@@ -517,9 +517,12 @@ input,select,textarea{font-family:inherit;outline:none}
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
           <div>
             <div style="font-size:20px;font-weight:700;margin-bottom:2px">Parámetros</div>
-            <div style="font-size:13px;color:var(--ink3)">Rangos ideales por cargo</div>
+            <div style="font-size:13px;color:var(--ink3)">Nivel mínimo requerido por dimensión — se aplica directamente al cálculo de ajuste en los informes</div>
           </div>
-          <button onclick="saveParams()" style="padding:8px 18px;border-radius:7px;background:#111;color:#fff;font-size:13px;font-weight:600;border:none;cursor:pointer">Guardar cambios</button>
+          <div style="display:flex;gap:8px">
+          <button onclick="resetParams()" style="padding:8px 18px;border-radius:7px;background:#fff;color:#64748b;font-size:13px;font-weight:600;border:1.5px solid #e2e8f0;cursor:pointer">Restaurar valores</button>
+          <button onclick="saveParams()" style="padding:8px 18px;border-radius:7px;background:#0f2d52;color:#fff;font-size:13px;font-weight:600;border:none;cursor:pointer">Guardar cambios</button>
+        </div>
         </div>
         <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap" id="params-tabs">
           <button class="param-tab-btn active" onclick="switchParamTab('jefatura',this)" style="padding:7px 16px;border-radius:7px;border:1.5px solid #111;background:#111;color:#fff;font-size:13px;font-weight:600;cursor:pointer">Jefatura</button>
@@ -2178,7 +2181,78 @@ function saveParams() {
     });
   });
 
-  showToast(changed > 0 ? '✓ Parámetros guardados (' + changed + ' dimensiones)' : 'Sin cambios detectados.');
+  if (changed > 0) {
+    persistParams();
+    showToast('✓ Parámetros guardados — los informes reflejarán estos niveles mínimos.');
+  } else {
+    showToast('Sin cambios detectados.');
+  }
+}
+
+// Serialize PERFIL_IDEAL to localStorage
+
+function resetParams() {
+  if (!confirm('¿Restaurar los valores por defecto para todos los perfiles?')) return;
+  try { localStorage.removeItem('psicoeval_params'); } catch(e) {}
+  // Reload page to restore hardcoded defaults
+  location.reload();
+}
+function persistParams() {
+  try {
+    // Extract only what changed: min per dim per perfil
+    const snapshot = {};
+    ['jefatura','administrativo','guardia'].forEach(function(pf) {
+      snapshot[pf] = {};
+      const ideal = PERFIL_IDEAL[pf];
+      if (!ideal) return;
+      ['barratt','pai','dc0','situacional','vigilancia'].forEach(function(secId) {
+        var sec = ideal[secId];
+        if (!sec) return;
+        snapshot[pf][secId] = {};
+        // situacional/vigilancia are flat
+        if (sec.min !== undefined) {
+          snapshot[pf][secId]._self = { min: sec.min, max: sec.max };
+        } else {
+          Object.keys(sec).forEach(function(k) {
+            snapshot[pf][secId][k] = { min: sec[k].min, max: sec[k].max };
+          });
+        }
+      });
+    });
+    localStorage.setItem('psicoeval_params', JSON.stringify(snapshot));
+  } catch(e) { console.warn('persistParams error', e); }
+}
+
+// Restore PERFIL_IDEAL from localStorage
+function restoreParams() {
+  try {
+    const raw = localStorage.getItem('psicoeval_params');
+    if (!raw) return;
+    const snapshot = JSON.parse(raw);
+    ['jefatura','administrativo','guardia'].forEach(function(pf) {
+      if (!snapshot[pf]) return;
+      const ideal = PERFIL_IDEAL[pf];
+      if (!ideal) return;
+      Object.keys(snapshot[pf]).forEach(function(secId) {
+        var sec = ideal[secId];
+        if (!sec) return;
+        var saved = snapshot[pf][secId];
+        if (saved._self !== undefined) {
+          // flat (situacional/vigilancia)
+          if (saved._self.min !== undefined) sec.min = saved._self.min;
+          if (saved._self.max !== undefined) sec.max = saved._self.max;
+        } else {
+          Object.keys(saved).forEach(function(k) {
+            if (sec[k]) {
+              if (saved[k].min !== undefined) sec[k].min = saved[k].min;
+              if (saved[k].max !== undefined) sec[k].max = saved[k].max;
+            }
+          });
+        }
+      });
+    });
+    console.log('✓ Parámetros restaurados desde localStorage');
+  } catch(e) { console.warn('restoreParams error', e); }
 }
 
 
@@ -2721,6 +2795,7 @@ function applyRoleRestrictions() {
 // ═══════════════════════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════════════════════
+restoreParams();
 restoreSession();
 </script>
 </body>
