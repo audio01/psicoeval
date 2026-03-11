@@ -518,7 +518,7 @@ input,select,textarea{font-family:inherit;outline:none}
 
 <!-- Candidate report modal -->
 <div id="cand-modal-overlay" class="overlay" style="display:none" onclick="closeCandModal()">
-  <div style="background:var(--bg);width:100%;max-width:900px;max-height:90vh;overflow-y:auto;border-radius:var(--rl);box-shadow:var(--shl)" onclick="event.stopPropagation()">
+  <div style="background:#f9f9f9;width:100%;max-width:940px;max-height:90vh;border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,.18);display:flex;flex-direction:column;overflow:hidden" onclick="event.stopPropagation()">
     <div id="cand-modal-content"></div>
   </div>
 </div>
@@ -1533,378 +1533,374 @@ function miniBars(dims, showIdeal) {
   }).join('');
 }
 
+function switchReportTab(tabId, el) {
+  var cont = el.closest('.rpt-modal');
+  cont.querySelectorAll('.rpt-tab-btn').forEach(function(b){
+    b.style.borderBottom = '2px solid transparent';
+    b.style.color = '#999';
+    b.style.fontWeight = '500';
+  });
+  cont.querySelectorAll('.rpt-tab-panel').forEach(function(p){ p.style.display='none'; });
+  el.style.borderBottom = '2px solid #111';
+  el.style.color = '#111';
+  el.style.fontWeight = '700';
+  var panel = cont.querySelector('#rpt-panel-'+tabId);
+  if (panel) panel.style.display = 'block';
+}
+
 function buildReportHtml(c, withClose) {
   const s = c.scores;
-  if (!s) return '<div style="padding:40px;text-align:center;color:var(--ink3)">Sin datos de evaluación.</div>';
+  if (!s) return '<div style="padding:40px;text-align:center;color:#999">Sin datos de evaluación.</div>';
   const perfil = c.perfil || 'administrativo';
   const pm = PERFIL_META[perfil];
   const isLegacy = !s.pf16 && !s.dc0 && !s.pai && (s.bigfive || s.disc || s.cognitivo);
 
-  let html = `<div style="background:var(--ink);color:#fff;padding:28px 32px">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px">
-      <div>
-        <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:8px">INFORME PSICOLABORAL — USO INTERNO RRHH</div>
-        <div style="font-size:24px;font-weight:800;margin-bottom:3px">${c.nombre} ${c.apellido}</div>
-        <div style="font-size:13px;color:rgba(255,255,255,.45)">${pm.icon} ${pm.label} · Evaluado el ${c.fecha}</div>
-        <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
-          ${(c.tests||[]).map(t=>`<span style="background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.13);border-radius:100px;font-size:10px;padding:2px 10px;color:rgba(255,255,255,.65)">${TESTS_META[t]?.icon||''} ${TESTS_META[t]?.name||t}</span>`).join('')}
-        </div>
-      </div>
-      ${withClose?'<button class="btn btn-ghost btn-sm" onclick="closeCandModal()" style="color:rgba(255,255,255,.5);flex-shrink:0">✕ Cerrar</button>':''}
-    </div>
-  </div>
-  <div style="padding:24px 32px;display:flex;flex-direction:column;gap:18px">`;
+  // ── Header (always visible) ──
+  let html = '<div class="rpt-modal">';
+  html += '<div style="background:#111;color:#fff;padding:24px 28px">'
+    + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px">'
+    + '<div>'
+    + '<div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:6px">INFORME PSICOLABORAL — USO INTERNO RRHH</div>'
+    + '<div style="font-size:22px;font-weight:800;margin-bottom:2px">' + c.nombre + ' ' + c.apellido + '</div>'
+    + '<div style="font-size:13px;color:rgba(255,255,255,.45)">' + pm.icon + ' ' + pm.label + ' &nbsp;·&nbsp; Evaluado el ' + c.fecha + '</div>'
+    + '</div>'
+    + (withClose ? '<button onclick="closeCandModal()" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:20px;cursor:pointer;flex-shrink:0;line-height:1">✕</button>' : '')
+    + '</div></div>';
 
   if (isLegacy) {
-    html += `<div style="background:var(--gold-l);border:1px solid var(--gold);border-radius:10px;padding:14px 18px;font-size:13px;color:var(--ink2)">⚠ Evaluado con versión anterior. Requiere nueva evaluación para informe de ajuste al cargo.</div></div>`;
+    html += '<div style="padding:24px"><div style="background:#fffbeb;border:1px solid #e5d4a0;border-radius:8px;padding:14px;font-size:13px;color:#555">⚠ Evaluado con versión anterior. Requiere nueva evaluación.</div></div></div>';
     return html;
   }
 
   const rpt = buildFitReport(c);
-  if (!rpt) { html += '<div style="padding:20px;color:var(--ink3)">No se pudo generar el análisis.</div></div>'; return html; }
+  if (!rpt) {
+    html += '<div style="padding:24px;color:#999">No se pudo generar el análisis.</div></div>';
+    return html;
+  }
 
   const fitLv = fitLabel(rpt.globalFit);
 
-  // ══════════════════════════════════════════════════════════
-  // BLOQUE 1 — ENCABEZADO DE RESULTADOS
-  // ══════════════════════════════════════════════════════════
-  html += `<div class="card cp" style="background:${fitLv.bg};border:2px solid ${fitLv.color}30">
-    <div style="display:flex;gap:24px;align-items:center;flex-wrap:wrap">
-      <div style="text-align:center;min-width:110px">
-        ${gaugeHtml(rpt.globalFit, fitLv.color, 110)}
-        <div style="font-size:13px;font-weight:800;color:${fitLv.color};margin-top:4px">${fitLv.label}</div>
-        <div style="font-size:10px;color:var(--ink3);margin-top:1px">Ajuste al cargo</div>
-      </div>
-      <div style="flex:1;min-width:200px">
-        <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--ink3);margin-bottom:6px">Resumen ejecutivo</div>
-        <div style="font-size:13px;line-height:1.75;color:var(--ink)">${rpt.resumen}</div>
-      </div>
-    </div>
-    <div style="height:1px;background:var(--border);margin:16px 0"></div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px">
-      ${rpt.sections.map(sec => {
-        const lv = fitLabel(sec.secFit);
-        return `<div style="text-align:center;padding:10px 8px;background:var(--surface);border-radius:8px;border:1px solid var(--border)">
-          <div style="font-size:18px">${sec.icon}</div>
-          <div style="font-size:10px;font-weight:700;color:var(--ink2);margin:3px 0;line-height:1.3">${sec.title.split('(')[0].trim()}</div>
-          <div style="font-size:20px;font-weight:900;color:${lv.color};line-height:1">${sec.secFit}%</div>
-          <div style="font-size:9px;font-weight:700;color:${lv.color}">${lv.label}</div>
-        </div>`;
-      }).join('')}
-    </div>
-  </div>`;
+  // ── Tab bar ──
+  const tabs = [{ id:'general', label:'Resumen General', icon:'📋' }];
+  if (s.pf16 && rpt.sections.find(x=>x.id==='pf16'))        tabs.push({ id:'pf16',       label:'Personalidad',  icon:'🧠' });
+  if (s.pai  && rpt.sections.find(x=>x.id==='pai'))         tabs.push({ id:'pai',        label:'Aj. Psicológico', icon:'🔎' });
+  if (s.dc0  && rpt.sections.find(x=>x.id==='dc0'))         tabs.push({ id:'dc0',        label:'Aptitud Cognitiva', icon:'⚡' });
+  if (s.situacional && rpt.sections.find(x=>x.id==='situacional')) tabs.push({ id:'situacional', label:'Juicio Situacional', icon:'💡' });
+  if (s.vigilancia  && rpt.sections.find(x=>x.id==='vigilancia'))  tabs.push({ id:'vigilancia',  label:'Vigilancia', icon:'🛡' });
 
-  // ══════════════════════════════════════════════════════════
-  // BLOQUE 2 — TEST POR TEST
-  // ══════════════════════════════════════════════════════════
+  html += '<div style="border-bottom:1px solid #e5e5e5;background:#fff;padding:0 28px;display:flex;gap:0;overflow-x:auto;flex-shrink:0">';
+  tabs.forEach(function(t, i) {
+    var first = i === 0;
+    html += '<button class="rpt-tab-btn" onclick="switchReportTab(\'' + t.id + '\',this)"'
+      + ' style="padding:12px 16px;border:none;background:none;cursor:pointer;font-size:13px;white-space:nowrap;'
+      + 'border-bottom:2px solid ' + (first?'#111':'transparent') + ';'
+      + 'color:' + (first?'#111':'#999') + ';'
+      + 'font-weight:' + (first?'700':'500') + '">'
+      + t.icon + ' ' + t.label
+      + '</button>';
+  });
+  html += '</div>';
 
-  // ── 16PF ──
-  if (s.pf16 && rpt.sections.find(x=>x.id==='pf16')) {
-    const sec = rpt.sections.find(x=>x.id==='pf16');
+  // ── Tab panels container ──
+  html += '<div style="overflow-y:auto;flex:1;padding:24px 28px;background:#f9f9f9;display:flex;flex-direction:column;gap:16px" id="rpt-panels-wrap">';
+
+  // ════════════════════════════════════════════
+  // TAB: GENERAL
+  // ════════════════════════════════════════════
+  html += '<div class="rpt-tab-panel" id="rpt-panel-general" style="display:block;display:flex;flex-direction:column;gap:16px">';
+
+  // Índice global
+  html += '<div style="background:#fff;border:1px solid #e5e5e5;border-radius:10px;padding:20px 22px">'
+    + '<div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap">'
+    + '<div style="text-align:center;min-width:100px">'
+    + gaugeHtml(rpt.globalFit, fitLv.color, 100)
+    + '<div style="font-size:12px;font-weight:700;color:' + fitLv.color + ';margin-top:3px">' + fitLv.label + '</div>'
+    + '<div style="font-size:10px;color:#999">Ajuste al cargo</div>'
+    + '</div>'
+    + '<div style="flex:1;min-width:200px">'
+    + '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#999;margin-bottom:6px">Resumen Ejecutivo</div>'
+    + '<div style="font-size:13px;line-height:1.7;color:#111">' + rpt.resumen + '</div>'
+    + '</div></div>'
+    // Section scores grid
+    + '<div style="height:1px;background:#e5e5e5;margin:16px 0"></div>'
+    + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px">'
+    + rpt.sections.map(function(sec) {
+        var lv2 = fitLabel(sec.secFit);
+        return '<div style="text-align:center;padding:10px 6px;background:#f9f9f9;border-radius:8px;border:1px solid #e5e5e5">'
+          + '<div style="font-size:16px">' + sec.icon + '</div>'
+          + '<div style="font-size:10px;font-weight:600;color:#555;margin:3px 0;line-height:1.3">' + sec.title.split('(')[0].trim() + '</div>'
+          + '<div style="font-size:20px;font-weight:900;color:' + lv2.color + ';line-height:1">' + sec.secFit + '%</div>'
+          + '<div style="font-size:9px;font-weight:700;color:' + lv2.color + '">' + lv2.label + '</div>'
+          + '</div>';
+      }).join('')
+    + '</div></div>';
+
+  // Fortalezas y áreas de desarrollo
+  html += '<div style="background:#fff;border:1px solid #e5e5e5;border-radius:10px;padding:20px 22px">'
+    + '<div style="font-size:16px;font-weight:700;margin-bottom:4px">Fortalezas y Áreas de Desarrollo</div>'
+    + '<div style="font-size:12px;color:#999;margin-bottom:16px">Dimensiones con mayor y menor ajuste al perfil del cargo.</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">'
+    + '<div>'
+    + '<div style="font-size:12px;font-weight:700;color:#16a34a;border-bottom:2px solid #16a34a;padding-bottom:6px;margin-bottom:10px">✓ Fortalezas</div>'
+    + (rpt.fortalezas.length ? rpt.fortalezas.map(function(f){
+        var l5 = scoreToLevel5(f.score);
+        return '<div style="display:flex;gap:9px;align-items:flex-start;padding:9px 0;border-bottom:1px solid #f0f0f0">'
+          + '<div style="width:19px;height:19px;border-radius:4px;background:#f0fdf4;font-size:10px;font-weight:800;color:#16a34a;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">' + l5 + '</div>'
+          + '<div><div style="font-size:13px;font-weight:600">' + f.label + '</div>'
+          + '<div style="font-size:11px;color:#999">' + f.section + '</div>'
+          + '<div style="font-size:11px;color:#555;margin-top:1px;line-height:1.4">' + f.req + '</div></div></div>';
+      }).join('') : '<div style="font-size:13px;color:#999;padding:8px 0">Sin fortalezas destacadas.</div>')
+    + '</div>'
+    + '<div>'
+    + '<div style="font-size:12px;font-weight:700;color:#dc2626;border-bottom:2px solid #dc2626;padding-bottom:6px;margin-bottom:10px">△ Áreas de Desarrollo</div>'
+    + (rpt.brechas.length ? rpt.brechas.map(function(b){
+        var l5 = scoreToLevel5(b.score);
+        return '<div style="display:flex;gap:9px;align-items:flex-start;padding:9px 0;border-bottom:1px solid #f0f0f0">'
+          + '<div style="width:19px;height:19px;border-radius:4px;background:#fef2f2;font-size:10px;font-weight:800;color:#dc2626;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">' + l5 + '</div>'
+          + '<div><div style="font-size:13px;font-weight:600">' + b.label + '</div>'
+          + '<div style="font-size:11px;color:#999">' + b.section + '</div>'
+          + '<div style="font-size:11px;color:#555;margin-top:1px;line-height:1.4">' + b.req + '</div></div></div>';
+      }).join('') : '<div style="font-size:13px;color:#999;padding:8px 0">No se detectaron brechas significativas.</div>')
+    + '</div></div></div>';
+
+  // Preguntas entrevista
+  html += '<div style="background:#fff;border:1px solid #e5e5e5;border-radius:10px;padding:20px 22px">'
+    + '<div style="font-size:16px;font-weight:700;margin-bottom:4px">🎤 Preguntas para Entrevista</div>'
+    + '<div style="font-size:12px;color:#999;margin-bottom:14px">Basadas en las brechas detectadas para el cargo ' + pm.label + '.</div>'
+    + '<div style="display:flex;flex-direction:column;gap:10px">'
+    + rpt.entrevista.map(function(q,i){
+        return '<div style="display:flex;gap:12px;padding:10px 12px;background:#f9f9f9;border-radius:8px;border-left:3px solid #e5e5e5">'
+          + '<div style="font-size:12px;font-weight:700;color:#999;flex-shrink:0;min-width:18px">' + (i+1) + '</div>'
+          + '<div style="font-size:13px;line-height:1.6;color:#333">' + q + '</div></div>';
+      }).join('')
+    + '</div></div>';
+
+  html += '</div>'; // end tab-panel general
+
+  // ════════════════════════════════════════════
+  // TAB: 16PF
+  // ════════════════════════════════════════════
+  if (s.pf16 && rpt.sections.find(function(x){return x.id==='pf16';})) {
+    const sec = rpt.sections.find(function(x){return x.id==='pf16';});
     const secLv = fitLabel(sec.secFit);
-
-    // Grupos visuales
     const GRUPOS = [
-      { label:'Relaciones Interpersonales', keys:['A','F','H'], color:'#1c5d8c' },
-      { label:'Gestión Emocional',          keys:['C','O','Q4'], color:'#3a7850' },
-      { label:'Trabajo y Disciplina',       keys:['E','G','Q3'], color:'#a07528' },
-      { label:'Estilo de Pensamiento',      keys:['M','Q1','I'], color:'#7a4f8c' },
-      { label:'Cautela y Privacidad',       keys:['L','N'],      color:'#5a5348' },
+      { label:'Relaciones Interpersonales', keys:['A','F','H'], color:'#2563eb' },
+      { label:'Gestión Emocional',          keys:['C','O','Q4'], color:'#16a34a' },
+      { label:'Trabajo y Disciplina',       keys:['E','G','Q3'], color:'#b45309' },
+      { label:'Estilo de Pensamiento',      keys:['M','Q1','I'], color:'#7c3aed' },
+      { label:'Cautela y Privacidad',       keys:['L','N'],      color:'#555' },
     ];
-
-    html += `<div class="card cp">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;flex-wrap:wrap;gap:8px">
-        <div class="res-section-title">🧠 Personalidad — 16PF</div>
-        <div style="display:flex;align-items:center;gap:8px">
-          ${gaugeHtml(sec.secFit, secLv.color, 70)}
-          <div><div style="font-size:14px;font-weight:800;color:${secLv.color}">${sec.secFit}%</div><div style="font-size:10px;color:var(--ink3)">${secLv.label}</div></div>
-        </div>
-      </div>
-      <p style="font-size:12px;color:var(--ink3);margin-bottom:16px;line-height:1.5">Mide 14 rasgos de personalidad organizados en 5 áreas. Compara el resultado obtenido (barra de color) con el rango ideal para el cargo ${pm.label} (zona gris).</p>
-
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px">
-        ${GRUPOS.map(g => {
-          const dims = g.keys.map(k => {
-            const sd = sec.dims.find(d=>d.key===k);
-            return sd ? {...sd} : null;
-          }).filter(Boolean);
-          if (!dims.length) return '';
-          return `<div style="background:var(--bg);border-radius:10px;padding:14px 16px;border:1px solid var(--border)">
-            <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:${g.color};margin-bottom:10px;border-bottom:2px solid ${g.color}20;padding-bottom:6px">${g.label}</div>
-            ${miniBars(dims, true)}
-            <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border)">
-              <div style="font-size:11px;color:var(--ink2);line-height:1.55">${dimDesc('pf16', dims[0].key, dims[0].score)}</div>
-            </div>
-          </div>`;
-        }).join('')}
-      </div>
-    </div>`;
-  }
-
-  // ── PAI ──
-  if (s.pai && rpt.sections.find(x=>x.id==='pai')) {
-    const sec = rpt.sections.find(x=>x.id==='pai');
-    const secLv = fitLabel(sec.secFit);
-    const PAI_FULL = { EE:'Estabilidad Emocional', AS:'Adaptación Social', ON:'Orient. Normativa', ME:'Manejo del Estrés', IL:'Integridad Laboral', ML:'Motivación Laboral' };
-
-    // Build PAI profile narrative
-    const paiScores = sec.dims.reduce((acc,d)=>{acc[d.key]=d.score;return acc},{});
-    const paiLevels = {};
-    sec.dims.forEach(d => { paiLevels[d.key] = scoreToLevel5(d.score); });
-    const paiHighs = sec.dims.filter(d=>d.fit>=75).sort((a,b)=>b.fit-a.fit);
-    const paiLows  = sec.dims.filter(d=>d.fit<50).sort((a,b)=>a.fit-b.fit);
-
-    // Overall PAI narrative
-    let paiNarrative = '';
-    const eeL = paiLevels.EE||3, meL = paiLevels.ME||3, ilL = paiLevels.IL||3;
-    const asL = paiLevels.AS||3, onL = paiLevels.ON||3, mlL = paiLevels.ML||3;
-    if (sec.secFit >= 80) {
-      paiNarrative = 'El perfil de ajuste psicológico es sólido y consistente con los requerimientos del cargo. Muestra buena capacidad para sostener su rendimiento en entornos exigentes.';
-    } else if (sec.secFit >= 60) {
-      paiNarrative = 'El perfil de ajuste psicológico es adecuado para el cargo en la mayoría de las dimensiones evaluadas. Algunas áreas requieren seguimiento inicial.';
-    } else {
-      paiNarrative = 'El perfil de ajuste psicológico presenta áreas de desarrollo que deben ser exploradas con mayor profundidad antes de tomar una decisión de contratación.';
-    }
-    // Add specific observations
-    if (eeL >= 4) paiNarrative += ` Su <strong>estabilidad emocional</strong> (nivel ${eeL}/5) es un activo relevante para el cargo.`;
-    else if (eeL <= 2) paiNarrative += ` La <strong>estabilidad emocional</strong> (nivel ${eeL}/5) es un área prioritaria de desarrollo.`;
-    if (ilL >= 4) paiNarrative += ` Destaca su <strong>integridad laboral</strong> (nivel ${ilL}/5), lo que favorece la confianza en el rol.`;
-    else if (ilL <= 2) paiNarrative += ` La <strong>integridad laboral</strong> (nivel ${ilL}/5) requiere ser explorada en entrevista.`;
-    if (meL >= 4) paiNarrative += ` Tiene buena capacidad de <strong>manejo del estrés</strong> (nivel ${meL}/5).`;
-    else if (meL <= 2) paiNarrative += ` El <strong>manejo del estrés</strong> (nivel ${meL}/5) puede ser un factor limitante en situaciones de alta exigencia.`;
-
-    html += '<div class="card cp">'
+    html += '<div class="rpt-tab-panel" id="rpt-panel-pf16" style="display:none;flex-direction:column;gap:16px">';
+    html += '<div style="background:#fff;border:1px solid #e5e5e5;border-radius:10px;padding:20px 22px">'
       + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;flex-wrap:wrap;gap:8px">'
-      + '<div class="res-section-title">🔎 Ajuste Psicológico — PAI</div>'
-      + '<div style="display:flex;align-items:center;gap:8px">'
-      + gaugeHtml(sec.secFit, secLv.color, 70)
-      + '<div><div style="font-size:14px;font-weight:800;color:' + secLv.color + '">' + sec.secFit + '%</div><div style="font-size:10px;color:var(--ink3)">' + secLv.label + '</div></div>'
-      + '</div></div>'
-      // ── PAI Profile Summary ──
-      + '<div style="background:var(--bg);border:1px solid var(--border);border-left:4px solid ' + secLv.color + ';border-radius:8px;padding:14px 16px;margin:12px 0 18px">'
-      + '<div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--ink3);margin-bottom:6px">Perfil de Ajuste Psicológico</div>'
-      + '<div style="font-size:13px;line-height:1.7;color:var(--ink);margin-bottom:12px">' + paiNarrative + '</div>'
-      // Mini radar 1-5
-      + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">'
-      + sec.dims.map(d => {
-          const l5 = scoreToLevel5(d.score);
-          const fitLv2 = fitLabel(d.fit);
-          return '<div style="text-align:center;padding:8px 6px;background:' + fitLv2.bg + ';border-radius:6px;border:1px solid ' + fitLv2.color + '20">'
-            + '<div style="font-size:10px;font-weight:700;color:var(--ink2);margin-bottom:4px;line-height:1.2">' + (PAI_FULL[d.key]||d.label) + '</div>'
-            + '<div style="font-size:22px;font-weight:900;color:' + fitLv2.color + ';line-height:1">' + l5 + '</div>'
-            + '<div style="font-size:9px;color:' + fitLv2.color + ';font-weight:700">' + NIVEL_LABELS_RPT[l5] + '</div>'
-            + '</div>';
-        }).join('')
-      + '</div></div>'
-      // ── PAI Dimension cards ──
-      + '<p style="font-size:12px;color:var(--ink3);margin-bottom:14px;line-height:1.5">Detalle por dimensión. Escala 1–5 donde 5 es el nivel más alto. La zona gris indica el rango ideal para el cargo.</p>'
-      + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px">'
-      + sec.dims.map(d => {
-          const lv2 = fitLabel(d.fit);
-          const scoreC = d.gap==='ok'?'#3a7850':d.gap==='bajo'?'#c04b1c':'#a07528';
-          const desc = dimDesc('pai', d.key, d.score);
-          const l5 = scoreToLevel5(d.score);
-          let idealMin5 = 1, idealMax5 = 5;
-          if (d.ideal) {
-            const pts = d.ideal.split('–');
-            idealMin5 = scoreToLevel5(parseInt(pts[0]||0));
-            idealMax5 = scoreToLevel5(parseInt(pts[1]||100));
-          }
-          return '<div style="background:var(--bg);border-radius:10px;padding:14px 16px;border:1.5px solid ' + lv2.color + '30">'
-            + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">'
-            + '<div><div style="font-size:13px;font-weight:700">' + (PAI_FULL[d.key]||d.label) + '</div>'
-            + '<div style="font-size:10px;color:var(--ink3);margin-top:1px">' + d.req + '</div></div>'
-            + '<div style="text-align:center;min-width:48px;padding:6px;background:' + lv2.bg + ';border-radius:8px;border:1px solid ' + lv2.color + '30">'
-            + '<div style="font-size:24px;font-weight:900;color:' + lv2.color + ';line-height:1">' + l5 + '</div>'
-            + '<div style="font-size:9px;font-weight:700;color:' + lv2.color + '">/5</div></div>'
-            + '</div>'
-            + '<div style="height:8px;background:var(--border);border-radius:4px;overflow:hidden;position:relative;margin-bottom:6px">'
-            + '<div style="height:100%;width:' + d.score + '%;background:' + scoreC + ';border-radius:4px"></div>'
-            + '<div style="position:absolute;top:0;height:100%;left:' + (d.ideal?d.ideal.split('–')[0]:'0') + '%;width:' + Math.max(0,parseInt((d.ideal||'0-100').split('–')[1]||100)-parseInt((d.ideal||'0-100').split('–')[0]||0)) + '%;background:rgba(0,0,0,.1);border-left:2px solid rgba(0,0,0,.25);border-right:2px solid rgba(0,0,0,.25)"></div>'
-            + '</div>'
-            + '<div style="font-size:10px;color:var(--ink3);margin-bottom:8px">Ideal para cargo: nivel ' + idealMin5 + '–' + idealMax5 + ' &nbsp;·&nbsp; Ajuste: <strong style="color:' + lv2.color + '">' + d.fit + '%</strong></div>'
-            + '<div style="font-size:11px;color:var(--ink2);line-height:1.55">' + desc + '</div>'
+      + '<div style="font-size:17px;font-weight:700">🧠 Personalidad — 16PF</div>'
+      + '<div style="display:flex;align-items:center;gap:8px">' + gaugeHtml(sec.secFit, secLv.color, 64)
+      + '<div><div style="font-size:13px;font-weight:800;color:' + secLv.color + '">' + sec.secFit + '%</div><div style="font-size:10px;color:#999">' + secLv.label + '</div></div></div></div>'
+      + '<div style="font-size:12px;color:#999;margin-bottom:16px">Mide 14 rasgos organizados en 5 áreas. La zona gris en cada barra indica el rango ideal para el cargo ' + pm.label + '.</div>'
+      + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px">'
+      + GRUPOS.map(function(g){
+          var dims = g.keys.map(function(k){ return sec.dims.find(function(d){return d.key===k;}); }).filter(Boolean);
+          if (!dims.length) return '';
+          return '<div style="background:#f9f9f9;border-radius:8px;padding:14px;border:1px solid #e5e5e5">'
+            + '<div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:' + g.color + ';margin-bottom:10px;border-bottom:2px solid ' + g.color + '20;padding-bottom:6px">' + g.label + '</div>'
+            + miniBars(dims, true)
+            + '<div style="margin-top:10px;padding-top:8px;border-top:1px solid #e5e5e5;font-size:11px;color:#555;line-height:1.55">' + dimDesc('pf16', dims[0].key, dims[0].score) + '</div>'
             + '</div>';
         }).join('')
       + '</div></div>';
+    html += '</div>';
   }
 
-  // ── DC-0 ──
-  if (s.dc0 && rpt.sections.find(x=>x.id==='dc0')) {
-    const sec = rpt.sections.find(x=>x.id==='dc0');
+  // ════════════════════════════════════════════
+  // TAB: PAI
+  // ════════════════════════════════════════════
+  if (s.pai && rpt.sections.find(function(x){return x.id==='pai';})) {
+    const sec = rpt.sections.find(function(x){return x.id==='pai';});
     const secLv = fitLabel(sec.secFit);
-    const DC_FULL = { V:'Razonamiento Verbal', N:'Razonamiento Numérico', L:'Razonamiento Lógico' };
-    const DC_COLOR = { V:'#1c5d8c', N:'#3a7850', L:'#a07528' };
-    const DC_ICON  = { V:'📖', N:'🔢', L:'🧩' };
+    const PAI_FULL = { EE:'Estabilidad Emocional', AS:'Adaptación Social', ON:'Orient. Normativa', ME:'Manejo del Estrés', IL:'Integridad Laboral', ML:'Motivación Laboral' };
+    const paiLevels = {};
+    sec.dims.forEach(function(d){ paiLevels[d.key] = scoreToLevel5(d.score); });
+    var eeL = paiLevels.EE||3, meL = paiLevels.ME||3, ilL = paiLevels.IL||3;
+    var paiNarrative = sec.secFit >= 80
+      ? 'El perfil de ajuste psicológico es sólido y consistente con los requerimientos del cargo.'
+      : sec.secFit >= 60
+      ? 'El perfil de ajuste psicológico es adecuado en la mayoría de las dimensiones evaluadas. Algunas áreas requieren seguimiento inicial.'
+      : 'El perfil presenta áreas de desarrollo relevantes que deben explorarse antes de tomar una decisión de contratación.';
+    if (eeL >= 4) paiNarrative += ' Su <strong>estabilidad emocional</strong> (nivel ' + eeL + '/5) es un activo relevante.';
+    else if (eeL <= 2) paiNarrative += ' La <strong>estabilidad emocional</strong> (nivel ' + eeL + '/5) es un área prioritaria de desarrollo.';
+    if (ilL >= 4) paiNarrative += ' Destaca su <strong>integridad laboral</strong> (nivel ' + ilL + '/5).';
+    else if (ilL <= 2) paiNarrative += ' La <strong>integridad laboral</strong> (nivel ' + ilL + '/5) requiere ser explorada en entrevista.';
+    if (meL >= 4) paiNarrative += ' Buena capacidad de <strong>manejo del estrés</strong> (nivel ' + meL + '/5).';
+    else if (meL <= 2) paiNarrative += ' El <strong>manejo del estrés</strong> (nivel ' + meL + '/5) puede ser un factor limitante.';
 
-    html += `<div class="card cp">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;flex-wrap:wrap;gap:8px">
-        <div class="res-section-title">⚡ Aptitud Cognitiva — DC-0</div>
-        <div style="display:flex;align-items:center;gap:8px">
-          ${gaugeHtml(s.dc0.total, secLv.color, 70)}
-          <div><div style="font-size:14px;font-weight:800;color:${secLv.color}">${s.dc0.total} pts</div><div style="font-size:10px;color:var(--ink3)">Puntaje global</div></div>
-        </div>
-      </div>
-      <p style="font-size:12px;color:var(--ink3);margin-bottom:16px;line-height:1.5">Evalúa tres dimensiones del razonamiento. El puntaje refleja el porcentaje de respuestas correctas en cada área.</p>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
-        ${['V','N','L'].map(k => {
-          const score = s.dc0[k];
-          const lv = scoreLevel(score);
-          return `<div style="text-align:center;padding:16px 10px;background:var(--bg);border-radius:10px;border:1.5px solid ${DC_COLOR[k]}30">
-            <div style="font-size:22px;margin-bottom:6px">${DC_ICON[k]}</div>
-            <div style="font-size:11px;font-weight:700;color:var(--ink2);margin-bottom:8px;line-height:1.3">${DC_FULL[k]}</div>
-            ${gaugeHtml(score, DC_COLOR[k], 80)}
-            <div style="font-size:10px;font-weight:700;color:${lv.color};margin-top:2px">${lv.label}</div>
-          </div>`;
-        }).join('')}
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px">
-        ${['V','N','L'].map(k => {
-          const score = s.dc0[k];
-          const dim = sec.dims.find(d=>d.key===k);
-          const lv = fitLabel(dim?.fit||0);
-          return `<div style="background:var(--bg);border-radius:8px;padding:12px 14px;border-left:3px solid ${DC_COLOR[k]}">
-            <div style="font-size:11px;font-weight:800;color:${DC_COLOR[k]};margin-bottom:4px">${DC_FULL[k]} — ${score}%</div>
-            <div style="font-size:11px;color:var(--ink2);line-height:1.55">${dimDesc('dc0',k,score)}</div>
-            ${dim ? `<div style="font-size:10px;font-weight:700;color:${lv.color};margin-top:4px">Ajuste al cargo: ${dim.fit}% — ${lv.label}</div>` : ''}
-          </div>`;
-        }).join('')}
-      </div>
-    </div>`;
+    html += '<div class="rpt-tab-panel" id="rpt-panel-pai" style="display:none;flex-direction:column;gap:16px">';
+    // Narrative card
+    html += '<div style="background:#fff;border:1px solid #e5e5e5;border-radius:10px;padding:20px 22px">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">'
+      + '<div style="font-size:17px;font-weight:700">🔎 Ajuste Psicológico — PAI</div>'
+      + '<div style="display:flex;align-items:center;gap:8px">' + gaugeHtml(sec.secFit, secLv.color, 64)
+      + '<div><div style="font-size:13px;font-weight:800;color:' + secLv.color + '">' + sec.secFit + '%</div><div style="font-size:10px;color:#999">' + secLv.label + '</div></div></div></div>'
+      + '<div style="background:#f9f9f9;border-left:3px solid ' + secLv.color + ';border-radius:0 8px 8px 0;padding:14px 16px;margin-bottom:16px">'
+      + '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#999;margin-bottom:6px">Perfil de Ajuste Psicológico</div>'
+      + '<div style="font-size:13px;line-height:1.7;color:#111;margin-bottom:12px">' + paiNarrative + '</div>'
+      + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">'
+      + sec.dims.map(function(d){
+          var l5 = scoreToLevel5(d.score);
+          var lv2 = fitLabel(d.fit);
+          return '<div style="text-align:center;padding:8px 6px;background:' + lv2.bg + ';border-radius:6px;border:1px solid ' + lv2.color + '20">'
+            + '<div style="font-size:10px;font-weight:700;color:#555;margin-bottom:3px;line-height:1.2">' + (PAI_FULL[d.key]||d.label) + '</div>'
+            + '<div style="font-size:22px;font-weight:900;color:' + lv2.color + ';line-height:1">' + l5 + '</div>'
+            + '<div style="font-size:9px;font-weight:700;color:' + lv2.color + '">' + NIVEL_LABELS_RPT[l5] + '</div>'
+            + '</div>';
+        }).join('')
+      + '</div></div>'
+      // Dimension cards
+      + '<div style="font-size:12px;color:#999;margin-bottom:12px">Detalle por dimensión. Escala 1–5 donde 5 es el nivel más alto.</div>'
+      + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:12px">'
+      + sec.dims.map(function(d){
+          var lv2 = fitLabel(d.fit);
+          var scoreC = d.gap==='ok'?'#16a34a':d.gap==='bajo'?'#dc2626':'#b45309';
+          var desc = dimDesc('pai', d.key, d.score);
+          var l5 = scoreToLevel5(d.score);
+          var pts = (d.ideal||'0–100').split('–');
+          var iMin5 = scoreToLevel5(parseInt(pts[0]||0));
+          var iMax5 = scoreToLevel5(parseInt(pts[1]||100));
+          return '<div style="background:#f9f9f9;border-radius:8px;padding:14px;border:1.5px solid ' + lv2.color + '30">'
+            + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">'
+            + '<div><div style="font-size:13px;font-weight:700">' + (PAI_FULL[d.key]||d.label) + '</div>'
+            + '<div style="font-size:10px;color:#999;margin-top:1px">' + d.req + '</div></div>'
+            + '<div style="text-align:center;min-width:44px;padding:5px 6px;background:' + lv2.bg + ';border-radius:7px;border:1px solid ' + lv2.color + '30">'
+            + '<div style="font-size:22px;font-weight:900;color:' + lv2.color + ';line-height:1">' + l5 + '</div>'
+            + '<div style="font-size:9px;font-weight:700;color:' + lv2.color + '">/5</div></div></div>'
+            + '<div style="height:7px;background:#e5e5e5;border-radius:4px;overflow:hidden;position:relative;margin-bottom:5px">'
+            + '<div style="height:100%;width:' + d.score + '%;background:' + scoreC + ';border-radius:4px"></div>'
+            + '<div style="position:absolute;top:0;height:100%;left:' + pts[0] + '%;width:' + Math.max(0,parseInt(pts[1]||100)-parseInt(pts[0]||0)) + '%;background:rgba(0,0,0,.1);border-left:2px solid rgba(0,0,0,.2);border-right:2px solid rgba(0,0,0,.2)"></div>'
+            + '</div>'
+            + '<div style="font-size:10px;color:#999;margin-bottom:8px">Ideal: nivel ' + iMin5 + '–' + iMax5 + ' &nbsp;·&nbsp; Ajuste: <strong style="color:' + lv2.color + '">' + d.fit + '%</strong></div>'
+            + '<div style="font-size:11px;color:#555;line-height:1.55">' + desc + '</div>'
+            + '</div>';
+        }).join('')
+      + '</div></div>';
+    html += '</div>';
   }
 
-  // ── Juicio Situacional ──
-  if (s.situacional && rpt.sections.find(x=>x.id==='situacional')) {
-    const sec = rpt.sections.find(x=>x.id==='situacional');
+  // ════════════════════════════════════════════
+  // TAB: DC-0
+  // ════════════════════════════════════════════
+  if (s.dc0 && rpt.sections.find(function(x){return x.id==='dc0';})) {
+    const sec = rpt.sections.find(function(x){return x.id==='dc0';});
+    const secLv = fitLabel(sec.secFit);
+    const DC_FULL  = { V:'Razonamiento Verbal', N:'Razonamiento Numérico', L:'Razonamiento Lógico' };
+    const DC_COLOR = { V:'#2563eb', N:'#16a34a', L:'#b45309' };
+    const DC_ICON  = { V:'📖', N:'🔢', L:'🧩' };
+    html += '<div class="rpt-tab-panel" id="rpt-panel-dc0" style="display:none;flex-direction:column;gap:16px">';
+    html += '<div style="background:#fff;border:1px solid #e5e5e5;border-radius:10px;padding:20px 22px">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;flex-wrap:wrap;gap:8px">'
+      + '<div style="font-size:17px;font-weight:700">⚡ Aptitud Cognitiva — DC-0</div>'
+      + '<div style="display:flex;align-items:center;gap:8px">' + gaugeHtml(s.dc0.total, secLv.color, 64)
+      + '<div><div style="font-size:13px;font-weight:800;color:' + secLv.color + '">' + s.dc0.total + ' pts</div><div style="font-size:10px;color:#999">Puntaje global</div></div></div></div>'
+      + '<div style="font-size:12px;color:#999;margin-bottom:16px">Evalúa tres dimensiones del razonamiento. Puntaje = % de respuestas correctas.</div>'
+      + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">'
+      + ['V','N','L'].map(function(k){
+          var score = s.dc0[k];
+          var lv2 = scoreLevel(score);
+          var l5 = scoreToLevel5(score);
+          return '<div style="text-align:center;padding:16px 10px;background:#f9f9f9;border-radius:8px;border:1.5px solid ' + DC_COLOR[k] + '30">'
+            + '<div style="font-size:22px;margin-bottom:6px">' + DC_ICON[k] + '</div>'
+            + '<div style="font-size:11px;font-weight:700;color:#555;margin-bottom:8px;line-height:1.3">' + DC_FULL[k] + '</div>'
+            + gaugeHtml(score, DC_COLOR[k], 72)
+            + '<div style="font-size:12px;font-weight:800;color:' + DC_COLOR[k] + ';margin-top:4px">Nivel ' + l5 + '/5</div>'
+            + '<div style="font-size:10px;font-weight:700;color:' + lv2.color + '">' + lv2.label + '</div>'
+            + '</div>';
+        }).join('')
+      + '</div>'
+      + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px">'
+      + ['V','N','L'].map(function(k){
+          var score = s.dc0[k];
+          var dim = sec.dims.find(function(d){return d.key===k;});
+          var lv2 = fitLabel(dim ? dim.fit : 0);
+          var l5 = scoreToLevel5(score);
+          return '<div style="background:#f9f9f9;border-radius:8px;padding:12px 14px;border-left:3px solid ' + DC_COLOR[k] + '">'
+            + '<div style="font-size:11px;font-weight:800;color:' + DC_COLOR[k] + ';margin-bottom:4px">' + DC_FULL[k] + ' — Nivel ' + l5 + '/5</div>'
+            + '<div style="font-size:11px;color:#555;line-height:1.55">' + dimDesc('dc0', k, score) + '</div>'
+            + (dim ? '<div style="font-size:10px;font-weight:700;color:' + lv2.color + ';margin-top:4px">Ajuste al cargo: ' + dim.fit + '% — ' + lv2.label + '</div>' : '')
+            + '</div>';
+        }).join('')
+      + '</div></div>';
+    html += '</div>';
+  }
+
+  // ════════════════════════════════════════════
+  // TAB: SITUACIONAL
+  // ════════════════════════════════════════════
+  if (s.situacional && rpt.sections.find(function(x){return x.id==='situacional';})) {
+    const sec = rpt.sections.find(function(x){return x.id==='situacional';});
     const secLv = fitLabel(sec.secFit);
     const pct = s.situacional.pct;
-    const sitText = pct>=80
-      ? 'Excelente criterio ante situaciones laborales complejas. Prioriza correctamente, actúa con procedimiento y considera el impacto de sus decisiones.'
-      : pct>=60
-      ? 'Buen juicio en la mayoría de los escenarios. Algunos casos requieren mayor orientación, especialmente ante situaciones ambiguas o de alta presión.'
-      : pct>=40
-      ? 'Juicio situacional variable. En algunos escenarios la respuesta no fue la más adecuada. Se recomienda explorar en entrevista su proceso de toma de decisiones.'
-      : 'Dificultades para seleccionar la respuesta correcta ante situaciones complejas del cargo. Requiere acompañamiento y formación en protocolos antes de asumir el puesto.';
-
-    html += `<div class="card cp">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;flex-wrap:wrap;gap:8px">
-        <div class="res-section-title">💡 Juicio Situacional</div>
-        <div style="display:flex;align-items:center;gap:8px">
-          ${gaugeHtml(pct, secLv.color, 70)}
-          <div><div style="font-size:14px;font-weight:800;color:${secLv.color}">${s.situacional.correct}/${s.situacional.total} correctas</div><div style="font-size:10px;color:var(--ink3)">${secLv.label}</div></div>
-        </div>
-      </div>
-      <p style="font-size:12px;color:var(--ink3);margin-bottom:14px;line-height:1.5">Evalúa la calidad de las decisiones ante escenarios laborales reales propios del cargo ${pm.label}. Mide priorización, criterio y adherencia a procedimientos.</p>
-      <div style="display:flex;align-items:center;gap:16px;padding:16px;background:var(--bg);border-radius:10px;border:1px solid var(--border)">
-        <div style="min-width:100px;text-align:center">
-          <div style="font-size:40px;font-weight:900;color:${secLv.color};line-height:1">${pct}%</div>
-          <div style="font-size:11px;color:var(--ink3);margin-top:2px">${s.situacional.correct} de ${s.situacional.total} correctas</div>
-          <div style="margin-top:8px">
-            ${Array.from({length:s.situacional.total},(_,i)=>`<span style="display:inline-block;width:16px;height:16px;border-radius:50%;margin:2px;background:${i<s.situacional.correct?secLv.color:'var(--border)'}"></span>`).join('')}
-          </div>
-        </div>
-        <div style="flex:1;font-size:12px;line-height:1.65;color:var(--ink2)">${sitText}</div>
-      </div>
-    </div>`;
+    var sitText = pct>=80 ? 'Excelente criterio ante situaciones laborales complejas. Prioriza correctamente, actúa con procedimiento y considera el impacto de sus decisiones.'
+      : pct>=60 ? 'Buen juicio en la mayoría de los escenarios. Algunos casos requieren mayor orientación ante situaciones ambiguas o de alta presión.'
+      : pct>=40 ? 'Juicio situacional variable. Se recomienda explorar en entrevista su proceso de toma de decisiones.'
+      : 'Juicio situacional por debajo de lo esperado. Se recomienda evaluación complementaria del criterio en situaciones de gestión.';
+    html += '<div class="rpt-tab-panel" id="rpt-panel-situacional" style="display:none;flex-direction:column;gap:16px">';
+    html += '<div style="background:#fff;border:1px solid #e5e5e5;border-radius:10px;padding:20px 22px">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;flex-wrap:wrap;gap:8px">'
+      + '<div style="font-size:17px;font-weight:700">💡 Juicio Situacional</div>'
+      + '<div style="display:flex;align-items:center;gap:8px">' + gaugeHtml(sec.secFit, secLv.color, 64)
+      + '<div><div style="font-size:13px;font-weight:800;color:' + secLv.color + '">' + sec.secFit + '%</div><div style="font-size:10px;color:#999">' + secLv.label + '</div></div></div></div>'
+      + '<div style="font-size:12px;color:#999;margin-bottom:16px">Mide capacidad de tomar decisiones correctas ante escenarios laborales del cargo.</div>'
+      + '<div style="display:flex;align-items:center;gap:20px;padding:16px;background:#f9f9f9;border-radius:8px;border:1px solid #e5e5e5">'
+      + '<div style="min-width:90px;text-align:center">'
+      + '<div style="font-size:40px;font-weight:900;color:' + secLv.color + ';line-height:1">' + pct + '%</div>'
+      + '<div style="font-size:11px;color:#999;margin-top:2px">' + s.situacional.correct + ' de ' + s.situacional.total + ' correctas</div>'
+      + '<div style="margin-top:8px">'
+      + Array.from({length:s.situacional.total},function(_,i){
+          return '<span style="display:inline-block;width:16px;height:16px;border-radius:50%;margin:2px;background:' + (i<s.situacional.correct?secLv.color:'#e5e5e5') + '"></span>';
+        }).join('')
+      + '</div></div>'
+      + '<div style="flex:1;font-size:13px;line-height:1.65;color:#444">' + sitText + '</div>'
+      + '</div></div>';
+    html += '</div>';
   }
 
-  // ── Vigilancia ──
-  if (s.vigilancia && rpt.sections.find(x=>x.id==='vigilancia')) {
-    const sec = rpt.sections.find(x=>x.id==='vigilancia');
+  // ════════════════════════════════════════════
+  // TAB: VIGILANCIA
+  // ════════════════════════════════════════════
+  if (s.vigilancia && rpt.sections.find(function(x){return x.id==='vigilancia';})) {
+    const sec = rpt.sections.find(function(x){return x.id==='vigilancia';});
     const secLv = fitLabel(sec.secFit);
     const pct = s.vigilancia.pct;
-    const vigText = pct>=80
-      ? 'Alto nivel de aptitud para roles de seguridad. Demuestra atención sostenida, aplicación correcta de protocolos y buen criterio ante incidentes.'
-      : pct>=60
-      ? 'Desempeño aceptable en vigilancia. Aplica los procedimientos en la mayoría de los casos, aunque algunos escenarios requieren refuerzo de protocolos específicos.'
-      : pct>=40
-      ? 'Aptitud básica para el cargo. Requiere capacitación formal en protocolos operativos antes de asumir funciones de forma autónoma.'
-      : 'Aptitud de vigilancia por debajo de lo requerido. Se recomienda evaluación complementaria y considerar si el candidato cumple el perfil mínimo para el cargo.';
-
-    html += `<div class="card cp">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;flex-wrap:wrap;gap:8px">
-        <div class="res-section-title">🛡 Aptitud de Vigilancia</div>
-        <div style="display:flex;align-items:center;gap:8px">
-          ${gaugeHtml(pct, secLv.color, 70)}
-          <div><div style="font-size:14px;font-weight:800;color:${secLv.color}">${s.vigilancia.correct}/${s.vigilancia.total} correctas</div><div style="font-size:10px;color:var(--ink3)">${secLv.label}</div></div>
-        </div>
-      </div>
-      <p style="font-size:12px;color:var(--ink3);margin-bottom:14px;line-height:1.5">Mide atención sostenida, criterio ante situaciones irregulares y adherencia a protocolos de seguridad.</p>
-      <div style="display:flex;align-items:center;gap:16px;padding:16px;background:var(--bg);border-radius:10px;border:1px solid var(--border)">
-        <div style="min-width:100px;text-align:center">
-          <div style="font-size:40px;font-weight:900;color:${secLv.color};line-height:1">${pct}%</div>
-          <div style="font-size:11px;color:var(--ink3);margin-top:2px">${s.vigilancia.correct} de ${s.vigilancia.total} correctas</div>
-          <div style="margin-top:8px">
-            ${Array.from({length:s.vigilancia.total},(_,i)=>`<span style="display:inline-block;width:16px;height:16px;border-radius:50%;margin:2px;background:${i<s.vigilancia.correct?secLv.color:'var(--border)'}"></span>`).join('')}
-          </div>
-        </div>
-        <div style="flex:1;font-size:12px;line-height:1.65;color:var(--ink2)">${vigText}</div>
-      </div>
-    </div>`;
+    var vigText = pct>=80 ? 'Alto nivel de aptitud para roles de seguridad. Atención sostenida y buen criterio ante incidentes.'
+      : pct>=60 ? 'Desempeño aceptable. Aplica los procedimientos en la mayoría de los casos, aunque algunos requieren refuerzo.'
+      : pct>=40 ? 'Aptitud básica. Requiere capacitación formal en protocolos antes de asumir funciones autónomas.'
+      : 'Aptitud de vigilancia por debajo de lo requerido. Se recomienda evaluación complementaria.';
+    html += '<div class="rpt-tab-panel" id="rpt-panel-vigilancia" style="display:none;flex-direction:column;gap:16px">';
+    html += '<div style="background:#fff;border:1px solid #e5e5e5;border-radius:10px;padding:20px 22px">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;flex-wrap:wrap;gap:8px">'
+      + '<div style="font-size:17px;font-weight:700">🛡 Aptitud de Vigilancia</div>'
+      + '<div style="display:flex;align-items:center;gap:8px">' + gaugeHtml(pct, secLv.color, 64)
+      + '<div><div style="font-size:13px;font-weight:800;color:' + secLv.color + '">' + s.vigilancia.correct + '/' + s.vigilancia.total + ' correctas</div><div style="font-size:10px;color:#999">' + secLv.label + '</div></div></div></div>'
+      + '<div style="font-size:12px;color:#999;margin-bottom:16px">Mide atención sostenida y criterio ante situaciones de seguridad.</div>'
+      + '<div style="display:flex;align-items:center;gap:20px;padding:16px;background:#f9f9f9;border-radius:8px;border:1px solid #e5e5e5">'
+      + '<div style="min-width:90px;text-align:center">'
+      + '<div style="font-size:40px;font-weight:900;color:' + secLv.color + ';line-height:1">' + pct + '%</div>'
+      + '<div style="font-size:11px;color:#999;margin-top:2px">' + s.vigilancia.correct + ' de ' + s.vigilancia.total + ' correctas</div>'
+      + '<div style="margin-top:8px">'
+      + Array.from({length:s.vigilancia.total},function(_,i){
+          return '<span style="display:inline-block;width:16px;height:16px;border-radius:50%;margin:2px;background:' + (i<s.vigilancia.correct?secLv.color:'#e5e5e5') + '"></span>';
+        }).join('')
+      + '</div></div>'
+      + '<div style="flex:1;font-size:13px;line-height:1.65;color:#444">' + vigText + '</div>'
+      + '</div></div>';
+    html += '</div>';
   }
 
-  // ══════════════════════════════════════════════════════════
-  // BLOQUE 3 — FORTALEZAS Y DEBILIDADES
-  // ══════════════════════════════════════════════════════════
-  html += '<div class="card cp">'
-    + '<div style="font-size:18px;font-weight:700;margin-bottom:4px">Fortalezas y Áreas de Desarrollo</div>'
-    + '<p style="font-size:12px;color:var(--ink3);margin-bottom:18px;line-height:1.5">Síntesis de las dimensiones evaluadas donde la persona presenta mayor ajuste al perfil del cargo (fortalezas) y aquellas con mayor brecha respecto al ideal (áreas de desarrollo).</p>'
-    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">'
-    // Fortalezas
-    + '<div>'
-    + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #16a34a">'
-    + '<div style="width:8px;height:8px;border-radius:50%;background:#16a34a"></div>'
-    + '<span style="font-size:13px;font-weight:700;color:#16a34a">Fortalezas</span>'
-    + '</div>'
-    + (rpt.fortalezas.length ? rpt.fortalezas.map(f => {
-        const l5 = scoreToLevel5(f.score);
-        return '<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">'
-          + '<div style="margin-top:2px;width:20px;height:20px;border-radius:4px;background:#e7f7ed;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#16a34a;flex-shrink:0">' + l5 + '</div>'
-          + '<div><div style="font-size:13px;font-weight:600;color:var(--ink)">' + f.label + '</div>'
-          + '<div style="font-size:11px;color:var(--ink3);margin-top:2px">' + f.section + '</div>'
-          + '<div style="font-size:11px;color:var(--ink2);margin-top:2px;line-height:1.4">' + f.req + '</div></div>'
-          + '</div>';
-      }).join('') : '<div style="font-size:13px;color:var(--ink3);padding:10px 0">Sin fortalezas destacadas en este perfil.</div>')
-    + '</div>'
-    // Áreas de desarrollo (debilidades)
-    + '<div>'
-    + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #dc2626">'
-    + '<div style="width:8px;height:8px;border-radius:50%;background:#dc2626"></div>'
-    + '<span style="font-size:13px;font-weight:700;color:#dc2626">Áreas de Desarrollo</span>'
-    + '</div>'
-    + (rpt.brechas.length ? rpt.brechas.map(b => {
-        const l5 = scoreToLevel5(b.score);
-        return '<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">'
-          + '<div style="margin-top:2px;width:20px;height:20px;border-radius:4px;background:#fef2f2;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#dc2626;flex-shrink:0">' + l5 + '</div>'
-          + '<div><div style="font-size:13px;font-weight:600;color:var(--ink)">' + b.label + '</div>'
-          + '<div style="font-size:11px;color:var(--ink3);margin-top:2px">' + b.section + '</div>'
-          + '<div style="font-size:11px;color:var(--ink2);margin-top:2px;line-height:1.4">' + b.req + '</div></div>'
-          + '</div>';
-      }).join('') : '<div style="font-size:13px;color:var(--ink3);padding:10px 0">No se detectaron brechas significativas.</div>')
-    + '</div>'
-    + '</div></div>';
+  // Disclaimer
+  html += '<div style="font-size:11px;color:#bbb;padding:8px 0;line-height:1.6">⚠ Informe de uso interno RRHH. No reemplaza el juicio de un psicólogo habilitado. Basado en constructos IPIP / PAI / DC-0 de dominio público.</div>';
 
-  // ══════════════════════════════════════════════════════════
-  // BLOQUE 4 — PREGUNTAS ENTREVISTA
-  // ══════════════════════════════════════════════════════════
-  html += `<div class="card cp">
-    <div class="res-section-title" style="margin-bottom:10px">🎤 Preguntas Sugeridas para Entrevista</div>
-    <p style="font-size:12px;color:var(--ink3);margin-bottom:12px">Basadas en las brechas detectadas para el cargo <strong>${pm.label}</strong>.</p>
-    <ol style="display:flex;flex-direction:column;gap:10px;padding-left:18px">
-      ${rpt.entrevista.map(q=>`<li style="font-size:13px;line-height:1.65;color:var(--ink)">${q}</li>`).join('')}
-    </ol>
-  </div>`;
-
-  // ══════════════════════════════════════════════════════════
-  // DISCLAIMER
-  // ══════════════════════════════════════════════════════════
-  html += `<div style="background:var(--surface2);border-radius:8px;padding:12px 16px;font-size:11px;color:var(--ink3);line-height:1.6;border-left:3px solid var(--border2)">
-    ⚠ <strong>Aviso:</strong> Informe de uso interno RRHH. Los rangos ideales reflejan requerimientos funcionales del cargo según literatura psicométrica. No reemplaza el juicio de un psicólogo habilitado. Basado en constructos IPIP / PAI / DC-0 de dominio público.
-  </div></div>`;
-
+  html += '</div>'; // end panels wrap
+  html += '</div>'; // end rpt-modal
   return html;
 }
-
 async function viewCandReport(id) {
   document.getElementById('cand-modal-overlay').style.display = 'flex';
   document.getElementById('cand-modal-content').innerHTML = '<div style="padding:80px;text-align:center;color:var(--ink3)">Cargando informe…</div>';
