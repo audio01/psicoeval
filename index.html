@@ -428,8 +428,10 @@ input,select,textarea{font-family:inherit;outline:none}
       <button class="nav-btn" id="nav-candidates" onclick="adminTab('candidates',this)"><span>👥</span><span>Candidatos</span></button>
       <button class="nav-btn" id="nav-reports" onclick="adminTab('reports',this)"><span>📄</span><span>Informes</span></button>
       <button class="nav-btn" id="nav-params" onclick="adminTab('params',this)"><span>⚙</span><span>Parámetros</span></button>
+      <button class="nav-btn" id="nav-users" onclick="adminTab('users',this)"><span>👤</span><span>Usuarios</span></button>
       <div style="flex:1"></div>
-      <button class="nav-btn" onclick="adminLogout()" style="color:var(--ink3)"><span>⎋</span><span>Cerrar sesión</span></button>
+      <div id="role-badge" style="font-size:10px;font-weight:700;text-align:center;padding:3px 8px;border-radius:100px;background:#f1f5f9;margin:0 8px 4px"></div>
+      <button id="logout-btn" class="nav-btn" onclick="adminLogout()" style="color:var(--ink3)"><span>⎋</span><span>Cerrar sesión</span></button>
     </aside>
     <main style="padding:28px 36px;overflow-y:auto;background:var(--bg);height:100vh">
       <!-- Dashboard -->
@@ -498,6 +500,18 @@ input,select,textarea{font-family:inherit;outline:none}
         <div id="reports-list" style="display:flex;flex-direction:column;gap:11px"></div>
       </div>
 
+      <!-- Users -->
+      <div id="tab-users" style="display:none;padding-bottom:40px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px">
+          <div>
+            <div style="font-size:20px;font-weight:700;margin-bottom:2px">Usuarios</div>
+            <div style="font-size:13px;color:var(--ink3)">Acceso al panel de administración</div>
+          </div>
+          <button onclick="openAddUserModal()" style="padding:8px 18px;border-radius:7px;background:#0f2d52;color:#fff;font-size:13px;font-weight:600;border:none;cursor:pointer">+ Añadir usuario</button>
+        </div>
+        <div id="users-list"></div>
+      </div>
+
       <!-- Params -->
       <div id="tab-params" style="display:none;padding-bottom:40px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
@@ -523,6 +537,40 @@ input,select,textarea{font-family:inherit;outline:none}
 <div id="cand-modal-overlay" class="overlay" style="display:none" onclick="closeCandModal()">
   <div style="background:#f9f9f9;width:100%;max-width:940px;max-height:90vh;border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,.18);display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden" onclick="event.stopPropagation()">
     <div id="cand-modal-content"></div>
+  </div>
+</div>
+
+<!-- Add user modal -->
+<div id="add-user-modal" class="overlay" style="display:none">
+  <div class="modal" style="max-width:400px;width:100%">
+    <h3 style="margin-bottom:4px">Añadir usuario</h3>
+    <p class="sub" style="margin-bottom:20px">Los usuarios con rol <strong>Visor</strong> solo pueden ver informes, no modificar parámetros.</p>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div>
+        <label style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:5px">Nombre</label>
+        <input id="nu-name" placeholder="Nombre del usuario" style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;font-family:inherit">
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:5px">Email</label>
+        <input id="nu-email" type="email" placeholder="usuario@empresa.cl" style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;font-family:inherit">
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:5px">Contraseña</label>
+        <input id="nu-pass" type="password" placeholder="Mínimo 6 caracteres" style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;font-family:inherit">
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:5px">Rol</label>
+        <select id="nu-role" style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;font-family:inherit;background:#fff">
+          <option value="viewer">Visor — Solo informes</option>
+          <option value="admin">Administrador — Acceso completo</option>
+        </select>
+      </div>
+      <div id="nu-error" style="display:none;color:#dc2626;font-size:12px;padding:8px;background:#fef2f2;border-radius:6px"></div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
+      <button class="btn btn-outline" onclick="document.getElementById('add-user-modal').style.display='none'">Cancelar</button>
+      <button class="btn btn-primary" onclick="addUser()" style="background:#0f2d52">Añadir usuario</button>
+    </div>
   </div>
 </div>
 
@@ -950,6 +998,8 @@ function calcScores(answers, selectedTests, perfil) {
 // ═══════════════════════════════════════════════════════════
 const FLEX_VIEWS = ['landing','register','adminlogin','results'];
 function showView(id) {
+  S.currentView = id;
+  saveSession();
   document.querySelectorAll('.view').forEach(v => { v.classList.remove('active'); v.style.display='none'; });
   const el = document.getElementById('view-'+id);
   el.classList.add('active');
@@ -2239,13 +2289,25 @@ async function seedTestData() {
 }
 
 
+
+// ═══════════════════════════════════════════════════════════
+//  USER STORE (in-memory; extend to Supabase later)
+// ═══════════════════════════════════════════════════════════
+const ADMIN_USERS = [
+  { email:'admin@psicoeval.cl', pass:'Admin2024!', role:'admin', name:'Administrador' },
+];
+
 function adminLogin() {
-  const email = document.getElementById('al-email').value.trim();
-  const pass = document.getElementById('al-pass').value;
+  const email = document.getElementById('al-email').value.trim().toLowerCase();
+  const pass  = document.getElementById('al-pass').value;
   const errEl = document.getElementById('al-error');
-  if (email === 'admin@psicoeval.cl' && pass === 'Admin2024!') {
+  const user  = ADMIN_USERS.find(u => u.email === email && u.pass === pass);
+  if (user) {
     errEl.style.display = 'none';
+    S.role = user.role;
+    S.userEmail = user.email;
     showView('admin');
+    applyRoleRestrictions();
     renderAdmin();
   } else {
     errEl.textContent = 'Credenciales incorrectas. Intenta de nuevo.';
@@ -2253,7 +2315,11 @@ function adminLogin() {
   }
 }
 
-function adminLogout() { showView('landing'); }
+function adminLogout() {
+  S.role = null; S.userEmail = null; S.currentAdminTab = null;
+  try { localStorage.removeItem(SESSION_KEY); } catch(e) {}
+  showView('landing');
+}
 
 function downloadAsIndex() {
   const html = document.documentElement.outerHTML;
@@ -2272,35 +2338,49 @@ async function downloadPdfReport(id) {
   if (!c) { toast('Candidato no encontrado', 'er'); return; }
   const reportBody = buildReportHtml(c, false);
   const CSS = `
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#f8fafc;--surface:#fff;--surface2:#f1f5f9;--ink:#0f172a;--ink2:#475569;--ink3:#94a3b8;
-  --accent:#10b981;--accent-l:#ecfdf5;--navy:#0f2d52;--navy-l:#e8f0fb;
-  --emerald:#10b981;--emerald-l:#ecfdf5;--blue:#2563eb;--blue-l:#eff6ff;
-  --green:#10b981;--green-l:#ecfdf5;--gold:#b45309;--gold-l:#fffbeb;
-  --border:#e2e8f0;--border2:#cbd5e1;--r:10px;--rl:14px;
-  --sh:0 1px 3px rgba(15,45,82,.05),0 4px 16px rgba(15,45,82,.06);
-  --shl:0 8px 32px rgba(15,45,82,.12);
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#f8fafc; --surface:#fff; --ink:#0f172a; --ink2:#475569; --ink3:#94a3b8;
+  --navy:#0f2d52; --emerald:#10b981; --blue:#2563eb; --gold:#b45309;
+  --border:#e2e8f0; --r:8px; --sh:0 1px 3px rgba(15,45,82,.07),0 2px 8px rgba(15,45,82,.05);
 }
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
-  font-size:12px;line-height:1.5;color:#0f172a;background:#fff;
-  -webkit-print-color-adjust:exact;print-color-adjust:exact}
-h1,h2,h3,h4{line-height:1.2;letter-spacing:-.02em}
-.card{background:#fff;border-radius:var(--r);box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:14px}
-.cp{padding:20px 24px}
-.res-section-title{font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px;margin-bottom:12px;color:#0f172a}
-.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.3px}
-.badge-green{background:#ecfdf5;color:#10b981}
-.badge-blue{background:#eff6ff;color:#2563eb}
-.badge-red{background:#ecfdf5;color:#10b981}
-.badge-gray{background:#f1f5f9;color:#94a3b8}
-svg text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-@media print{
-  body{margin:0}
-  @page{margin:14mm 12mm;size:A4}
-  .card{box-shadow:none!important;break-inside:avoid}
-  div{break-inside:avoid}
-}`;
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font-size: 12px; line-height: 1.55; color: var(--ink); background: #fff;
+  -webkit-print-color-adjust: exact; print-color-adjust: exact;
+}
+h1,h2,h3,h4 { line-height: 1.2; letter-spacing: -.02em; }
+.card {
+  background: #fff; border-radius: var(--r); border: 1px solid var(--border);
+  margin-bottom: 12px; page-break-inside: avoid;
+}
+.cp { padding: 16px 20px; }
+.res-section-title {
+  font-size: 13px; font-weight: 700; display: flex; align-items: center;
+  gap: 7px; margin-bottom: 10px; color: var(--ink);
+}
+.badge {
+  display: inline-flex; align-items: center; padding: 2px 8px;
+  border-radius: 100px; font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .3px;
+}
+.badge-green { background: #ecfdf5; color: #059669; }
+.badge-blue  { background: #eff6ff; color: #2563eb; }
+.badge-gray  { background: #f1f5f9; color: #94a3b8; }
+.rpt-modal   { font-size: 12px; }
+.rpt-tab-panel { display: block !important; }
+svg text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+/* Hide tab bar in print — show all panels */
+[style*="border-bottom:1px solid #e5e5e5"][style*="display:flex"][style*="overflow-x"] { display: none !important; }
+/* Section headers */
+[style*="background:#111"] { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+@media print {
+  body { margin: 0; font-size: 11px; }
+  @page { margin: 12mm 10mm; size: A4; }
+  .card { box-shadow: none !important; break-inside: avoid; }
+  div { break-inside: avoid; }
+}
+`;
   const w = window.open('', '_blank', 'width=960,height=800,scrollbars=yes');
   if (!w) { toast('Permite ventanas emergentes para descargar el PDF', 'er'); return; }
   const fname = (c.nombre + '_' + c.apellido + '_Informe').replace(/\s+/g,'_');
@@ -2316,10 +2396,18 @@ svg text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
   w.document.write('<button onclick="window.print()" style="background:#10b981;border:none;color:#fff;padding:7px 16px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer">⬇ Guardar como PDF</button>');
   w.document.write('<button onclick="document.getElementById(\'pdf-bar\').remove()" style="background:rgba(255,255,255,.1);border:none;color:rgba(255,255,255,.6);padding:7px 12px;border-radius:7px;font-size:12px;cursor:pointer">✕</button>');
   w.document.write('</div></div>');
-  w.document.write('<div style="margin-top:50px">');
-  w.document.write(reportBody);
+  w.document.write('<div style="margin-top:50px" id="rpt-wrap">');
+  // Show all tab panels in print
+  var cleanBody = reportBody
+    .replace(/display:none/g, 'display:block')
+    .replace(/class="rpt-tab-btn[^"]*"[^>]*>[^<]*<\/button>/g, '');
+  w.document.write(cleanBody);
   w.document.write('</div>');
-  w.document.write('<style>@media print{#pdf-bar{display:none!important}div[style*="margin-top:50px"]{margin-top:0!important}}</style>');
+  w.document.write('<style>');
+  w.document.write('@media print{#pdf-bar{display:none!important}#rpt-wrap{margin-top:0!important}}');
+  w.document.write('.rpt-tab-panel{display:block!important}');
+  w.document.write('[style*="border-bottom:1px solid"][style*="display:flex"][style*="overflow-x"]{display:none!important}');
+  w.document.write('</style>');
   w.document.write('</body></html>');
   w.document.close();
 }
@@ -2360,7 +2448,9 @@ function closeDelModal() {
 }
 
 function adminTab(id, btn) {
-  ['dashboard','candidates','reports','params'].forEach(t => {
+  S.currentAdminTab = id;
+  saveSession();
+  ['dashboard','candidates','reports','params','users'].forEach(t => {
     const el = document.getElementById('tab-' + t); if(el) el.style.display = t === id ? 'block' : 'none';
     const nb = document.getElementById('nav-' + t); if(nb) nb.classList.toggle('active', t === id);
   });
@@ -2368,6 +2458,7 @@ function adminTab(id, btn) {
   else if (id === 'reports') renderReports();
   else if (id === 'dashboard') renderDashboard();
   else if (id === 'params') renderParams();
+  else if (id === 'users') renderUsersTab();
 }
 
 function renderAdmin() { renderDashboard(); }
@@ -2458,7 +2549,7 @@ async function renderReports() {
   const cands = all.filter(c=>c.estado==='completed');
   if (cands.length === 0) { el.innerHTML = `<div style="text-align:center;padding:48px;color:var(--ink3)">No hay informes disponibles aún</div>`; return; }
   el.innerHTML = cands.map(c => `
-    <div class="card" style="display:flex;align-items:center;justify-content:space-between;padding:16px 22px;gap:16px">
+    <div class="card report-card" data-id="${c.id}" style="display:flex;align-items:center;justify-content:space-between;padding:16px 22px;gap:16px">
       <div>
         <div style="font-weight:700;font-size:14px">${c.nombre} ${c.apellido}</div>
         <div style="font-size:12px;color:var(--ink3)">${c.cargo||'Sin cargo'} · ${c.fecha} · ${(c.tests||[]).map(t=>TESTS_META[t]?.icon).join(' ')}</div>
@@ -2475,17 +2566,162 @@ async function renderReports() {
 
 async function confirmDelete() {
   if (!S.deleteId) return;
+  const btn = document.querySelector('#del-modal .btn-primary');
+  if (btn) { btn.disabled = true; btn.textContent = 'Eliminando…'; }
   await deleteFromDB(S.deleteId);
   closeDelModal();
-  toast('Candidato eliminado correctamente');
-  renderCandidatesTable();
+  if (btn) { btn.disabled = false; btn.textContent = 'Sí, eliminar'; }
+  toast('Candidato eliminado correctamente', 'ok');
+  // Remove row instantly from DOM (no waiting for network)
+  const row = document.querySelector('tr[data-id="' + S.deleteId + '"]');
+  if (row) row.remove();
+  const card = document.querySelector('.report-card[data-id="' + S.deleteId + '"]');
+  if (card) card.remove();
+  S.deleteId = null;
   renderDashboard();
+}
+
+
+// ═══════════════════════════════════════════════════════════
+//  USER MANAGEMENT
+// ═══════════════════════════════════════════════════════════
+function renderUsersTab() {
+  const el = document.getElementById('users-list');
+  if (!el) return;
+  const isAdmin = S.role === 'admin';
+
+  if (!isAdmin) {
+    el.innerHTML = '<div style="text-align:center;padding:48px;color:#94a3b8;font-size:13px">No tienes permiso para gestionar usuarios.</div>';
+    return;
+  }
+
+  if (ADMIN_USERS.length === 0) {
+    el.innerHTML = '<div style="text-align:center;padding:48px;color:#94a3b8">No hay usuarios registrados.</div>';
+    return;
+  }
+
+  const ROLE_LABEL = { admin:'Administrador', viewer:'Visor' };
+  const ROLE_COLOR = { admin:'#10b981', viewer:'#f59e0b' };
+
+  el.innerHTML = '<div style="background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(15,45,82,.06);overflow:hidden">'
+    + ADMIN_USERS.map(function(u, i) {
+        var isLast = (i === ADMIN_USERS.length - 1);
+        var isSelf = (u.email === S.userEmail);
+        return '<div style="display:flex;align-items:center;gap:16px;padding:14px 20px;' + (isLast ? '' : 'border-bottom:1px solid #f1f5f9;') + '">'
+          + '<div style="width:36px;height:36px;border-radius:50%;background:#e8f0fb;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#0f2d52;flex-shrink:0">'
+          + (u.name||u.email).charAt(0).toUpperCase() + '</div>'
+          + '<div style="flex:1;min-width:0">'
+          + '<div style="font-size:13px;font-weight:600;color:#0f172a">' + (u.name||'Sin nombre') + (isSelf ? ' <span style="font-size:10px;color:#94a3b8">(tú)</span>' : '') + '</div>'
+          + '<div style="font-size:11px;color:#94a3b8">' + u.email + '</div>'
+          + '</div>'
+          + '<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:100px;background:' + (ROLE_COLOR[u.role]||'#94a3b8') + '20;color:' + (ROLE_COLOR[u.role]||'#94a3b8') + '">'
+          + (ROLE_LABEL[u.role]||u.role) + '</span>'
+          + (!isSelf
+            ? '<button data-em="' + u.email + '" onclick="deleteUser(this.dataset.em)" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:16px;padding:4px 6px;border-radius:6px;flex-shrink:0" title="Eliminar usuario">×</button>'
+            : '<div style="width:28px"></div>')
+          + '</div>';
+      }).join('')
+    + '</div>';
+}
+
+function openAddUserModal() {
+  if (S.role !== 'admin') { toast('Solo el administrador puede añadir usuarios', 'er'); return; }
+  document.getElementById('nu-name').value = '';
+  document.getElementById('nu-email').value = '';
+  document.getElementById('nu-pass').value = '';
+  document.getElementById('nu-role').value = 'viewer';
+  document.getElementById('nu-error').style.display = 'none';
+  document.getElementById('add-user-modal').style.display = 'flex';
+}
+
+function addUser() {
+  const name  = document.getElementById('nu-name').value.trim();
+  const email = document.getElementById('nu-email').value.trim().toLowerCase();
+  const pass  = document.getElementById('nu-pass').value;
+  const role  = document.getElementById('nu-role').value;
+  const errEl = document.getElementById('nu-error');
+
+  if (!name || !email || !pass) { errEl.textContent = 'Completa todos los campos.'; errEl.style.display = 'block'; return; }
+  if (pass.length < 6) { errEl.textContent = 'La contraseña debe tener al menos 6 caracteres.'; errEl.style.display = 'block'; return; }
+  if (ADMIN_USERS.find(u => u.email === email)) { errEl.textContent = 'Ya existe un usuario con ese email.'; errEl.style.display = 'block'; return; }
+
+  ADMIN_USERS.push({ email, pass, role, name });
+  document.getElementById('add-user-modal').style.display = 'none';
+  renderUsersTab();
+  toast('Usuario ' + name + ' añadido correctamente', 'ok');
+}
+
+function deleteUser(email) {
+  if (email === S.userEmail) { toast('No puedes eliminarte a ti mismo/a.', 'er'); return; }
+  if (!confirm('¿Eliminar al usuario ' + email + '?')) return;
+  const idx = ADMIN_USERS.findIndex(u => u.email === email);
+  if (idx !== -1) ADMIN_USERS.splice(idx, 1);
+  renderUsersTab();
+  toast('Usuario eliminado.', 'ok');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SESSION PERSISTENCE
+// ═══════════════════════════════════════════════════════════
+const SESSION_KEY = 'psicoeval_session';
+
+function saveSession() {
+  try {
+    localStorage.setItem(SESSION_KEY, JSON.stringify({
+      view: S.currentView || 'landing',
+      role: S.role || null,
+      userEmail: S.userEmail || null,
+      adminTab: S.currentAdminTab || 'dashboard'
+    }));
+  } catch(e) {}
+}
+
+function restoreSession() {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    if (!raw) { showView('landing'); return; }
+    const sess = JSON.parse(raw);
+    if (sess.role === 'admin' || sess.role === 'viewer') {
+      S.role = sess.role;
+      S.userEmail = sess.userEmail || '';
+      showView('admin');
+      applyRoleRestrictions();
+      const tab = sess.adminTab || 'dashboard';
+      S.currentAdminTab = tab;
+      const navBtn = document.getElementById('nav-' + tab);
+      if (navBtn) adminTab(tab, navBtn);
+      else renderAdmin();
+    } else {
+      showView('landing');
+    }
+  } catch(e) { showView('landing'); }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  ROLE RESTRICTIONS
+// ═══════════════════════════════════════════════════════════
+function applyRoleRestrictions() {
+  const isViewer = S.role === 'viewer';
+  // Hide params tab for viewers
+  const navParams = document.getElementById('nav-params');
+  if (navParams) navParams.style.display = isViewer ? 'none' : '';
+  // Update logout label with email
+  const logoutBtn = document.getElementById('logout-btn');
+  if (logoutBtn && S.userEmail) {
+    logoutBtn.querySelector('span:last-child').textContent = S.userEmail.split('@')[0];
+  }
+  // Show role badge
+  const roleBadge = document.getElementById('role-badge');
+  if (roleBadge) {
+    roleBadge.textContent = isViewer ? 'Solo lectura' : 'Administrador';
+    roleBadge.style.color = isViewer ? '#f59e0b' : '#10b981';
+  }
 }
 
 // ═══════════════════════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════════════════════
-showView('landing');
+restoreSession();
 </script>
 </body>
 </html>
