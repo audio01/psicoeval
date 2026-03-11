@@ -339,7 +339,8 @@ input,select,textarea{font-family:inherit;outline:none}
     <h2 style="font-size:30px;font-weight:800;margin-bottom:6px" id="sel-title">Tu evaluación</h2>
     <p style="color:var(--ink3);font-size:14px;margin-bottom:32px" id="sel-subtitle">A continuación se describen las evaluaciones asignadas a tu cargo.</p>
     <div id="sel-profile-banner" style="border-radius:12px;padding:18px 22px;margin-bottom:28px;border:1.5px solid"></div>
-    <div id="sel-tests-list" style="display:flex;flex-direction:column;gap:12px;margin-bottom:32px"></div>
+    <div id="sel-tests-list" style="display:flex;flex-direction:column;gap:12px;margin-bottom:12px"></div>
+    <div id="sel-total-time" style="font-size:12px;color:var(--ink3);margin-bottom:20px;text-align:right"></div>
     <button class="btn btn-primary btn-lg" style="width:100%" onclick="startTests()">Comenzar evaluación →</button>
   </div>
 </div>
@@ -1057,7 +1058,8 @@ function submitRegister() {
     return '<div style="display:flex;align-items:center;gap:14px;padding:13px 16px;border-radius:10px;background:var(--bg);border:1px solid var(--border)"><span style="font-size:22px">'+m.icon+'</span><div style="flex:1"><div style="font-weight:700;font-size:14px">'+m.name+'</div></div><span style="font-size:12px;color:var(--ink3)">~'+testMins[t]+' min</span></div>';
   }).join('');
   const total = tests.reduce((a,t)=>a+(testMins[t]||10),0);
-  document.getElementById('sel-total-time').textContent = 'Tiempo estimado total: ~'+total+' minutos';
+  const ttEl = document.getElementById('sel-total-time');
+  if (ttEl) ttEl.textContent = 'Tiempo estimado total: ~'+total+' minutos';
   showView('testselect');
 }
 
