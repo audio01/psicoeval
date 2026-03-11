@@ -544,7 +544,7 @@ input,select,textarea{font-family:inherit;outline:none}
 //  TEST METADATA
 // ═══════════════════════════════════════════════════════════
 const TESTS_META = {
-  pf16:    { name:'Factores de Personalidad (16PF)', icon:'🧠', color:'var(--blue)'   },
+  barratt: { name:'Impulsividad Barratt (BIS-11)',   icon:'🧩', color:'var(--navy)'  },
   dc0:     { name:'Aptitud Cognitiva (DC-0)',         icon:'⚡', color:'var(--green)'  },
   pai:     { name:'Ajuste Psicológico (PAI)',         icon:'🔎', color:'var(--gold)'   },
   situacional:{ name:'Juicio Situacional',            icon:'💡', color:'var(--accent)' },
@@ -552,9 +552,9 @@ const TESTS_META = {
 };
 
 const PERFIL_TESTS = {
-  jefatura:      ['pf16','dc0','pai','situacional'],
-  administrativo:['pf16','dc0','pai'],
-  guardia:       ['pf16','pai','situacional','vigilancia'],
+  jefatura:      ['barratt','dc0','pai','situacional'],
+  administrativo:['barratt','dc0','pai'],
+  guardia:       ['barratt','pai','situacional','vigilancia'],
 };
 
 const PERFIL_META = {
@@ -564,69 +564,42 @@ const PERFIL_META = {
 };
 
 // ═══════════════════════════════════════════════════════════
-//  16PF — Factores de Personalidad (basado en IPIP-NEO y constructos Cattell)
-//  Escala Likert 1–5. Mide: A(Afabilidad) B(Razonamiento) C(Estabilidad)
-//  E(Dominancia) F(Animación) G(Responsabilidad) H(Audacia)
-//  I(Sensibilidad) L(Vigilancia) M(Abstracción) N(Privacidad)
-//  O(Aprensión) Q1(Apertura) Q2(Autosuficiencia) Q3(Perfeccionismo) Q4(Tensión)
 // ═══════════════════════════════════════════════════════════
-const PF16_BASE = [
-  // Factor A – Afabilidad / Calidez
-  {id:'p1', f:'A', r:false, text:'Me resulta fácil llevarme bien con personas que acabo de conocer.'},
-  {id:'p2', f:'A', r:false, text:'Disfruto genuinamente trabajar junto a otras personas.'},
-  // Factor C – Estabilidad Emocional
-  {id:'p3', f:'C', r:true,  text:'Me afectan mucho los pequeños contratiempos del día a día.'},
-  {id:'p4', f:'C', r:false, text:'Mantengo la calma incluso cuando las cosas no salen como esperaba.'},
-  // Factor E – Dominancia / Asertividad
-  {id:'p5', f:'E', r:false, text:'No me cuesta expresar mis opiniones aunque sean contrarias a la mayoría.'},
-  {id:'p6', f:'E', r:false, text:'Tiendo a asumir el liderazgo cuando el grupo no tiene una dirección clara.'},
-  // Factor F – Animación / Entusiasmo
-  {id:'p7', f:'F', r:false, text:'La gente me describe como una persona enérgica y entusiasta.'},
-  {id:'p8', f:'F', r:true,  text:'Prefiero ambientes tranquilos y sin mucha interacción social.'},
-  // Factor G – Responsabilidad / Conciencia
-  {id:'p9', f:'G', r:false, text:'Cumplo mis compromisos aunque sea difícil o inconveniente hacerlo.'},
-  {id:'p10',f:'G', r:false, text:'Soy ordenado/a y metódico/a en la organización de mi trabajo.'},
-  // Factor H – Audacia / Atrevimiento
-  {id:'p11',f:'H', r:false, text:'Me siento cómodo/a en situaciones nuevas o poco predecibles.'},
-  {id:'p12',f:'H', r:true,  text:'Evito hablar en público o ante grupos numerosos.'},
-  // Factor I – Sensibilidad / Receptividad
-  {id:'p13',f:'I', r:false, text:'Me afectan emocionalmente las situaciones de injusticia o sufrimiento ajeno.'},
-  {id:'p14',f:'I', r:false, text:'Valoro mucho la armonía emocional en el ambiente de trabajo.'},
-  // Factor L – Vigilancia / Desconfianza
-  {id:'p15',f:'L', r:false, text:'Antes de confiar en alguien nuevo, prefiero observarlo durante un tiempo.'},
-  {id:'p16',f:'L', r:true,  text:'Generalmente asumo que las personas tienen buenas intenciones.'},
-  // Factor M – Abstracción / Imaginación
-  {id:'p17',f:'M', r:false, text:'Con frecuencia me pierdo en mis propios pensamientos o ideas.'},
-  {id:'p18',f:'M', r:false, text:'Prefiero resolver problemas de forma creativa antes que seguir recetas establecidas.'},
-  // Factor O – Aprensión / Inseguridad
-  {id:'p19',f:'O', r:false, text:'A menudo me preocupa si estoy haciendo las cosas bien.'},
-  {id:'p20',f:'O', r:true,  text:'Me siento seguro/a de mis capacidades en el trabajo.'},
-  // Factor Q1 – Apertura al Cambio
-  {id:'p21',f:'Q1',r:false, text:'Disfruto aprender cosas nuevas aunque implique abandonar formas antiguas de trabajar.'},
-  // Factor Q3 – Perfeccionismo / Autocontrol
-  {id:'p22',f:'Q3',r:false, text:'Reviso mi trabajo varias veces antes de darlo por terminado.'},
-  // Factor Q4 – Tensión / Estrés
-  {id:'p23',f:'Q4',r:false, text:'Con frecuencia me siento tenso/a o con demasiadas cosas en mente.'},
-  {id:'p24',f:'Q4',r:true,  text:'En general me siento relajado/a y sin mucha presión interna.'},
-  // Factor N – Privacidad / Discreción
-  {id:'p25',f:'N', r:false, text:'Prefiero mantener mis asuntos personales de manera reservada en el trabajo.'},
-];
-
-// Preguntas extra por perfil (16PF)
-const PF16_JEFATURA = [
-  {id:'pj1',f:'E', r:false, text:'Me siento cómodo/a tomando decisiones que afectan a otras personas.'},
-  {id:'pj2',f:'G', r:false, text:'Hago seguimiento riguroso a los compromisos que delego en mi equipo.'},
-  {id:'pj3',f:'C', r:false, text:'Bajo situaciones de alta presión, mantengo el foco y la claridad.'},
-];
-const PF16_ADMIN = [
-  {id:'pa1',f:'G', r:false, text:'Presto mucha atención a los detalles en documentos y registros.'},
-  {id:'pa2',f:'N', r:false, text:'Manejo con discreción la información confidencial a la que accedo.'},
-  {id:'pa3',f:'C', r:false, text:'Soy capaz de mantener la calma cuando enfrento múltiples tareas simultáneas.'},
-];
-const PF16_GUARDIA = [
-  {id:'pg1',f:'G', r:false, text:'Sigo rigurosamente los protocolos y normas establecidas sin saltarme pasos.'},
-  {id:'pg2',f:'C', r:false, text:'Actúo con serenidad ante situaciones de conflicto o tensión.'},
-  {id:'pg3',f:'H', r:false, text:'Me siento cómodo/a enfrentando situaciones de riesgo controlado.'},
+//  BIS-11 — Escala de Impulsividad de Barratt
+//  Likert 1–4 (1=Rara vez, 4=Siempre). Subescalas: AI, IM, NP.
+//  Score final invertido: alto = BUEN control del impulso.
+// ═══════════════════════════════════════════════════════════
+const BIS11_ITEMS = [
+  {id:'b01',sub:'AI',r:false,text:'Planifico mis tareas con cuidado antes de empezar.'},
+  {id:'b02',sub:'AI',r:true, text:'Hago cosas sin pensar en las consecuencias.'},
+  {id:'b03',sub:'AI',r:false,text:'Me concentro con facilidad cuando es necesario.'},
+  {id:'b04',sub:'AI',r:true, text:'Me distraigo fácilmente mientras trabajo.'},
+  {id:'b05',sub:'AI',r:false,text:'Pienso en los problemas con detenimiento antes de actuar.'},
+  {id:'b06',sub:'AI',r:true, text:'Me cuesta mantener la atención en una tarea por mucho tiempo.'},
+  {id:'b07',sub:'AI',r:false,text:'Evalúo consecuencias antes de tomar una decisión.'},
+  {id:'b08',sub:'AI',r:true, text:'Cambio de tema en conversaciones sin seguir un hilo lógico.'},
+  {id:'b09',sub:'AI',r:false,text:'Resuelvo los problemas considerando varias opciones.'},
+  {id:'b10',sub:'AI',r:true, text:'Cuando pienso en algo, otros pensamientos me interrumpen.'},
+  {id:'b11',sub:'IM',r:true, text:'Actúo impulsivamente ante situaciones nuevas.'},
+  {id:'b12',sub:'IM',r:true, text:'Gasto más dinero del que debería.'},
+  {id:'b13',sub:'IM',r:true, text:'Digo lo que pienso sin medir las palabras.'},
+  {id:'b14',sub:'IM',r:true, text:'Actúo rápido cuando me enfrento a un problema, sin detenerme a pensar.'},
+  {id:'b15',sub:'IM',r:false,text:'Controlo mi carácter ante situaciones difíciles.'},
+  {id:'b16',sub:'IM',r:true, text:'Reacciono antes de evaluar las opciones disponibles.'},
+  {id:'b17',sub:'IM',r:false,text:'Me contengo cuando estoy emocionalmente alterado/a.'},
+  {id:'b18',sub:'IM',r:true, text:'Tomo decisiones sin pensar suficientemente en ellas.'},
+  {id:'b19',sub:'IM',r:false,text:'Mantengo la calma ante situaciones de conflicto.'},
+  {id:'b20',sub:'IM',r:true, text:'Compro cosas sin haberlo planeado.'},
+  {id:'b21',sub:'NP',r:true, text:'Me preocupa más lo que pasa hoy que lo que pasará después.'},
+  {id:'b22',sub:'NP',r:false,text:'Me oriento hacia el logro de metas a largo plazo.'},
+  {id:'b23',sub:'NP',r:true, text:'Cambio de trabajo o proyectos con frecuencia.'},
+  {id:'b24',sub:'NP',r:false,text:'Soy más cuidadoso/a que la mayoría de las personas en mis decisiones.'},
+  {id:'b25',sub:'NP',r:true, text:'Los detalles me aburren y los paso por alto.'},
+  {id:'b26',sub:'NP',r:false,text:'Me controlo ante las tentaciones de actuar sin pensar.'},
+  {id:'b27',sub:'NP',r:true, text:'Busco resultados rápidos en lugar de beneficios futuros.'},
+  {id:'b28',sub:'NP',r:false,text:'Tengo claro hacia dónde quiero llegar en mi carrera.'},
+  {id:'b29',sub:'NP',r:true, text:'Tomo decisiones sin planificarlas.'},
+  {id:'b30',sub:'NP',r:false,text:'Pienso en las consecuencias de mis actos antes de decidir.'},
 ];
 
 // ═══════════════════════════════════════════════════════════
@@ -882,16 +855,16 @@ function buildQuestions(perfil) {
   const add = (arr, testId, type) => arr.forEach(q => qs.push({...q, testId, type}));
 
   if (perfil === 'jefatura') {
-    add([...PF16_BASE, ...PF16_JEFATURA], 'pf16', 'likert');
+    add(BIS11_ITEMS, 'barratt', 'likert');
     add([...DC0_BASE,  ...DC0_JEFATURA],  'dc0',  'choice');
     add(PAI_BASE,                         'pai',  'pai');
     add(SIT_JEFATURA,                     'situacional', 'situacional');
   } else if (perfil === 'administrativo') {
-    add([...PF16_BASE, ...PF16_ADMIN], 'pf16', 'likert');
+    add(BIS11_ITEMS, 'barratt', 'likert');
     add([...DC0_BASE,  ...DC0_ADMIN],  'dc0',  'choice');
     add(PAI_BASE,                      'pai',  'pai');
   } else if (perfil === 'guardia') {
-    add([...PF16_BASE, ...PF16_GUARDIA], 'pf16', 'likert');
+    add(BIS11_ITEMS, 'barratt', 'likert');
     add(PAI_BASE,                        'pai',  'pai');
     add(SIT_GUARDIA,                     'situacional', 'situacional');
     add(VIGQ,                            'vigilancia',  'choice');
@@ -906,19 +879,23 @@ function calcScores(answers, selectedTests, perfil) {
   const allQs = buildQuestions(perfil);
   const scores = {};
 
-  // 16PF
-  if (selectedTests.includes('pf16')) {
-    const dims = {A:[],C:[],E:[],F:[],G:[],H:[],I:[],L:[],M:[],N:[],O:[],Q1:[],Q3:[],Q4:[]};
-    allQs.filter(q=>q.testId==='pf16').forEach(q => {
+  // BIS-11 Barratt
+  if (selectedTests.includes('barratt')) {
+    const dims = {AI:[],IM:[],NP:[]};
+    allQs.filter(q=>q.testId==='barratt').forEach(q => {
       const v = answers[q.id]; if (v===undefined) return;
-      const adj = q.r ? (6 - v) : v;
-      if (dims[q.f]) dims[q.f].push(adj);
+      // r=true items are direct impulsivity; r=false are control (invert)
+      const adj = q.r ? v : (5 - v);   // 1-4 → high=impulsive
+      if (dims[q.sub]) dims[q.sub].push(adj);
     });
-    scores.pf16 = {};
-    Object.keys(dims).forEach(k => {
+    scores.barratt = {};
+    ['AI','IM','NP'].forEach(k => {
       const vals = dims[k];
-      scores.pf16[k] = vals.length ? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length*20) : 50;
+      const raw = vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : 2.5;
+      // Convert to 0-100 where HIGH = GOOD CONTROL (invert impulsivity)
+      scores.barratt[k] = Math.round((1 - (raw-1)/3) * 100);
     });
+    scores.barratt.total = Math.round((scores.barratt.AI + scores.barratt.IM + scores.barratt.NP)/3);
   }
 
   // DC-0
@@ -986,8 +963,8 @@ function gotoAdminLogin() { showView('adminlogin'); }
 // ═══════════════════════════════════════════════════════════
 //  INFORME PROFESIONAL
 // ═══════════════════════════════════════════════════════════
-const PF16_NAMES = {A:'Afabilidad',C:'Est. Emocional',E:'Dominancia',F:'Animación',G:'Responsabilidad',H:'Audacia',I:'Sensibilidad',L:'Vigilancia',M:'Abstracción',N:'Privacidad',O:'Aprensión',Q1:'Apertura',Q3:'Perfeccionismo',Q4:'Tensión'};
-const PF16_COLORS = {A:'#1c5d8c',C:'#3a7850',E:'#c04b1c',F:'#e8a020',G:'#3a7850',H:'#1c5d8c',I:'#a07528',L:'#7a4f8c',M:'#1c5d8c',N:'#5a5348',O:'#c04b1c',Q1:'#3a7850',Q3:'#a07528',Q4:'#c04b1c'};
+const BIS11_NAMES = {AI:'Control Atencional',IM:'Control Motor',NP:'Planificación'};
+const BIS11_COLORS = {AI:'#0f2d52',IM:'#10b981',NP:'#2563eb'};
 const PAI_NAMES = {EE:'Est. Emocional',AS:'Adapt. Social',ON:'Orient. Normativa',ME:'Manejo del Estrés',IL:'Integridad Laboral',ML:'Motivación Laboral'};
 const PAI_COLORS = {EE:'#1c5d8c',AS:'#3a7850',ON:'#a07528',ME:'#c04b1c',IL:'#3a7850',ML:'#1c5d8c'};
 
@@ -1055,7 +1032,7 @@ function submitRegister() {
   banner.style.background = pm.color+'10'; banner.style.borderColor = pm.color+'40';
   banner.innerHTML = '<span style="font-size:24px">'+pm.icon+'</span><div style="margin-top:8px"><strong style="font-size:15px">'+pm.label+'</strong><div style="font-size:13px;color:var(--ink3);margin-top:3px">'+pm.desc+'</div></div>';
   const tests = PERFIL_TESTS[perfil];
-  const testMins = {pf16:25,dc0:20,pai:15,situacional:12,vigilancia:10};
+  const testMins = {barratt:12,dc0:20,pai:15,situacional:12,vigilancia:10};
   document.getElementById('sel-tests-list').innerHTML = tests.map(t => {
     const m = TESTS_META[t];
     return '<div style="display:flex;align-items:center;gap:14px;padding:13px 16px;border-radius:10px;background:var(--bg);border:1px solid var(--border)"><span style="font-size:22px">'+m.icon+'</span><div style="flex:1"><div style="font-weight:700;font-size:14px">'+m.name+'</div></div><span style="font-size:12px;color:var(--ink3)">~'+testMins[t]+' min</span></div>';
@@ -1180,17 +1157,10 @@ async function finishTests() {
 // ═══════════════════════════════════════════════════════════
 const PERFIL_IDEAL = {
   jefatura: {
-    pf16: {
-      A:  { min:55, max:85, peso:2, label:'Afabilidad',        req:'Trato cálido y colaborativo con el equipo.' },
-      C:  { min:65, max:95, peso:3, label:'Est. Emocional',    req:'Estabilidad bajo presión decisional.' },
-      E:  { min:65, max:95, peso:3, label:'Dominancia',        req:'Asertividad para liderar y dirigir.' },
-      F:  { min:55, max:85, peso:2, label:'Animación',         req:'Energía para motivar al equipo.' },
-      G:  { min:65, max:95, peso:3, label:'Responsabilidad',   req:'Cumplimiento y seguimiento de compromisos.' },
-      H:  { min:55, max:85, peso:2, label:'Audacia',           req:'Disposición a enfrentar situaciones difíciles.' },
-      O:  { min:20, max:50, peso:2, label:'Aprensión',         req:'Seguridad en sí mismo/a, sin exceso de autocrítica.' },
-      Q3: { min:60, max:90, peso:2, label:'Perfeccionismo',    req:'Autocontrol y orientación a la calidad.' },
-      Q4: { min:10, max:45, peso:2, label:'Tensión',           req:'Bajo nivel de tensión crónica.' },
-      Q1: { min:50, max:90, peso:1, label:'Apertura',          req:'Apertura a nuevas formas de gestión.' },
+    barratt: {
+      AI: { min:60, max:100, peso:3, label:'Control Atencional', req:'Capacidad de concentración y foco sostenido bajo demanda.' },
+      IM: { min:65, max:100, peso:4, label:'Control Motor',      req:'Actúa con reflexión; no se precipita ante situaciones nuevas.' },
+      NP: { min:60, max:100, peso:3, label:'Planificación',      req:'Orientación al logro futuro; organiza y evalúa consecuencias.' },
     },
     pai: {
       EE: { min:65, max:100, peso:3, label:'Est. Emocional',     req:'Alta regulación emocional ante conflictos y presión.' },
@@ -1209,15 +1179,10 @@ const PERFIL_IDEAL = {
   },
 
   administrativo: {
-    pf16: {
-      A:  { min:45, max:80, peso:2, label:'Afabilidad',        req:'Trato cordial con usuarios internos.' },
-      C:  { min:55, max:90, peso:2, label:'Est. Emocional',    req:'Estabilidad ante múltiples demandas.' },
-      G:  { min:65, max:100,peso:4, label:'Responsabilidad',   req:'Alta confiabilidad en el cumplimiento de tareas.' },
-      N:  { min:55, max:90, peso:2, label:'Privacidad',        req:'Discreción con información sensible.' },
-      O:  { min:25, max:60, peso:1, label:'Aprensión',         req:'Autoconfianza moderada.' },
-      Q3: { min:65, max:100,peso:3, label:'Perfeccionismo',    req:'Atención al detalle en documentos y registros.' },
-      Q4: { min:10, max:50, peso:2, label:'Tensión',           req:'Capacidad de mantener ritmo sin agotamiento.' },
-      Q1: { min:45, max:80, peso:1, label:'Apertura',          req:'Adaptación a nuevos sistemas o procedimientos.' },
+    barratt: {
+      AI: { min:55, max:100, peso:2, label:'Control Atencional', req:'Atención sostenida en tareas repetitivas y documentos.' },
+      IM: { min:60, max:100, peso:3, label:'Control Motor',      req:'Reflexión antes de actuar; evita errores por precipitación.' },
+      NP: { min:65, max:100, peso:5, label:'Planificación',      req:'Organización y anticipación en el manejo de tareas y plazos.' },
     },
     pai: {
       EE: { min:55, max:100, peso:2, label:'Est. Emocional',    req:'Estabilidad ante demandas simultáneas.' },
@@ -1235,15 +1200,10 @@ const PERFIL_IDEAL = {
   },
 
   guardia: {
-    pf16: {
-      C:  { min:65, max:100, peso:4, label:'Est. Emocional',   req:'Serenidad ante situaciones de conflicto o riesgo.' },
-      E:  { min:45, max:75,  peso:2, label:'Dominancia',       req:'Firmeza sin agresividad en el trato.' },
-      G:  { min:70, max:100, peso:4, label:'Responsabilidad',  req:'Cumplimiento estricto de protocolos.' },
-      H:  { min:55, max:85,  peso:3, label:'Audacia',          req:'Disposición a actuar en situaciones de riesgo controlado.' },
-      L:  { min:55, max:85,  peso:3, label:'Vigilancia',       req:'Detección de anomalías y actitud cautelosa.' },
-      O:  { min:20, max:55,  peso:2, label:'Aprensión',        req:'Seguridad suficiente para actuar bajo presión.' },
-      Q4: { min:10, max:45,  peso:2, label:'Tensión',          req:'Control del estrés en turnos prolongados.' },
-      F:  { min:35, max:65,  peso:1, label:'Animación',        req:'Nivel moderado de sociabilidad.' },
+    barratt: {
+      AI: { min:60, max:100, peso:3, label:'Control Atencional', req:'Vigilancia activa y detección de irregularidades.' },
+      IM: { min:70, max:100, peso:5, label:'Control Motor',      req:'No actuar de forma impulsiva en situaciones críticas.' },
+      NP: { min:60, max:100, peso:2, label:'Planificación',      req:'Seguimiento de protocolos sin improvisar.' },
     },
     pai: {
       EE: { min:65, max:100, peso:3, label:'Est. Emocional',   req:'Autocontrol en situaciones de confrontación.' },
@@ -1293,11 +1253,11 @@ function buildFitReport(c) {
   const sections = [];
   let totalPeso = 0, totalFitPeso = 0;
 
-  // ── 16PF ──
-  if (s.pf16 && ideal.pf16) {
+  // ── Barratt BIS-11 ──
+  if (s.barratt && ideal.barratt) {
     const dims = [];
-    Object.entries(ideal.pf16).forEach(([k, cfg]) => {
-      const score = s.pf16[k];
+    Object.entries(ideal.barratt).forEach(([k, cfg]) => {
+      const score = s.barratt[k];
       if (score === undefined) return;
       const fit = calcFit(score, cfg.min, cfg.max);
       totalPeso += cfg.peso;
@@ -1306,8 +1266,8 @@ function buildFitReport(c) {
         ideal:`${cfg.min}–${cfg.max}`, gap: score < cfg.min ? 'bajo' : score > cfg.max ? 'alto' : 'ok' });
     });
     const secFit = Math.round(dims.reduce((a,d)=>a+d.fit*d.peso,0)/dims.reduce((a,d)=>a+d.peso,0));
-    sections.push({ id:'pf16', icon:'🧠', title:'Personalidad (16PF)', dims, secFit,
-      desc:'Evalúa rasgos de personalidad relevantes para el cargo.' });
+    sections.push({ id:'barratt', icon:'⚡', title:'Control Impulsivo (BIS-11)', dims, secFit,
+      desc:'Evalúa el nivel de control de los impulsos en tres dimensiones.' });
   }
 
   // ── PAI ──
@@ -1382,17 +1342,10 @@ function buildFitReport(c) {
 
   // ── Preguntas de entrevista según brechas ──
   const QS_ENTREVISTA = {
-    // 16PF
-    C:  'Cuéntame de una situación muy estresante en el trabajo. ¿Cómo la gestionaste y qué resultado obtuviste?',
-    E:  '¿Puedes describir una ocasión en que tuviste que imponer tu criterio ante la resistencia de otros?',
-    G:  'Cuéntame de un proyecto donde debiste cumplir plazos ajustados. ¿Cómo te organizaste?',
-    H:  '¿Cómo reaccionas cuando enfrentas una situación completamente nueva o de riesgo? Dame un ejemplo.',
-    L:  '¿Cómo verificas la información antes de tomar una decisión importante?',
-    O:  '¿Cómo manejas la crítica o retroalimentación negativa sobre tu trabajo?',
-    Q4: '¿Cómo organizas tu jornada cuando tienes múltiples urgencias simultáneas?',
-    A:  '¿Cómo describes tu estilo para trabajar en equipo? ¿Qué tan cómodo/a te sientes colaborando?',
-    Q3: '¿Qué tan importante es para ti la exactitud en tu trabajo? Dame un ejemplo donde eso hizo la diferencia.',
-    N:  '¿Cómo manejas información confidencial en el contexto laboral?',
+    // BIS-11 Barratt
+    AI: 'Cuéntame de una situación donde necesitabas concentrarte por mucho tiempo. ¿Cómo manejaste las distracciones?',
+    IM: '¿Puedes describir una situación en que actuaste de forma impulsiva en el trabajo? ¿Qué pasó y qué cambiarías?',
+    NP: '¿Cómo organizas tu trabajo cuando tienes varios proyectos simultáneos con plazos distintos? Dame un ejemplo concreto.',
     // PAI
     EE: 'Cuéntame de una situación de alta presión emocional en el trabajo. ¿Cómo la gestionaste internamente?',
     AS: '¿Cómo te has adaptado a equipos o culturas organizacionales muy diferentes a lo que esperabas?',
@@ -1441,25 +1394,24 @@ function buildFitReport(c) {
 // ═══════════════════════════════════════════════════════════
 // ── Textos descriptivos por dimensión y nivel ──────────────
 const DIM_DESC = {
-  // 16PF
-  pf16: {
-    A: { hi:'Persona cálida y abierta en sus relaciones interpersonales. Disfruta el trabajo en equipo y genera buen clima laboral.', mid:'Equilibrio entre trabajo independiente y colaborativo. Se relaciona bien cuando la situación lo requiere.', lo:'Prefiere trabajar de forma autónoma. Puede percibirse como distante en entornos de alta interacción.' },
-    C: { hi:'Alta estabilidad emocional. Mantiene la calma bajo presión y no se deja llevar por el estrés del entorno.', mid:'Generalmente estable, aunque situaciones de alta exigencia pueden afectar su equilibrio emocional.', lo:'Tendencia a experimentar cambios de humor o dificultad para manejar la presión sostenida.' },
-    E: { hi:'Seguro/a, asertivo/a y capaz de tomar la iniciativa. Se siente cómodo/a liderando y expresando su opinión.', mid:'Equilibrio entre ceder y afirmarse. Puede liderar cuando la situación lo exige.', lo:'Tendencia a ceder ante otros. Puede tener dificultades para imponer su criterio o dirigir grupos.' },
-    F: { hi:'Persona entusiasta, dinámica y motivadora. Aporta energía positiva al entorno de trabajo.', mid:'Activo/a cuando la tarea lo requiere, pero no busca protagonismo innecesario.', lo:'Perfil más reservado y tranquilo. Puede parecer poco expresivo/a en entornos sociales activos.' },
-    G: { hi:'Muy responsable, puntual y comprometido/a. Cumple lo que promete y sigue los procedimientos con rigor.', mid:'Generalmente cumplidor/a, con capacidad de adaptarse cuando los procedimientos no son rígidos.', lo:'Relación más flexible con las normas. Puede incumplir compromisos o saltarse pasos del procedimiento.' },
-    H: { hi:'Dispuesto/a a enfrentar situaciones nuevas, riesgosas o desafiantes con confianza y determinación.', mid:'Maneja bien la incertidumbre moderada, aunque situaciones de alto riesgo pueden generar incomodidad.', lo:'Prefiere entornos predecibles y seguros. Puede evitar situaciones de exposición o presión.' },
-    I: { hi:'Alta sensibilidad hacia los demás. Considera el impacto emocional de sus decisiones y acciones.', mid:'Equilibrio entre racionalidad y consideración emocional del entorno.', lo:'Orientación práctica y objetiva. Puede subestimar el componente emocional en sus interacciones.' },
-    L: { hi:'Evaluación cautelosa del entorno. Detecta inconsistencias y no acepta información sin verificarla.', mid:'Combina confianza y precaución según el contexto. Evaluación razonable del entorno.', lo:'Alta confianza en los demás. Puede aceptar información o situaciones sin suficiente cuestionamiento.' },
-    M: { hi:'Pensamiento creativo y abstracto. Genera ideas originales y prefiere la innovación sobre la rutina.', mid:'Equilibrio entre pensamiento práctico y capacidad de abstracción cuando se requiere.', lo:'Orientación concreta y pragmática. Prefiere soluciones probadas antes que enfoques creativos.' },
-    N: { hi:'Persona discreta y reservada. Maneja la información con cuidado y no comparte en exceso.', mid:'Comparte lo necesario sin ser hermético/a. Adecuado manejo de información en contextos laborales.', lo:'Persona abierta que comparte con facilidad. Puede no dimensionar la sensibilidad de cierta información.' },
-    O: { hi:'Alta autocrítica y preocupación por hacerlo bien. Puede verse afectado/a por errores o críticas.', mid:'Autocrítica moderada. Se preocupa por su desempeño sin llegar a la ansiedad.', lo:'Alta autoconfianza y bajo nivel de preocupación. Se recupera rápidamente de los errores.' },
-    Q1: { hi:'Abierto/a al cambio, la innovación y las nuevas formas de hacer las cosas.', mid:'Acepta los cambios necesarios aunque puede necesitar tiempo de adaptación.', lo:'Prefiere los métodos establecidos. La resistencia al cambio puede ser una limitación en entornos dinámicos.' },
-    Q3: { hi:'Disciplinado/a, organizado/a y orientado/a al logro con estándares altos.', mid:'Equilibrio entre flexibilidad y organización. Generalmente mantiene un nivel de calidad aceptable.', lo:'Menor énfasis en la organización y la precisión. Puede presentar descuidos en tareas que requieren exactitud.' },
-    Q4: { hi:'Alta activación interna. Puede manifestarse como tensión crónica si no se maneja adecuadamente.', mid:'Nivel moderado de tensión. Funcional en la mayoría de los contextos laborales.', lo:'Bajo nivel de tensión interna. Persona tranquila que no se estresa con facilidad.' },
+  barratt: {
+    AI: {
+      hi: 'Excelente capacidad de concentración. Se enfoca con facilidad, mantiene la atención sostenida y procesa la información de manera ordenada antes de actuar.',
+      mid:'Concentración adecuada para la mayoría de las tareas. Situaciones de alta demanda pueden requerir mayor esfuerzo de foco.',
+      lo: 'Tendencia a la distracción; puede pasar por alto detalles relevantes en tareas que requieren concentración prolongada.'
+    },
+    IM: {
+      hi: 'Alto control de los impulsos motores. Actúa con reflexión, evalúa opciones antes de responder y mantiene la compostura ante conflictos.',
+      mid:'Generalmente reflexivo/a, aunque en situaciones de alta activación emocional puede reaccionar antes de evaluar todas las opciones.',
+      lo: 'Tendencia a actuar de forma precipitada. Puede tomar decisiones impulsivas sin evaluar consecuencias, especialmente bajo presión.'
+    },
+    NP: {
+      hi: 'Alta orientación a la planificación. Anticipa consecuencias, organiza el trabajo con criterio y se enfoca en objetivos de largo plazo.',
+      mid:'Planificación adecuada para tareas rutinarias. Proyectos complejos pueden requerir mayor estructura y seguimiento.',
+      lo: 'Orientación preferentemente al presente. Puede tener dificultades para planificar a mediano plazo o evaluar consecuencias futuras.'
+    },
   },
-  // PAI
-  pai: {
+    pai: {
     EE: { hi:'Excelente regulación emocional. Mantiene la compostura incluso en situaciones de alta presión o conflicto.', mid:'Generalmente estable emocionalmente. Situaciones muy demandantes pueden afectarle transitoriamente.', lo:'Puede mostrar reactividad emocional ante el estrés laboral. Requiere estrategias de manejo emocional.' },
     AS: { hi:'Alta adaptabilidad social. Se integra con facilidad a equipos diversos y resuelve conflictos constructivamente.', mid:'Buena adaptación al entorno social con algunas áreas de mejora en contextos de alta diversidad o conflicto.', lo:'Puede presentar dificultades para adaptarse a entornos cambiantes o relacionarse con perfiles muy distintos al propio.' },
     ON: { hi:'Sólida orientación normativa. Respeta las reglas independientemente de la supervisión y reporta irregularidades.', mid:'Generalmente cumple las normas, aunque puede hacer excepciones cuando no hay supervisión directa.', lo:'Relación flexible con las normas. Puede omitir procedimientos si considera que los resultados lo justifican.' },
@@ -1592,7 +1544,7 @@ function buildReportHtml(c, withClose) {
   if (!s) return '<div style="padding:40px;text-align:center;color:#999">Sin datos de evaluación.</div>';
   const perfil = c.perfil || 'administrativo';
   const pm = PERFIL_META[perfil];
-  const isLegacy = !s.pf16 && !s.dc0 && !s.pai && (s.bigfive || s.disc || s.cognitivo);
+  const isLegacy = !s.barratt && !s.dc0 && !s.pai && (s.bigfive || s.disc || s.cognitivo);
 
   // ── Header (always visible) ──
   let html = '<div class="rpt-modal">';
@@ -1603,7 +1555,7 @@ function buildReportHtml(c, withClose) {
     + '<div style="font-size:22px;font-weight:800;margin-bottom:2px">' + c.nombre + ' ' + c.apellido + '</div>'
     + '<div style="font-size:13px;color:rgba(255,255,255,.45)">' + pm.icon + ' ' + pm.label + ' &nbsp;·&nbsp; Evaluado el ' + c.fecha + '</div>'
     + '</div>'
-    + (withClose ? '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0"><button onclick="printCandReport(currentReportId)" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:12px;font-weight:600;padding:6px 12px;border-radius:6px;cursor:pointer">⎙ Imprimir</button><button onclick="closeCandModal()" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:20px;cursor:pointer;line-height:1">✕</button></div>' : '')
+    + (withClose ? '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0"><button onclick="downloadPdfReport(currentReportId)" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:12px;font-weight:600;padding:6px 12px;border-radius:6px;cursor:pointer">⬇ Descargar PDF</button><button onclick="closeCandModal()" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:20px;cursor:pointer;line-height:1">✕</button></div>' : '')
     + '</div></div>';
 
   if (isLegacy) {
@@ -1621,7 +1573,7 @@ function buildReportHtml(c, withClose) {
 
   // ── Tab bar ──
   const tabs = [{ id:'general', label:'Resumen General', icon:'📋' }];
-  if (s.pf16 && rpt.sections.find(x=>x.id==='pf16'))        tabs.push({ id:'pf16',       label:'Personalidad',  icon:'🧠' });
+  if (s.barratt && rpt.sections.find(x=>x.id==='barratt')) tabs.push({ id:'barratt', label:'Control Impulsivo', icon:'⚡' });
   if (s.pai  && rpt.sections.find(x=>x.id==='pai'))         tabs.push({ id:'pai',        label:'Aj. Psicológico', icon:'🔎' });
   if (s.dc0  && rpt.sections.find(x=>x.id==='dc0'))         tabs.push({ id:'dc0',        label:'Aptitud Cognitiva', icon:'⚡' });
   if (s.situacional && rpt.sections.find(x=>x.id==='situacional')) tabs.push({ id:'situacional', label:'Juicio Situacional', icon:'💡' });
@@ -1717,40 +1669,54 @@ function buildReportHtml(c, withClose) {
   html += '</div>'; // end tab-panel general
 
   // ════════════════════════════════════════════
-  // TAB: 16PF
+  // TAB: BARRATT
   // ════════════════════════════════════════════
-  if (s.pf16 && rpt.sections.find(function(x){return x.id==='pf16';})) {
-    const sec = rpt.sections.find(function(x){return x.id==='pf16';});
+  if (s.barratt && rpt.sections.find(function(x){return x.id==='barratt';})) {
+    const sec = rpt.sections.find(function(x){return x.id==='barratt';});
     const secLv = fitLabel(sec.secFit);
-    const GRUPOS = [
-      { label:'Relaciones Interpersonales', keys:['A','F','H'], color:'#2563eb' },
-      { label:'Gestión Emocional',          keys:['C','O','Q4'], color:'#16a34a' },
-      { label:'Trabajo y Disciplina',       keys:['E','G','Q3'], color:'#b45309' },
-      { label:'Estilo de Pensamiento',      keys:['M','Q1','I'], color:'#7c3aed' },
-      { label:'Cautela y Privacidad',       keys:['L','N'],      color:'#555' },
-    ];
-    html += '<div class="rpt-tab-panel" id="rpt-panel-pf16" style="display:none;flex-direction:column;gap:16px">';
-    html += '<div style="background:#fff;border:1px solid #e5e5e5;border-radius:10px;padding:20px 22px">'
-      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;flex-wrap:wrap;gap:8px">'
-      + '<div style="font-size:17px;font-weight:700">🧠 Personalidad — 16PF</div>'
-      + '<div style="display:flex;align-items:center;gap:8px">' + gaugeHtml(sec.secFit, secLv.color, 64)
-      + '<div><div style="font-size:13px;font-weight:800;color:' + secLv.color + '">' + sec.secFit + '%</div><div style="font-size:10px;color:#999">' + secLv.label + '</div></div></div></div>'
-      + '<div style="font-size:12px;color:#999;margin-bottom:16px">Mide 14 rasgos organizados en 5 áreas. La zona gris en cada barra indica el rango ideal para el cargo ' + pm.label + '.</div>'
-      + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px">'
-      + GRUPOS.map(function(g){
-          var dims = g.keys.map(function(k){ return sec.dims.find(function(d){return d.key===k;}); }).filter(Boolean);
-          if (!dims.length) return '';
-          return '<div style="background:#f9f9f9;border-radius:8px;padding:14px;border:1px solid #e5e5e5">'
-            + '<div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:' + g.color + ';margin-bottom:10px;border-bottom:2px solid ' + g.color + '20;padding-bottom:6px">' + g.label + '</div>'
-            + miniBars(dims, true)
-            + '<div style="margin-top:10px;padding-top:8px;border-top:1px solid #e5e5e5;font-size:11px;color:#555;line-height:1.55">' + dimDesc('pf16', dims[0].key, dims[0].score) + '</div>'
+    const BIS_FULL = { AI:'Control Atencional', IM:'Control Motor', NP:'Planificación' };
+    const BIS_COLOR = { AI:'#0f2d52', IM:'#10b981', NP:'#2563eb' };
+    const BIS_ICON  = { AI:'🎯', IM:'⚡', NP:'📋' };
+
+    html += '<div class="rpt-tab-panel" id="rpt-panel-barratt" style="display:none;flex-direction:column;gap:16px">';
+
+    // Header card
+    html += '<div style="background:#fff;border-radius:10px;box-shadow:0 1px 8px rgba(15,45,82,.07);padding:22px 24px">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:8px">'
+      + '<div style="font-size:17px;font-weight:700">⚡ Control Impulsivo — BIS-11</div>'
+      + '<div style="display:flex;align-items:center;gap:8px">' + gaugeHtml(sec.secFit, secLv.color, 60)
+      + '<div><div style="font-size:13px;font-weight:800;color:' + secLv.color + '">' + sec.secFit + '%</div>'
+      + '<div style="font-size:10px;color:#999">' + secLv.label + '</div></div></div></div>'
+      + '<div style="font-size:12px;color:#999;margin-bottom:18px;line-height:1.5">'
+      + 'Mide el nivel de control impulsivo en 3 dimensiones. Puntaje alto = buen control. La zona verde indica el rango ideal para el cargo ' + pm.label + '.</div>'
+      // 3 large dimension cards
+      + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px">'
+      + sec.dims.map(function(d) {
+          var lv2 = fitLabel(d.fit);
+          var desc = dimDesc('barratt', d.key, d.score);
+          var scoreL5 = scoreToLevel5(d.score);
+          var idealMin100 = parseInt((d.ideal||'60-100').split('–')[0]);
+          var idealMax100 = parseInt((d.ideal||'60-100').split('–')[1]||'100');
+          return '<div style="background:#f8fafc;border-radius:10px;padding:18px 20px">'
+            + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">'
+            + '<div>'
+            + '<div style="font-size:13px;font-weight:700;color:#0f172a">' + BIS_ICON[d.key] + ' ' + (BIS_FULL[d.key]||d.label) + '</div>'
+            + '<div style="font-size:11px;color:#94a3b8;margin-top:2px">' + d.req + '</div>'
+            + '</div>'
+            + '<div style="text-align:center;background:' + lv2.bg + ';border-radius:8px;padding:6px 10px;border:1px solid ' + lv2.color + '30">'
+            + '<div style="font-size:22px;font-weight:900;color:' + lv2.color + ';line-height:1">' + scoreL5 + '</div>'
+            + '<div style="font-size:9px;font-weight:700;color:' + lv2.color + '">/5</div>'
+            + '</div></div>'
+            + trackBar(d.score, idealMin100, idealMax100, true, d.fit, lv2)
+            + '<div style="font-size:10px;color:#94a3b8;margin-bottom:10px">Rango ideal: nivel ' + scoreToLevel5(idealMin100) + '–' + scoreToLevel5(idealMax100) + ' &nbsp;·&nbsp; Ajuste: <strong style="color:' + lv2.color + '">' + d.fit + '%</strong></div>'
+            + '<div style="font-size:12px;color:#475569;line-height:1.6;padding-top:10px;border-top:1px solid #e2e8f0">' + desc + '</div>'
             + '</div>';
         }).join('')
       + '</div></div>';
     html += '</div>';
   }
 
-  // ════════════════════════════════════════════
+    // ════════════════════════════════════════════
   // TAB: PAI
   // ════════════════════════════════════════════
   if (s.pai && rpt.sections.find(function(x){return x.id==='pai';})) {
@@ -1983,115 +1949,53 @@ function toInternalMax(val5) { return val5 === 5 ? 100 : val5 * 20 - 1; }
 const NIVEL_LABELS = {1:'Muy Bajo',2:'Bajo',3:'Medio',4:'Alto',5:'Muy Alto'};
 const NIVEL_COLORS = {1:'#8b0000',2:'#c04b1c',3:'#a07528',4:'#3a7850',5:'#1c5d8c'};
 
-// Renders a segmented click-track for 1-5 selection
-function scaleSelector(fieldId, currentVal100, type) {
-  var cur = type === 'peso' ? currentVal100 : toDisplay(currentVal100);
-  // For range track: this is a single-point selector (min, max, or peso)
-  var isRange = (type === 'min' || type === 'max');
-  var emerald = '#10b981', navy = '#0f2d52';
-  var activeColor = isRange ? emerald : navy;
-  var NAMES = {1:'Muy Bajo',2:'Bajo',3:'Medio',4:'Alto',5:'Muy Alto'};
-
-  // Build 5-segment horizontal track
-  var h = '<div style="display:flex;gap:0;position:relative;height:40px;align-items:center">';
-  // Background rail
-  h += '<div style="position:absolute;left:0;right:0;height:4px;background:#e2e8f0;border-radius:100px"></div>';
-  // Filled portion up to selected
-  var fillPct = ((cur - 1) / 4) * 100;
-  h += '<div style="position:absolute;left:0;height:4px;width:' + fillPct + '%;background:' + activeColor + ';border-radius:100px;transition:width .2s"></div>';
-  // 5 tick points
+// Simple +/- stepper for 1-5 scale
+function scaleSelector(fieldId, currentVal, type) {
+  var NAMES = {1:'Muy\nBajo', 2:'Bajo', 3:'Medio', 4:'Alto', 5:'Muy\nAlto'};
+  var activeColor = type==='peso' ? '#0f2d52' : '#10b981';
+  var h = '<div style="display:flex;gap:4px">';
   for (var i = 1; i <= 5; i++) {
-    var left = ((i - 1) / 4) * 100;
-    var active = (i === cur);
-    h += '<div style="position:absolute;left:' + left + '%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;cursor:pointer"'
+    var active = (i === currentVal);
+    h += '<button type="button"'
+      + ' id="sbtn_' + fieldId + '_' + type + '_' + i + '"'
       + ' onclick="selectParam(\'' + fieldId + '\',\'' + type + '\',' + i + ')"'
-      + ' data-fid="' + fieldId + '" data-type="' + type + '" data-val="' + i + '">'
-      + '<div id="sbtn_' + fieldId + '_' + type + '_' + i + '"'
-      + ' style="width:' + (active ? '16px' : '10px') + ';height:' + (active ? '16px' : '10px') + ';border-radius:50%;'
-      + 'background:' + (active ? activeColor : '#e2e8f0') + ';'
-      + 'border:' + (active ? '2px solid ' + activeColor : '2px solid #cbd5e1') + ';'
-      + 'transition:all .15s;box-shadow:' + (active ? '0 0 0 3px ' + activeColor + '20' : 'none') + '">'
-      + '</div>'
-      + '<span style="font-size:9px;font-weight:' + (active ? '700' : '500') + ';color:' + (active ? activeColor : '#94a3b8') + ';margin-top:4px;white-space:nowrap">'
-      + (i === 1 ? 'Muy Bajo' : i === 5 ? 'Muy Alto' : i)
-      + '</span>'
-      + '</div>';
+      + ' style="flex:1;padding:6px 2px;border-radius:8px;border:2px solid '
+      + (active ? activeColor : '#e2e8f0') + ';background:'
+      + (active ? activeColor : '#f8fafc') + ';cursor:pointer;transition:all .12s;text-align:center;line-height:1.2">'
+      + '<div style="font-size:13px;font-weight:800;color:' + (active ? '#fff' : '#94a3b8') + '">' + i + '</div>'
+      + '</button>';
   }
   h += '</div>';
   return h;
 }
 
+
 function selectParam(fieldId, type, val) {
   val = +val;
-  var isRange = (type === 'min' || type === 'max');
-  var activeColor = isRange ? '#10b981' : '#0f2d52';
+  var activeColor = type==='peso' ? '#0f2d52' : '#10b981';
   var NAMES = {1:'Muy Bajo',2:'Bajo',3:'Medio',4:'Alto',5:'Muy Alto'};
-
   for (var i = 1; i <= 5; i++) {
-    var dot = document.getElementById('sbtn_' + fieldId + '_' + type + '_' + i);
-    if (!dot) continue;
+    var btn = document.getElementById('sbtn_' + fieldId + '_' + type + '_' + i);
+    if (!btn) continue;
     var active = (i === val);
-    dot.style.width  = active ? '16px' : '10px';
-    dot.style.height = active ? '16px' : '10px';
-    dot.style.background = active ? activeColor : '#e2e8f0';
-    dot.style.borderColor = active ? activeColor : '#cbd5e1';
-    dot.style.boxShadow = active ? '0 0 0 3px ' + activeColor + '20' : 'none';
-  }
-  // Update fill bar — find parent div and update fill child
-  var dot1 = document.getElementById('sbtn_' + fieldId + '_' + type + '_1');
-  if (dot1) {
-    var container = dot1.parentNode && dot1.parentNode.parentNode;
-    if (container) {
-      var fills = container.children;
-      for (var j = 0; j < fills.length; j++) {
-        var el = fills[j];
-        if (el.style && el.style.position === 'absolute' && el.style.height === '4px' && el.style.left === '0px') {
-          el.style.width = (((val - 1) / 4) * 100) + '%';
-          break;
-        }
-      }
-    }
+    btn.style.background  = active ? activeColor : '#f8fafc';
+    btn.style.borderColor = active ? activeColor : '#e2e8f0';
+    var numDiv = btn.querySelector('div');
+    if (numDiv) numDiv.style.color = active ? '#fff' : '#94a3b8';
   }
   var hidden = document.getElementById('hid_' + fieldId + '_' + type);
   if (hidden) hidden.value = val;
-  var lbl = document.getElementById('lbl_' + fieldId + '_' + type);
-  if (lbl) lbl.textContent = type === 'peso' ? 'Peso: ' + val + '/5' : NAMES[val];
-}
-
-
-function setRangePoint(fid, val) {
-  var minEl = document.getElementById('hid_' + fid + '_min');
-  var maxEl = document.getElementById('hid_' + fid + '_max');
-  if (!minEl || !maxEl) return;
-  var curMin = parseInt(minEl.value) || 1;
-  var curMax = parseInt(maxEl.value) || 5;
-  var NAMES = {1:'Muy Bajo',2:'Bajo',3:'Medio',4:'Alto',5:'Muy Alto'};
-
-  // Smart assignment: if clicking below current min → set new min
-  //                   if clicking above current max → set new max
-  //                   if clicking inside → move nearest endpoint
-  var newMin = curMin, newMax = curMax;
-  if (val < curMin) newMin = val;
-  else if (val > curMax) newMax = val;
-  else {
-    var distMin = Math.abs(val - curMin), distMax = Math.abs(val - curMax);
-    if (distMin <= distMax) newMin = val; else newMax = val;
+  // Update range preview bar if present
+  var bar = document.getElementById('rbar_' + fieldId);
+  if (bar) {
+    var minV = parseInt((document.getElementById('hid_' + fieldId + '_min')||{value:1}).value)||1;
+    var maxV = parseInt((document.getElementById('hid_' + fieldId + '_max')||{value:5}).value)||5;
+    bar.style.left  = ((minV-1)/4*100)+'%';
+    bar.style.width = ((maxV-minV)/4*100)+'%';
   }
-  if (newMin > newMax) { var tmp = newMin; newMin = newMax; newMax = tmp; }
-
-  minEl.value = newMin; maxEl.value = newMax;
-
-  // Update fill
-  var minPct = ((newMin-1)/4)*100, maxPct = ((newMax-1)/4)*100, zonePct = maxPct-minPct;
-  var fill = document.getElementById('range_fill_' + fid);
-  if (fill) { fill.style.left = minPct+'%'; fill.style.width = zonePct+'%'; }
-  var lb = document.getElementById('range_lbound_' + fid);
-  if (lb) lb.style.left = minPct+'%';
-  var rb = document.getElementById('range_rbound_' + fid);
-  if (rb) rb.style.left = maxPct+'%';
-  var lbl = document.getElementById('lbl_range_' + fid);
-  if (lbl) lbl.textContent = NAMES[newMin] + ' → ' + NAMES[newMax];
 }
+
+
 
 function renderParams() {
   try {
@@ -2100,102 +2004,85 @@ function renderParams() {
     if (!ideal) { document.getElementById('params-content').innerHTML = '<p>Perfil no encontrado.</p>'; return; }
 
     var SECTION_META = {
-      pf16: { icon:'🧠', title:'Personalidad (16PF)', keys:['A','C','E','F','G','H','I','L','M','N','O','Q1','Q3','Q4'] },
+      barratt: { icon:'🧩', title:'Control Impulsivo (BIS-11)', keys:['AI','IM','NP'] },
       pai:  { icon:'🔎', title:'Ajuste Psicológico (PAI)', keys:['EE','AS','ON','ME','IL','ML'] },
       dc0:  { icon:'⚡', title:'Aptitud Cognitiva (DC-0)', keys:['V','N','L'] },
       situacional: { icon:'💡', title:'Juicio Situacional', keys:['_self'] },
       vigilancia:  { icon:'🛡', title:'Aptitud Vigilancia', keys:['_self'] },
     };
+    var NAMES = {1:'Muy Bajo',2:'Bajo',3:'Medio',4:'Alto',5:'Muy Alto'};
 
-    // Hint bar
-    var out = '<div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:#f8fafc;border-radius:10px;margin-bottom:20px">'
-      + '<div style="width:32px;height:4px;background:linear-gradient(90deg,#10b981,#0f2d52);border-radius:100px;flex-shrink:0"></div>'
-      + '<span style="font-size:12px;color:#475569;line-height:1.5">Arrastra o toca los puntos para definir el <strong style="color:#10b981">rango ideal</strong> (verde) y el <strong style="color:#0f2d52">peso</strong> (azul) de cada dimensión.</span>'
+    var out = '<div style="display:flex;gap:12px;flex-wrap:wrap;padding:12px 16px;background:#f0fdf4;border-radius:10px;margin-bottom:20px;font-size:12px;color:#166534">'
+      + '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#10b981;margin-right:4px;vertical-align:middle"></span>Verde = Rango ideal del cargo</span>'
+      + '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#0f2d52;margin-right:4px;vertical-align:middle"></span>Azul = Peso en el índice global</span>'
       + '</div>';
 
     Object.entries(SECTION_META).forEach(function(entry) {
-      var secId = entry[0]; var secMeta = entry[1];
+      var secId = entry[0]; var sm = entry[1];
       var secData = ideal[secId];
       if (!secData) return;
 
-      // Section header — no border card, just shadow
-      out += '<div style="background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(15,45,82,.07);margin-bottom:16px;padding:24px 28px">';
-      out += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:20px">';
-      out += '<span style="font-size:18px">' + secMeta.icon + '</span>';
-      out += '<span style="font-size:15px;font-weight:700;color:#0f172a;letter-spacing:-.02em">' + secMeta.title + '</span>';
-      out += '</div>';
-      out += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:24px">';
+      out += '<div style="background:#fff;border-radius:14px;box-shadow:0 2px 10px rgba(15,45,82,.06);margin-bottom:16px;padding:22px 24px">';
+      out += '<div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:18px;display:flex;align-items:center;gap:7px">'
+           + sm.icon + ' ' + sm.title + '</div>';
+      out += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px">';
 
-      secMeta.keys.forEach(function(k) {
+      sm.keys.forEach(function(k) {
         var cfg = k === '_self' ? secData : secData[k];
         if (!cfg) return;
-        var fid = 'p_' + perfil + '_' + secId + '_' + k;
-        var dmin  = toDisplay(cfg.min);
-        var dmax  = toDisplay(cfg.max);
-        var dpeso = cfg.peso;
+        var fid  = 'p_' + perfil + '_' + secId + '_' + k;
+        var dmin = toDisplay(cfg.min);
+        var dmax = toDisplay(cfg.max);
+        var dpeso= cfg.peso;
         var NAMES = {1:'Muy Bajo',2:'Bajo',3:'Medio',4:'Alto',5:'Muy Alto'};
 
-        out += '<div style="padding:0">';
+        out += '<div style="background:#f8fafc;border-radius:10px;padding:14px 16px">';
+        // Label + requirement
+        out += '<div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:2px">' + cfg.label + '</div>';
+        out += '<div style="font-size:11px;color:#94a3b8;line-height:1.4;margin-bottom:12px">' + cfg.req + '</div>';
 
-        // Dim header
-        out += '<div style="margin-bottom:16px">';
-        out += '<div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:3px">' + cfg.label + '</div>';
-        out += '<div style="font-size:11px;color:#94a3b8;line-height:1.45">' + cfg.req + '</div>';
+        // Live range stripe — updates on selection
+        var minPct = (dmin-1)/4*100; var maxPct = (dmax-1)/4*100; var zW = maxPct-minPct;
+        out += '<div style="position:relative;height:4px;background:#e2e8f0;border-radius:100px;margin-bottom:16px">';
+        out += '<div id="rbar_' + fid + '" style="position:absolute;top:0;height:4px;left:'+minPct+'%;width:'+zW+'%;background:#10b981;border-radius:100px;transition:all .2s"></div>';
         out += '</div>';
 
-        // ── Ideal Range track (combined min + max = shaded zone) ──
-        out += '<div style="margin-bottom:20px">';
-        out += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">';
-        out += '<span style="font-size:11px;font-weight:600;color:#475569;text-transform:uppercase;letter-spacing:.5px">Rango Ideal</span>';
-        out += '<span style="font-size:11px;font-weight:700;color:#10b981" id="lbl_range_' + fid + '">'
-          + NAMES[dmin] + ' → ' + NAMES[dmax] + '</span>';
-        out += '</div>';
-
-        // Combined range visual: shows shaded zone between min and max
-        var minPct = ((dmin - 1) / 4) * 100;
-        var maxPct = ((dmax - 1) / 4) * 100;
-        var zonePct = maxPct - minPct;
-        out += '<div style="position:relative;height:50px">';
-        // Rail
-        out += '<div style="position:absolute;top:8px;left:0;right:0;height:4px;background:#e2e8f0;border-radius:100px"></div>';
-        // Shaded ideal zone
-        out += '<div id="range_fill_' + fid + '" style="position:absolute;top:8px;left:' + minPct + '%;width:' + zonePct + '%;height:4px;background:rgba(16,185,129,.3);border-radius:100px;transition:all .2s"></div>';
-        // Left boundary line
-        out += '<div id="range_lbound_' + fid + '" style="position:absolute;top:4px;left:' + minPct + '%;width:2px;height:12px;background:#10b981;border-radius:1px;transform:translateX(-50%);transition:left .2s"></div>';
-        // Right boundary line
-        out += '<div id="range_rbound_' + fid + '" style="position:absolute;top:4px;left:' + maxPct + '%;width:2px;height:12px;background:#10b981;border-radius:1px;transform:translateX(-50%);transition:left .2s"></div>';
-        // 5 tick dots
-        for (var i = 1; i <= 5; i++) {
-          var lp = ((i - 1) / 4) * 100;
-          var inZone = (i >= dmin && i <= dmax);
-          out += '<div style="position:absolute;top:4px;left:' + lp + '%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;cursor:pointer;gap:4px"'
-            + ' onclick="setRangePoint(\'' + fid + '\',' + i + ')">';
-          out += '<div style="width:' + (inZone?12:8) + 'px;height:' + (inZone?12:8) + 'px;border-radius:50%;'
-            + 'background:' + (inZone?'#10b981':'#e2e8f0') + ';border:2px solid ' + (inZone?'#10b981':'#cbd5e1') + ';transition:all .15s"></div>';
-          out += '<span style="font-size:9px;font-weight:' + (inZone?'700':'400') + ';color:' + (inZone?'#10b981':'#94a3b8') + ';margin-top:16px;position:absolute;top:8px">' + i + '</span>';
-          out += '</div>';
+        // Scale axis
+        out += '<div style="display:flex;justify-content:space-between;margin-bottom:10px">';
+        for (var ax = 1; ax <= 5; ax++) {
+          out += '<span style="font-size:9px;color:#cbd5e1;font-weight:500">' + ax + '</span>';
         }
         out += '</div>';
 
-        // Hidden state
+        // 3-column: MIN | MAX | PESO
+        out += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">';
+
+        // MIN
+        out += '<div>';
+        out += '<div style="font-size:10px;font-weight:600;color:#10b981;text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px">Mín.</div>';
+        out += scaleSelector(fid, dmin, 'min');
         out += '<input type="hidden" id="hid_' + fid + '_min" value="' + dmin + '">';
+        out += '</div>';
+
+        // MAX
+        out += '<div>';
+        out += '<div style="font-size:10px;font-weight:600;color:#10b981;text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px">Máx.</div>';
+        out += scaleSelector(fid, dmax, 'max');
         out += '<input type="hidden" id="hid_' + fid + '_max" value="' + dmax + '">';
         out += '</div>';
 
-        // ── Weight — single bold dot on navy track ──
-        out += '<div style="padding-top:4px;border-top:1px solid #f1f5f9">';
-        out += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">';
-        out += '<span style="font-size:11px;font-weight:600;color:#475569;text-transform:uppercase;letter-spacing:.5px">Peso</span>';
-        out += '<span style="font-size:11px;font-weight:700;color:#0f2d52" id="lbl_' + fid + '_peso">Peso: ' + dpeso + '/5</span>';
-        out += '</div>';
+        // PESO
+        out += '<div>';
+        out += '<div style="font-size:10px;font-weight:600;color:#0f2d52;text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px">Peso</div>';
         out += scaleSelector(fid, dpeso, 'peso');
         out += '<input type="hidden" id="hid_' + fid + '_peso" value="' + dpeso + '">';
         out += '</div>';
 
-        out += '</div>'; // end dim card
+        out += '</div>'; // 3-col grid
+        out += '</div>'; // dim card
       });
 
-      out += '</div></div>'; // end grid + section
+      out += '</div></div>'; // grid + section
     });
 
     document.getElementById('params-content').innerHTML = out;
@@ -2205,12 +2092,13 @@ function renderParams() {
   }
 }
 
+
 function saveParams() {
   const perfil = _paramPerfil;
   const ideal = PERFIL_IDEAL[perfil];
 
   const SECTION_KEYS = {
-    pf16: ['A','C','E','F','G','H','I','L','M','N','O','Q1','Q3','Q4'],
+    barratt: ['AI','IM','NP'],
     pai:  ['EE','AS','ON','ME','IL','ML'],
     dc0:  ['V','N','L'],
     situacional: ['_self'],
@@ -2307,31 +2195,31 @@ async function seedTestData() {
   const SEED = [
     { id:'c_seed1_'+ts, nombre:'Ana', apellido:'Fuentes', email:'ana.fuentes@test.cl', rut:'12345678',
       perfil:'jefatura', cargo:'Jefatura', fecha:'11/03/2026',
-      tests:['pf16','dc0','pai','situacional'], estado:'completed',
-      scores:{ pf16:{A:72,C:80,E:78,F:68,G:85,H:70,I:60,L:55,M:65,N:72,O:35,Q1:68,Q3:75,Q4:30},
+      tests:['barratt','dc0','pai','situacional'], estado:'completed',
+      scores:{ barratt:{AI:82,IM:75,NP:70,total:76},
                dc0:{V:75,N:83,L:71,total:76}, pai:{EE:82,AS:75,ON:88,ME:79,IL:91,ML:77},
                situacional:{pct:80,correct:4,total:5} } },
     { id:'c_seed2_'+ts, nombre:'Carlos', apellido:'Morales', email:'carlos.morales@test.cl', rut:'11222333',
       perfil:'administrativo', cargo:'Administrativo', fecha:'11/03/2026',
-      tests:['pf16','dc0','pai'], estado:'completed',
-      scores:{ pf16:{A:60,C:55,E:45,F:50,G:78,H:52,I:65,L:48,M:55,N:68,O:52,Q1:58,Q3:80,Q4:48},
+      tests:['barratt','dc0','pai'], estado:'completed',
+      scores:{ barratt:{AI:68,IM:72,NP:80,total:73},
                dc0:{V:83,N:70,L:65,total:73}, pai:{EE:60,AS:65,ON:85,ME:58,IL:88,ML:62} } },
     { id:'c_seed3_'+ts, nombre:'Roberto', apellido:'Díaz', email:'roberto.diaz@test.cl', rut:'15888777',
       perfil:'guardia', cargo:'Guardia de Seguridad', fecha:'10/03/2026',
-      tests:['pf16','pai','situacional','vigilancia'], estado:'completed',
-      scores:{ pf16:{A:55,C:75,E:60,F:45,G:88,H:72,I:50,L:70,M:40,N:60,O:38,Q1:50,Q3:70,Q4:35},
+      tests:['barratt','pai','situacional','vigilancia'], estado:'completed',
+      scores:{ barratt:{AI:75,IM:85,NP:65,total:75},
                pai:{EE:78,AS:65,ON:92,ME:75,IL:90,ML:68},
                situacional:{pct:60,correct:3,total:5}, vigilancia:{pct:83,correct:5,total:6} } },
     { id:'c_seed4_'+ts, nombre:'Daniela', apellido:'Rojas', email:'daniela.rojas@test.cl', rut:'13777555',
       perfil:'jefatura', cargo:'Jefatura', fecha:'10/03/2026',
-      tests:['pf16','dc0','pai','situacional'], estado:'completed',
-      scores:{ pf16:{A:48,C:42,E:88,F:82,G:55,H:80,I:35,L:72,M:75,N:38,O:68,Q1:72,Q3:45,Q4:72},
+      tests:['barratt','dc0','pai','situacional'], estado:'completed',
+      scores:{ barratt:{AI:40,IM:38,NP:35,total:38},
                dc0:{V:58,N:50,L:65,total:58}, pai:{EE:45,AS:55,ON:60,ME:40,IL:70,ML:80},
                situacional:{pct:40,correct:2,total:5} } },
     { id:'c_seed5_'+ts, nombre:'Marco', apellido:'Soto', email:'marco.soto@test.cl', rut:'14666444',
       perfil:'administrativo', cargo:'Administrativo', fecha:'09/03/2026',
-      tests:['pf16','dc0','pai'], estado:'completed',
-      scores:{ pf16:{A:70,C:65,E:52,F:58,G:72,H:55,I:68,L:50,M:62,N:75,O:45,Q1:65,Q3:70,Q4:42},
+      tests:['barratt','dc0','pai'], estado:'completed',
+      scores:{ barratt:{AI:65,IM:70,NP:72,total:69},
                dc0:{V:65,N:55,L:60,total:60}, pai:{EE:70,AS:72,ON:78,ME:65,IL:82,ML:68} } },
   ];
   let ok = 0; const errors = [];
@@ -2377,25 +2265,63 @@ function downloadAsIndex() {
   URL.revokeObjectURL(a.href);
 }
 
-async function printCandReport(id) {
+async function downloadPdfReport(id) {
   if (!id) return;
   const all = await getDB();
   const c = all.find(x => x.id === id);
-  if (!c) return;
-  const html = buildReportHtml(c, false);
-  const w = window.open('','_blank','width=900,height=700');
-  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Informe — ' + c.nombre + ' ' + c.apellido + '</title>');
-  w.document.write('<style>');
-  w.document.write('*{box-sizing:border-box;margin:0;padding:0}');
-  w.document.write('body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;font-size:13px;line-height:1.5;color:#111;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}');
-  w.document.write(':root{--bg:#f5f5f5;--surface:#fff;--surface2:#eee;--ink:#111;--ink2:#555;--ink3:#999;--accent:#111;--border:#e5e5e5;--border2:#ccc;--green:#16a34a;--green-l:#f0fdf4;--gold:#b45309;--gold-l:#fffbeb;--rl:8px;--r:8px;--sh:none}');
-  w.document.write('.card{background:#fff;border:1px solid #e5e5e5;border-radius:8px}.cp{padding:20px}.res-section-title{font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px;margin-bottom:14px}');
-  w.document.write('@media print{body{margin:0}@page{margin:12mm;size:A4}}');
-  w.document.write('</style></head><body>');
-  w.document.write(html);
+  if (!c) { toast('Candidato no encontrado', 'er'); return; }
+  const reportBody = buildReportHtml(c, false);
+  const CSS = `
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f8fafc;--surface:#fff;--surface2:#f1f5f9;--ink:#0f172a;--ink2:#475569;--ink3:#94a3b8;
+  --accent:#10b981;--accent-l:#ecfdf5;--navy:#0f2d52;--navy-l:#e8f0fb;
+  --emerald:#10b981;--emerald-l:#ecfdf5;--blue:#2563eb;--blue-l:#eff6ff;
+  --green:#10b981;--green-l:#ecfdf5;--gold:#b45309;--gold-l:#fffbeb;
+  --border:#e2e8f0;--border2:#cbd5e1;--r:10px;--rl:14px;
+  --sh:0 1px 3px rgba(15,45,82,.05),0 4px 16px rgba(15,45,82,.06);
+  --shl:0 8px 32px rgba(15,45,82,.12);
+}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  font-size:12px;line-height:1.5;color:#0f172a;background:#fff;
+  -webkit-print-color-adjust:exact;print-color-adjust:exact}
+h1,h2,h3,h4{line-height:1.2;letter-spacing:-.02em}
+.card{background:#fff;border-radius:var(--r);box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:14px}
+.cp{padding:20px 24px}
+.res-section-title{font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px;margin-bottom:12px;color:#0f172a}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.3px}
+.badge-green{background:#ecfdf5;color:#10b981}
+.badge-blue{background:#eff6ff;color:#2563eb}
+.badge-red{background:#ecfdf5;color:#10b981}
+.badge-gray{background:#f1f5f9;color:#94a3b8}
+svg text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+@media print{
+  body{margin:0}
+  @page{margin:14mm 12mm;size:A4}
+  .card{box-shadow:none!important;break-inside:avoid}
+  div{break-inside:avoid}
+}`;
+  const w = window.open('', '_blank', 'width=960,height=800,scrollbars=yes');
+  if (!w) { toast('Permite ventanas emergentes para descargar el PDF', 'er'); return; }
+  const fname = (c.nombre + '_' + c.apellido + '_Informe').replace(/\s+/g,'_');
+  w.document.write('<!DOCTYPE html><html lang="es"><head>');
+  w.document.write('<meta charset="UTF-8">');
+  w.document.write('<title>' + fname + '</title>');
+  w.document.write('<style>' + CSS + '</style>');
+  w.document.write('</head><body>');
+  // Download-to-PDF bar (hidden on print)
+  w.document.write('<div id="pdf-bar" style="position:fixed;top:0;left:0;right:0;background:#0f2d52;color:#fff;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;z-index:9999;font-family:inherit;font-size:13px">');
+  w.document.write('<span style="font-weight:600">' + c.nombre + ' ' + c.apellido + ' — Informe Psicolaboral</span>');
+  w.document.write('<div style="display:flex;gap:8px">');
+  w.document.write('<button onclick="window.print()" style="background:#10b981;border:none;color:#fff;padding:7px 16px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer">⬇ Guardar como PDF</button>');
+  w.document.write('<button onclick="document.getElementById(\'pdf-bar\').remove()" style="background:rgba(255,255,255,.1);border:none;color:rgba(255,255,255,.6);padding:7px 12px;border-radius:7px;font-size:12px;cursor:pointer">✕</button>');
+  w.document.write('</div></div>');
+  w.document.write('<div style="margin-top:50px">');
+  w.document.write(reportBody);
+  w.document.write('</div>');
+  w.document.write('<style>@media print{#pdf-bar{display:none!important}div[style*="margin-top:50px"]{margin-top:0!important}}</style>');
   w.document.write('</body></html>');
   w.document.close();
-  setTimeout(function() { w.focus(); w.print(); }, 600);
 }
 
 function printReport() {
@@ -2519,8 +2445,8 @@ async function renderCandidatesTable() {
       <td>${statusBadge(c.estado)}</td>
       <td style="color:var(--ink3)">${c.fecha}</td>
       <td style="white-space:nowrap">
-        ${c.estado==='completed'?`<a onclick="viewCandReport('${c.id}')">Ver informe</a><a onclick="printCandReport('${c.id}')" style="margin-left:8px">Imprimir</a>`:''}
-        <a onclick="openDelModal('${c.id}','${c.nombre} ${c.apellido}')" style="color:var(--accent);margin-left:8px">Eliminar</a>
+        ${c.estado==='completed'?`<a onclick="viewCandReport('${c.id}')">Ver informe</a><a onclick="downloadPdfReport('${c.id}')" style="color:#0f2d52;margin-left:8px">⬇ PDF</a>`:''}
+        <a onclick="openDelModal('${c.id}','${c.nombre} ${c.apellido}')" style="color:#dc2626;margin-left:8px">Eliminar</a>
       </td>
     </tr>`).join('');
 }
@@ -2537,10 +2463,10 @@ async function renderReports() {
         <div style="font-weight:700;font-size:14px">${c.nombre} ${c.apellido}</div>
         <div style="font-size:12px;color:var(--ink3)">${c.cargo||'Sin cargo'} · ${c.fecha} · ${(c.tests||[]).map(t=>TESTS_META[t]?.icon).join(' ')}</div>
       </div>
-      <div style="display:flex;gap:8px">
+      <div style="display:flex;gap:6px">
         <button class="btn btn-outline btn-sm" onclick="viewCandReport('${c.id}')">Ver informe</button>
-        <button class="btn btn-outline btn-sm" onclick="printCandReport('${c.id}')">Imprimir</button>
-        <button class="btn btn-outline btn-sm" onclick="openDelModal('${c.id}','${c.nombre+' '+c.apellido}')" style="color:#c04b1c;border-color:#c04b1c">Eliminar</button>
+        <button class="btn btn-sm" onclick="downloadPdfReport('${c.id}')" style="background:#0f2d52;color:#fff">⬇ Descargar PDF</button>
+        <button class="btn btn-outline btn-sm" onclick="openDelModal('${c.id}','${c.nombre} ${c.apellido}')" style="color:#dc2626;border-color:#dc2626">Eliminar</button>
       </div>
     </div>`).join('');
 }
