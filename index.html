@@ -1270,15 +1270,40 @@ const PERFIL_IDEAL = {
     vigilancia:  { min:65, max:100, peso:5, label:'Apt. Vigilancia',    req:'Atención sostenida y aplicación de protocolos.' },
   },
 };
+// ── Ensure minLv is set on all cfg entries ──────────────────
+(function initMinLv() {
+  ['jefatura','administrativo','guardia'].forEach(function(pf) {
+    var ideal = PERFIL_IDEAL[pf];
+    if (!ideal) return;
+    Object.keys(ideal).forEach(function(secId) {
+      var sec = ideal[secId];
+      if (!sec) return;
+      if (sec.min !== undefined && sec.minLv === undefined) {
+        // flat entry (situacional/vigilancia)
+        sec.minLv = scoreToLevel5(sec.min);
+      } else {
+        Object.keys(sec).forEach(function(k) {
+          var cfg = sec[k];
+          if (cfg && cfg.min !== undefined && cfg.minLv === undefined) {
+            cfg.minLv = scoreToLevel5(cfg.min);
+          }
+        });
+      }
+    });
+  });
+})();
+
 
 // ═══════════════════════════════════════════════════════════
 //  FIT ENGINE — calcula ajuste candidato vs perfil ideal
 // ═══════════════════════════════════════════════════════════
 function calcFit(score, min, max) {
-  // Returns 0-100 fit percentage for a given score vs ideal range
-  if (score >= min && score <= max) return 100;
-  if (score < min) return Math.max(0, Math.round(100 - (min - score) * 2.5));
-  return Math.max(0, Math.round(100 - (score - max) * 2.5));
+  // score and min are 0-100. Convert to 1-5 for comparison.
+  var scoreLv = scoreToLevel5(score);
+  var minLv5  = scoreToLevel5(min);
+  if (scoreLv >= minLv5) return 100;
+  // Each level below minimum = 25% penalty
+  return Math.max(0, 100 - (minLv5 - scoreLv) * 25);
 }
 
 function scoreLevel(v) {
@@ -1315,8 +1340,9 @@ function buildFitReport(c) {
       const fit = calcFit(score, cfg.min, cfg.max);
       totalPeso += cfg.peso;
       totalFitPeso += fit * cfg.peso;
-      dims.push({ key:k, label:cfg.label, score, fit, peso:cfg.peso, req:cfg.req,
-        ideal:`${cfg.min}–${cfg.max}`, gap: score < cfg.min ? 'bajo' : score > cfg.max ? 'alto' : 'ok' });
+      const minLv = cfg.minLv || scoreToLevel5(cfg.min) || 1;
+      dims.push({ key:k, label:cfg.label, score, fit, peso:cfg.peso, req:cfg.req, minLv,
+        ideal:`${cfg.min}–${cfg.max}`, gap: scoreToLevel5(score) < minLv ? 'bajo' : 'ok' });
     });
     const secFit = Math.round(dims.reduce((a,d)=>a+d.fit*d.peso,0)/dims.reduce((a,d)=>a+d.peso,0));
     sections.push({ id:'barratt', icon:'⚡', title:'Control Impulsivo (BIS-11)', dims, secFit,
@@ -1332,8 +1358,9 @@ function buildFitReport(c) {
       const fit = calcFit(score, cfg.min, cfg.max);
       totalPeso += cfg.peso;
       totalFitPeso += fit * cfg.peso;
-      dims.push({ key:k, label:cfg.label, score, fit, peso:cfg.peso, req:cfg.req,
-        ideal:`${cfg.min}–${cfg.max}`, gap: score < cfg.min ? 'bajo' : score > cfg.max ? 'alto' : 'ok' });
+      const minLvP = cfg.minLv || scoreToLevel5(cfg.min) || 1;
+      dims.push({ key:k, label:cfg.label, score, fit, peso:cfg.peso, req:cfg.req, minLv:minLvP,
+        ideal:`${cfg.min}–${cfg.max}`, gap: scoreToLevel5(score) < minLvP ? 'bajo' : 'ok' });
     });
     const secFit = Math.round(dims.reduce((a,d)=>a+d.fit*d.peso,0)/dims.reduce((a,d)=>a+d.peso,0));
     sections.push({ id:'pai', icon:'🔎', title:'Ajuste Psicológico (PAI)', dims, secFit,
@@ -1349,8 +1376,9 @@ function buildFitReport(c) {
       const fit = calcFit(score, cfg.min, cfg.max);
       totalPeso += cfg.peso;
       totalFitPeso += fit * cfg.peso;
-      dims.push({ key:k, label:cfg.label, score, fit, peso:cfg.peso, req:cfg.req,
-        ideal:`${cfg.min}–${cfg.max}`, gap: score < cfg.min ? 'bajo' : score > cfg.max ? 'alto' : 'ok' });
+      const minLvD = cfg.minLv || scoreToLevel5(cfg.min) || 1;
+      dims.push({ key:k, label:cfg.label, score, fit, peso:cfg.peso, req:cfg.req, minLv:minLvD,
+        ideal:`${cfg.min}–${cfg.max}`, gap: scoreToLevel5(score) < minLvD ? 'bajo' : 'ok' });
     });
     const secFit = Math.round(dims.reduce((a,d)=>a+d.fit*d.peso,0)/dims.reduce((a,d)=>a+d.peso,0));
     sections.push({ id:'dc0', icon:'⚡', title:'Aptitud Cognitiva (DC-0)', dims, secFit,
@@ -1390,8 +1418,8 @@ function buildFitReport(c) {
 
   // ── Fortalezas y Brechas ──
   const allDims = sections.flatMap(sec => sec.dims.map(d => ({...d, section:sec.title})));
-  const fortalezas = allDims.filter(d => d.fit >= 80).sort((a,b)=>b.fit-a.fit).slice(0,4);
-  const brechas    = allDims.filter(d => d.fit < 60).sort((a,b)=>a.fit-b.fit).slice(0,4);
+  const fortalezas = allDims.filter(d => scoreToLevel5(d.score) >= (d.minLv||1) && d.fit >= 70).sort((a,b)=>b.fit-a.fit).slice(0,4);
+  const brechas    = allDims.filter(d => scoreToLevel5(d.score) <  (d.minLv||1)).sort((a,b)=>a.score-b.score).slice(0,4);
 
   // ── Preguntas de entrevista según brechas ──
   const QS_ENTREVISTA = {
@@ -1549,30 +1577,55 @@ function trackBar(score100, idealMin100, idealMax100, showIdeal, fitPct, fitLv) 
 }
 
 function miniBars(dims, showIdeal) {
-  return dims.map(function(d) {
-    var lv = fitLabel(d.fit);
-    var scoreL5 = scoreToLevel5(d.score);
-    var idealMin100 = 0, idealMax100 = 100;
-    var idealMin5 = 1, idealMax5 = 5;
-    if (d.ideal) {
-      var pts = d.ideal.split('–');
-      idealMin100 = parseInt(pts[0]) || 0;
-      idealMax100 = parseInt(pts[1]) || 100;
-      idealMin5 = scoreToLevel5(idealMin100);
-      idealMax5 = scoreToLevel5(idealMax100);
-    }
-    var inZone = d.score >= idealMin100 && d.score <= idealMax100;
-    var scoreColor = inZone ? '#10b981' : '#0f2d52';
+  var NAMES = {1:'Muy Bajo',2:'Bajo',3:'Medio',4:'Alto',5:'Muy Alto'};
+  var SEG_COLORS = {1:'#94a3b8',2:'#64748b',3:'#f59e0b',4:'#3b82f6',5:'#10b981'};
 
-    return '<div style="margin-bottom:18px">'
-      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">'
-      + '<span style="font-size:12px;font-weight:600;color:#0f172a;letter-spacing:-.01em">' + d.label + '</span>'
-      + '<div style="display:flex;align-items:center;gap:6px">'
-      + '<span style="font-size:11px;font-weight:700;color:' + scoreColor + '">' + LEVEL5_NAMES[scoreL5] + '</span>'
-      + '<span style="font-size:10px;font-weight:600;color:' + lv.color + ';background:' + lv.bg + ';padding:1px 8px;border-radius:100px">' + lv.label + '</span>'
+  return dims.map(function(d) {
+    // Convert 0-100 score to 1-5
+    var scoreLv = scoreToLevel5(d.score);
+    // Minimum required level from params (cfg.minLv)
+    var minLv = d.minLv || 1;
+    var passes = scoreLv >= minLv;
+    var dotColor = passes ? '#10b981' : '#dc2626';
+    var lv = fitLabel(d.fit);
+
+    // Build 5-segment bar
+    var segW = 20; // each segment = 20% of track
+    var dotPct = ((scoreLv - 1) / 4) * 100;    // position 0-100%
+    var minPct  = ((minLv  - 1) / 4) * 100;
+
+    var barH = '<div style="position:relative;height:8px;border-radius:100px;background:#e2e8f0;margin:8px 0 4px;overflow:visible">';
+    // Filled area up to score level
+    barH += '<div style="position:absolute;top:0;bottom:0;left:0;width:' + (dotPct + 2) + '%;background:' + (passes ? '#10b981' : '#dc2626') + ';border-radius:100px;opacity:.25"></div>';
+    // Minimum required marker (vertical line)
+    if (showIdeal && minLv > 1) {
+      barH += '<div style="position:absolute;top:-4px;bottom:-4px;left:' + minPct + '%;width:2px;background:#0f2d52;border-radius:1px;transform:translateX(-50%)" title="Mínimo requerido: ' + NAMES[minLv] + '"></div>';
+      barH += '<div style="position:absolute;top:-14px;left:' + minPct + '%;transform:translateX(-50%);font-size:8px;font-weight:700;color:#0f2d52;white-space:nowrap">Mín.</div>';
+    }
+    // Score dot
+    barH += '<div style="position:absolute;top:50%;left:' + dotPct + '%;transform:translate(-50%,-50%);width:14px;height:14px;border-radius:50%;background:' + dotColor + ';border:2px solid #fff;box-shadow:0 1px 6px rgba(0,0,0,.2)"></div>';
+    barH += '</div>';
+
+    // 5 axis labels
+    barH += '<div style="display:flex;justify-content:space-between;margin-bottom:2px">';
+    for (var i = 1; i <= 5; i++) {
+      var isScore = (i === scoreLv);
+      var isMin   = (i === minLv) && showIdeal;
+      barH += '<span style="font-size:9px;font-weight:' + (isScore ? '800' : '500') + ';color:' + (isScore ? dotColor : (isMin ? '#0f2d52' : '#cbd5e1')) + ';flex:1;text-align:center">' + i + '</span>';
+    }
+    barH += '</div>';
+
+    return '<div style="margin-bottom:20px">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
+      + '<span style="font-size:12px;font-weight:600;color:#0f172a">' + d.label + '</span>'
+      + '<div style="display:flex;align-items:center;gap:8px">'
+      // Show candidate level badge
+      + '<span style="font-size:13px;font-weight:800;color:' + dotColor + '">Nivel ' + scoreLv + '</span>'
+      + (showIdeal && minLv ? '<span style="font-size:10px;color:#94a3b8">/ mín. ' + minLv + '</span>' : '')
+      + '<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:100px;background:' + lv.bg + ';color:' + lv.color + '">' + lv.label + '</span>'
       + '</div></div>'
-      + trackBar(d.score, idealMin100, idealMax100, showIdeal, d.fit, lv)
-      + (showIdeal ? '<div style="font-size:10px;color:#94a3b8;margin-top:1px">Rango ideal: <span style="color:#10b981;font-weight:600">nivel ' + idealMin5 + '–' + idealMax5 + '</span></div>' : '')
+      + barH
+      + (showIdeal && minLv > 1 ? '<div style="font-size:10px;color:#94a3b8;margin-top:1px">Nivel mínimo requerido: <strong style="color:#0f2d52">' + NAMES[minLv] + ' (' + minLv + ')</strong></div>' : '')
       + '</div>';
   }).join('');
 }
@@ -1659,7 +1712,7 @@ function buildReportHtml(c, withClose) {
     + '<div style="text-align:center;min-width:100px">'
     + gaugeHtml(rpt.globalFit, fitLv.color, 100)
     + '<div style="font-size:12px;font-weight:700;color:' + fitLv.color + ';margin-top:3px">' + fitLv.label + '</div>'
-    + '<div style="font-size:10px;color:#999">Ajuste al cargo</div>'
+    + '<div style="font-size:10px;color:#999">Ajuste al perfil</div>'
     + '</div>'
     + '<div style="flex:1;min-width:200px">'
     + '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#999;margin-bottom:6px">Resumen Ejecutivo</div>'
@@ -2084,7 +2137,7 @@ function renderParams() {
         var cfg = k === '_self' ? secData : secData[k];
         if (!cfg) return;
         var fid   = 'p_' + perfil + '_' + secId + '_' + k;
-        var curLv = toDisplay(cfg.min);
+        var curLv = cfg.minLv || scoreToLevel5(cfg.min) || 3;
         var isLast = (ki === sm.keys.length - 1);
 
         out += '<div style="display:flex;align-items:center;gap:16px;padding:14px 18px;'
@@ -2174,8 +2227,9 @@ function saveParams() {
       if (!minEl) return;
       const v5 = parseInt(minEl.value);
       if (!isNaN(v5) && v5 >= 1 && v5 <= 5) {
-        cfg.min = toInternal(v5);
-        cfg.max = 100; // always accept anything at or above minimum
+        cfg.minLv = v5;              // native 1-5 — used by report
+        cfg.min   = (v5 - 1) * 20;  // 0-100 equivalent for calcFit
+        cfg.max   = 100;
         changed++;
       }
     });
@@ -2183,9 +2237,9 @@ function saveParams() {
 
   if (changed > 0) {
     persistParams();
-    showToast('✓ Parámetros guardados — los informes reflejarán estos niveles mínimos.');
+    toast('✓ Parámetros guardados — aplicados al informe', 'ok');
   } else {
-    showToast('Sin cambios detectados.');
+    toast('Sin cambios detectados', 'ok');
   }
 }
 
@@ -2211,10 +2265,10 @@ function persistParams() {
         snapshot[pf][secId] = {};
         // situacional/vigilancia are flat
         if (sec.min !== undefined) {
-          snapshot[pf][secId]._self = { min: sec.min, max: sec.max };
+          snapshot[pf][secId]._self = { min: sec.min, max: sec.max, minLv: sec.minLv };
         } else {
           Object.keys(sec).forEach(function(k) {
-            snapshot[pf][secId][k] = { min: sec[k].min, max: sec[k].max };
+            snapshot[pf][secId][k] = { min: sec[k].min, max: sec[k].max, minLv: sec[k].minLv };
           });
         }
       });
@@ -2241,11 +2295,13 @@ function restoreParams() {
           // flat (situacional/vigilancia)
           if (saved._self.min !== undefined) sec.min = saved._self.min;
           if (saved._self.max !== undefined) sec.max = saved._self.max;
+          if (saved._self.minLv !== undefined) sec.minLv = saved._self.minLv;
         } else {
           Object.keys(saved).forEach(function(k) {
             if (sec[k]) {
               if (saved[k].min !== undefined) sec[k].min = saved[k].min;
               if (saved[k].max !== undefined) sec[k].max = saved[k].max;
+              if (saved[k].minLv !== undefined) sec[k].minLv = saved[k].minLv;
             }
           });
         }
