@@ -424,6 +424,7 @@ input,select,textarea{font-family:inherit;outline:none}
       <button class="nav-btn" id="nav-reports" onclick="adminTab('reports',this)"><span>📄</span><span>Informes</span></button>
       <button class="nav-btn" id="nav-params" onclick="adminTab('params',this)"><span>⚙</span><span>Parámetros</span></button>
       <div style="flex:1"></div>
+      <button class="nav-btn" onclick="downloadAsIndex()" style="color:var(--ink3)"><span>⬇</span><span>Descargar</span></button>
       <button class="nav-btn" onclick="adminLogout()" style="color:var(--ink3)"><span>⎋</span><span>Cerrar sesión</span></button>
     </aside>
     <main style="padding:28px 36px;overflow-y:auto;background:var(--bg);height:100vh">
@@ -1859,22 +1860,26 @@ const NIVEL_LABELS = {1:'Muy Bajo',2:'Bajo',3:'Medio',4:'Alto',5:'Muy Alto'};
 const NIVEL_COLORS = {1:'#8b0000',2:'#c04b1c',3:'#a07528',4:'#3a7850',5:'#1c5d8c'};
 
 function scaleSelector(fieldId, currentVal100, type) {
-  // type: 'min', 'max', 'peso'
   const cur = type === 'peso' ? currentVal100 : toDisplay(currentVal100);
-  let html = `<div style="display:flex;gap:4px" id="sel_${fieldId}_${type}">`;
+  let h = '<div style="display:flex;gap:4px" id="sel_' + fieldId + '_' + type + '">';
   for (let i = 1; i <= 5; i++) {
     const active = i === cur;
     const color = NIVEL_COLORS[i];
-    html += `<button type="button"
-      onclick="selectParam('${fieldId}','${type}',${i})"
-      id="sbtn_${fieldId}_${type}_${i}"
-      style="width:36px;height:36px;border-radius:8px;border:2px solid ${active ? color : 'var(--border)'};
-             background:${active ? color : 'var(--surface)'};color:${active ? '#fff' : 'var(--ink3)'};
-             font-size:13px;font-weight:800;cursor:pointer;transition:all .15s;flex-shrink:0"
-      title="${type === 'peso' ? 'Peso ' + i : NIVEL_LABELS[i]}">${i}</button>`;
+    const bc  = active ? color : 'var(--border)';
+    const bg  = active ? color : '#fff';
+    const fc  = active ? '#fff' : '#999';
+    const tip = type === 'peso' ? 'Peso ' + i : NIVEL_LABELS[i];
+    h += '<button type="button"'
+      + ' onclick="selectParam(\'' + fieldId + '\',\'' + type + '\',' + i + ')"'
+      + ' id="sbtn_' + fieldId + '_' + type + '_' + i + '"'
+      + ' title="' + tip + '"'
+      + ' style="width:36px;height:36px;border-radius:6px;border:1.5px solid ' + bc + ';'
+      + 'background:' + bg + ';color:' + fc + ';'
+      + 'font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0">'
+      + i + '</button>';
   }
-  html += `</div>`;
-  return html;
+  h += '</div>';
+  return h;
 }
 
 function selectParam(fieldId, type, val) {
@@ -1898,11 +1903,11 @@ function selectParam(fieldId, type, val) {
 
 function renderParams() {
   try {
-    const perfil = _paramPerfil;
-    const ideal = PERFIL_IDEAL[perfil];
+    var perfil = _paramPerfil;
+    var ideal = PERFIL_IDEAL[perfil];
     if (!ideal) { document.getElementById('params-content').innerHTML = '<p>Perfil no encontrado.</p>'; return; }
 
-    const SECTION_META = {
+    var SECTION_META = {
       pf16: { icon:'🧠', title:'Personalidad (16PF)', keys:['A','C','E','F','G','H','I','L','M','N','O','Q1','Q3','Q4'] },
       pai:  { icon:'🔎', title:'Ajuste Psicológico (PAI)', keys:['EE','AS','ON','ME','IL','ML'] },
       dc0:  { icon:'⚡', title:'Aptitud Cognitiva (DC-0)', keys:['V','N','L'] },
@@ -1910,65 +1915,70 @@ function renderParams() {
       vigilancia:  { icon:'🛡', title:'Aptitud Vigilancia', keys:['_self'] },
     };
 
-    let html = `<div style="background:var(--gold-l);border:1px solid var(--gold);border-radius:10px;padding:12px 16px;font-size:12px;color:var(--ink2);margin-bottom:16px;line-height:1.6">
-      ℹ️ <strong>Escala 1–5:</strong> Cada dimensión usa una escala de 1 (Muy Bajo) a 5 (Muy Alto). Define el rango ideal para el cargo seleccionando el nivel mínimo y máximo esperado. El <strong>Peso</strong> determina cuánto influye esa dimensión en el índice global de ajuste.
-    </div>`;
+    var out = '<div style="background:#fffbeb;border:1px solid #e5d4a0;border-radius:8px;padding:12px 16px;font-size:12px;color:#555;margin-bottom:16px;line-height:1.6">'
+      + 'Escala 1-5: selecciona el nivel minimo y maximo ideal para cada dimension. El <strong>Peso</strong> indica cuanto influye en el indice global.'
+      + '</div>';
 
-    Object.entries(SECTION_META).forEach(([secId, secMeta]) => {
-      const secData = ideal[secId];
+    Object.entries(SECTION_META).forEach(function(entry) {
+      var secId = entry[0]; var secMeta = entry[1];
+      var secData = ideal[secId];
       if (!secData) return;
 
-      html += `<div class="card cp" style="margin-bottom:14px">
-        <div class="res-section-title" style="margin-bottom:16px">${secMeta.icon} ${secMeta.title}</div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">`;
+      out += '<div class="card" style="margin-bottom:14px;padding:20px">';
+      out += '<div style="font-size:15px;font-weight:700;margin-bottom:16px">' + secMeta.icon + ' ' + secMeta.title + '</div>';
+      out += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px">';
 
-      secMeta.keys.forEach(k => {
-        const cfg = k === '_self' ? secData : secData[k];
+      secMeta.keys.forEach(function(k) {
+        var cfg = k === '_self' ? secData : secData[k];
         if (!cfg) return;
-        const fieldId = `p_${perfil}_${secId}_${k}`;
-        const dispMin  = toDisplay(cfg.min);
-        const dispMax  = toDisplay(cfg.max);
-        const dispPeso = cfg.peso;
+        var fid = 'p_' + perfil + '_' + secId + '_' + k;
+        var dmin  = toDisplay(cfg.min);
+        var dmax  = toDisplay(cfg.max);
+        var dpeso = cfg.peso;
 
-        html += `<div style="background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:14px 16px">
-          <div style="font-size:13px;font-weight:800;color:var(--ink);margin-bottom:2px">${cfg.label}</div>
-          <div style="font-size:11px;color:var(--ink3);margin-bottom:12px;line-height:1.4">${cfg.req}</div>
+        out += '<div style="border:1px solid var(--border);border-radius:8px;padding:14px">';
+        out += '<div style="font-size:13px;font-weight:700;margin-bottom:2px">' + cfg.label + '</div>';
+        out += '<div style="font-size:11px;color:#999;margin-bottom:12px;line-height:1.4">' + cfg.req + '</div>';
 
-          <div style="margin-bottom:10px">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-              <span style="font-size:11px;font-weight:700;color:var(--ink2)">Nivel mínimo ideal</span>
-              <span id="lbl_${fieldId}_min" style="font-size:11px;font-weight:700;color:${NIVEL_COLORS[dispMin]}">${NIVEL_LABELS[dispMin]}</span>
-            </div>
-            ${scaleSelector(fieldId, cfg.min, 'min')}
-            <input type="hidden" id="hid_${fieldId}_min" value="${dispMin}">
-          </div>
+        // Min row
+        out += '<div style="margin-bottom:10px">';
+        out += '<div style="display:flex;justify-content:space-between;margin-bottom:5px">';
+        out += '<span style="font-size:11px;font-weight:600;color:#555">Mínimo ideal</span>';
+        out += '<span id="lbl_' + fid + '_min" style="font-size:11px;font-weight:700;color:' + NIVEL_COLORS[dmin] + '">' + NIVEL_LABELS[dmin] + '</span>';
+        out += '</div>';
+        out += scaleSelector(fid, cfg.min, 'min');
+        out += '<input type="hidden" id="hid_' + fid + '_min" value="' + dmin + '">';
+        out += '</div>';
 
-          <div style="margin-bottom:10px">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-              <span style="font-size:11px;font-weight:700;color:var(--ink2)">Nivel máximo ideal</span>
-              <span id="lbl_${fieldId}_max" style="font-size:11px;font-weight:700;color:${NIVEL_COLORS[dispMax]}">${NIVEL_LABELS[dispMax]}</span>
-            </div>
-            ${scaleSelector(fieldId, cfg.max, 'max')}
-            <input type="hidden" id="hid_${fieldId}_max" value="${dispMax}">
-          </div>
+        // Max row
+        out += '<div style="margin-bottom:10px">';
+        out += '<div style="display:flex;justify-content:space-between;margin-bottom:5px">';
+        out += '<span style="font-size:11px;font-weight:600;color:#555">Máximo ideal</span>';
+        out += '<span id="lbl_' + fid + '_max" style="font-size:11px;font-weight:700;color:' + NIVEL_COLORS[dmax] + '">' + NIVEL_LABELS[dmax] + '</span>';
+        out += '</div>';
+        out += scaleSelector(fid, cfg.max, 'max');
+        out += '<input type="hidden" id="hid_' + fid + '_max" value="' + dmax + '">';
+        out += '</div>';
 
-          <div>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-              <span style="font-size:11px;font-weight:700;color:var(--ink2)">Peso en el índice global</span>
-              <span id="lbl_${fieldId}_peso" style="font-size:11px;font-weight:700;color:var(--ink3)">Peso: ${dispPeso}</span>
-            </div>
-            ${scaleSelector(fieldId, dispPeso, 'peso')}
-            <input type="hidden" id="hid_${fieldId}_peso" value="${dispPeso}">
-          </div>
-        </div>`;
+        // Peso row
+        out += '<div>';
+        out += '<div style="display:flex;justify-content:space-between;margin-bottom:5px">';
+        out += '<span style="font-size:11px;font-weight:600;color:#555">Peso</span>';
+        out += '<span id="lbl_' + fid + '_peso" style="font-size:11px;font-weight:700;color:#555">Peso: ' + dpeso + '</span>';
+        out += '</div>';
+        out += scaleSelector(fid, dpeso, 'peso');
+        out += '<input type="hidden" id="hid_' + fid + '_peso" value="' + dpeso + '">';
+        out += '</div>';
+
+        out += '</div>'; // end dim card
       });
 
-      html += `</div></div>`;
+      out += '</div></div>'; // end grid + section card
     });
 
-    document.getElementById('params-content').innerHTML = html;
+    document.getElementById('params-content').innerHTML = out;
   } catch(e) {
-    document.getElementById('params-content').innerHTML = '<div style="padding:20px;color:var(--accent)">Error al cargar parámetros: ' + e.message + '</div>';
+    document.getElementById('params-content').innerHTML = '<div style="padding:20px;color:red">Error: ' + e.message + '</div>';
     console.error(e);
   }
 }
@@ -2134,6 +2144,16 @@ function adminLogin() {
 }
 
 function adminLogout() { showView('landing'); }
+
+function downloadAsIndex() {
+  const html = document.documentElement.outerHTML;
+  const blob = new Blob([html], {type: 'text/html'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'index.html';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
 
 function closeCandModal() {
   document.getElementById('cand-modal-overlay').style.display = 'none';
