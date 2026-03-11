@@ -8,26 +8,30 @@
 /* ── Reset & Variables ── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#f9f9f9;
+  --bg:#f8fafc;
   --surface:#ffffff;
-  --surface2:#f2f2f2;
-  --ink:#111111;
-  --ink2:#555555;
-  --ink3:#999999;
-  --accent:#111111;
-  --accent-l:#f2f2f2;
+  --surface2:#f1f5f9;
+  --ink:#0f172a;
+  --ink2:#475569;
+  --ink3:#94a3b8;
+  --accent:#10b981;
+  --accent-l:#ecfdf5;
+  --navy:#0f2d52;
+  --navy-l:#e8f0fb;
+  --emerald:#10b981;
+  --emerald-l:#ecfdf5;
   --blue:#2563eb;
   --blue-l:#eff6ff;
-  --green:#16a34a;
-  --green-l:#f0fdf4;
+  --green:#10b981;
+  --green-l:#ecfdf5;
   --gold:#b45309;
   --gold-l:#fffbeb;
-  --border:#e5e5e5;
-  --border2:#d4d4d4;
-  --r:8px;
-  --rl:12px;
-  --sh:0 1px 3px rgba(0,0,0,.06);
-  --shl:0 4px 24px rgba(0,0,0,.10);
+  --border:#e2e8f0;
+  --border2:#cbd5e1;
+  --r:10px;
+  --rl:14px;
+  --sh:0 1px 3px rgba(15,45,82,.05),0 4px 16px rgba(15,45,82,.06);
+  --shl:0 8px 32px rgba(15,45,82,.12),0 2px 8px rgba(15,45,82,.06);
 }
 
 /* ── Base ── */
@@ -425,7 +429,6 @@ input,select,textarea{font-family:inherit;outline:none}
       <button class="nav-btn" id="nav-reports" onclick="adminTab('reports',this)"><span>📄</span><span>Informes</span></button>
       <button class="nav-btn" id="nav-params" onclick="adminTab('params',this)"><span>⚙</span><span>Parámetros</span></button>
       <div style="flex:1"></div>
-      <button class="nav-btn" onclick="downloadAsIndex()" style="color:var(--ink3)"><span>⬇</span><span>Descargar</span></button>
       <button class="nav-btn" onclick="adminLogout()" style="color:var(--ink3)"><span>⎋</span><span>Cerrar sesión</span></button>
     </aside>
     <main style="padding:28px 36px;overflow-y:auto;background:var(--bg);height:100vh">
@@ -1505,30 +1508,66 @@ function scoreToLevel5(score100) {
 }
 const LEVEL5_NAMES = {1:'Muy Bajo',2:'Bajo',3:'Medio',4:'Alto',5:'Muy Alto'};
 
+// ── Track helpers ─────────────────────────────────────────────────────────
+// Renders a 1-5 sleek horizontal track with:
+//   • shaded ideal zone (if showIdeal)
+//   • navy dot at actual score position
+function trackBar(score100, idealMin100, idealMax100, showIdeal, fitPct, fitLv) {
+  // Normalise to 0-100 rail
+  var pct = Math.max(0, Math.min(100, score100));
+  var iMin = Math.max(0, Math.min(100, idealMin100 || 0));
+  var iMax = Math.max(0, Math.min(100, idealMax100 || 100));
+  var iWidth = Math.max(0, iMax - iMin);
+
+  // Score label in 1-5 scale
+  var scoreL5 = scoreToLevel5(score100);
+  var inZone   = score100 >= idealMin100 && score100 <= idealMax100;
+  var dotColor = inZone ? '#10b981' : '#0f2d52';
+
+  var h = '<div style="position:relative;height:6px;background:#e2e8f0;border-radius:100px;margin:8px 0 4px">';
+  // Ideal shaded zone
+  if (showIdeal && iWidth > 0) {
+    h += '<div style="position:absolute;top:0;bottom:0;left:' + iMin + '%;width:' + iWidth + '%;background:rgba(16,185,129,.18);border-radius:100px"></div>';
+    h += '<div style="position:absolute;top:-2px;bottom:-2px;left:' + iMin + '%;width:2px;background:rgba(16,185,129,.5);border-radius:1px"></div>';
+    h += '<div style="position:absolute;top:-2px;bottom:-2px;left:' + iMax + '%;width:2px;background:rgba(16,185,129,.5);border-radius:1px"></div>';
+  }
+  // Score dot
+  h += '<div style="position:absolute;top:50%;left:' + pct + '%;transform:translate(-50%,-50%);width:12px;height:12px;border-radius:50%;background:' + dotColor + ';border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.2);transition:left .6s ease"></div>';
+  h += '</div>';
+  // Axis labels
+  h += '<div style="display:flex;justify-content:space-between;margin-bottom:2px">';
+  for (var i = 1; i <= 5; i++) {
+    h += '<span style="font-size:9px;font-weight:600;color:' + (i === scoreL5 ? dotColor : '#94a3b8') + ';min-width:0;text-align:center;flex:1">' + i + '</span>';
+  }
+  h += '</div>';
+  return h;
+}
+
 function miniBars(dims, showIdeal) {
-  return dims.map(d => {
-    const lv = fitLabel(d.fit);
-    const scoreColor = d.gap==='ok' ? '#3a7850' : d.gap==='bajo' ? '#c04b1c' : '#a07528';
-    const scoreL5 = scoreToLevel5(d.score);
-    // Convert ideal range from 0-100 to 1-5
-    let idealMin5 = '', idealMax5 = '';
+  return dims.map(function(d) {
+    var lv = fitLabel(d.fit);
+    var scoreL5 = scoreToLevel5(d.score);
+    var idealMin100 = 0, idealMax100 = 100;
+    var idealMin5 = 1, idealMax5 = 5;
     if (d.ideal) {
-      const parts = d.ideal.split('–');
-      idealMin5 = scoreToLevel5(parseInt(parts[0]||0));
-      idealMax5 = scoreToLevel5(parseInt(parts[1]||100));
+      var pts = d.ideal.split('–');
+      idealMin100 = parseInt(pts[0]) || 0;
+      idealMax100 = parseInt(pts[1]) || 100;
+      idealMin5 = scoreToLevel5(idealMin100);
+      idealMax5 = scoreToLevel5(idealMax100);
     }
-    return '<div style="margin-bottom:12px">'
-      + '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">'
-      + '<span style="font-size:12px;font-weight:600;color:var(--ink)">' + d.label + '</span>'
+    var inZone = d.score >= idealMin100 && d.score <= idealMax100;
+    var scoreColor = inZone ? '#10b981' : '#0f2d52';
+
+    return '<div style="margin-bottom:18px">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">'
+      + '<span style="font-size:12px;font-weight:600;color:#0f172a;letter-spacing:-.01em">' + d.label + '</span>'
       + '<div style="display:flex;align-items:center;gap:6px">'
-      + '<span style="font-size:11px;font-weight:800;color:' + scoreColor + '">Nivel ' + scoreL5 + ' — ' + LEVEL5_NAMES[scoreL5] + '</span>'
-      + '<span style="font-size:10px;font-weight:700;color:' + lv.color + ';background:' + lv.bg + ';padding:1px 7px;border-radius:20px;border:1px solid ' + lv.color + '30">' + lv.label + '</span>'
+      + '<span style="font-size:11px;font-weight:700;color:' + scoreColor + '">' + LEVEL5_NAMES[scoreL5] + '</span>'
+      + '<span style="font-size:10px;font-weight:600;color:' + lv.color + ';background:' + lv.bg + ';padding:1px 8px;border-radius:100px">' + lv.label + '</span>'
       + '</div></div>'
-      + '<div style="position:relative;height:10px;background:var(--border);border-radius:5px;overflow:hidden">'
-      + '<div style="height:100%;width:' + d.score + '%;background:' + scoreColor + ';border-radius:5px;transition:width .8s ease"></div>'
-      + (showIdeal && d.ideal ? '<div style="position:absolute;top:0;height:100%;left:' + d.ideal.split('\u2013')[0].split('–')[0] + '%;width:' + Math.max(0,parseInt(d.ideal.split('–')[1]||d.ideal.split('–')[0]||100)-parseInt(d.ideal.split('–')[0]||0)) + '%;background:rgba(0,0,0,.12);border-left:2px solid rgba(0,0,0,.3);border-right:2px solid rgba(0,0,0,.3)"></div>' : '')
-      + '</div>'
-      + (showIdeal && idealMin5 ? '<div style="font-size:10px;color:var(--ink3);margin-top:2px">Ideal: nivel ' + idealMin5 + '–' + idealMax5 + ' (' + LEVEL5_NAMES[idealMin5] + '–' + LEVEL5_NAMES[idealMax5] + ') &nbsp;·&nbsp; Ajuste: <strong style="color:' + lv.color + '">' + d.fit + '%</strong></div>' : '')
+      + trackBar(d.score, idealMin100, idealMax100, showIdeal, d.fit, lv)
+      + (showIdeal ? '<div style="font-size:10px;color:#94a3b8;margin-top:1px">Rango ideal: <span style="color:#10b981;font-weight:600">nivel ' + idealMin5 + '–' + idealMax5 + '</span></div>' : '')
       + '</div>';
   }).join('');
 }
@@ -1564,7 +1603,7 @@ function buildReportHtml(c, withClose) {
     + '<div style="font-size:22px;font-weight:800;margin-bottom:2px">' + c.nombre + ' ' + c.apellido + '</div>'
     + '<div style="font-size:13px;color:rgba(255,255,255,.45)">' + pm.icon + ' ' + pm.label + ' &nbsp;·&nbsp; Evaluado el ' + c.fecha + '</div>'
     + '</div>'
-    + (withClose ? '<button onclick="closeCandModal()" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:20px;cursor:pointer;flex-shrink:0;line-height:1">✕</button>' : '')
+    + (withClose ? '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0"><button onclick="printCandReport(currentReportId)" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:12px;font-weight:600;padding:6px 12px;border-radius:6px;cursor:pointer">⎙ Imprimir</button><button onclick="closeCandModal()" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:20px;cursor:pointer;line-height:1">✕</button></div>' : '')
     + '</div></div>';
 
   if (isLegacy) {
@@ -1901,7 +1940,9 @@ function buildReportHtml(c, withClose) {
   html += '</div>'; // end rpt-modal
   return html;
 }
+let currentReportId = null;
 async function viewCandReport(id) {
+  currentReportId = id;
   document.getElementById('cand-modal-overlay').style.display = 'flex';
   document.getElementById('cand-modal-content').innerHTML = '<div style="padding:80px;text-align:center;color:var(--ink3)">Cargando informe…</div>';
   try {
@@ -1942,23 +1983,39 @@ function toInternalMax(val5) { return val5 === 5 ? 100 : val5 * 20 - 1; }
 const NIVEL_LABELS = {1:'Muy Bajo',2:'Bajo',3:'Medio',4:'Alto',5:'Muy Alto'};
 const NIVEL_COLORS = {1:'#8b0000',2:'#c04b1c',3:'#a07528',4:'#3a7850',5:'#1c5d8c'};
 
+// Renders a segmented click-track for 1-5 selection
 function scaleSelector(fieldId, currentVal100, type) {
   var cur = type === 'peso' ? currentVal100 : toDisplay(currentVal100);
-  var h = '<div style="display:flex;gap:4px">';
+  // For range track: this is a single-point selector (min, max, or peso)
+  var isRange = (type === 'min' || type === 'max');
+  var emerald = '#10b981', navy = '#0f2d52';
+  var activeColor = isRange ? emerald : navy;
+  var NAMES = {1:'Muy Bajo',2:'Bajo',3:'Medio',4:'Alto',5:'Muy Alto'};
+
+  // Build 5-segment horizontal track
+  var h = '<div style="display:flex;gap:0;position:relative;height:40px;align-items:center">';
+  // Background rail
+  h += '<div style="position:absolute;left:0;right:0;height:4px;background:#e2e8f0;border-radius:100px"></div>';
+  // Filled portion up to selected
+  var fillPct = ((cur - 1) / 4) * 100;
+  h += '<div style="position:absolute;left:0;height:4px;width:' + fillPct + '%;background:' + activeColor + ';border-radius:100px;transition:width .2s"></div>';
+  // 5 tick points
   for (var i = 1; i <= 5; i++) {
+    var left = ((i - 1) / 4) * 100;
     var active = (i === cur);
-    var color = NIVEL_COLORS[i];
-    var bc = active ? color : '#e5e5e5';
-    var bg = active ? color : '#fff';
-    var fc = active ? '#fff' : '#999';
-    h += '<button type="button"'
-      + ' data-fid="' + fieldId + '"'
-      + ' data-type="' + type + '"'
-      + ' data-val="' + i + '"'
-      + ' id="sbtn_' + fieldId + '_' + type + '_' + i + '"'
-      + ' onclick="selectParam(this.dataset.fid, this.dataset.type, +this.dataset.val)"'
-      + ' style="width:36px;height:36px;border-radius:6px;border:1.5px solid ' + bc + ';background:' + bg + ';color:' + fc + ';font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0">'
-      + i + '</button>';
+    h += '<div style="position:absolute;left:' + left + '%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;cursor:pointer"'
+      + ' onclick="selectParam(\'' + fieldId + '\',\'' + type + '\',' + i + ')"'
+      + ' data-fid="' + fieldId + '" data-type="' + type + '" data-val="' + i + '">'
+      + '<div id="sbtn_' + fieldId + '_' + type + '_' + i + '"'
+      + ' style="width:' + (active ? '16px' : '10px') + ';height:' + (active ? '16px' : '10px') + ';border-radius:50%;'
+      + 'background:' + (active ? activeColor : '#e2e8f0') + ';'
+      + 'border:' + (active ? '2px solid ' + activeColor : '2px solid #cbd5e1') + ';'
+      + 'transition:all .15s;box-shadow:' + (active ? '0 0 0 3px ' + activeColor + '20' : 'none') + '">'
+      + '</div>'
+      + '<span style="font-size:9px;font-weight:' + (active ? '700' : '500') + ';color:' + (active ? activeColor : '#94a3b8') + ';margin-top:4px;white-space:nowrap">'
+      + (i === 1 ? 'Muy Bajo' : i === 5 ? 'Muy Alto' : i)
+      + '</span>'
+      + '</div>';
   }
   h += '</div>';
   return h;
@@ -1966,19 +2023,74 @@ function scaleSelector(fieldId, currentVal100, type) {
 
 function selectParam(fieldId, type, val) {
   val = +val;
+  var isRange = (type === 'min' || type === 'max');
+  var activeColor = isRange ? '#10b981' : '#0f2d52';
+  var NAMES = {1:'Muy Bajo',2:'Bajo',3:'Medio',4:'Alto',5:'Muy Alto'};
+
   for (var i = 1; i <= 5; i++) {
-    var btn = document.getElementById('sbtn_' + fieldId + '_' + type + '_' + i);
-    if (!btn) continue;
+    var dot = document.getElementById('sbtn_' + fieldId + '_' + type + '_' + i);
+    if (!dot) continue;
     var active = (i === val);
-    var color = NIVEL_COLORS[i];
-    btn.style.borderColor = active ? color : '#e5e5e5';
-    btn.style.background  = active ? color : '#fff';
-    btn.style.color       = active ? '#fff' : '#999';
+    dot.style.width  = active ? '16px' : '10px';
+    dot.style.height = active ? '16px' : '10px';
+    dot.style.background = active ? activeColor : '#e2e8f0';
+    dot.style.borderColor = active ? activeColor : '#cbd5e1';
+    dot.style.boxShadow = active ? '0 0 0 3px ' + activeColor + '20' : 'none';
+  }
+  // Update fill bar — find parent div and update fill child
+  var dot1 = document.getElementById('sbtn_' + fieldId + '_' + type + '_1');
+  if (dot1) {
+    var container = dot1.parentNode && dot1.parentNode.parentNode;
+    if (container) {
+      var fills = container.children;
+      for (var j = 0; j < fills.length; j++) {
+        var el = fills[j];
+        if (el.style && el.style.position === 'absolute' && el.style.height === '4px' && el.style.left === '0px') {
+          el.style.width = (((val - 1) / 4) * 100) + '%';
+          break;
+        }
+      }
+    }
   }
   var hidden = document.getElementById('hid_' + fieldId + '_' + type);
   if (hidden) hidden.value = val;
   var lbl = document.getElementById('lbl_' + fieldId + '_' + type);
-  if (lbl) lbl.textContent = type === 'peso' ? 'Peso: ' + val : NIVEL_LABELS[val];
+  if (lbl) lbl.textContent = type === 'peso' ? 'Peso: ' + val + '/5' : NAMES[val];
+}
+
+
+function setRangePoint(fid, val) {
+  var minEl = document.getElementById('hid_' + fid + '_min');
+  var maxEl = document.getElementById('hid_' + fid + '_max');
+  if (!minEl || !maxEl) return;
+  var curMin = parseInt(minEl.value) || 1;
+  var curMax = parseInt(maxEl.value) || 5;
+  var NAMES = {1:'Muy Bajo',2:'Bajo',3:'Medio',4:'Alto',5:'Muy Alto'};
+
+  // Smart assignment: if clicking below current min → set new min
+  //                   if clicking above current max → set new max
+  //                   if clicking inside → move nearest endpoint
+  var newMin = curMin, newMax = curMax;
+  if (val < curMin) newMin = val;
+  else if (val > curMax) newMax = val;
+  else {
+    var distMin = Math.abs(val - curMin), distMax = Math.abs(val - curMax);
+    if (distMin <= distMax) newMin = val; else newMax = val;
+  }
+  if (newMin > newMax) { var tmp = newMin; newMin = newMax; newMax = tmp; }
+
+  minEl.value = newMin; maxEl.value = newMax;
+
+  // Update fill
+  var minPct = ((newMin-1)/4)*100, maxPct = ((newMax-1)/4)*100, zonePct = maxPct-minPct;
+  var fill = document.getElementById('range_fill_' + fid);
+  if (fill) { fill.style.left = minPct+'%'; fill.style.width = zonePct+'%'; }
+  var lb = document.getElementById('range_lbound_' + fid);
+  if (lb) lb.style.left = minPct+'%';
+  var rb = document.getElementById('range_rbound_' + fid);
+  if (rb) rb.style.left = maxPct+'%';
+  var lbl = document.getElementById('lbl_range_' + fid);
+  if (lbl) lbl.textContent = NAMES[newMin] + ' → ' + NAMES[newMax];
 }
 
 function renderParams() {
@@ -1995,8 +2107,10 @@ function renderParams() {
       vigilancia:  { icon:'🛡', title:'Aptitud Vigilancia', keys:['_self'] },
     };
 
-    var out = '<div style="background:#fffbeb;border:1px solid #e5d4a0;border-radius:8px;padding:12px 16px;font-size:12px;color:#555;margin-bottom:16px;line-height:1.6">'
-      + 'Escala 1-5: selecciona el nivel minimo y maximo ideal para cada dimension. El <strong>Peso</strong> indica cuanto influye en el indice global.'
+    // Hint bar
+    var out = '<div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:#f8fafc;border-radius:10px;margin-bottom:20px">'
+      + '<div style="width:32px;height:4px;background:linear-gradient(90deg,#10b981,#0f2d52);border-radius:100px;flex-shrink:0"></div>'
+      + '<span style="font-size:12px;color:#475569;line-height:1.5">Arrastra o toca los puntos para definir el <strong style="color:#10b981">rango ideal</strong> (verde) y el <strong style="color:#0f2d52">peso</strong> (azul) de cada dimensión.</span>'
       + '</div>';
 
     Object.entries(SECTION_META).forEach(function(entry) {
@@ -2004,9 +2118,13 @@ function renderParams() {
       var secData = ideal[secId];
       if (!secData) return;
 
-      out += '<div class="card" style="margin-bottom:14px;padding:20px">';
-      out += '<div style="font-size:15px;font-weight:700;margin-bottom:16px">' + secMeta.icon + ' ' + secMeta.title + '</div>';
-      out += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px">';
+      // Section header — no border card, just shadow
+      out += '<div style="background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(15,45,82,.07);margin-bottom:16px;padding:24px 28px">';
+      out += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:20px">';
+      out += '<span style="font-size:18px">' + secMeta.icon + '</span>';
+      out += '<span style="font-size:15px;font-weight:700;color:#0f172a;letter-spacing:-.02em">' + secMeta.title + '</span>';
+      out += '</div>';
+      out += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:24px">';
 
       secMeta.keys.forEach(function(k) {
         var cfg = k === '_self' ? secData : secData[k];
@@ -2015,36 +2133,60 @@ function renderParams() {
         var dmin  = toDisplay(cfg.min);
         var dmax  = toDisplay(cfg.max);
         var dpeso = cfg.peso;
+        var NAMES = {1:'Muy Bajo',2:'Bajo',3:'Medio',4:'Alto',5:'Muy Alto'};
 
-        out += '<div style="border:1px solid var(--border);border-radius:8px;padding:14px">';
-        out += '<div style="font-size:13px;font-weight:700;margin-bottom:2px">' + cfg.label + '</div>';
-        out += '<div style="font-size:11px;color:#999;margin-bottom:12px;line-height:1.4">' + cfg.req + '</div>';
+        out += '<div style="padding:0">';
 
-        // Min row
-        out += '<div style="margin-bottom:10px">';
-        out += '<div style="display:flex;justify-content:space-between;margin-bottom:5px">';
-        out += '<span style="font-size:11px;font-weight:600;color:#555">Mínimo ideal</span>';
-        out += '<span id="lbl_' + fid + '_min" style="font-size:11px;font-weight:700;color:' + NIVEL_COLORS[dmin] + '">' + NIVEL_LABELS[dmin] + '</span>';
+        // Dim header
+        out += '<div style="margin-bottom:16px">';
+        out += '<div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:3px">' + cfg.label + '</div>';
+        out += '<div style="font-size:11px;color:#94a3b8;line-height:1.45">' + cfg.req + '</div>';
         out += '</div>';
-        out += scaleSelector(fid, cfg.min, 'min');
+
+        // ── Ideal Range track (combined min + max = shaded zone) ──
+        out += '<div style="margin-bottom:20px">';
+        out += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">';
+        out += '<span style="font-size:11px;font-weight:600;color:#475569;text-transform:uppercase;letter-spacing:.5px">Rango Ideal</span>';
+        out += '<span style="font-size:11px;font-weight:700;color:#10b981" id="lbl_range_' + fid + '">'
+          + NAMES[dmin] + ' → ' + NAMES[dmax] + '</span>';
+        out += '</div>';
+
+        // Combined range visual: shows shaded zone between min and max
+        var minPct = ((dmin - 1) / 4) * 100;
+        var maxPct = ((dmax - 1) / 4) * 100;
+        var zonePct = maxPct - minPct;
+        out += '<div style="position:relative;height:50px">';
+        // Rail
+        out += '<div style="position:absolute;top:8px;left:0;right:0;height:4px;background:#e2e8f0;border-radius:100px"></div>';
+        // Shaded ideal zone
+        out += '<div id="range_fill_' + fid + '" style="position:absolute;top:8px;left:' + minPct + '%;width:' + zonePct + '%;height:4px;background:rgba(16,185,129,.3);border-radius:100px;transition:all .2s"></div>';
+        // Left boundary line
+        out += '<div id="range_lbound_' + fid + '" style="position:absolute;top:4px;left:' + minPct + '%;width:2px;height:12px;background:#10b981;border-radius:1px;transform:translateX(-50%);transition:left .2s"></div>';
+        // Right boundary line
+        out += '<div id="range_rbound_' + fid + '" style="position:absolute;top:4px;left:' + maxPct + '%;width:2px;height:12px;background:#10b981;border-radius:1px;transform:translateX(-50%);transition:left .2s"></div>';
+        // 5 tick dots
+        for (var i = 1; i <= 5; i++) {
+          var lp = ((i - 1) / 4) * 100;
+          var inZone = (i >= dmin && i <= dmax);
+          out += '<div style="position:absolute;top:4px;left:' + lp + '%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;cursor:pointer;gap:4px"'
+            + ' onclick="setRangePoint(\'' + fid + '\',' + i + ')">';
+          out += '<div style="width:' + (inZone?12:8) + 'px;height:' + (inZone?12:8) + 'px;border-radius:50%;'
+            + 'background:' + (inZone?'#10b981':'#e2e8f0') + ';border:2px solid ' + (inZone?'#10b981':'#cbd5e1') + ';transition:all .15s"></div>';
+          out += '<span style="font-size:9px;font-weight:' + (inZone?'700':'400') + ';color:' + (inZone?'#10b981':'#94a3b8') + ';margin-top:16px;position:absolute;top:8px">' + i + '</span>';
+          out += '</div>';
+        }
+        out += '</div>';
+
+        // Hidden state
         out += '<input type="hidden" id="hid_' + fid + '_min" value="' + dmin + '">';
-        out += '</div>';
-
-        // Max row
-        out += '<div style="margin-bottom:10px">';
-        out += '<div style="display:flex;justify-content:space-between;margin-bottom:5px">';
-        out += '<span style="font-size:11px;font-weight:600;color:#555">Máximo ideal</span>';
-        out += '<span id="lbl_' + fid + '_max" style="font-size:11px;font-weight:700;color:' + NIVEL_COLORS[dmax] + '">' + NIVEL_LABELS[dmax] + '</span>';
-        out += '</div>';
-        out += scaleSelector(fid, cfg.max, 'max');
         out += '<input type="hidden" id="hid_' + fid + '_max" value="' + dmax + '">';
         out += '</div>';
 
-        // Peso row
-        out += '<div>';
-        out += '<div style="display:flex;justify-content:space-between;margin-bottom:5px">';
-        out += '<span style="font-size:11px;font-weight:600;color:#555">Peso</span>';
-        out += '<span id="lbl_' + fid + '_peso" style="font-size:11px;font-weight:700;color:#555">Peso: ' + dpeso + '</span>';
+        // ── Weight — single bold dot on navy track ──
+        out += '<div style="padding-top:4px;border-top:1px solid #f1f5f9">';
+        out += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">';
+        out += '<span style="font-size:11px;font-weight:600;color:#475569;text-transform:uppercase;letter-spacing:.5px">Peso</span>';
+        out += '<span style="font-size:11px;font-weight:700;color:#0f2d52" id="lbl_' + fid + '_peso">Peso: ' + dpeso + '/5</span>';
         out += '</div>';
         out += scaleSelector(fid, dpeso, 'peso');
         out += '<input type="hidden" id="hid_' + fid + '_peso" value="' + dpeso + '">';
@@ -2053,7 +2195,7 @@ function renderParams() {
         out += '</div>'; // end dim card
       });
 
-      out += '</div></div>'; // end grid + section card
+      out += '</div></div>'; // end grid + section
     });
 
     document.getElementById('params-content').innerHTML = out;
@@ -2235,6 +2377,27 @@ function downloadAsIndex() {
   URL.revokeObjectURL(a.href);
 }
 
+async function printCandReport(id) {
+  if (!id) return;
+  const all = await getDB();
+  const c = all.find(x => x.id === id);
+  if (!c) return;
+  const html = buildReportHtml(c, false);
+  const w = window.open('','_blank','width=900,height=700');
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Informe — ' + c.nombre + ' ' + c.apellido + '</title>');
+  w.document.write('<style>');
+  w.document.write('*{box-sizing:border-box;margin:0;padding:0}');
+  w.document.write('body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;font-size:13px;line-height:1.5;color:#111;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}');
+  w.document.write(':root{--bg:#f5f5f5;--surface:#fff;--surface2:#eee;--ink:#111;--ink2:#555;--ink3:#999;--accent:#111;--border:#e5e5e5;--border2:#ccc;--green:#16a34a;--green-l:#f0fdf4;--gold:#b45309;--gold-l:#fffbeb;--rl:8px;--r:8px;--sh:none}');
+  w.document.write('.card{background:#fff;border:1px solid #e5e5e5;border-radius:8px}.cp{padding:20px}.res-section-title{font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px;margin-bottom:14px}');
+  w.document.write('@media print{body{margin:0}@page{margin:12mm;size:A4}}');
+  w.document.write('</style></head><body>');
+  w.document.write(html);
+  w.document.write('</body></html>');
+  w.document.close();
+  setTimeout(function() { w.focus(); w.print(); }, 600);
+}
+
 function printReport() {
   const content = document.getElementById('cand-modal-content');
   if (!content) return;
@@ -2355,8 +2518,8 @@ async function renderCandidatesTable() {
       <td>${(c.tests||[]).map(t=>TESTS_META[t]?.icon).join(' ')||'—'}</td>
       <td>${statusBadge(c.estado)}</td>
       <td style="color:var(--ink3)">${c.fecha}</td>
-      <td>
-        ${c.estado==='completed'?`<a onclick="viewCandReport('${c.id}')">Ver informe</a>`:''}
+      <td style="white-space:nowrap">
+        ${c.estado==='completed'?`<a onclick="viewCandReport('${c.id}')">Ver informe</a><a onclick="printCandReport('${c.id}')" style="margin-left:8px">Imprimir</a>`:''}
         <a onclick="openDelModal('${c.id}','${c.nombre} ${c.apellido}')" style="color:var(--accent);margin-left:8px">Eliminar</a>
       </td>
     </tr>`).join('');
@@ -2374,7 +2537,11 @@ async function renderReports() {
         <div style="font-weight:700;font-size:14px">${c.nombre} ${c.apellido}</div>
         <div style="font-size:12px;color:var(--ink3)">${c.cargo||'Sin cargo'} · ${c.fecha} · ${(c.tests||[]).map(t=>TESTS_META[t]?.icon).join(' ')}</div>
       </div>
-      <button class="btn btn-outline btn-sm" onclick="viewCandReport('${c.id}')">Ver informe</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-outline btn-sm" onclick="viewCandReport('${c.id}')">Ver informe</button>
+        <button class="btn btn-outline btn-sm" onclick="printCandReport('${c.id}')">Imprimir</button>
+        <button class="btn btn-outline btn-sm" onclick="openDelModal('${c.id}','${c.nombre+' '+c.apellido}')" style="color:#c04b1c;border-color:#c04b1c">Eliminar</button>
+      </div>
     </div>`).join('');
 }
 
