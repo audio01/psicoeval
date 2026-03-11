@@ -1341,7 +1341,7 @@ function buildFitReport(c) {
       totalPeso += cfg.peso;
       totalFitPeso += fit * cfg.peso;
       const minLv = cfg.minLv || scoreToLevel5(cfg.min) || 1;
-      dims.push({ key:k, label:cfg.label, score, fit, peso:cfg.peso, req:cfg.req, minLv,
+      dims.push({ testId:'barratt', key:k, label:cfg.label, score, fit, peso:cfg.peso, req:cfg.req, minLv,
         ideal:`${cfg.min}–${cfg.max}`, gap: scoreToLevel5(score) < minLv ? 'bajo' : 'ok' });
     });
     const secFit = Math.round(dims.reduce((a,d)=>a+d.fit*d.peso,0)/dims.reduce((a,d)=>a+d.peso,0));
@@ -1359,7 +1359,7 @@ function buildFitReport(c) {
       totalPeso += cfg.peso;
       totalFitPeso += fit * cfg.peso;
       const minLvP = cfg.minLv || scoreToLevel5(cfg.min) || 1;
-      dims.push({ key:k, label:cfg.label, score, fit, peso:cfg.peso, req:cfg.req, minLv:minLvP,
+      dims.push({ testId:'pai', key:k, label:cfg.label, score, fit, peso:cfg.peso, req:cfg.req, minLv:minLvP,
         ideal:`${cfg.min}–${cfg.max}`, gap: scoreToLevel5(score) < minLvP ? 'bajo' : 'ok' });
     });
     const secFit = Math.round(dims.reduce((a,d)=>a+d.fit*d.peso,0)/dims.reduce((a,d)=>a+d.peso,0));
@@ -1377,7 +1377,7 @@ function buildFitReport(c) {
       totalPeso += cfg.peso;
       totalFitPeso += fit * cfg.peso;
       const minLvD = cfg.minLv || scoreToLevel5(cfg.min) || 1;
-      dims.push({ key:k, label:cfg.label, score, fit, peso:cfg.peso, req:cfg.req, minLv:minLvD,
+      dims.push({ testId:'dc0', key:k, label:cfg.label, score, fit, peso:cfg.peso, req:cfg.req, minLv:minLvD,
         ideal:`${cfg.min}–${cfg.max}`, gap: scoreToLevel5(score) < minLvD ? 'bajo' : 'ok' });
     });
     const secFit = Math.round(dims.reduce((a,d)=>a+d.fit*d.peso,0)/dims.reduce((a,d)=>a+d.peso,0));
@@ -1477,40 +1477,89 @@ function buildFitReport(c) {
 const DIM_DESC = {
   barratt: {
     AI: {
-      hi: 'Excelente capacidad de concentración. Se enfoca con facilidad, mantiene la atención sostenida y procesa la información de manera ordenada antes de actuar.',
-      mid:'Concentración adecuada para la mayoría de las tareas. Situaciones de alta demanda pueden requerir mayor esfuerzo de foco.',
-      lo: 'Tendencia a la distracción; puede pasar por alto detalles relevantes en tareas que requieren concentración prolongada.'
+      hi:  'Demuestra una excelente capacidad para mantener el foco durante períodos prolongados. Procesa la información con calma antes de actuar, lo que le permite evitar errores por distracción.',
+      mid: 'Mantiene la atención de manera adecuada en la mayoría de las situaciones. En momentos de alta demanda o múltiples estímulos, puede requerir un esfuerzo adicional para mantenerse concentrado/a.',
+      lo:  'Presenta dificultades para sostener la atención en tareas que requieren foco prolongado. Tiende a distraerse con facilidad, lo que puede afectar la calidad y exactitud de su trabajo.',
     },
     IM: {
-      hi: 'Alto control de los impulsos motores. Actúa con reflexión, evalúa opciones antes de responder y mantiene la compostura ante conflictos.',
-      mid:'Generalmente reflexivo/a, aunque en situaciones de alta activación emocional puede reaccionar antes de evaluar todas las opciones.',
-      lo: 'Tendencia a actuar de forma precipitada. Puede tomar decisiones impulsivas sin evaluar consecuencias, especialmente bajo presión.'
+      hi:  'Actúa con notable reflexión y autocontrol. Evalúa las consecuencias antes de responder, incluso en situaciones de conflicto o presión, lo que transmite seguridad y madurez profesional.',
+      mid: 'Generalmente reflexivo/a y considerado/a en sus respuestas. En momentos de estrés o confrontación puede reaccionar antes de tiempo, aunque logra corregir el curso con relativa facilidad.',
+      lo:  'Muestra una marcada tendencia a actuar de manera impulsiva, especialmente bajo presión. Puede tomar decisiones o emitir respuestas sin evaluar sus consecuencias, lo que representa un riesgo en contextos que requieren prudencia.',
     },
     NP: {
-      hi: 'Alta orientación a la planificación. Anticipa consecuencias, organiza el trabajo con criterio y se enfoca en objetivos de largo plazo.',
-      mid:'Planificación adecuada para tareas rutinarias. Proyectos complejos pueden requerir mayor estructura y seguimiento.',
-      lo: 'Orientación preferentemente al presente. Puede tener dificultades para planificar a mediano plazo o evaluar consecuencias futuras.'
+      hi:  'Se destaca por su orientación al largo plazo y su capacidad para anticipar consecuencias. Organiza su trabajo de forma sistemática y se enfoca en resultados sostenibles más que en soluciones inmediatas.',
+      mid: 'Planifica adecuadamente para la mayoría de sus tareas cotidianas. En proyectos de mayor complejidad o con horizontes de tiempo extendidos puede beneficiarse de mayor estructura y seguimiento.',
+      lo:  'Presenta dificultades para proyectarse hacia el futuro y organizar su trabajo con anticipación. Tiende a priorizar lo inmediato, lo que puede generar improvisación y menor consistencia en sus resultados.',
     },
   },
-    pai: {
-    EE: { hi:'Excelente regulación emocional. Mantiene la compostura incluso en situaciones de alta presión o conflicto.', mid:'Generalmente estable emocionalmente. Situaciones muy demandantes pueden afectarle transitoriamente.', lo:'Puede mostrar reactividad emocional ante el estrés laboral. Requiere estrategias de manejo emocional.' },
-    AS: { hi:'Alta adaptabilidad social. Se integra con facilidad a equipos diversos y resuelve conflictos constructivamente.', mid:'Buena adaptación al entorno social con algunas áreas de mejora en contextos de alta diversidad o conflicto.', lo:'Puede presentar dificultades para adaptarse a entornos cambiantes o relacionarse con perfiles muy distintos al propio.' },
-    ON: { hi:'Sólida orientación normativa. Respeta las reglas independientemente de la supervisión y reporta irregularidades.', mid:'Generalmente cumple las normas, aunque puede hacer excepciones cuando no hay supervisión directa.', lo:'Relación flexible con las normas. Puede omitir procedimientos si considera que los resultados lo justifican.' },
-    ME: { hi:'Excelentes estrategias para manejar el estrés. Mantiene rendimiento bajo plazos ajustados y cambios inesperados.', mid:'Manejo adecuado del estrés en condiciones normales. Situaciones de alta exigencia pueden requerir apoyo.', lo:'Puede experimentar dificultades bajo presión sostenida, afectando su rendimiento y toma de decisiones.' },
-    IL: { hi:'Alta integridad laboral. Actúa con honestidad, cuida los recursos de la organización y asume sus errores.', mid:'Generalmente íntegro/a, con comportamiento consistente en la mayoría de los contextos laborales.', lo:'Pueden existir inconsistencias en honestidad o responsabilidad que requieren ser exploradas en entrevista.' },
-    ML: { hi:'Alta motivación intrínseca. Se esfuerza más allá de lo requerido y mantiene una actitud proactiva constante.', mid:'Motivación adecuada para cumplir las funciones del cargo. Puede requerir incentivos para ir más allá.', lo:'Motivación básica orientada al cumplimiento mínimo. Puede necesitar incentivos o mayor supervisión.' },
+  pai: {
+    EE: {
+      hi:  'Muestra una sólida estabilidad emocional frente a situaciones de presión, conflicto o cambio. Mantiene la compostura y el juicio incluso en entornos de alta exigencia, lo que le permite ser un referente de serenidad para su entorno.',
+      mid: 'Por lo general maneja bien sus emociones en el trabajo. Situaciones de mucha exigencia o conflictos repetidos pueden afectarle transitoriamente, aunque logra recuperarse sin mayores dificultades.',
+      lo:  'Puede experimentar dificultades para regular sus emociones ante el estrés laboral. Su estado de ánimo podría verse influenciado por las tensiones del entorno, afectando su rendimiento y sus relaciones en el trabajo.',
+    },
+    AS: {
+      hi:  'Se integra con facilidad a equipos y entornos diversos. Construye relaciones laborales positivas, maneja los conflictos interpersonales con madurez y se adapta bien a distintos estilos de trabajo y personalidad.',
+      mid: 'Tiene buenas habilidades sociales en contextos conocidos o de baja complejidad relacional. En situaciones de alta diversidad, tensión interpersonal o cambios frecuentes de equipo puede requerir mayor apoyo.',
+      lo:  'Puede presentar dificultades para relacionarse con personas de perfiles muy distintos al propio o para adaptarse a entornos sociales cambiantes. Los conflictos interpersonales pueden resultarle especialmente desgastantes.',
+    },
+    ON: {
+      hi:  'Presenta una sólida adherencia a las normas y procedimientos de la organización. Actúa con integridad tanto en presencia como en ausencia de supervisión, y tiende a reportar situaciones irregulares cuando las detecta.',
+      mid: 'En general respeta las normas y procedimientos establecidos. Puede hacer excepciones puntuales cuando considera que la situación lo justifica, sin que esto sea un patrón habitual de comportamiento.',
+      lo:  'Mantiene una relación flexible con las reglas y procedimientos. Puede omitir pasos o hacer excepciones con relativa frecuencia, especialmente cuando no hay supervisión directa, lo que representa un riesgo en roles que requieren alto cumplimiento normativo.',
+    },
+    ME: {
+      hi:  'Cuenta con recursos sólidos para enfrentar el estrés laboral. Mantiene su rendimiento y claridad mental frente a plazos ajustados, sobrecarga de trabajo o situaciones de incertidumbre prolongada.',
+      mid: 'Maneja bien el estrés en condiciones normales de trabajo. Períodos sostenidos de alta exigencia o situaciones de crisis pueden requerir mayor apoyo externo para mantener su nivel habitual de desempeño.',
+      lo:  'Puede experimentar dificultades para mantener su rendimiento bajo presión sostenida. El estrés acumulado podría afectar su toma de decisiones, su concentración y su bienestar general en el trabajo.',
+    },
+    IL: {
+      hi:  'Demuestra un alto sentido ético en su comportamiento laboral. Actúa con honestidad, cuida los recursos de la organización como propios y reconoce sus errores sin dificultad. Su coherencia entre lo que dice y hace genera confianza en su entorno.',
+      mid: 'En líneas generales actúa con integridad y responsabilidad. En situaciones de presión o ambigüedad ética puede mostrar algunas vacilaciones, aunque sin comprometer de manera grave sus principios.',
+      lo:  'Pueden existir inconsistencias entre su comportamiento declarado y sus acciones reales en el contexto laboral. Se recomienda explorar con mayor profundidad en entrevista antes de asignarle responsabilidades críticas.',
+    },
+    ML: {
+      hi:  'Muestra un alto nivel de motivación intrínseca hacia su trabajo. Se esfuerza consistentemente por encima de lo mínimo requerido, toma iniciativa de manera natural y mantiene una actitud proactiva incluso en tareas rutinarias.',
+      mid: 'Presenta una motivación adecuada para cumplir con las responsabilidades del cargo. Puede requerir incentivos externos o variedad en sus tareas para dar lo mejor de sí mismo/a de manera sostenida.',
+      lo:  'Su motivación parece orientada principalmente al cumplimiento mínimo de lo que se le solicita. Podría necesitar supervisión cercana o incentivos claros para mantener un nivel de rendimiento consistente.',
+    },
   },
-  // DC0
   dc0: {
-    V: { hi:'Excelente razonamiento verbal. Comprende documentos complejos, detecta inconsistencias y se comunica con precisión.', mid:'Buen manejo verbal para tareas cotidianas. Documentos muy técnicos pueden requerir mayor tiempo de procesamiento.', lo:'Dificultades en la comprensión de textos complejos o en la expresión precisa de ideas. Requiere instrucciones simples y directas.' },
-    N: { hi:'Alto rendimiento numérico. Maneja datos, proporciones y presupuestos con rapidez y precisión.', mid:'Capacidad numérica adecuada para cálculos cotidianos. Análisis financieros complejos pueden requerir apoyo.', lo:'Dificultad con cálculos, proporciones o interpretación de datos. Requiere herramientas de apoyo para tareas numéricas.' },
-    L: { hi:'Excelente razonamiento lógico. Aplica reglas con precisión, detecta falacias y toma decisiones estructuradas.', mid:'Razonamiento lógico funcional para situaciones cotidianas. Problemas complejos pueden requerir más tiempo.', lo:'Dificultad para aplicar razonamiento estructurado ante situaciones complejas o ambiguas. Requiere mayor orientación.' },
+    V: {
+      hi:  'Comprende con facilidad textos e instrucciones complejas, identifica ideas principales y se expresa con precisión y claridad. Tiene una comunicación efectiva tanto escrita como oral.',
+      mid: 'Maneja bien el lenguaje en situaciones cotidianas. Documentos muy técnicos o de alta densidad conceptual pueden requerir mayor tiempo de procesamiento o consultar a terceros.',
+      lo:  'Presenta dificultades para comprender textos complejos o para expresar sus ideas de forma precisa. Requiere instrucciones simples, directas y preferentemente orales para una mejor comprensión.',
+    },
+    N: {
+      hi:  'Trabaja con números, proporciones y datos con rapidez y alta precisión. Es capaz de interpretar indicadores, calcular resultados y detectar inconsistencias numéricas sin apoyo adicional.',
+      mid: 'Tiene capacidad numérica suficiente para las operaciones habituales del cargo. Análisis financieros más complejos o el manejo de grandes volúmenes de datos pueden requerir herramientas de apoyo.',
+      lo:  'Muestra dificultades con cálculos, proporciones o interpretación de datos numéricos. Requiere herramientas de apoyo (calculadoras, planillas) para tareas que impliquen trabajo con cifras.',
+    },
+    L: {
+      hi:  'Aplica el razonamiento lógico con solidez para analizar situaciones, identificar patrones y tomar decisiones estructuradas. Destaca en la resolución de problemas poco rutinarios y en la aplicación correcta de reglas.',
+      mid: 'Razona con lógica de manera adecuada en situaciones cotidianas. Problemas de mayor complejidad o que requieren múltiples pasos de análisis pueden demandarle más tiempo o apoyo.',
+      lo:  'Presenta dificultades para seguir cadenas de razonamiento complejas o para aplicar reglas de manera consistente en situaciones ambiguas. Requiere orientación clara y paso a paso para resolver problemas no rutinarios.',
+    },
   },
 };
 
 function dimDesc(testId, key, score) {
   const d = DIM_DESC[testId]?.[key];
-  if (!d) return '';
+  if (!d) {
+    // Fallback for situacional / vigilancia
+    var lv5 = scoreToLevel5(score);
+    if (testId === 'situacional') {
+      if (lv5 >= 4) return 'Demostró excelente criterio para evaluar situaciones laborales complejas, eligiendo respuestas coherentes, proporcionales y orientadas a la solución.';
+      if (lv5 >= 3) return 'Mostró criterio adecuado ante situaciones laborales típicas. En escenarios de mayor complejidad podría beneficiarse de mayor orientación.';
+      return 'Presentó dificultades para identificar la respuesta más adecuada ante situaciones laborales desafiantes. Se recomienda explorar en entrevista su manejo de conflictos y toma de decisiones.';
+    }
+    if (testId === 'vigilancia') {
+      if (lv5 >= 4) return 'Mantuvo alta concentración y precisión durante la tarea de vigilancia, detectando correctamente los estímulos relevantes con mínimo margen de error.';
+      if (lv5 >= 3) return 'Evidenció un desempeño adecuado en la tarea de vigilancia. Puede mostrar algunas omisiones en condiciones de mayor duración o monotonía.';
+      return 'Mostró dificultades para mantener la atención sostenida durante la tarea de vigilancia. Se recomienda considerar este resultado en roles que exigen alta concentración continua.';
+    }
+    return '';
+  }
   if (score >= 65) return d.hi;
   if (score >= 40) return d.mid;
   return d.lo;
@@ -1741,23 +1790,31 @@ function buildReportHtml(c, withClose) {
     + '<div style="font-size:12px;font-weight:700;color:#16a34a;border-bottom:2px solid #16a34a;padding-bottom:6px;margin-bottom:10px">✓ Fortalezas</div>'
     + (rpt.fortalezas.length ? rpt.fortalezas.map(function(f){
         var l5 = scoreToLevel5(f.score);
-        return '<div style="display:flex;gap:9px;align-items:flex-start;padding:9px 0;border-bottom:1px solid #f0f0f0">'
-          + '<div style="width:19px;height:19px;border-radius:4px;background:#f0fdf4;font-size:10px;font-weight:800;color:#16a34a;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">' + l5 + '</div>'
-          + '<div><div style="font-size:13px;font-weight:600">' + f.label + '</div>'
-          + '<div style="font-size:11px;color:#999">' + f.section + '</div>'
-          + '<div style="font-size:11px;color:#555;margin-top:1px;line-height:1.4">' + f.req + '</div></div></div>';
-      }).join('') : '<div style="font-size:13px;color:#999;padding:8px 0">Sin fortalezas destacadas.</div>')
+        var desc = dimDesc(f.testId, f.key, f.score);
+        return '<div style="padding:12px 0;border-bottom:1px solid #f5f5f5">'
+          + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">'
+          + '<div style="width:22px;height:22px;border-radius:6px;background:#f0fdf4;font-size:11px;font-weight:800;color:#16a34a;display:flex;align-items:center;justify-content:center;flex-shrink:0">' + l5 + '</div>'
+          + '<span style="font-size:13px;font-weight:700;color:#0f172a">' + f.label + '</span>'
+          + '<span style="font-size:10px;color:#94a3b8">' + (f.section||'') + '</span>'
+          + '</div>'
+          + '<div style="font-size:12px;color:#475569;line-height:1.6;padding-left:30px">' + desc + '</div>'
+          + '</div>';
+      }).join('') : '<div style="font-size:13px;color:#94a3b8;padding:12px 0">Sin fortalezas destacadas en esta evaluación.</div>')
     + '</div>'
     + '<div>'
     + '<div style="font-size:12px;font-weight:700;color:#dc2626;border-bottom:2px solid #dc2626;padding-bottom:6px;margin-bottom:10px">△ Áreas de Desarrollo</div>'
     + (rpt.brechas.length ? rpt.brechas.map(function(b){
         var l5 = scoreToLevel5(b.score);
-        return '<div style="display:flex;gap:9px;align-items:flex-start;padding:9px 0;border-bottom:1px solid #f0f0f0">'
-          + '<div style="width:19px;height:19px;border-radius:4px;background:#fef2f2;font-size:10px;font-weight:800;color:#dc2626;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">' + l5 + '</div>'
-          + '<div><div style="font-size:13px;font-weight:600">' + b.label + '</div>'
-          + '<div style="font-size:11px;color:#999">' + b.section + '</div>'
-          + '<div style="font-size:11px;color:#555;margin-top:1px;line-height:1.4">' + b.req + '</div></div></div>';
-      }).join('') : '<div style="font-size:13px;color:#999;padding:8px 0">No se detectaron brechas significativas.</div>')
+        var desc = dimDesc(b.testId, b.key, b.score);
+        return '<div style="padding:12px 0;border-bottom:1px solid #f5f5f5">'
+          + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">'
+          + '<div style="width:22px;height:22px;border-radius:6px;background:#fef2f2;font-size:11px;font-weight:800;color:#dc2626;display:flex;align-items:center;justify-content:center;flex-shrink:0">' + l5 + '</div>'
+          + '<span style="font-size:13px;font-weight:700;color:#0f172a">' + b.label + '</span>'
+          + '<span style="font-size:10px;color:#94a3b8">' + (b.section||'') + '</span>'
+          + '</div>'
+          + '<div style="font-size:12px;color:#475569;line-height:1.6;padding-left:30px">' + desc + '</div>'
+          + '</div>';
+      }).join('') : '<div style="font-size:13px;color:#94a3b8;padding:12px 0">No se detectaron brechas significativas en esta evaluación.</div>')
     + '</div></div></div>';
 
   // Preguntas entrevista
