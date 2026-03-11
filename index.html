@@ -2004,85 +2004,74 @@ function renderParams() {
     if (!ideal) { document.getElementById('params-content').innerHTML = '<p>Perfil no encontrado.</p>'; return; }
 
     var SECTION_META = {
-      barratt: { icon:'🧩', title:'Control Impulsivo (BIS-11)', keys:['AI','IM','NP'] },
-      pai:  { icon:'🔎', title:'Ajuste Psicológico (PAI)', keys:['EE','AS','ON','ME','IL','ML'] },
-      dc0:  { icon:'⚡', title:'Aptitud Cognitiva (DC-0)', keys:['V','N','L'] },
-      situacional: { icon:'💡', title:'Juicio Situacional', keys:['_self'] },
-      vigilancia:  { icon:'🛡', title:'Aptitud Vigilancia', keys:['_self'] },
+      barratt:     { icon:'🧩', title:'Control Impulsivo (BIS-11)',  keys:['AI','IM','NP'] },
+      pai:         { icon:'🔎', title:'Ajuste Psicológico (PAI)',     keys:['EE','AS','ON','ME','IL','ML'] },
+      dc0:         { icon:'⚡', title:'Aptitud Cognitiva (DC-0)',      keys:['V','N','L'] },
+      situacional: { icon:'💡', title:'Juicio Situacional',           keys:['_self'] },
+      vigilancia:  { icon:'🛡', title:'Aptitud Vigilancia',           keys:['_self'] },
     };
-    var NAMES = {1:'Muy Bajo',2:'Bajo',3:'Medio',4:'Alto',5:'Muy Alto'};
+    var LEVEL_LABELS = ['','Muy Bajo','Bajo','Medio','Alto','Muy Alto'];
+    var LEVEL_COLORS = ['','#94a3b8','#64748b','#f59e0b','#3b82f6','#10b981'];
 
-    var out = '<div style="display:flex;gap:12px;flex-wrap:wrap;padding:12px 16px;background:#f0fdf4;border-radius:10px;margin-bottom:20px;font-size:12px;color:#166534">'
-      + '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#10b981;margin-right:4px;vertical-align:middle"></span>Verde = Rango ideal del cargo</span>'
-      + '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#0f2d52;margin-right:4px;vertical-align:middle"></span>Azul = Peso en el índice global</span>'
-      + '</div>';
+    var out = '';
 
     Object.entries(SECTION_META).forEach(function(entry) {
       var secId = entry[0]; var sm = entry[1];
       var secData = ideal[secId];
       if (!secData) return;
 
-      out += '<div style="background:#fff;border-radius:14px;box-shadow:0 2px 10px rgba(15,45,82,.06);margin-bottom:16px;padding:22px 24px">';
-      out += '<div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:18px;display:flex;align-items:center;gap:7px">'
-           + sm.icon + ' ' + sm.title + '</div>';
-      out += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px">';
+      out += '<div style="margin-bottom:28px">';
+      out += '<div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;margin-bottom:12px">'
+           + sm.icon + '  ' + sm.title + '</div>';
 
-      sm.keys.forEach(function(k) {
+      // Table-style rows
+      out += '<div style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(15,45,82,.06)">';
+
+      sm.keys.forEach(function(k, ki) {
         var cfg = k === '_self' ? secData : secData[k];
         if (!cfg) return;
-        var fid  = 'p_' + perfil + '_' + secId + '_' + k;
-        var dmin = toDisplay(cfg.min);
-        var dmax = toDisplay(cfg.max);
-        var dpeso= cfg.peso;
-        var NAMES = {1:'Muy Bajo',2:'Bajo',3:'Medio',4:'Alto',5:'Muy Alto'};
+        var fid   = 'p_' + perfil + '_' + secId + '_' + k;
+        var curLv = toDisplay(cfg.min);
+        var isLast = (ki === sm.keys.length - 1);
 
-        out += '<div style="background:#f8fafc;border-radius:10px;padding:14px 16px">';
-        // Label + requirement
-        out += '<div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:2px">' + cfg.label + '</div>';
-        out += '<div style="font-size:11px;color:#94a3b8;line-height:1.4;margin-bottom:12px">' + cfg.req + '</div>';
+        out += '<div style="display:flex;align-items:center;gap:16px;padding:14px 18px;'
+             + (isLast ? '' : 'border-bottom:1px solid #f1f5f9;') + '">';
 
-        // Live range stripe — updates on selection
-        var minPct = (dmin-1)/4*100; var maxPct = (dmax-1)/4*100; var zW = maxPct-minPct;
-        out += '<div style="position:relative;height:4px;background:#e2e8f0;border-radius:100px;margin-bottom:16px">';
-        out += '<div id="rbar_' + fid + '" style="position:absolute;top:0;height:4px;left:'+minPct+'%;width:'+zW+'%;background:#10b981;border-radius:100px;transition:all .2s"></div>';
+        // Left: label + description
+        out += '<div style="flex:1;min-width:0">';
+        out += '<div style="font-size:13px;font-weight:600;color:#0f172a">' + cfg.label + '</div>';
+        out += '<div style="font-size:11px;color:#94a3b8;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + cfg.req + '</div>';
         out += '</div>';
 
-        // Scale axis
-        out += '<div style="display:flex;justify-content:space-between;margin-bottom:10px">';
-        for (var ax = 1; ax <= 5; ax++) {
-          out += '<span style="font-size:9px;color:#cbd5e1;font-weight:500">' + ax + '</span>';
+        // Right: 5 chips — Nivel mínimo requerido
+        out += '<div style="display:flex;gap:4px;flex-shrink:0">';
+        for (var lv = 1; lv <= 5; lv++) {
+          var active = (lv === curLv);
+          var col    = LEVEL_COLORS[lv];
+          out += '<button type="button"'
+               + ' id="chip_' + fid + '_' + lv + '"'
+               + ' data-fid="' + fid + '" data-lv="' + lv + '"'
+               + ' onclick="pickLevel(this.dataset.fid,+this.dataset.lv)"'
+               + ' title="' + LEVEL_LABELS[lv] + '"'
+               + ' style="width:36px;height:36px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-weight:700;transition:all .12s;'
+               + (active
+                  ? 'background:' + col + ';color:#fff;'
+                  : 'background:#f1f5f9;color:#94a3b8;') + '">'
+               + lv
+               + '</button>';
         }
         out += '</div>';
 
-        // 3-column: MIN | MAX | PESO
-        out += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">';
+        // Current label
+        out += '<div id="lbl_' + fid + '" style="font-size:11px;font-weight:700;color:' + LEVEL_COLORS[curLv] + ';min-width:62px;text-align:right">'
+             + LEVEL_LABELS[curLv] + '</div>';
 
-        // MIN
-        out += '<div>';
-        out += '<div style="font-size:10px;font-weight:600;color:#10b981;text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px">Mín.</div>';
-        out += scaleSelector(fid, dmin, 'min');
-        out += '<input type="hidden" id="hid_' + fid + '_min" value="' + dmin + '">';
-        out += '</div>';
-
-        // MAX
-        out += '<div>';
-        out += '<div style="font-size:10px;font-weight:600;color:#10b981;text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px">Máx.</div>';
-        out += scaleSelector(fid, dmax, 'max');
-        out += '<input type="hidden" id="hid_' + fid + '_max" value="' + dmax + '">';
-        out += '</div>';
-
-        // PESO
-        out += '<div>';
-        out += '<div style="font-size:10px;font-weight:600;color:#0f2d52;text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px">Peso</div>';
-        out += scaleSelector(fid, dpeso, 'peso');
-        out += '<input type="hidden" id="hid_' + fid + '_peso" value="' + dpeso + '">';
-        out += '</div>';
-
-        out += '</div>'; // 3-col grid
-        out += '</div>'; // dim card
+        out += '<input type="hidden" id="hid_' + fid + '_min" value="' + curLv + '">';
+        out += '</div>'; // row
       });
 
-      out += '</div></div>'; // grid + section
+      out += '</div>'; // card
+      out += '</div>'; // section
     });
 
     document.getElementById('params-content').innerHTML = out;
@@ -2092,15 +2081,30 @@ function renderParams() {
   }
 }
 
+function pickLevel(fid, lv) {
+  var LEVEL_LABELS = ['','Muy Bajo','Bajo','Medio','Alto','Muy Alto'];
+  var LEVEL_COLORS = ['','#94a3b8','#64748b','#f59e0b','#3b82f6','#10b981'];
+  for (var i = 1; i <= 5; i++) {
+    var chip = document.getElementById('chip_' + fid + '_' + i);
+    if (!chip) continue;
+    var active = (i === lv);
+    chip.style.background = active ? LEVEL_COLORS[i] : '#f1f5f9';
+    chip.style.color      = active ? '#fff'           : '#94a3b8';
+  }
+  var hidEl = document.getElementById('hid_' + fid + '_min');
+  if (hidEl) hidEl.value = lv;
+  var lblEl = document.getElementById('lbl_' + fid);
+  if (lblEl) { lblEl.textContent = LEVEL_LABELS[lv]; lblEl.style.color = LEVEL_COLORS[lv]; }
+}
+
 
 function saveParams() {
   const perfil = _paramPerfil;
-  const ideal = PERFIL_IDEAL[perfil];
-
+  const ideal  = PERFIL_IDEAL[perfil];
   const SECTION_KEYS = {
-    barratt: ['AI','IM','NP'],
-    pai:  ['EE','AS','ON','ME','IL','ML'],
-    dc0:  ['V','N','L'],
+    barratt:     ['AI','IM','NP'],
+    pai:         ['EE','AS','ON','ME','IL','ML'],
+    dc0:         ['V','N','L'],
     situacional: ['_self'],
     vigilancia:  ['_self'],
   };
@@ -2112,25 +2116,21 @@ function saveParams() {
     keys.forEach(k => {
       const cfg = k === '_self' ? secData : secData[k];
       if (!cfg) return;
-      const fieldId = `p_${perfil}_${secId}_${k}`;
-      const minEl  = document.getElementById('hid_' + fieldId + '_min');
-      const maxEl  = document.getElementById('hid_' + fieldId + '_max');
-      const pesoEl = document.getElementById('hid_' + fieldId + '_peso');
+      const fieldId = 'p_' + perfil + '_' + secId + '_' + k;
+      const minEl   = document.getElementById('hid_' + fieldId + '_min');
       if (!minEl) return;
-      const v5min  = parseInt(minEl.value);
-      const v5max  = parseInt(maxEl.value);
-      const v5peso = parseInt(pesoEl.value);
-      if (!isNaN(v5min) && !isNaN(v5max) && v5min <= v5max) {
-        cfg.min  = toInternal(v5min);
-        cfg.max  = toInternalMax(v5max);
+      const v5 = parseInt(minEl.value);
+      if (!isNaN(v5) && v5 >= 1 && v5 <= 5) {
+        cfg.min = toInternal(v5);
+        cfg.max = 100; // always accept anything at or above minimum
         changed++;
       }
-      if (!isNaN(v5peso) && v5peso >= 1 && v5peso <= 5) cfg.peso = v5peso;
     });
   });
 
-  toast(changed + ' rangos guardados para ' + PERFIL_META[perfil].label + '. Se aplican en los próximos informes.', 'ok');
+  showToast(changed > 0 ? '✓ Parámetros guardados (' + changed + ' dimensiones)' : 'Sin cambios detectados.');
 }
+
 
 
 // ═══════════════════════════════════════════════════════════
