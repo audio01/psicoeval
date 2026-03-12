@@ -1692,6 +1692,40 @@ function dimDesc(testId, key, score) {
   return d.lo;
 }
 
+// ── Text adapted to gap between score and minimum required ──────────────────
+// scoreLv: candidate's level 1-5  |  minLv: required minimum 1-5
+function dimDescWithGap(testId, key, score, scoreLv, minLv) {
+  const baseDesc = dimDesc(testId, key, score);
+  if (!minLv || minLv <= 1) return baseDesc;
+
+  const gap = minLv - scoreLv; // positive = below minimum
+  const LV = {1:'Muy Bajo',2:'Bajo',3:'Medio',4:'Alto',5:'Muy Alto'};
+  const reqName = LV[minLv] || ('nivel ' + minLv);
+
+  if (gap <= 0) {
+    // Cumple o supera
+    return baseDesc;
+  }
+  if (gap === 1) {
+    // Un nivel por debajo — reconocer lo observado pero marcar la brecha
+    return baseDesc
+      + ' <span style="color:#b45309;font-weight:600">Sin embargo, su nivel actual (' + LV[scoreLv] + ') está un nivel por debajo del mínimo requerido ('
+      + reqName + ') para este cargo. Se recomienda explorar esta dimensión en la entrevista.</span>';
+  }
+  // Gap >= 2 — no cumple claramente
+  return '<span style="color:#dc2626;font-weight:600">No alcanza el nivel mínimo requerido ('
+    + reqName + ') para este cargo.</span> '
+    + baseDesc
+    + ' <span style="color:#dc2626;font-weight:600">Esta brecha es un factor relevante a considerar antes de tomar una decisión de selección.</span>';
+}
+
+// ── Pass/fail badge HTML ─────────────────────────────────────────────────────
+function passBadge(passes, gap) {
+  if (passes) return '<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;padding:3px 9px;border-radius:100px;background:#dcfce7;color:#16a34a">✓ Cumple</span>';
+  if (gap === 1) return '<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;padding:3px 9px;border-radius:100px;background:#fff7ed;color:#b45309">⚠ Cerca</span>';
+  return '<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;padding:3px 9px;border-radius:100px;background:#ffe4e6;color:#e11d48">✕ No cumple</span>';
+}
+
 // ── Gauge SVG (semicircle) ──────────────────────────────────
 function gaugeHtml(pct, color, size=90) {
   const r = 34, cx = 50, cy = 44;
@@ -1983,23 +2017,31 @@ function buildReportHtml(c, withClose) {
       + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px">'
       + sec.dims.map(function(d) {
           var lv2 = fitLabel(d.fit);
-          var desc = dimDesc('barratt', d.key, d.score);
           var scoreL5 = scoreToLevel5(d.score);
+          var minLv   = d.minLv || 1;
+          var passes  = scoreL5 >= minLv;
+          var gap     = minLv - scoreL5;
+          var borderColor = passes ? '#16a34a' : (gap === 1 ? '#b45309' : '#e11d48');
+          var bgColor     = passes ? '#f0fdf4'  : (gap === 1 ? '#fff7ed'  : '#fff1f3');
+          var desc = dimDescWithGap('barratt', d.key, d.score, scoreL5, minLv);
           var idealMin100 = parseInt((d.ideal||'60-100').split('–')[0]);
           var idealMax100 = parseInt((d.ideal||'60-100').split('–')[1]||'100');
-          return '<div style="background:#f8fafc;border-radius:10px;padding:18px 20px">'
-            + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">'
-            + '<div>'
+          return '<div style="background:' + bgColor + ';border-radius:10px;padding:18px 20px;border:2px solid ' + borderColor + '40">'
+            + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">'
+            + '<div style="flex:1">'
             + '<div style="font-size:13px;font-weight:700;color:#0f172a">' + BIS_ICON[d.key] + ' ' + (BIS_FULL[d.key]||d.label) + '</div>'
             + '<div style="font-size:11px;color:#94a3b8;margin-top:2px">' + d.req + '</div>'
             + '</div>'
-            + '<div style="text-align:center;background:' + lv2.bg + ';border-radius:8px;padding:6px 10px;border:1px solid ' + lv2.color + '30">'
-            + '<div style="font-size:22px;font-weight:900;color:' + lv2.color + ';line-height:1">' + scoreL5 + '</div>'
-            + '<div style="font-size:9px;font-weight:700;color:' + lv2.color + '">/5</div>'
+            + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;margin-left:10px">'
+            + '<div style="text-align:center;background:#fff;border-radius:8px;padding:5px 10px;border:2px solid ' + borderColor + '">'
+            + '<div style="font-size:22px;font-weight:900;color:' + borderColor + ';line-height:1">' + scoreL5 + '</div>'
+            + '<div style="font-size:9px;font-weight:700;color:' + borderColor + '">/5</div>'
+            + '</div>'
+            + passBadge(passes, gap)
             + '</div></div>'
             + trackBar(d.score, idealMin100, idealMax100, true, d.fit, lv2)
-            + '<div style="font-size:10px;color:#94a3b8;margin-bottom:10px">Rango ideal: nivel ' + scoreToLevel5(idealMin100) + '–' + scoreToLevel5(idealMax100) + ' &nbsp;·&nbsp; Ajuste: <strong style="color:' + lv2.color + '">' + d.fit + '%</strong></div>'
-            + '<div style="font-size:12px;color:#475569;line-height:1.6;padding-top:10px;border-top:1px solid #e2e8f0">' + desc + '</div>'
+            + '<div style="font-size:10px;color:#94a3b8;margin-bottom:10px">Mínimo requerido: <strong style="color:' + borderColor + '">nivel ' + minLv + '</strong> &nbsp;·&nbsp; Ajuste: <strong style="color:' + lv2.color + '">' + d.fit + '%</strong></div>'
+            + '<div style="font-size:12px;color:#475569;line-height:1.6;padding-top:10px;border-top:1px solid ' + borderColor + '30">' + desc + '</div>'
             + '</div>';
         }).join('')
       + '</div></div>';
@@ -2053,26 +2095,33 @@ function buildReportHtml(c, withClose) {
       + '<div style="font-size:12px;color:#999;margin-bottom:12px">Detalle por dimensión. Escala 1–5 donde 5 es el nivel más alto.</div>'
       + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:12px">'
       + sec.dims.map(function(d){
-          var lv2 = fitLabel(d.fit);
-          var scoreC = d.gap==='ok'?'#16a34a':d.gap==='bajo'?'#dc2626':'#b45309';
-          var desc = dimDesc('pai', d.key, d.score);
-          var l5 = scoreToLevel5(d.score);
+          var scoreL5  = scoreToLevel5(d.score);
+          var minLv    = d.minLv || 1;
+          var passes   = scoreL5 >= minLv;
+          var gap      = minLv - scoreL5;
+          var borderC  = passes ? '#16a34a' : (gap === 1 ? '#b45309' : '#e11d48');
+          var bgC      = passes ? '#f0fdf4'  : (gap === 1 ? '#fff7ed'  : '#fff1f3');
+          var desc = dimDescWithGap('pai', d.key, d.score, scoreL5, minLv);
           var pts = (d.ideal||'0–100').split('–');
           var iMin5 = scoreToLevel5(parseInt(pts[0]||0));
           var iMax5 = scoreToLevel5(parseInt(pts[1]||100));
-          return '<div style="background:#f9f9f9;border-radius:8px;padding:14px;border:1.5px solid ' + lv2.color + '30">'
+          var scoreC = passes ? '#16a34a' : (gap === 1 ? '#b45309' : '#dc2626');
+          return '<div style="background:' + bgC + ';border-radius:8px;padding:14px;border:2px solid ' + borderC + '40">'
             + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">'
-            + '<div><div style="font-size:13px;font-weight:700">' + (PAI_FULL[d.key]||d.label) + '</div>'
-            + '<div style="font-size:10px;color:#999;margin-top:1px">' + d.req + '</div></div>'
-            + '<div style="text-align:center;min-width:44px;padding:5px 6px;background:' + lv2.bg + ';border-radius:7px;border:1px solid ' + lv2.color + '30">'
-            + '<div style="font-size:22px;font-weight:900;color:' + lv2.color + ';line-height:1">' + l5 + '</div>'
-            + '<div style="font-size:9px;font-weight:700;color:' + lv2.color + '">/5</div></div></div>'
+            + '<div style="flex:1"><div style="font-size:13px;font-weight:700;color:#0f172a">' + (PAI_FULL[d.key]||d.label) + '</div>'
+            + '<div style="font-size:10px;color:#94a3b8;margin-top:1px">' + d.req + '</div></div>'
+            + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;margin-left:10px">'
+            + '<div style="text-align:center;min-width:44px;padding:5px 6px;background:#fff;border-radius:7px;border:2px solid ' + borderC + '">'
+            + '<div style="font-size:22px;font-weight:900;color:' + borderC + ';line-height:1">' + scoreL5 + '</div>'
+            + '<div style="font-size:9px;font-weight:700;color:' + borderC + '">/5</div></div>'
+            + passBadge(passes, gap)
+            + '</div></div>'
             + '<div style="height:7px;background:#e5e5e5;border-radius:4px;overflow:hidden;position:relative;margin-bottom:5px">'
             + '<div style="height:100%;width:' + d.score + '%;background:' + scoreC + ';border-radius:4px"></div>'
             + '<div style="position:absolute;top:0;height:100%;left:' + pts[0] + '%;width:' + Math.max(0,parseInt(pts[1]||100)-parseInt(pts[0]||0)) + '%;background:rgba(0,0,0,.1);border-left:2px solid rgba(0,0,0,.2);border-right:2px solid rgba(0,0,0,.2)"></div>'
             + '</div>'
-            + '<div style="font-size:10px;color:#999;margin-bottom:8px">Ideal: nivel ' + iMin5 + '–' + iMax5 + ' &nbsp;·&nbsp; Ajuste: <strong style="color:' + lv2.color + '">' + d.fit + '%</strong></div>'
-            + '<div style="font-size:11px;color:#555;line-height:1.55">' + desc + '</div>'
+            + '<div style="font-size:10px;color:#94a3b8;margin-bottom:8px">Mínimo requerido: <strong style="color:' + borderC + '">nivel ' + minLv + '</strong> &nbsp;·&nbsp; Ajuste: <strong style="color:' + borderC + '">' + d.fit + '%</strong></div>'
+            + '<div style="font-size:11px;color:#475569;line-height:1.55;padding-top:8px;border-top:1px solid ' + borderC + '30">' + desc + '</div>'
             + '</div>';
         }).join('')
       + '</div></div>';
@@ -2113,12 +2162,21 @@ function buildReportHtml(c, withClose) {
       + ['V','N','L'].map(function(k){
           var score = s.dc0[k];
           var dim = sec.dims.find(function(d){return d.key===k;});
+          var scoreL5 = scoreToLevel5(score);
+          var minLv   = dim ? (dim.minLv || 1) : 1;
+          var passes  = scoreL5 >= minLv;
+          var gap     = minLv - scoreL5;
+          var borderC = passes ? DC_COLOR[k] : (gap === 1 ? '#b45309' : '#e11d48');
+          var bgC     = passes ? '#f9f9f9' : (gap === 1 ? '#fff7ed' : '#fff1f3');
+          var desc = dimDescWithGap('dc0', k, score, scoreL5, minLv);
           var lv2 = fitLabel(dim ? dim.fit : 0);
-          var l5 = scoreToLevel5(score);
-          return '<div style="background:#f9f9f9;border-radius:8px;padding:12px 14px;border-left:3px solid ' + DC_COLOR[k] + '">'
-            + '<div style="font-size:11px;font-weight:800;color:' + DC_COLOR[k] + ';margin-bottom:4px">' + DC_FULL[k] + ' — Nivel ' + l5 + '/5</div>'
-            + '<div style="font-size:11px;color:#555;line-height:1.55">' + dimDesc('dc0', k, score) + '</div>'
-            + (dim ? '<div style="font-size:10px;font-weight:700;color:' + lv2.color + ';margin-top:4px">Ajuste al cargo: ' + dim.fit + '% — ' + lv2.label + '</div>' : '')
+          return '<div style="background:' + bgC + ';border-radius:8px;padding:12px 14px;border:2px solid ' + borderC + (passes ? '50' : '60') + '">'
+            + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'
+            + '<div style="font-size:11px;font-weight:800;color:' + borderC + '">' + DC_FULL[k] + ' — Nivel ' + scoreL5 + '/5</div>'
+            + passBadge(passes, gap)
+            + '</div>'
+            + '<div style="font-size:11px;color:#475569;line-height:1.55">' + desc + '</div>'
+            + (dim ? '<div style="font-size:10px;font-weight:700;color:' + borderC + ';margin-top:6px">Ajuste al cargo: ' + dim.fit + '% · Mín. requerido: nivel ' + minLv + '</div>' : '')
             + '</div>';
         }).join('')
       + '</div></div>';
@@ -2582,32 +2640,66 @@ async function deleteAll() {
 
 async function seedTestData() {
   const btn = document.getElementById('btn-seed');
-  btn.disabled = true; btn.textContent = 'Insertando…';
+  btn.disabled = true; btn.textContent = 'Verificando conexión…';
 
+  // ── 1. Test connectivity first ──────────────────────────────────────────
+  try {
+    const ping = await fetch(`${SUPA_URL}/rest/v1/candidates?limit=1`, { headers: DB_HEADERS });
+    if (!ping.ok && ping.status !== 406) {
+      const txt = await ping.text();
+      btn.disabled = false; btn.textContent = '⚡ Insertar datos de prueba';
+      toast('Error Supabase ' + ping.status, 'er');
+      console.error('Supabase error:', ping.status, txt);
+      return;
+    }
+  } catch(e) {
+    btn.disabled = false; btn.textContent = '⚡ Insertar datos de prueba';
+    // Show pause instructions modal
+    const over = document.createElement('div');
+    over.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.35);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px';
+    over.innerHTML = `
+      <div style="background:#fff;border-radius:16px;padding:32px;max-width:400px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.2);font-size:13px;line-height:1.7">
+        <div style="font-size:22px;margin-bottom:8px">⏸️</div>
+        <div style="font-size:17px;font-weight:700;color:#1d1d1f;margin-bottom:6px">Proyecto Supabase pausado</div>
+        <div style="color:#6e6e73;margin-bottom:18px">Los proyectos gratuitos se pausan automáticamente tras 7 días sin actividad. Solo toma 1 minuto reactivarlo.</div>
+        <div style="background:#f2f2f7;border-radius:10px;padding:14px;margin-bottom:20px;color:#1d1d1f">
+          <div style="margin-bottom:6px">1. Ir a <a href="https://app.supabase.com" target="_blank" style="color:#6366f1;font-weight:600">app.supabase.com</a></div>
+          <div style="margin-bottom:6px">2. Abrir el proyecto <strong>refjkmmlivssauxdnflf</strong></div>
+          <div style="margin-bottom:6px">3. Clic en <strong>"Restore project"</strong></div>
+          <div>4. Esperar ~1 minuto y volver a intentar</div>
+        </div>
+        <button onclick="this.closest('[style]').remove()" style="width:100%;padding:11px;background:#1d1d1f;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">Entendido</button>
+      </div>`;
+    document.body.appendChild(over);
+    over.addEventListener('click', e => { if (e.target === over) over.remove(); });
+    return;
+  }
+
+  // ── 2. Insert seed rows (without id — Supabase auto-generates UUID) ──────
+  btn.textContent = 'Insertando…';
   const fecha = new Date().toLocaleDateString('es-CL');
-  const ts = Date.now();
   const SEED = [
-    { id:'c_'+ts+'1', nombre:'Ana', apellido:'Fuentes', email:'ana.fuentes@test.cl', rut:'12.345.678-9',
+    { nombre:'Ana', apellido:'Fuentes', email:'ana.fuentes@test.cl', rut:'12.345.678-9',
       perfil:'jefatura', cargo:'Jefatura', fecha,
       tests:['barratt','dc0','pai','situacional'], estado:'completed',
       scores:{ barratt:{AI:82,IM:75,NP:70,total:76}, dc0:{V:75,N:83,L:71,total:76},
                pai:{EE:82,AS:75,ON:88,ME:79,IL:91,ML:77}, situacional:{pct:80,correct:4,total:5} } },
-    { id:'c_'+ts+'2', nombre:'Carlos', apellido:'Morales', email:'carlos.morales@test.cl', rut:'11.222.333-4',
+    { nombre:'Carlos', apellido:'Morales', email:'carlos.morales@test.cl', rut:'11.222.333-4',
       perfil:'administrativo', cargo:'Administrativo', fecha,
       tests:['barratt','dc0','pai'], estado:'completed',
       scores:{ barratt:{AI:68,IM:72,NP:80,total:73}, dc0:{V:83,N:70,L:65,total:73},
                pai:{EE:60,AS:65,ON:85,ME:58,IL:88,ML:62} } },
-    { id:'c_'+ts+'3', nombre:'Roberto', apellido:'Díaz', email:'roberto.diaz@test.cl', rut:'15.888.777-6',
+    { nombre:'Roberto', apellido:'Díaz', email:'roberto.diaz@test.cl', rut:'15.888.777-6',
       perfil:'guardia', cargo:'Guardia de Seguridad', fecha,
       tests:['barratt','pai','situacional','vigilancia'], estado:'completed',
       scores:{ barratt:{AI:75,IM:85,NP:65,total:75}, pai:{EE:78,AS:65,ON:92,ME:75,IL:90,ML:68},
                situacional:{pct:60,correct:3,total:5}, vigilancia:{pct:83,correct:5,total:6} } },
-    { id:'c_'+ts+'4', nombre:'Daniela', apellido:'Rojas', email:'daniela.rojas@test.cl', rut:'13.777.555-2',
+    { nombre:'Daniela', apellido:'Rojas', email:'daniela.rojas@test.cl', rut:'13.777.555-2',
       perfil:'jefatura', cargo:'Jefatura', fecha,
       tests:['barratt','dc0','pai','situacional'], estado:'completed',
       scores:{ barratt:{AI:40,IM:38,NP:35,total:38}, dc0:{V:58,N:50,L:65,total:58},
                pai:{EE:45,AS:55,ON:60,ME:40,IL:70,ML:80}, situacional:{pct:40,correct:2,total:5} } },
-    { id:'c_'+ts+'5', nombre:'Marco', apellido:'Soto', email:'marco.soto@test.cl', rut:'14.666.444-3',
+    { nombre:'Marco', apellido:'Soto', email:'marco.soto@test.cl', rut:'14.666.444-3',
       perfil:'administrativo', cargo:'Administrativo', fecha,
       tests:['barratt','dc0','pai'], estado:'completed',
       scores:{ barratt:{AI:65,IM:70,NP:72,total:69}, dc0:{V:65,N:55,L:60,total:60},
@@ -2617,21 +2709,24 @@ async function seedTestData() {
   let ok = 0; const errors = [];
   for (const row of SEED) {
     try {
-      await addToDB(row);
-      ok++;
-    } catch(e) {
-      errors.push(row.nombre + ': ' + String(e));
-      console.error('Seed error:', row.nombre, e);
-    }
+      const r = await fetch(`${SUPA_URL}/rest/v1/candidates`, {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', 'apikey':SUPA_KEY, 'Authorization':'Bearer '+SUPA_KEY, 'Prefer':'return=minimal' },
+        body: JSON.stringify(row)
+      });
+      if (r.ok) { ok++; }
+      else { const txt = await r.text(); errors.push(row.nombre + ' ('+r.status+'): ' + txt.slice(0,100)); }
+    } catch(e) { errors.push(row.nombre + ': ' + String(e)); }
   }
 
   btn.disabled = false; btn.textContent = '⚡ Insertar datos de prueba';
   if (ok > 0) {
-    toast(ok + ' candidatos de prueba insertados', 'ok');
+    toast(ok + ' candidatos de prueba insertados ✓', 'ok');
     renderDashboard();
     if (document.getElementById('tab-candidates')?.style.display !== 'none') renderCandidatesTable();
   } else {
-    toast('Error: ' + (errors[0] || 'ver consola'), 'er');
+    toast('Error al insertar: ' + (errors[0] || 'ver consola'), 'er');
+    console.error('Seed errors:', errors);
   }
 }
 
