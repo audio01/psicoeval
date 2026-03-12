@@ -1693,30 +1693,63 @@ function dimDesc(testId, key, score) {
 }
 
 // ── Text adapted to gap between score and minimum required ──────────────────
-// scoreLv: candidate's level 1-5  |  minLv: required minimum 1-5
 function dimDescWithGap(testId, key, score, scoreLv, minLv) {
   const baseDesc = dimDesc(testId, key, score);
   if (!minLv || minLv <= 1) return baseDesc;
 
-  const gap = minLv - scoreLv; // positive = below minimum
-  const LV = {1:'Muy Bajo',2:'Bajo',3:'Medio',4:'Alto',5:'Muy Alto'};
-  const reqName = LV[minLv] || ('nivel ' + minLv);
+  const gap = minLv - scoreLv;
+  const LV = {1:'Muy Bajo', 2:'Bajo', 3:'Medio', 4:'Alto', 5:'Muy Alto'};
+  const reqName  = LV[minLv]  || ('nivel ' + minLv);
+  const candName = LV[scoreLv] || ('nivel ' + scoreLv);
 
-  if (gap <= 0) {
-    // Cumple o supera
-    return baseDesc;
-  }
+  // Collapsible comparison box — works in both modal and PDF (details/summary)
+  const uid = 'gap_' + testId + '_' + key + '_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
+  const compareBox = function(borderCol, bgCol) {
+    return '<details style="margin-top:8px;border-radius:8px;border:1px solid ' + borderCol + '40;overflow:hidden">'
+      + '<summary style="cursor:pointer;padding:7px 10px;background:' + bgCol + ';font-size:11px;font-weight:600;color:' + borderCol + ';list-style:none;display:flex;align-items:center;justify-content:space-between;user-select:none">'
+      + '<span>📊 Ver comparativa requerido vs obtenido</span>'
+      + '<span style="font-size:10px;opacity:.7">▾</span>'
+      + '</summary>'
+      + '<div style="padding:10px 12px;background:#fff;font-size:11px;line-height:1.7">'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">'
+      // Required box
+      + '<div style="text-align:center;padding:8px;border-radius:6px;background:' + bgCol + ';border:1.5px solid ' + borderCol + '">'
+      + '<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:' + borderCol + ';margin-bottom:4px">Requerido</div>'
+      + '<div style="font-size:22px;font-weight:900;color:' + borderCol + ';line-height:1">' + minLv + '</div>'
+      + '<div style="font-size:10px;font-weight:600;color:' + borderCol + '">' + reqName + '</div>'
+      + '</div>'
+      // Obtained box
+      + '<div style="text-align:center;padding:8px;border-radius:6px;background:#f8fafc;border:1.5px solid #94a3b8">'
+      + '<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#64748b;margin-bottom:4px">Obtenido</div>'
+      + '<div style="font-size:22px;font-weight:900;color:#64748b;line-height:1">' + scoreLv + '</div>'
+      + '<div style="font-size:10px;font-weight:600;color:#64748b">' + candName + '</div>'
+      + '</div>'
+      + '</div>'
+      // Visual gap bar
+      + '<div style="position:relative;height:8px;background:#e2e8f0;border-radius:100px;overflow:hidden">'
+      + '<div style="position:absolute;top:0;bottom:0;left:0;width:' + ((scoreLv-1)/4*100) + '%;background:#94a3b8;border-radius:100px"></div>'
+      + '<div style="position:absolute;top:-2px;bottom:-2px;left:' + ((minLv-1)/4*100) + '%;width:3px;background:' + borderCol + ';border-radius:2px;transform:translateX(-50%)"></div>'
+      + '</div>'
+      + '<div style="display:flex;justify-content:space-between;margin-top:3px;font-size:9px;color:#94a3b8">'
+      + '<span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>'
+      + '</div>'
+      + '<div style="margin-top:6px;font-size:10px;color:#64748b">Brecha: <strong style="color:' + borderCol + '">' + Math.abs(gap) + ' nivel' + (Math.abs(gap)>1?'es':'') + '</strong> por debajo del mínimo requerido.</div>'
+      + '</div>'
+      + '</details>';
+  };
+
+  if (gap <= 0) return baseDesc;
+
   if (gap === 1) {
-    // Un nivel por debajo — reconocer lo observado pero marcar la brecha
     return baseDesc
-      + ' <span style="color:#b45309;font-weight:600">Sin embargo, su nivel actual (' + LV[scoreLv] + ') está un nivel por debajo del mínimo requerido ('
-      + reqName + ') para este cargo. Se recomienda explorar esta dimensión en la entrevista.</span>';
+      + ' <span style="color:#b45309;font-weight:600">Sin embargo, su nivel actual (' + candName + ') está un nivel por debajo del mínimo requerido (' + reqName + ') para este cargo. Se recomienda explorar esta dimensión en la entrevista.</span>'
+      + compareBox('#b45309', '#fff7ed');
   }
-  // Gap >= 2 — no cumple claramente
-  return '<span style="color:#dc2626;font-weight:600">No alcanza el nivel mínimo requerido ('
-    + reqName + ') para este cargo.</span> '
+
+  return '<span style="color:#dc2626;font-weight:600">No alcanza el nivel mínimo requerido (' + reqName + ') para este cargo.</span> '
     + baseDesc
-    + ' <span style="color:#dc2626;font-weight:600">Esta brecha es un factor relevante a considerar antes de tomar una decisión de selección.</span>';
+    + ' <span style="color:#dc2626;font-weight:600">Esta brecha es un factor relevante a considerar antes de tomar una decisión de selección.</span>'
+    + compareBox('#dc2626', '#fff1f3');
 }
 
 // ── Pass/fail badge HTML ─────────────────────────────────────────────────────
@@ -2778,79 +2811,54 @@ async function downloadPdfReport(id) {
   const all = await getDB();
   const c = all.find(x => x.id === id);
   if (!c) { toast('Candidato no encontrado', 'er'); return; }
-  const reportBody = buildReportHtml(c, false);
-  // Build complete CSS for print — mirrors main app styles precisely
-  const mainStyles = Array.from(document.styleSheets)
-    .map(ss => { try { return Array.from(ss.cssRules).map(r=>r.cssText).join('\n'); } catch(e){ return ''; } })
-    .join('\n');
 
-  const PRINT_CSS = `
+  // Build report HTML with all tabs shown
+  const reportBody = buildReportHtml(c, false)
+    .replace(/display:none/g, 'display:block')
+    .replace(/<button[^>]*class="rpt-tab-btn[^"]*"[^>]*>[\s\S]*?<\/button>/g, '');
+
+  // Extract inline <style> block from the page — most reliable approach
+  const inlineStyle = document.querySelector('style') ? document.querySelector('style').textContent : '';
+
+  const PDF_EXTRA = `
     @page { margin: 14mm 12mm; size: A4 portrait; }
-    *, *::before, *::after { box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-      font-size: 11.5px; line-height: 1.55; color: #0f172a; background: #fff;
-      -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;
-    }
-    h1,h2,h3,h4 { line-height: 1.2; letter-spacing: -.02em; margin: 0; }
-    .rpt-modal { font-size: 11.5px; }
-    .card, [style*="border:1px solid #e5e5e5"][style*="border-radius"] {
-      border: 1px solid #e2e8f0 !important; border-radius: 8px !important;
-      background: #fff !important; margin-bottom: 10px !important;
-      box-shadow: none !important; break-inside: avoid;
-    }
-    .cp, [style*="padding:20px 22px"] { padding: 14px 18px !important; }
-    .badge { display:inline-flex;align-items:center;padding:2px 8px;border-radius:100px;font-size:9px;font-weight:700;text-transform:uppercase; }
-    .badge-green { background:#ecfdf5!important;color:#059669!important; }
-    .badge-blue  { background:#eff6ff!important;color:#2563eb!important; }
-    .badge-gray  { background:#f1f5f9!important;color:#94a3b8!important; }
-    /* Show all tab panels */
-    .rpt-tab-panel { display: block !important; }
-    /* Hide tab bar */
-    [style*="border-bottom:1px solid #e5e5e5"][style*="overflow-x"] { display: none !important; }
-    /* Preserve colors */
-    [style*="background:#111"], [style*="background:#0f2d52"], [style*="background:#10b981"],
-    [style*="background:#ecfdf5"], [style*="background:#f0fdf4"], [style*="background:#fef2f2"],
-    [style*="background:#fffbeb"], [style*="background:#eff6ff"], [style*="background:#f1f5f9"] {
-      -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;
-    }
-    /* Section breaks */
-    .rpt-tab-panel { page-break-before: auto; break-before: auto; }
-    .rpt-tab-panel + .rpt-tab-panel { page-break-before: always; break-before: always; margin-top: 0; }
-    div { break-inside: avoid; }
+    body { font-size: 11px !important; background: #fff !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
     #pdf-bar { display: none !important; }
-    svg text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .rpt-tab-panel { display: block !important; }
+    /* hide the tab nav bar */
+    .rpt-modal > div:nth-child(2) { display: none !important; }
+    /* ensure backgrounds print */
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    /* page breaks between sections */
+    .rpt-tab-panel + .rpt-tab-panel { page-break-before: always; break-before: always; }
+    div { break-inside: avoid; }
+    /* details summary — show content open in PDF */
+    details { display: block !important; }
+    details > div { display: block !important; }
+    @media print { #pdf-bar { display: none !important; } }
   `;
 
-  const w = window.open('', '_blank', 'width=960,height=800,scrollbars=yes');
-  if (!w) { toast('Permite ventanas emergentes para descargar el PDF', 'er'); return; }
-  const fname = (c.nombre + '_' + c.apellido + '_Informe').replace(/\s+/g,'_');
-  w.document.write('<!DOCTYPE html><html lang="es"><head>');
-  w.document.write('<meta charset="UTF-8">');
-  w.document.write('<title>' + fname + '</title>');
-  w.document.write('<style>' + CSS + '</style>');
-  w.document.write('</head><body>');
-  // Download-to-PDF bar (hidden on print)
-  w.document.write('<div id="pdf-bar" style="position:fixed;top:0;left:0;right:0;background:#0f2d52;color:#fff;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;z-index:9999;font-family:inherit;font-size:13px">');
-  w.document.write('<span style="font-weight:600">' + c.nombre + ' ' + c.apellido + ' — Informe Psicolaboral</span>');
-  w.document.write('<div style="display:flex;gap:8px">');
-  w.document.write('<button onclick="window.print()" style="background:#10b981;border:none;color:#fff;padding:7px 16px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer">⬇ Guardar como PDF</button>');
-  w.document.write('<button onclick="document.getElementById(\'pdf-bar\').remove()" style="background:rgba(255,255,255,.1);border:none;color:rgba(255,255,255,.6);padding:7px 12px;border-radius:7px;font-size:12px;cursor:pointer">✕</button>');
-  w.document.write('</div></div>');
-  w.document.write('<div style="margin-top:50px" id="rpt-wrap">');
-  // Show all tab panels in print
-  var cleanBody = reportBody
-    .replace(/display:none/g, 'display:block')
-    .replace(/class="rpt-tab-btn[^"]*"[^>]*>[^<]*<\/button>/g, '');
-  w.document.write(cleanBody);
-  w.document.write('</div>');
-  w.document.write('<style>');
-  w.document.write('@media print{#pdf-bar{display:none!important}#rpt-wrap{margin-top:0!important}}');
-  w.document.write('.rpt-tab-panel{display:block!important}');
-  w.document.write('[style*="border-bottom:1px solid"][style*="display:flex"][style*="overflow-x"]{display:none!important}');
-  w.document.write('</style>');
-  w.document.write('</body></html>');
-  w.document.close();
+  const fname = (c.nombre + '_' + c.apellido + '_Informe').replace(/\s+/g, '_');
+  const html = `<!DOCTYPE html>
+<html lang="es"><head>
+<meta charset="UTF-8"><title>${fname}</title>
+<style>${inlineStyle}\n${PDF_EXTRA}</style>
+</head><body>
+<div id="pdf-bar" style="position:fixed;top:0;left:0;right:0;background:#1d1d1f;color:#fff;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;z-index:9999;font-family:inherit;font-size:13px;gap:12px">
+  <span style="font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.nombre} ${c.apellido} — Informe Psicolaboral</span>
+  <div style="display:flex;gap:8px;flex-shrink:0">
+    <button onclick="window.print()" style="background:#6366f1;border:none;color:#fff;padding:8px 18px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">⬇ Guardar como PDF</button>
+    <button onclick="document.getElementById('pdf-bar').style.display='none'" style="background:rgba(255,255,255,.12);border:none;color:rgba(255,255,255,.7);padding:8px 12px;border-radius:8px;font-size:12px;cursor:pointer">✕</button>
+  </div>
+</div>
+<div style="margin-top:52px">${reportBody}</div>
+</body></html>`;
+
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const w = window.open(url, '_blank', 'width=980,height=840,scrollbars=yes');
+  if (!w) { toast('Permite ventanas emergentes para descargar el PDF', 'er'); }
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 
 function printReport() {
