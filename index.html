@@ -580,17 +580,12 @@ input,select,textarea{font-family:inherit;outline:none}
             <option value="pending">Pendientes</option>
           </select>
         </div>
-        <div id="bulk-bar" style="display:none;align-items:center;gap:12px;padding:11px 16px;background:var(--accent-l);border:1.5px solid var(--accent)30;border-radius:10px;margin-bottom:10px;flex-wrap:wrap">
+        <div id="bulk-bar" style="display:none;align-items:center;gap:10px;padding:11px 16px;background:var(--accent-l);border:1.5px solid var(--accent-m);border-radius:10px;margin-bottom:10px;flex-wrap:wrap">
           <span id="bulk-count" style="font-size:13px;font-weight:700;color:var(--accent)">0 seleccionados</span>
-          <button class="btn btn-sm" onclick="deleteSelected()" style="background:var(--accent);color:#fff">🗑 Eliminar seleccionados</button>
+          <button id="btn-compare" class="btn btn-sm" onclick="openCompareModal()" style="background:var(--ink);color:#fff;display:none">⚖ Comparar candidatos</button>
+          <button class="btn btn-sm" onclick="deleteSelected()" style="background:#e11d48;color:#fff">🗑 Eliminar</button>
           <button class="btn btn-outline btn-sm" onclick="deleteAll()" style="border-color:#8b0000;color:#8b0000">⚠ Eliminar TODOS</button>
           <button class="btn btn-outline btn-sm" onclick="clearSelection()">✕ Cancelar</button>
-        </div>
-        <div id="bulk-bar" style="display:none;align-items:center;gap:12px;padding:11px 16px;background:#fdf0eb;border:1.5px solid #c04b1c30;border-radius:10px;margin-bottom:10px;flex-wrap:wrap">
-          <span id="bulk-count" style="font-size:13px;font-weight:700;color:#c04b1c">0 seleccionados</span>
-          <button onclick="deleteSelected()" style="padding:6px 14px;border-radius:7px;border:none;background:#c04b1c;color:#fff;font-size:12px;font-weight:700;cursor:pointer">🗑 Eliminar seleccionados</button>
-          <button onclick="deleteAll()" style="padding:6px 14px;border-radius:7px;border:1.5px solid #8b0000;background:transparent;color:#8b0000;font-size:12px;font-weight:700;cursor:pointer">⚠ Eliminar TODOS los candidatos</button>
-          <button onclick="clearSelection()" style="padding:6px 14px;border-radius:7px;border:1.5px solid var(--border);background:transparent;color:var(--ink3);font-size:12px;cursor:pointer">✕ Cancelar</button>
         </div>
         <div class="card" style="overflow:hidden">
           <table class="tbl"><thead><tr>
@@ -2627,17 +2622,271 @@ function toggleAllChecks(checked) {
 
 function updateBulkBar() {
   const checked = document.querySelectorAll('.row-chk:checked');
-  const bar = document.getElementById('bulk-bar');
+  const bar   = document.getElementById('bulk-bar');
   const count = document.getElementById('bulk-count');
+  const btnCmp = document.getElementById('btn-compare');
   if (!bar) return;
   if (checked.length > 0) {
     bar.style.display = 'flex';
     count.textContent = checked.length + ' seleccionado' + (checked.length > 1 ? 's' : '');
+    // Show compare button only when 2-5 completed candidates are selected
+    if (btnCmp) {
+      const completedChecked = Array.from(checked).filter(chk => {
+        const row = document.querySelector(`tr[data-id="${chk.dataset.id}"]`);
+        return row && row.querySelector('.badge-green');
+      });
+      btnCmp.style.display = completedChecked.length >= 2 ? 'inline-flex' : 'none';
+      btnCmp.textContent = '⚖ Comparar ' + (completedChecked.length >= 2 ? completedChecked.length + ' candidatos' : '');
+    }
   } else {
     bar.style.display = 'none';
+    if (btnCmp) btnCmp.style.display = 'none';
     const chkAll = document.getElementById('chk-all');
     if (chkAll) chkAll.checked = false;
   }
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  COMPARACIÓN DE CANDIDATOS
+// ══════════════════════════════════════════════════════════════════
+async function openCompareModal() {
+  const checked = Array.from(document.querySelectorAll('.row-chk:checked'));
+  const all = await getDB();
+  const cands = checked
+    .map(chk => all.find(c => c.id === chk.dataset.id))
+    .filter(c => c && c.estado === 'completed' && c.scores);
+  if (cands.length < 2) { toast('Selecciona al menos 2 candidatos completados', 'er'); return; }
+  if (cands.length > 5) { toast('Máximo 5 candidatos a la vez', 'er'); return; }
+
+  // ── Build reports for each candidate ──
+  const reports = cands.map(c => ({ c, rpt: buildFitReport(c) })).filter(x => x.rpt);
+  if (reports.length < 2) { toast('No hay datos suficientes para comparar', 'er'); return; }
+
+  // ── Collect all dimension keys present across all candidates ──
+  const allDimKeys = [];
+  const dimMeta = {};  // key → {label, testId, section}
+  reports.forEach(({ rpt }) => {
+    rpt.sections.forEach(sec => {
+      sec.dims.forEach(d => {
+        const k = d.testId + '_' + d.key;
+        if (!dimMeta[k]) {
+          dimMeta[k] = { label: d.label, testId: d.testId, key: d.key, section: sec.title, minLv: d.minLv || 1 };
+          allDimKeys.push(k);
+        }
+      });
+    });
+  });
+
+  // ── Color helpers ──
+  const FIT_COLORS = { 85: '#16a34a', 70: '#2563eb', 50: '#b45309', 0: '#dc2626' };
+  function fitColor(f) { return f >= 85 ? '#16a34a' : f >= 70 ? '#2563eb' : f >= 50 ? '#b45309' : '#dc2626'; }
+  function fitBg(f)    { return f >= 85 ? '#f0fdf4' : f >= 70 ? '#eff6ff' : f >= 50 ? '#fff7ed' : '#fff1f3'; }
+  function fitLabel2(f){ return f >= 85 ? 'Muy apto' : f >= 70 ? 'Apto' : f >= 50 ? 'Parcial' : 'No apto'; }
+  const LV = {1:'Muy Bajo',2:'Bajo',3:'Medio',4:'Alto',5:'Muy Alto'};
+
+  // ── Find winner per dimension (highest score) ──
+  function getDimScore(rpt, testId, key) {
+    for (const sec of rpt.sections) {
+      const d = sec.dims.find(d => d.testId === testId && d.key === key);
+      if (d) return { score: d.score, lv: scoreToLevel5(d.score), fit: d.fit, minLv: d.minLv || 1 };
+    }
+    return null;
+  }
+  function winnerIdx(dimK) {
+    const meta = dimMeta[dimK];
+    let best = -1, bestLv = -1;
+    reports.forEach(({ rpt }, i) => {
+      const d = getDimScore(rpt, meta.testId, meta.key);
+      if (d && d.lv > bestLv) { bestLv = d.lv; best = i; }
+    });
+    return best;
+  }
+
+  // N columns — max width per col
+  const N = reports.length;
+  const colW = Math.floor(100 / (N + 1)); // +1 for label col
+
+  // ── Build HTML ──
+  const PERFIL_META_C = { jefatura: '👔 Jefatura', administrativo: '🗂 Administrativo', guardia: '🛡 Guardia' };
+
+  let html = '<div id="compare-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:600;display:flex;flex-direction:column;padding:0;overflow:hidden;animation:fin .2s ease">';
+  html += '<div style="background:#fff;height:100%;display:flex;flex-direction:column;overflow:hidden">';
+
+  // ── Top bar ──
+  html += '<div style="background:#1d1d1f;color:#fff;padding:16px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">';
+  html += '<div><div style="font-size:18px;font-weight:700">⚖ Comparativa de Candidatos</div>'
+    + '<div style="font-size:12px;color:rgba(255,255,255,.45);margin-top:2px">' + N + ' candidatos · Uso interno RRHH</div></div>';
+  html += '<div style="display:flex;gap:8px">'
+    + '<button onclick="printCompare()" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">🖨 Imprimir</button>'
+    + '<button onclick="document.getElementById(\'compare-overlay\').remove()" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:22px;cursor:pointer;padding:4px 8px;line-height:1">✕</button>'
+    + '</div></div>';
+
+  // ── Scrollable body ──
+  html += '<div id="compare-body" style="overflow-y:auto;flex:1;padding:24px 28px;background:#f2f2f7">';
+
+  // ── Candidate header cards ──
+  html += '<div style="display:grid;grid-template-columns:repeat(' + N + ',1fr);gap:14px;margin-bottom:24px">';
+  reports.forEach(({ c, rpt }, i) => {
+    const fc = fitColor(rpt.globalFit);
+    const fb = fitBg(rpt.globalFit);
+    const fl = fitLabel2(rpt.globalFit);
+    // Strengths & gaps count
+    const fortalezas = rpt.fortalezas ? rpt.fortalezas.length : 0;
+    const brechas    = rpt.brechas    ? rpt.brechas.length    : 0;
+    html += '<div style="background:#fff;border:2px solid ' + fc + '40;border-radius:14px;padding:18px 20px;position:relative">';
+    html += '<div style="position:absolute;top:12px;right:12px;font-size:11px;font-weight:700;padding:3px 10px;border-radius:100px;background:' + fb + ';color:' + fc + '">' + fl + '</div>';
+    html += '<div style="font-size:15px;font-weight:800;color:#1d1d1f;margin-bottom:2px">' + c.nombre + ' ' + c.apellido + '</div>';
+    html += '<div style="font-size:12px;color:#8e8e93;margin-bottom:14px">' + (PERFIL_META_C[c.perfil] || c.cargo) + ' · ' + c.fecha + '</div>';
+    // Big fit gauge
+    html += '<div style="display:flex;align-items:center;gap:14px">';
+    html += '<div style="text-align:center">';
+    html += gaugeHtml(rpt.globalFit, fc, 80);
+    html += '<div style="font-size:10px;font-weight:700;color:' + fc + ';margin-top:2px">Ajuste global</div></div>';
+    html += '<div style="flex:1">';
+    html += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px"><span style="font-size:18px">✅</span><span style="font-size:12px;color:#1d1d1f"><strong>' + fortalezas + '</strong> fortaleza' + (fortalezas !== 1 ? 's' : '') + '</span></div>';
+    html += '<div style="display:flex;align-items:center;gap:6px"><span style="font-size:18px">⚠️</span><span style="font-size:12px;color:#1d1d1f"><strong>' + brechas + '</strong> brecha' + (brechas !== 1 ? 's' : '') + '</span></div>';
+    html += '</div></div>';
+    // Quick view button
+    html += '<button onclick="closeCmpOpenReport(\'' + c.id + '\')" style="margin-top:14px;width:100%;padding:8px;border-radius:8px;border:1.5px solid #e5e5ea;background:#fff;font-size:12px;font-weight:600;color:#1d1d1f;cursor:pointer">Ver informe completo →</button>';
+    html += '</div>';
+  });
+  html += '</div>';
+
+  // ── Dimension comparison table ──
+  html += '<div style="background:#fff;border-radius:14px;overflow:hidden;border:1px solid #e5e5ea;margin-bottom:24px">';
+  html += '<div style="padding:16px 20px;border-bottom:1px solid #f2f2f7;display:flex;align-items:center;justify-content:space-between">';
+  html += '<div style="font-size:15px;font-weight:700;color:#1d1d1f">Comparativa por dimensión</div>';
+  html += '<div style="display:flex;gap:16px;font-size:11px;color:#8e8e93">'
+    + '<span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#16a34a"></span>Cumple</span>'
+    + '<span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#b45309"></span>Cerca</span>'
+    + '<span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#e11d48"></span>No cumple</span>'
+    + '<span style="display:flex;align-items:center;gap:4px">🏆 Mejor en esta dimensión</span>'
+    + '</div></div>';
+
+  // Table header
+  html += '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">';
+  html += '<thead><tr style="background:#f9f9fb">';
+  html += '<th style="text-align:left;padding:10px 16px;font-size:11px;font-weight:600;color:#8e8e93;border-bottom:1px solid #f2f2f7;min-width:160px">Dimensión</th>';
+  reports.forEach(({ c }) => {
+    html += '<th style="text-align:center;padding:10px 12px;font-size:11px;font-weight:700;color:#1d1d1f;border-bottom:1px solid #f2f2f7;min-width:110px">'
+      + c.nombre + '<br><span style="font-weight:400;color:#8e8e93">' + (c.apellido||'') + '</span></th>';
+  });
+  html += '</tr></thead><tbody>';
+
+  // Group dimensions by section
+  const sections = {};
+  allDimKeys.forEach(k => {
+    const s = dimMeta[k].section;
+    if (!sections[s]) sections[s] = [];
+    sections[s].push(k);
+  });
+
+  let rowIdx = 0;
+  Object.entries(sections).forEach(([secTitle, dimKeys]) => {
+    // Section header row
+    html += '<tr><td colspan="' + (N + 1) + '" style="padding:8px 16px;background:#f2f2f7;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#8e8e93">' + secTitle + '</td></tr>';
+    dimKeys.forEach(dimK => {
+      const meta = dimMeta[dimK];
+      const winner = winnerIdx(dimK);
+      const rowBg = rowIdx % 2 === 0 ? '#fff' : '#fafafa';
+      rowIdx++;
+      html += '<tr style="background:' + rowBg + ';border-bottom:1px solid #f2f2f7">';
+      html += '<td style="padding:10px 16px;font-weight:600;color:#1d1d1f">'
+        + meta.label
+        + '<div style="font-size:10px;color:#8e8e93;font-weight:400;margin-top:1px">Mín. requerido: nivel ' + meta.minLv + ' · ' + LV[meta.minLv] + '</div>'
+        + '</td>';
+      reports.forEach(({ rpt }, i) => {
+        const d = getDimScore(rpt, meta.testId, meta.key);
+        if (!d) {
+          html += '<td style="text-align:center;padding:10px 12px;color:#d1d1d6;font-size:11px">—</td>';
+          return;
+        }
+        const passes = d.lv >= meta.minLv;
+        const gap    = meta.minLv - d.lv;
+        const dotCol = passes ? '#16a34a' : (gap === 1 ? '#b45309' : '#e11d48');
+        const dotBg  = passes ? '#f0fdf4' : (gap === 1 ? '#fff7ed' : '#fff1f3');
+        const isWinner = (i === winner) && N > 1;
+        html += '<td style="text-align:center;padding:10px 12px;background:' + (isWinner ? '#f0fdf4' : 'transparent') + '">';
+        // Level badge
+        html += '<div style="display:inline-flex;flex-direction:column;align-items:center;gap:3px">';
+        html += '<div style="width:36px;height:36px;border-radius:50%;background:' + dotBg + ';border:2px solid ' + dotCol + ';display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:' + dotCol + '">' + d.lv + '</div>';
+        html += '<div style="font-size:9px;font-weight:600;color:' + dotCol + '">' + (passes ? '✓ Cumple' : (gap === 1 ? '⚠ Cerca' : '✕ No cumple')) + '</div>';
+        if (isWinner) html += '<div style="font-size:10px">🏆</div>';
+        html += '</div>';
+        // Mini bar
+        html += '<div style="margin-top:5px;width:60px;height:4px;background:#e5e5ea;border-radius:2px;overflow:hidden;margin:5px auto 0">';
+        html += '<div style="height:100%;width:' + (d.lv / 5 * 100) + '%;background:' + dotCol + ';border-radius:2px"></div></div>';
+        html += '</td>';
+      });
+      html += '</tr>';
+    });
+  });
+
+  html += '</tbody></table></div></div>';
+
+  // ── Recommendation summary ──
+  html += '<div style="background:#fff;border-radius:14px;padding:20px 24px;border:1px solid #e5e5ea">';
+  html += '<div style="font-size:15px;font-weight:700;color:#1d1d1f;margin-bottom:16px">📋 Resumen para decisión</div>';
+  html += '<div style="display:grid;grid-template-columns:repeat(' + N + ',1fr);gap:12px">';
+  reports.forEach(({ c, rpt }, i) => {
+    const fc = fitColor(rpt.globalFit);
+    const fb = fitBg(rpt.globalFit);
+    const fl = fitLabel2(rpt.globalFit);
+    const brechasCount = rpt.brechas ? rpt.brechas.length : 0;
+    const fortCount    = rpt.fortalezas ? rpt.fortalezas.length : 0;
+    // Count wins
+    let wins = 0;
+    allDimKeys.forEach(k => { if (winnerIdx(k) === i) wins++; });
+    const recText = rpt.globalFit >= 70
+      ? 'Perfil <strong>recomendado</strong> para el cargo. Cumple los estándares clave.'
+      : rpt.globalFit >= 50
+      ? 'Perfil <strong>con reservas</strong>. Requiere entrevista focalizada en las brechas.'
+      : 'Perfil <strong>no recomendado</strong> en esta instancia. Brechas significativas.';
+    const recColor = rpt.globalFit >= 70 ? '#16a34a' : rpt.globalFit >= 50 ? '#b45309' : '#dc2626';
+    html += '<div style="padding:14px 16px;border-radius:10px;background:' + fb + ';border:1.5px solid ' + fc + '40">';
+    html += '<div style="font-size:13px;font-weight:700;color:#1d1d1f;margin-bottom:8px">' + c.nombre + ' ' + c.apellido + '</div>';
+    html += '<div style="font-size:28px;font-weight:900;color:' + fc + ';line-height:1">' + rpt.globalFit + '%</div>';
+    html += '<div style="font-size:11px;font-weight:700;color:' + fc + ';margin-bottom:10px">' + fl + '</div>';
+    html += '<div style="font-size:11px;color:#48484a;line-height:1.6;margin-bottom:10px">' + recText + '</div>';
+    html += '<div style="display:flex;gap:8px;font-size:10px;flex-wrap:wrap">';
+    html += '<span style="background:#fff;border-radius:6px;padding:3px 8px;color:#16a34a;font-weight:600">✅ ' + fortCount + ' fortaleza' + (fortCount!==1?'s':'') + '</span>';
+    html += '<span style="background:#fff;border-radius:6px;padding:3px 8px;color:#e11d48;font-weight:600">⚠ ' + brechasCount + ' brecha' + (brechasCount!==1?'s':'') + '</span>';
+    if (N > 1) html += '<span style="background:#fff;border-radius:6px;padding:3px 8px;color:#6366f1;font-weight:600">🏆 ' + wins + ' mejor dim.</span>';
+    html += '</div></div>';
+  });
+  html += '</div></div>';
+
+  html += '</div></div></div>'; // close body, inner, overlay
+
+  // ── Inject ──
+  const existing = document.getElementById('compare-overlay');
+  if (existing) existing.remove();
+  const div = document.createElement('div');
+  div.innerHTML = html;
+  document.body.appendChild(div.firstChild);
+}
+
+function closeCmpOpenReport(id) {
+  const ov = document.getElementById('compare-overlay');
+  if (ov) ov.remove();
+  viewCandReport(id);
+}
+
+function printCompare() {
+  const body = document.getElementById('compare-body');
+  if (!body) return;
+  const inlineStyle = document.querySelector('style') ? document.querySelector('style').textContent : '';
+  const printHtml = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Comparativa Candidatos</title>
+<style>${inlineStyle}
+@page{margin:12mm 10mm;size:A4 landscape}
+body{font-size:11px;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+div{break-inside:avoid}
+</style></head><body>${body.innerHTML}</body></html>`;
+  const blob = new Blob([printHtml], {type:'text/html;charset=utf-8'});
+  const url  = URL.createObjectURL(blob);
+  const w = window.open(url, '_blank', 'width=1100,height=800');
+  if (w) setTimeout(() => { w.print(); URL.revokeObjectURL(url); }, 800);
 }
 
 function clearSelection() {
