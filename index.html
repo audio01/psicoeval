@@ -518,6 +518,7 @@ input,select,textarea{font-family:inherit;outline:none}
       <button class="nav-btn active" id="nav-dashboard" onclick="adminTab('dashboard',this)"><span>📊</span><span>Dashboard</span></button>
       <button class="nav-btn" id="nav-candidates" onclick="adminTab('candidates',this)"><span>👥</span><span>Candidatos</span></button>
       <button class="nav-btn" id="nav-reports" onclick="adminTab('reports',this)"><span>📄</span><span>Informes</span></button>
+      <button class="nav-btn" id="nav-raw" onclick="adminTab('raw',this)"><span>🔢</span><span>Datos Brutos</span></button>
       <button class="nav-btn" id="nav-params" onclick="adminTab('params',this)"><span>⚙</span><span>Parámetros</span></button>
       <button class="nav-btn" id="nav-users" onclick="adminTab('users',this)"><span>👤</span><span>Usuarios</span></button>
       <div style="flex:1"></div>
@@ -593,6 +594,17 @@ input,select,textarea{font-family:inherit;outline:none}
             <th>Candidato</th><th>Cargo</th><th>Tests</th><th>Estado</th><th>Fecha</th><th>Acciones</th>
           </tr></thead><tbody id="cand-tbody"></tbody></table>
         </div>
+      </div>
+      <!-- Raw Data -->
+      <div id="tab-raw" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:22px">
+          <div>
+            <h2 style="font-size:26px;font-weight:800;margin-bottom:4px">Datos Brutos</h2>
+            <p style="font-size:13px;color:var(--ink3)">Puntajes directos de cada test sin interpretación</p>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="renderRaw()">↻ Actualizar</button>
+        </div>
+        <div id="raw-content"></div>
       </div>
       <!-- Reports -->
       <div id="tab-reports" style="display:none">
@@ -696,17 +708,18 @@ input,select,textarea{font-family:inherit;outline:none}
 //  TEST METADATA
 // ═══════════════════════════════════════════════════════════
 const TESTS_META = {
-  barratt: { name:'Impulsividad Barratt (BIS-11)',   icon:'🧩', color:'var(--navy)'  },
-  dc0:     { name:'Aptitud Cognitiva (DC-0)',         icon:'⚡', color:'var(--green)'  },
-  pai:     { name:'Ajuste Psicológico (PAI)',         icon:'🔎', color:'var(--gold)'   },
-  situacional:{ name:'Juicio Situacional',            icon:'💡', color:'var(--accent)' },
-  vigilancia:{ name:'Aptitud de Vigilancia',          icon:'🛡', color:'var(--ink2)'   },
+  barratt:      { name:'Impulsividad Barratt (BIS-11)',      icon:'🧩', color:'var(--navy)'   },
+  dc0:          { name:'Aptitud Cognitiva (DC-0)',            icon:'⚡', color:'var(--green)'  },
+  pai:          { name:'Ajuste Psicológico (PAI)',            icon:'🔎', color:'var(--gold)'   },
+  situacional:  { name:'Juicio Situacional',                 icon:'💡', color:'var(--accent)' },
+  vigilancia:   { name:'Aptitud de Vigilancia',              icon:'🛡', color:'var(--ink2)'   },
+  comprension:  { name:'Comprensión de Instrucciones',       icon:'📋', color:'var(--lilac)'  },
 };
 
 const PERFIL_TESTS = {
-  jefatura:      ['barratt','dc0','pai','situacional'],
-  administrativo:['barratt','dc0','pai'],
-  guardia:       ['barratt','pai','situacional','vigilancia'],
+  jefatura:      ['barratt','dc0','pai','situacional','comprension'],
+  administrativo:['barratt','dc0','pai','comprension'],
+  guardia:       ['barratt','pai','situacional','vigilancia','comprension'],
 };
 
 const PERFIL_META = {
@@ -1000,6 +1013,190 @@ const VIGQ = [
 ];
 
 // ═══════════════════════════════════════════════════════════
+//  COMPRENSIÓN DE INSTRUCCIONES — Bancos por perfil
+// ═══════════════════════════════════════════════════════════
+
+// ── JEFATURA: instrucciones de gestión y toma de decisiones ──
+const COMP_JEFATURA = [
+  { id:'cj1',
+    text:'Protocolo de aprobación de gastos: los gastos hasta $50.000 los aprueba el jefe directo. Los gastos entre $50.001 y $200.000 requieren aprobación del jefe directo Y del área de finanzas. Los gastos sobre $200.000 requieren además la firma de gerencia. Un colaborador solicita $180.000 para materiales de capacitación. ¿Quién debe aprobar?',
+    opts:[
+      {t:'Solo el jefe directo.',ok:false},
+      {t:'El jefe directo y finanzas.',ok:true},
+      {t:'El jefe directo, finanzas y gerencia.',ok:false},
+      {t:'Solo el área de finanzas.',ok:false}]},
+  { id:'cj2',
+    text:'Política de licencias: si un trabajador lleva menos de 6 meses en la empresa, solo puede tomar licencias médicas. Si lleva entre 6 y 12 meses, puede tomar licencias médicas y 3 días de permiso administrativo al año. Si lleva más de 12 meses, tiene además derecho a vacaciones proporcionales. María lleva 8 meses. ¿A qué tiene derecho?',
+    opts:[
+      {t:'Solo licencias médicas.',ok:false},
+      {t:'Licencias médicas y 3 días de permiso administrativo.',ok:true},
+      {t:'Licencias médicas, permiso administrativo y vacaciones.',ok:false},
+      {t:'Ningún beneficio aún.',ok:false}]},
+  { id:'cj3',
+    text:'Procedimiento de reuniones de equipo: si el quórum es inferior al 60% del equipo, la reunión se pospone. Si el quórum está entre 60% y 79%, se puede sesionar pero no se toman acuerdos vinculantes. Con 80% o más, la reunión es plena y los acuerdos son vinculantes. Asisten 7 de 10 personas. ¿Qué corresponde?',
+    opts:[
+      {t:'Posponer la reunión.',ok:false},
+      {t:'Sesionar sin tomar acuerdos vinculantes.',ok:false},
+      {t:'Sesionar con plenas facultades para tomar acuerdos.',ok:true},
+      {t:'Sesionar solo para temas informativos.',ok:false}]},
+  { id:'cj4',
+    text:'Escala de urgencia para escalar problemas: los problemas que afectan a 1 persona deben resolverse en 48 horas. Si afectan a más de 1 persona pero menos de 5, en 24 horas. Si afectan a 5 o más personas O implican riesgo legal, se escala inmediatamente a gerencia. Se detecta un error en nóminas que afecta a 6 personas. ¿Qué corresponde?',
+    opts:[
+      {t:'Resolverlo en 48 horas.',ok:false},
+      {t:'Resolverlo en 24 horas.',ok:false},
+      {t:'Escalar inmediatamente a gerencia.',ok:true},
+      {t:'Informar solo a las personas afectadas.',ok:false}]},
+  { id:'cj5',
+    text:'Política de feedback: el feedback correctivo debe darse siempre en privado. El feedback positivo puede darse en público o en privado según criterio del jefe. Si el colaborador tiene menos de 3 meses, todo feedback debe acompañarse de un plan de acción escrito. Pedro lleva 2 meses y cometió un error grave. ¿Cómo procedes?',
+    opts:[
+      {t:'Feedback correctivo en público con plan de acción escrito.',ok:false},
+      {t:'Feedback correctivo en privado con plan de acción escrito.',ok:true},
+      {t:'Feedback correctivo en privado, sin necesidad de escrito aún.',ok:false},
+      {t:'Derivarlo directamente a RRHH.',ok:false}]},
+  { id:'cj6',
+    text:'Protocolo de contratación de reemplazos: si la ausencia es de hasta 5 días, el trabajo se redistribuye internamente. Si es entre 6 y 15 días, se puede contratar un reemplazo temporal con autorización del jefe directo. Si supera los 15 días, se requiere autorización del jefe directo y RRHH. Un trabajador se ausentará 12 días. ¿Qué procede?',
+    opts:[
+      {t:'Redistribuir el trabajo internamente.',ok:false},
+      {t:'Contratar reemplazo con autorización solo del jefe directo.',ok:true},
+      {t:'Contratar reemplazo con autorización del jefe directo y RRHH.',ok:false},
+      {t:'No se puede contratar reemplazo en ningún caso.',ok:false}]},
+  { id:'cj7',
+    text:'Regla de comunicación de resultados: los resultados negativos del área deben informarse primero a gerencia y luego al equipo, en ese orden. Los resultados positivos pueden comunicarse al equipo directamente. Si los resultados implican reestructuración, la comunicación al equipo debe hacerse en conjunto con RRHH. Hay resultados negativos que implicarán reestructuración. ¿Cómo comunicas?',
+    opts:[
+      {t:'Informar primero al equipo y luego a gerencia.',ok:false},
+      {t:'Informar primero a gerencia, luego al equipo junto a RRHH.',ok:true},
+      {t:'Informar directamente al equipo junto a RRHH.',ok:false},
+      {t:'Informar solo a gerencia, el equipo no necesita saber.',ok:false}]},
+  { id:'cj8',
+    text:'Política de evaluación de desempeño: si el puntaje es 1–2, se abre un plan de mejora obligatorio de 60 días. Si es 3, se agenda una reunión de retroalimentación. Si es 4–5, se registra como candidato a promoción. Si el trabajador ya tuvo un plan de mejora en los últimos 12 meses y vuelve a obtener 1–2, corresponde iniciar proceso disciplinario. Carlos obtuvo 2 puntos y tuvo un plan de mejora hace 8 meses. ¿Qué corresponde?',
+    opts:[
+      {t:'Abrir un nuevo plan de mejora de 60 días.',ok:false},
+      {t:'Agendar solo una reunión de retroalimentación.',ok:false},
+      {t:'Iniciar proceso disciplinario.',ok:true},
+      {t:'Registrarlo como candidato a promoción.',ok:false}]},
+];
+
+// ── ADMINISTRATIVO: instrucciones de procesos documentales y autorizaciones ──
+const COMP_ADMIN = [
+  { id:'ca1',
+    text:'Procedimiento de recepción de documentos: los documentos recibidos antes de las 15:00 se procesan el mismo día. Los recibidos después de las 15:00 se procesan al día hábil siguiente. Si el documento está marcado como "urgente", se procesa dentro de las 2 horas siguientes sin importar la hora. Llega un documento urgente a las 16:30. ¿Cuándo se procesa?',
+    opts:[
+      {t:'Al día hábil siguiente.',ok:false},
+      {t:'El mismo día antes de las 18:00.',ok:false},
+      {t:'Dentro de las 2 horas siguientes.',ok:true},
+      {t:'A primera hora del día siguiente.',ok:false}]},
+  { id:'ca2',
+    text:'Política de archivo: los documentos originales se archivan en la carpeta física. Las copias digitales se suben al sistema. Si el documento contiene datos personales, debe además registrarse en el libro de datos sensibles. Si es un contrato, requiere adicionalmente firma del jefe de área. Recibes un contrato con datos personales. ¿Qué pasos debes seguir?',
+    opts:[
+      {t:'Archivar el original y subir copia digital.',ok:false},
+      {t:'Archivar original, subir copia digital y registrar en libro de datos sensibles.',ok:false},
+      {t:'Archivar original, subir copia digital, registrar en libro de datos sensibles y obtener firma del jefe de área.',ok:true},
+      {t:'Solo subir al sistema y pedir firma del jefe.',ok:false}]},
+  { id:'ca3',
+    text:'Regla de despacho de materiales: los materiales de oficina se despachan con la solicitud firmada por el solicitante. Si el valor es mayor a $20.000, se requiere además firma del supervisor. Si el material no está en stock, se genera una orden de compra y el plazo de entrega es 5 días hábiles. Llega una solicitud por $25.000 de material que no está en stock. ¿Qué haces?',
+    opts:[
+      {t:'Despachar con solo la firma del solicitante.',ok:false},
+      {t:'Solicitar firma del supervisor y generar orden de compra.',ok:true},
+      {t:'Generar orden de compra sin necesidad de firmas.',ok:false},
+      {t:'Rechazar la solicitud por no haber stock.',ok:false}]},
+  { id:'ca4',
+    text:'Manejo de llamadas entrantes: las llamadas para el gerente se derivan directamente si él está disponible. Si no está disponible, se toma el mensaje y se informa en un plazo máximo de 30 minutos. Si la llamada es de un cliente con reclamo activo, se transfiere al área de atención al cliente sin importar la disponibilidad del gerente. Llama un cliente con un reclamo activo mientras el gerente está en reunión. ¿Qué haces?',
+    opts:[
+      {t:'Tomar el mensaje y avisar al gerente en 30 minutos.',ok:false},
+      {t:'Interrumpir la reunión del gerente.',ok:false},
+      {t:'Transferir al área de atención al cliente.',ok:true},
+      {t:'Pedir al cliente que llame más tarde.',ok:false}]},
+  { id:'ca5',
+    text:'Política de uso de caja chica: montos hasta $5.000 se pueden usar sin formulario. Entre $5.001 y $15.000 requieren formulario y recibo. Sobre $15.000 requieren formulario, recibo y autorización previa escrita del jefe. Todos los gastos deben rendirse dentro de 48 horas. Se gasta $12.000 en materiales de emergencia. ¿Qué se debe presentar al rendir?',
+    opts:[
+      {t:'Solo el recibo.',ok:false},
+      {t:'Formulario y recibo.',ok:true},
+      {t:'Formulario, recibo y autorización escrita del jefe.',ok:false},
+      {t:'Nada, es un gasto de emergencia.',ok:false}]},
+  { id:'ca6',
+    text:'Protocolo de errores en documentos oficiales: si el error es tipográfico, se corrige directamente y se inicia con las iniciales de quien corrigió. Si el error afecta datos numéricos o nombres propios, se anula el documento y se emite uno nuevo. Si el documento ya fue firmado por dos o más partes, cualquier corrección requiere notificación a todas las partes. Detectas un error en un nombre en un documento ya firmado por dos personas. ¿Qué haces?',
+    opts:[
+      {t:'Corregir directamente e inicializar la corrección.',ok:false},
+      {t:'Anular el documento y emitir uno nuevo.',ok:false},
+      {t:'Anular el documento, emitir uno nuevo y notificar a ambas partes.',ok:true},
+      {t:'Dejar el error y anotar una observación al margen.',ok:false}]},
+  { id:'ca7',
+    text:'Regla de priorización de tareas: las tareas con fecha límite hoy tienen máxima prioridad. Las tareas urgentes sin fecha específica son segunda prioridad. Las tareas de rutina diaria son tercera prioridad. Si dos tareas tienen la misma prioridad, se atiende primero la que llegó antes. Tienes: una tarea urgente sin fecha (llegó a las 9:00), una tarea con fecha límite hoy (llegó a las 10:00) y una rutina (llegó a las 8:00). ¿En qué orden trabajas?',
+    opts:[
+      {t:'Rutina → urgente → fecha límite hoy.',ok:false},
+      {t:'Urgente → fecha límite hoy → rutina.',ok:false},
+      {t:'Fecha límite hoy → urgente → rutina.',ok:true},
+      {t:'La que llegó primero: rutina → urgente → fecha límite.',ok:false}]},
+  { id:'ca8',
+    text:'Procedimiento de permisos de ausencia: los permisos de hasta 2 horas los autoriza el supervisor directo. Los permisos de medio día o más requieren autorización del supervisor y registro en RRHH. Si el permiso es por razones médicas, siempre se requiere certificado, independiente de la duración. Un colaborador pide 1 hora de permiso por control médico. ¿Qué se necesita?',
+    opts:[
+      {t:'Solo la autorización del supervisor.',ok:false},
+      {t:'Autorización del supervisor y registro en RRHH.',ok:false},
+      {t:'Autorización del supervisor y certificado médico.',ok:true},
+      {t:'Solo el certificado médico.',ok:false}]},
+];
+
+// ── GUARDIA: instrucciones de protocolos de seguridad y acceso ──
+const COMP_GUARDIA = [
+  { id:'cg1',
+    text:'Protocolo de acceso de visitas: los visitantes con cita previa registrada deben ser anunciados al área correspondiente antes de ingresar. Los visitantes sin cita deben esperar en recepción mientras se consulta al área si los recibirán. Si el área no confirma en 10 minutos, el visitante debe retirarse. Si el visitante tiene identificación de empresa proveedora habitual, puede ingresar directo a bodega sin anuncio previo. Llega un visitante con cita previa. ¿Qué haces?',
+    opts:[
+      {t:'Dejarlo ingresar directamente sin anuncio.',ok:false},
+      {t:'Anunciarlo al área correspondiente y luego dejarlo ingresar.',ok:true},
+      {t:'Pedirle que espere 10 minutos en recepción.',ok:false},
+      {t:'Solicitar su identificación y dejarlo pasar.',ok:false}]},
+  { id:'cg2',
+    text:'Regla de zonas restringidas: la zona A es de libre acceso con credencial de empleado. La zona B requiere credencial de empleado MÁS autorización escrita del jefe de área. La zona C solo es accesible para personal autorizado en lista oficial, sin excepciones. Un empleado con credencial vigente solicita acceso a zona B diciendo que su jefe lo autorizó verbalmente. ¿Qué haces?',
+    opts:[
+      {t:'Dejarlo pasar porque tiene credencial vigente.',ok:false},
+      {t:'Dejarlo pasar porque el jefe lo autorizó.',ok:false},
+      {t:'Solicitar la autorización escrita del jefe antes de permitir el acceso.',ok:true},
+      {t:'Llamar al jefe para confirmar la autorización verbal.',ok:false}]},
+  { id:'cg3',
+    text:'Protocolo de objetos sospechosos: si se detecta un objeto no identificado en área pública, se debe acordonar el sector y avisar al supervisor inmediatamente. Si el objeto está en zona restringida, se evacua además el área adyacente. Si hay una persona que dice ser dueña del objeto, se retiene a esa persona hasta que llegue el supervisor. Se encuentra una mochila sin dueño en una zona restringida. ¿Qué haces primero?',
+    opts:[
+      {t:'Abrir la mochila para verificar su contenido.',ok:false},
+      {t:'Acordonar el sector, evacuar el área adyacente y avisar al supervisor.',ok:true},
+      {t:'Solo avisar al supervisor y esperar instrucciones.',ok:false},
+      {t:'Preguntar a los presentes si alguien reconoce la mochila.',ok:false}]},
+  { id:'cg4',
+    text:'Procedimiento de registro de ingreso: todo vehículo de reparto debe ser registrado con patente, nombre del conductor y empresa. Si transporta materiales peligrosos, debe además presentar guía de transporte y se notifica al área de seguridad industrial. Si el conductor no presenta documentación completa, no puede ingresar al recinto. Llega un camión de reparto con materiales peligrosos pero sin guía de transporte. ¿Qué haces?',
+    opts:[
+      {t:'Dejarlo ingresar y notificar a seguridad industrial.',ok:false},
+      {t:'Registrar sus datos y pedirle que espere.',ok:false},
+      {t:'No permitir el ingreso hasta que presente la guía de transporte.',ok:true},
+      {t:'Avisarle al supervisor para que él decida.',ok:false}]},
+  { id:'cg5',
+    text:'Protocolo nocturno de rondas: las rondas se hacen cada 60 minutos en turno normal. Si hay incidente o alarma, la ronda siguiente se hace a los 20 minutos. Si llueve o hay condiciones climáticas adversas, se agregan puntos de revisión en accesos externos. Esta noche hubo una alarma hace 25 minutos y está lloviendo. ¿Cuándo es la próxima ronda y qué incluye?',
+    opts:[
+      {t:'En 60 minutos, ronda normal.',ok:false},
+      {t:'En 35 minutos, ronda normal.',ok:false},
+      {t:'Inmediatamente, ya que pasaron 25 minutos desde el incidente.',ok:false},
+      {t:'En los próximos 20 minutos desde el incidente, incluyendo accesos externos.',ok:true}]},
+  { id:'cg6',
+    text:'Regla de entrega de llaves: las llaves de oficinas se entregan solo al titular del cargo o a quien esté en la lista de autorizados del área. Si el solicitante no está en la lista, se requiere autorización escrita del jefe de área. Fuera del horario laboral, solo se entrega a personal en lista de emergencia. A las 21:00 llega un empleado que no está en la lista de emergencia y dice necesitar la llave de su oficina urgente. ¿Qué haces?',
+    opts:[
+      {t:'Entregarle la llave porque es empleado de la empresa.',ok:false},
+      {t:'Pedirle que espere a que llegue alguien de la lista.',ok:false},
+      {t:'No entregar la llave; fuera de horario solo se entrega a personal en lista de emergencia.',ok:true},
+      {t:'Llamar a su jefe para pedir autorización verbal.',ok:false}]},
+  { id:'cg7',
+    text:'Protocolo de evacuación: ante alarma de incendio, los guardias del primer piso evacúan el hall principal y verifican baños. Los guardias de pisos superiores acompañan la salida por escaleras de emergencia. El guardia de recepción llama a bomberos y permanece en su puesto hasta la llegada de servicios de emergencia. Eres el guardia del segundo piso. Suena la alarma. ¿Qué haces?',
+    opts:[
+      {t:'Llamar a bomberos desde tu puesto.',ok:false},
+      {t:'Ir al hall principal a apoyar la evacuación.',ok:false},
+      {t:'Acompañar la evacuación del segundo piso por escalera de emergencia.',ok:true},
+      {t:'Evacuar el edificio y esperar afuera.',ok:false}]},
+  { id:'cg8',
+    text:'Política de reporte de incidentes: cualquier incidente que involucre a una persona (lesión, pelea, desmayo) debe reportarse al supervisor de turno en el momento. Si hay lesionados, se llama primero a emergencias médicas y luego se reporta al supervisor. El reporte escrito debe completarse dentro de las 2 horas siguientes al incidente. Un visitante se desmaya en recepción. ¿Cuál es el orden correcto de acciones?',
+    opts:[
+      {t:'Reportar al supervisor → llamar a emergencias → completar el reporte escrito.',ok:false},
+      {t:'Llamar a emergencias → reportar al supervisor → completar reporte escrito en 2 horas.',ok:true},
+      {t:'Completar el reporte escrito primero para tener todo documentado.',ok:false},
+      {t:'Llamar a emergencias y esperar; el supervisor se enterará solo.',ok:false}]},
+];
+
+// ═══════════════════════════════════════════════════════════
 //  CONSTRUCCIÓN DE PREGUNTAS POR PERFIL
 // ═══════════════════════════════════════════════════════════
 function buildQuestions(perfil) {
@@ -1011,15 +1208,18 @@ function buildQuestions(perfil) {
     add([...DC0_BASE,  ...DC0_JEFATURA],  'dc0',  'choice');
     add(PAI_BASE,                         'pai',  'pai');
     add(SIT_JEFATURA,                     'situacional', 'situacional');
+    add(COMP_JEFATURA,                    'comprension', 'choice');
   } else if (perfil === 'administrativo') {
     add(BIS11_ITEMS, 'barratt', 'likert');
     add([...DC0_BASE,  ...DC0_ADMIN],  'dc0',  'choice');
     add(PAI_BASE,                      'pai',  'pai');
+    add(COMP_ADMIN,                    'comprension', 'choice');
   } else if (perfil === 'guardia') {
     add(BIS11_ITEMS, 'barratt', 'likert');
     add(PAI_BASE,                        'pai',  'pai');
     add(SIT_GUARDIA,                     'situacional', 'situacional');
     add(VIGQ,                            'vigilancia',  'choice');
+    add(COMP_GUARDIA,                    'comprension', 'choice');
   }
   return qs;
 }
@@ -1092,6 +1292,14 @@ function calcScores(answers, selectedTests, perfil) {
     let correct = 0;
     qs2.forEach(q => { const idx = answers[q.id]; if (idx!==undefined && q.opts[idx].ok) correct++; });
     scores.vigilancia = { pct: qs2.length ? Math.round(correct/qs2.length*100) : 0, correct, total: qs2.length };
+  }
+
+  // Comprensión de Instrucciones
+  if (selectedTests.includes('comprension')) {
+    const qs2 = allQs.filter(q=>q.testId==='comprension');
+    let correct = 0;
+    qs2.forEach(q => { const idx = answers[q.id]; if (idx!==undefined && q.opts[idx].ok) correct++; });
+    scores.comprension = { pct: qs2.length ? Math.round(correct/qs2.length*100) : 0, correct, total: qs2.length };
   }
 
   return scores;
@@ -1198,7 +1406,7 @@ function submitRegister() {
   banner.style.background = pm.color+'10'; banner.style.borderColor = pm.color+'40';
   banner.innerHTML = '<span style="font-size:24px">'+pm.icon+'</span><div style="margin-top:8px"><strong style="font-size:15px">'+pm.label+'</strong><div style="font-size:13px;color:var(--ink3);margin-top:3px">'+pm.desc+'</div></div>';
   const tests = PERFIL_TESTS[perfil];
-  const testMins = {barratt:12,dc0:20,pai:15,situacional:12,vigilancia:10};
+  const testMins = {barratt:12,dc0:20,pai:15,situacional:12,vigilancia:10,comprension:10};
   document.getElementById('sel-tests-list').innerHTML = tests.map(t => {
     const m = TESTS_META[t];
     return '<div style="display:flex;align-items:center;gap:14px;padding:13px 16px;border-radius:10px;background:var(--bg);border:1px solid var(--border)"><span style="font-size:22px">'+m.icon+'</span><div style="flex:1"><div style="font-weight:700;font-size:14px">'+m.name+'</div></div><span style="font-size:12px;color:var(--ink3)">~'+testMins[t]+' min</span></div>';
@@ -1341,7 +1549,8 @@ const PERFIL_IDEAL = {
       N:  { min:55, max:100, peso:2, label:'Numérico',           req:'Análisis de indicadores y presupuestos.' },
       L:  { min:60, max:100, peso:3, label:'Lógico-Abstracto',   req:'Toma de decisiones complejas con información incompleta.' },
     },
-    situacional: { min:70, max:100, peso:4, label:'Juicio Situacional', req:'Decisiones correctas ante escenarios de liderazgo.' },
+    situacional: { min:70, max:100, peso:4, label:'Juicio Situacional',          req:'Decisiones correctas ante escenarios de liderazgo.' },
+    comprension: { min:75, max:100, peso:4, label:'Comprensión de Instrucciones', req:'Interpreta y aplica correctamente instrucciones complejas y procedimientos de gestión.' },
   },
 
   administrativo: {
@@ -1363,6 +1572,7 @@ const PERFIL_IDEAL = {
       N:  { min:60, max:100, peso:3, label:'Numérico',          req:'Manejo de cifras, archivos y registros.' },
       L:  { min:50, max:100, peso:2, label:'Lógico-Abstracto',  req:'Aplicación correcta de procedimientos.' },
     },
+    comprension: { min:75, max:100, peso:5, label:'Comprensión de Instrucciones', req:'Sigue instrucciones multi-condición con precisión; aplica procedimientos sin omitir pasos clave.' },
   },
 
   guardia: {
@@ -1379,8 +1589,9 @@ const PERFIL_IDEAL = {
       AS: { min:50, max:80,  peso:2, label:'Adapt. Social',    req:'Trato respetuoso con usuarios y visitas.' },
       ML: { min:55, max:100, peso:1, label:'Motivación',       req:'Disposición positiva en tareas rutinarias.' },
     },
-    situacional: { min:70, max:100, peso:5, label:'Juicio Situacional', req:'Decisiones correctas en incidentes de seguridad.' },
-    vigilancia:  { min:65, max:100, peso:5, label:'Apt. Vigilancia',    req:'Atención sostenida y aplicación de protocolos.' },
+    situacional: { min:70, max:100, peso:5, label:'Juicio Situacional',          req:'Decisiones correctas en incidentes de seguridad.' },
+    vigilancia:  { min:65, max:100, peso:5, label:'Apt. Vigilancia',             req:'Atención sostenida y aplicación de protocolos.' },
+    comprension: { min:80, max:100, peso:5, label:'Comprensión de Instrucciones', req:'Aplica protocolos de seguridad con precisión; sin ambigüedad ante instrucciones multi-condición.' },
   },
 };
 // ── Ensure minLv is set on all cfg entries ──────────────────
@@ -1525,6 +1736,20 @@ function buildFitReport(c) {
       gap: score < cfg.min ? 'bajo' : 'ok' };
     sections.push({ id:'vigilancia', icon:'🛡', title:'Aptitud de Vigilancia', dims:[dim], secFit:fit,
       desc:'Atención sostenida y criterio en situaciones de seguridad.' });
+  }
+
+  // ── Comprensión de Instrucciones ──
+  if (s.comprension && ideal.comprension) {
+    const cfg = ideal.comprension;
+    const score = s.comprension.pct;
+    const fit = calcFit(score, cfg.min, cfg.max);
+    totalPeso += cfg.peso;
+    totalFitPeso += fit * cfg.peso;
+    const dim = { key:'comp', label:cfg.label, score, fit, peso:cfg.peso, req:cfg.req,
+      ideal:`${cfg.min}–${cfg.max}`, extra:`${s.comprension.correct}/${s.comprension.total} correctas`,
+      gap: score < cfg.min ? 'bajo' : 'ok', minLv: cfg.minLv || scoreToLevel5(cfg.min), testId:'comprension' };
+    sections.push({ id:'comprension', icon:'📋', title:'Comprensión de Instrucciones', dims:[dim], secFit:fit,
+      desc:'Capacidad de interpretar y aplicar instrucciones complejas con múltiples condiciones.' });
   }
 
   const globalFit = totalPeso > 0 ? Math.round(totalFitPeso / totalPeso) : 0;
@@ -1679,6 +1904,11 @@ function dimDesc(testId, key, score) {
       if (lv5 >= 4) return 'Mantuvo alta concentración y precisión durante la tarea de vigilancia, detectando correctamente los estímulos relevantes con mínimo margen de error.';
       if (lv5 >= 3) return 'Evidenció un desempeño adecuado en la tarea de vigilancia. Puede mostrar algunas omisiones en condiciones de mayor duración o monotonía.';
       return 'Mostró dificultades para mantener la atención sostenida durante la tarea de vigilancia. Se recomienda considerar este resultado en roles que exigen alta concentración continua.';
+    }
+    if (testId === 'comprension') {
+      if (lv5 >= 4) return 'Demuestra sólida capacidad para interpretar y aplicar instrucciones con múltiples condiciones sin omitir pasos.';
+      if (lv5 >= 3) return 'Comprende instrucciones de mediana complejidad. Ante condiciones encadenadas puede requerir verificación puntual.';
+      return 'Presenta dificultades para seguir instrucciones multi-condición. Se recomienda explorar en entrevista cómo enfrenta procedimientos complejos.';
     }
     return '';
   }
@@ -1922,6 +2152,7 @@ function buildReportHtml(c, withClose) {
   if (s.dc0  && rpt.sections.find(x=>x.id==='dc0'))         tabs.push({ id:'dc0',        label:'Aptitud Cognitiva', icon:'⚡' });
   if (s.situacional && rpt.sections.find(x=>x.id==='situacional')) tabs.push({ id:'situacional', label:'Juicio Situacional', icon:'💡' });
   if (s.vigilancia  && rpt.sections.find(x=>x.id==='vigilancia'))  tabs.push({ id:'vigilancia',  label:'Vigilancia', icon:'🛡' });
+  if (s.comprension && rpt.sections.find(x=>x.id==='comprension')) tabs.push({ id:'comprension', label:'Comprensión', icon:'📋' });
 
   html += '<div style="border-bottom:1px solid #e5e5e5;background:#fff;padding:0 28px;display:flex;gap:0;overflow-x:auto;flex-shrink:0">';
   tabs.forEach(function(t, i) {
@@ -2006,17 +2237,7 @@ function buildReportHtml(c, withClose) {
       }).join('') : '<div style="font-size:13px;color:#94a3b8;padding:12px 0">No se detectaron brechas significativas en esta evaluación.</div>')
     + '</div></div></div>';
 
-  // Preguntas entrevista
-  html += '<div style="background:#fff;border:1px solid #e5e5e5;border-radius:10px;padding:20px 22px">'
-    + '<div style="font-size:16px;font-weight:700;margin-bottom:4px">🎤 Preguntas para Entrevista</div>'
-    + '<div style="font-size:12px;color:#999;margin-bottom:14px">Basadas en las brechas detectadas para el cargo ' + pm.label + '.</div>'
-    + '<div style="display:flex;flex-direction:column;gap:10px">'
-    + rpt.entrevista.map(function(q,i){
-        return '<div style="display:flex;gap:12px;padding:10px 12px;background:#f9f9f9;border-radius:8px;border-left:3px solid #e5e5e5">'
-          + '<div style="font-size:12px;font-weight:700;color:#999;flex-shrink:0;min-width:18px">' + (i+1) + '</div>'
-          + '<div style="font-size:13px;line-height:1.6;color:#333">' + q + '</div></div>';
-      }).join('')
-    + '</div></div>';
+  // (preguntas de entrevista eliminadas)
 
   html += '</div>'; // end tab-panel general
 
@@ -2316,6 +2537,75 @@ function buildReportHtml(c, withClose) {
       + '<span style="font-size:11px;color:#8e8e93;margin-right:4px">Respuestas:</span>'
       + Array.from({length:s.vigilancia.total}, function(_,i){
           return '<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:' + (i<s.vigilancia.correct ? '#dcfce7' : '#f1f5f9') + ';border:1.5px solid ' + (i<s.vigilancia.correct ? '#16a34a' : '#d1d1d6') + ';font-size:12px">' + (i<s.vigilancia.correct ? '✓' : '✕') + '</span>';
+        }).join('')
+      + '</div>'
+      + '</div>';
+    html += '</div>';
+  }
+
+  // ════════════════════════════════════════════
+  // TAB: COMPRENSIÓN DE INSTRUCCIONES
+  // ════════════════════════════════════════════
+  if (s.comprension && rpt.sections.find(function(x){return x.id==='comprension';})) {
+    const sec     = rpt.sections.find(function(x){return x.id==='comprension';});
+    const pct     = s.comprension.pct;
+    const lv5     = scoreToLevel5(pct);
+    const minLv   = (PERFIL_IDEAL[perfil]?.comprension?.minLv) || scoreToLevel5(PERFIL_IDEAL[perfil]?.comprension?.min || 75);
+    const passes  = lv5 >= minLv;
+    const gap     = minLv - lv5;
+    const borderC = passes ? '#16a34a' : (gap === 1 ? '#b45309' : '#e11d48');
+    const bgC     = passes ? '#f0fdf4'  : (gap === 1 ? '#fff7ed'  : '#fff1f3');
+    const LV5N    = {1:'Muy Bajo',2:'Bajo',3:'Medio',4:'Alto',5:'Muy Alto'};
+
+    const compDesc = lv5 >= 4
+      ? 'Demuestra una sólida capacidad para interpretar instrucciones con múltiples condiciones y aplicarlas correctamente sin omitir pasos. Sigue procedimientos complejos con precisión, lo que reduce errores operacionales y la necesidad de supervisión constante.'
+      : lv5 >= 3
+      ? 'Comprende instrucciones de mediana complejidad de manera adecuada. En situaciones con múltiples condiciones simultáneas puede requerir verificación o apoyo puntual antes de actuar, especialmente en casos poco habituales.'
+      : lv5 >= 2
+      ? 'Presenta dificultades para aplicar instrucciones con varias condiciones encadenadas. Tiende a omitir pasos o a generalizar reglas sin considerar las excepciones. Se recomienda explorar en entrevista cómo enfrenta procedimientos complejos.'
+      : 'Muestra dificultades significativas para seguir instrucciones multi-condición. Los errores sugieren que puede actuar sin considerar el contexto o las excepciones del protocolo. Requiere evaluación complementaria antes de asignar responsabilidades que dependan de la aplicación exacta de procedimientos.';
+
+    html += '<div class="rpt-tab-panel" id="rpt-panel-comprension" style="display:none;flex-direction:column;gap:16px">';
+    html += '<div style="background:#fff;border:1px solid #e5e5ea;border-radius:10px;padding:20px 22px">'
+      // Header
+      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;flex-wrap:wrap;gap:8px">'
+      + '<div style="font-size:17px;font-weight:700">📋 Comprensión de Instrucciones</div>'
+      + '<div style="display:flex;align-items:center;gap:8px">'
+      + gaugeHtml(pct, borderC, 64)
+      + '<div><div style="font-size:13px;font-weight:800;color:' + borderC + '">Nivel ' + lv5 + '/5</div>'
+      + '<div style="font-size:10px;color:#8e8e93">' + LV5N[lv5] + '</div></div></div></div>'
+      + '<div style="font-size:12px;color:#8e8e93;margin-bottom:16px">Mide la capacidad de leer instrucciones con múltiples condiciones y aplicarlas correctamente.</div>'
+      // Main card
+      + '<div style="display:flex;align-items:center;gap:20px;padding:16px;background:' + bgC + ';border-radius:10px;border:2px solid ' + borderC + '40">'
+      // Big score
+      + '<div style="min-width:100px;text-align:center;flex-shrink:0">'
+      + '<div style="font-size:56px;font-weight:900;color:' + borderC + ';line-height:1">' + lv5 + '</div>'
+      + '<div style="font-size:13px;font-weight:700;color:' + borderC + '">/5 · ' + LV5N[lv5] + '</div>'
+      + '<div style="font-size:11px;color:#8e8e93;margin-top:4px">' + s.comprension.correct + ' de ' + s.comprension.total + ' correctas</div>'
+      + '</div>'
+      // Bar + desc
+      + '<div style="flex:1">'
+      + passBadge(passes, gap)
+      + '<div style="margin:10px 0 4px;position:relative;height:8px;background:#e5e5ea;border-radius:100px">'
+      + '<div style="position:absolute;top:0;bottom:0;left:0;width:' + ((lv5-1)/4*100) + '%;background:' + borderC + ';border-radius:100px"></div>'
+      + '<div style="position:absolute;top:-3px;bottom:-3px;left:' + ((minLv-1)/4*100) + '%;width:2px;background:#1d1d1f;border-radius:1px;transform:translateX(-50%)"></div>'
+      + '</div>'
+      + '<div style="display:flex;justify-content:space-between;font-size:9px;color:#aeaeb2;margin-bottom:10px"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span></div>'
+      + '<div style="font-size:12px;font-weight:600;color:#48484a;margin-bottom:8px">Mínimo requerido: <span style="color:' + (passes?'#16a34a':'#e11d48') + '">nivel ' + minLv + ' · ' + LV5N[minLv] + '</span></div>'
+      + '<div style="font-size:13px;line-height:1.65;color:#48484a">' + compDesc + '</div>'
+      + (gap > 0 ? dimDescWithGap('comprension','comp',pct,lv5,minLv).replace(compDesc,'') : '')
+      + '</div></div>'
+      // Item-by-item dots
+      + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:14px;align-items:center">'
+      + '<span style="font-size:11px;color:#8e8e93;margin-right:4px">Respuestas:</span>'
+      + Array.from({length:s.comprension.total}, function(_,i){
+          return '<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:'
+            + (i < s.comprension.correct ? '#dcfce7' : '#f1f5f9')
+            + ';border:1.5px solid '
+            + (i < s.comprension.correct ? '#16a34a' : '#d1d1d6')
+            + ';font-size:12px">'
+            + (i < s.comprension.correct ? '✓' : '✕')
+            + '</span>';
         }).join('')
       + '</div>'
       + '</div>';
@@ -3195,13 +3485,14 @@ function closeDelModal() {
 function adminTab(id, btn) {
   S.currentAdminTab = id;
   saveSession();
-  ['dashboard','candidates','reports','params','users'].forEach(t => {
+  ['dashboard','candidates','reports','raw','params','users'].forEach(t => {
     const el = document.getElementById('tab-' + t); if(el) el.style.display = t === id ? 'block' : 'none';
     const nb = document.getElementById('nav-' + t); if(nb) nb.classList.toggle('active', t === id);
   });
   if (id === 'candidates') renderCandidatesTable();
   else if (id === 'reports') renderReports();
   else if (id === 'dashboard') renderDashboard();
+  else if (id === 'raw') renderRaw();
   else if (id === 'params') renderParams();
   else if (id === 'users') renderUsersTab();
 }
@@ -3368,6 +3659,110 @@ async function renderCandidatesTable() {
         <a onclick="openDelModal('${c.id}','${c.nombre} ${c.apellido}')" style="color:#dc2626;margin-left:8px">Eliminar</a>
       </td>
     </tr>`).join('');
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  DATOS BRUTOS
+// ══════════════════════════════════════════════════════════════════
+async function renderRaw() {
+  const el = document.getElementById('raw-content');
+  if (!el) return;
+  el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--ink3);font-size:13px">Cargando…</div>';
+  const all = await getDB();
+  const cands = all.filter(c => c.estado === 'completed' && c.scores);
+  if (!cands.length) {
+    el.innerHTML = '<div style="text-align:center;padding:60px;color:var(--ink3)">No hay candidatos con evaluaciones completadas.</div>';
+    return;
+  }
+
+  const TESTS_ORDER = ['barratt','dc0','pai','situacional','vigilancia','comprension'];
+  const TESTS_LABELS = { barratt:'BIS-11 Control Impulsivo', dc0:'DC-0 Aptitud Cognitiva', pai:'PAI Ajuste Psicológico', situacional:'Juicio Situacional', vigilancia:'Apt. Vigilancia', comprension:'Comprensión de Instrucciones' };
+  const DIM_LABELS = {
+    barratt: { AI:'Control Atencional', IM:'Control Motor', NP:'Planificación', total:'Total BIS-11' },
+    dc0:     { V:'Verbal', N:'Numérico', L:'Lógico', total:'Total DC-0' },
+    pai:     { EE:'Est. Emocional', AS:'Adapt. Social', ON:'Orient. Normativa', ME:'Manejo Estrés', IL:'Integridad', ML:'Motivación' },
+    situacional: { pct:'Puntaje', correct:'Correctas', total:'Total ítems' },
+    vigilancia:  { pct:'Puntaje', correct:'Correctas', total:'Total ítems' },
+    comprension: { pct:'Puntaje', correct:'Correctas', total:'Total ítems' },
+  };
+  const LV5 = {1:'Muy Bajo',2:'Bajo',3:'Medio',4:'Alto',5:'Muy Alto'};
+
+  let out = '';
+
+  cands.forEach(c => {
+    const s = c.scores;
+    const perfil = c.perfil || 'administrativo';
+    out += `<div class="card" style="margin-bottom:16px;overflow:hidden">`;
+    // Candidate header
+    out += `<div style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+      <div>
+        <div style="font-size:15px;font-weight:700;color:var(--ink)">${c.nombre} ${c.apellido}</div>
+        <div style="font-size:12px;color:var(--ink3)">${c.cargo||'Sin cargo'} · ${c.perfil||''} · ${c.fecha}</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${(c.tests||[]).map(t=>`<span style="font-size:11px;font-weight:600;padding:3px 9px;border-radius:100px;background:var(--surface2);color:var(--ink2)">${TESTS_META[t]?.icon||''} ${TESTS_META[t]?.name||t}</span>`).join('')}
+      </div>
+    </div>`;
+
+    // Tests grid
+    out += `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:0;border-top:0">`;
+
+    TESTS_ORDER.forEach(testId => {
+      if (!s[testId]) return;
+      const data  = s[testId];
+      const dims  = DIM_LABELS[testId];
+      const isSitVig = (testId === 'situacional' || testId === 'vigilancia' || testId === 'comprension');
+
+      out += `<div style="padding:16px 20px;border-right:1px solid var(--border);border-top:1px solid var(--border)">`;
+      out += `<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);margin-bottom:12px">${TESTS_LABELS[testId]}</div>`;
+
+      if (isSitVig) {
+        const lv5 = scoreToLevel5(data.pct);
+        const col  = lv5 >= 4 ? '#16a34a' : lv5 >= 3 ? '#2563eb' : lv5 >= 2 ? '#b45309' : '#dc2626';
+        out += `<div style="display:flex;align-items:baseline;gap:6px;margin-bottom:6px">
+          <span style="font-size:32px;font-weight:900;color:${col};line-height:1">${lv5}</span>
+          <span style="font-size:14px;font-weight:600;color:${col}">/5</span>
+          <span style="font-size:11px;color:var(--ink3)">${LV5[lv5]}</span>
+        </div>`;
+        out += `<div style="height:5px;background:var(--surface2);border-radius:100px;overflow:hidden;margin-bottom:8px">
+          <div style="height:100%;width:${(lv5/5*100)}%;background:${col};border-radius:100px"></div></div>`;
+        out += `<table style="width:100%;border-collapse:collapse;font-size:11px">`;
+        out += `<tr><td style="color:var(--ink3);padding:2px 0">Correctas</td><td style="text-align:right;font-weight:700;color:var(--ink)">${data.correct} / ${data.total}</td></tr>`;
+        out += `<tr><td style="color:var(--ink3);padding:2px 0">% Respuestas</td><td style="text-align:right;font-weight:700;color:var(--ink)">${data.pct}%</td></tr>`;
+        out += `</table>`;
+      } else {
+        out += `<table style="width:100%;border-collapse:collapse;font-size:12px">`;
+        Object.entries(dims).forEach(([k, label]) => {
+          const raw = data[k];
+          if (raw === undefined || raw === null) return;
+          const lv5  = scoreToLevel5(raw);
+          const col  = lv5 >= 4 ? '#16a34a' : lv5 >= 3 ? '#2563eb' : lv5 >= 2 ? '#b45309' : '#dc2626';
+          const isTotal = (k === 'total');
+          out += `<tr style="${isTotal ? 'border-top:1px solid var(--border)' : ''}">
+            <td style="padding:4px 0;color:${isTotal ? 'var(--ink)' : 'var(--ink2)'};font-weight:${isTotal ? '700' : '400'}">${label}</td>
+            <td style="text-align:right;padding:4px 0">
+              <span style="font-size:${isTotal ? '15px' : '13px'};font-weight:${isTotal ? '800' : '600'};color:${col}">${lv5}</span>
+              <span style="font-size:10px;color:var(--ink3)">/5</span>
+              <span style="font-size:10px;color:var(--ink4);margin-left:4px">${LV5[lv5]}</span>
+            </td>
+          </tr>
+          <tr>
+            <td colspan="2" style="padding:0 0 5px">
+              <div style="height:4px;background:var(--surface2);border-radius:100px;overflow:hidden">
+                <div style="height:100%;width:${(lv5/5*100)}%;background:${col}33;border-radius:100px"></div>
+              </div>
+            </td>
+          </tr>`;
+        });
+        out += `</table>`;
+      }
+      out += `</div>`;
+    });
+
+    out += `</div></div>`; // grid + card
+  });
+
+  el.innerHTML = out;
 }
 
 async function renderReports() {
