@@ -2218,28 +2218,53 @@ function buildReportHtml(c, withClose) {
     const sec = rpt.sections.find(function(x){return x.id==='situacional';});
     const secLv = fitLabel(sec.secFit);
     const pct = s.situacional.pct;
-    var sitText = pct>=80 ? 'Excelente criterio ante situaciones laborales complejas. Prioriza correctamente, actúa con procedimiento y considera el impacto de sus decisiones.'
-      : pct>=60 ? 'Buen juicio en la mayoría de los escenarios. Algunos casos requieren mayor orientación ante situaciones ambiguas o de alta presión.'
-      : pct>=40 ? 'Juicio situacional variable. Se recomienda explorar en entrevista su proceso de toma de decisiones.'
+    const lv5 = scoreToLevel5(pct);
+    const minLv = (PERFIL_IDEAL[perfil]?.situacional?.minLv) || scoreToLevel5(PERFIL_IDEAL[perfil]?.situacional?.min || 60);
+    const passes = lv5 >= minLv;
+    const gap    = minLv - lv5;
+    const borderC = passes ? '#16a34a' : (gap === 1 ? '#b45309' : '#e11d48');
+    const bgC     = passes ? '#f0fdf4'  : (gap === 1 ? '#fff7ed'  : '#fff1f3');
+    const LV5N = {1:'Muy Bajo',2:'Bajo',3:'Medio',4:'Alto',5:'Muy Alto'};
+    var sitText = lv5 >= 4 ? 'Demostró excelente criterio para evaluar situaciones laborales complejas, eligiendo respuestas coherentes, proporcionales y orientadas a la solución.'
+      : lv5 >= 3 ? 'Mostró criterio adecuado ante situaciones laborales típicas. En escenarios de mayor complejidad podría beneficiarse de mayor orientación.'
+      : lv5 >= 2 ? 'Juicio situacional variable. Se recomienda explorar en entrevista su proceso de toma de decisiones.'
       : 'Juicio situacional por debajo de lo esperado. Se recomienda evaluación complementaria del criterio en situaciones de gestión.';
     html += '<div class="rpt-tab-panel" id="rpt-panel-situacional" style="display:none;flex-direction:column;gap:16px">';
-    html += '<div style="background:#fff;border:1px solid #e5e5e5;border-radius:10px;padding:20px 22px">'
+    html += '<div style="background:#fff;border:1px solid #e5e5ea;border-radius:10px;padding:20px 22px">'
       + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;flex-wrap:wrap;gap:8px">'
       + '<div style="font-size:17px;font-weight:700">💡 Juicio Situacional</div>'
-      + '<div style="display:flex;align-items:center;gap:8px">' + gaugeHtml(sec.secFit, secLv.color, 64)
-      + '<div><div style="font-size:13px;font-weight:800;color:' + secLv.color + '">' + sec.secFit + '%</div><div style="font-size:10px;color:#999">' + secLv.label + '</div></div></div></div>'
-      + '<div style="font-size:12px;color:#999;margin-bottom:16px">Mide capacidad de tomar decisiones correctas ante escenarios laborales del cargo.</div>'
-      + '<div style="display:flex;align-items:center;gap:20px;padding:16px;background:#f9f9f9;border-radius:8px;border:1px solid #e5e5e5">'
-      + '<div style="min-width:90px;text-align:center">'
-      + '<div style="font-size:40px;font-weight:900;color:' + secLv.color + ';line-height:1">' + pct + '%</div>'
-      + '<div style="font-size:11px;color:#999;margin-top:2px">' + s.situacional.correct + ' de ' + s.situacional.total + ' correctas</div>'
-      + '<div style="margin-top:8px">'
-      + Array.from({length:s.situacional.total},function(_,i){
-          return '<span style="display:inline-block;width:16px;height:16px;border-radius:50%;margin:2px;background:' + (i<s.situacional.correct?secLv.color:'#e5e5e5') + '"></span>';
-        }).join('')
+      + '<div style="display:flex;align-items:center;gap:8px">'
+      + gaugeHtml(pct, borderC, 64)
+      + '<div><div style="font-size:13px;font-weight:800;color:' + borderC + '">Nivel ' + lv5 + '/5</div>'
+      + '<div style="font-size:10px;color:#8e8e93">' + LV5N[lv5] + '</div></div></div></div>'
+      + '<div style="font-size:12px;color:#8e8e93;margin-bottom:16px">Mide capacidad de tomar decisiones correctas ante escenarios laborales del cargo.</div>'
+      // Main score card
+      + '<div style="display:flex;align-items:center;gap:20px;padding:16px;background:' + bgC + ';border-radius:10px;border:2px solid ' + borderC + '40">'
+      + '<div style="min-width:100px;text-align:center;flex-shrink:0">'
+      + '<div style="font-size:56px;font-weight:900;color:' + borderC + ';line-height:1">' + lv5 + '</div>'
+      + '<div style="font-size:13px;font-weight:700;color:' + borderC + '">/5 · ' + LV5N[lv5] + '</div>'
+      + '<div style="font-size:11px;color:#8e8e93;margin-top:4px">' + s.situacional.correct + ' de ' + s.situacional.total + ' correctas</div>'
+      + '</div>'
+      // Level bar 1-5
+      + '<div style="flex:1">'
+      + passBadge(passes, gap)
+      + '<div style="margin:10px 0 4px;position:relative;height:8px;background:#e5e5ea;border-radius:100px">'
+      + '<div style="position:absolute;top:0;bottom:0;left:0;width:' + ((lv5-1)/4*100) + '%;background:' + borderC + ';border-radius:100px"></div>'
+      + '<div style="position:absolute;top:-3px;bottom:-3px;left:' + ((minLv-1)/4*100) + '%;width:2px;background:#1d1d1f;border-radius:1px;transform:translateX(-50%)"></div>'
+      + '</div>'
+      + '<div style="display:flex;justify-content:space-between;font-size:9px;color:#aeaeb2;margin-bottom:10px">'
+      + '<span>1</span><span>2</span><span>3</span><span>4</span><span>5</span></div>'
+      + '<div style="font-size:12px;font-weight:600;color:#48484a;margin-bottom:6px">Mínimo requerido: <span style="color:' + (passes?'#16a34a':'#e11d48') + '">nivel ' + minLv + ' · ' + LV5N[minLv] + '</span></div>'
+      + '<div style="font-size:13px;line-height:1.65;color:#48484a">' + sitText + '</div>'
       + '</div></div>'
-      + '<div style="flex:1;font-size:13px;line-height:1.65;color:#444">' + sitText + '</div>'
-      + '</div></div>';
+      // Dot row
+      + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:14px;align-items:center">'
+      + '<span style="font-size:11px;color:#8e8e93;margin-right:4px">Respuestas:</span>'
+      + Array.from({length:s.situacional.total}, function(_,i){
+          return '<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:' + (i<s.situacional.correct ? '#dcfce7' : '#f1f5f9') + ';border:1.5px solid ' + (i<s.situacional.correct ? '#16a34a' : '#d1d1d6') + ';font-size:12px">' + (i<s.situacional.correct ? '✓' : '✕') + '</span>';
+        }).join('')
+      + '</div>'
+      + '</div>';
     html += '</div>';
   }
 
@@ -2250,28 +2275,50 @@ function buildReportHtml(c, withClose) {
     const sec = rpt.sections.find(function(x){return x.id==='vigilancia';});
     const secLv = fitLabel(sec.secFit);
     const pct = s.vigilancia.pct;
-    var vigText = pct>=80 ? 'Alto nivel de aptitud para roles de seguridad. Atención sostenida y buen criterio ante incidentes.'
-      : pct>=60 ? 'Desempeño aceptable. Aplica los procedimientos en la mayoría de los casos, aunque algunos requieren refuerzo.'
-      : pct>=40 ? 'Aptitud básica. Requiere capacitación formal en protocolos antes de asumir funciones autónomas.'
+    const lv5 = scoreToLevel5(pct);
+    const minLv = (PERFIL_IDEAL[perfil]?.vigilancia?.minLv) || scoreToLevel5(PERFIL_IDEAL[perfil]?.vigilancia?.min || 60);
+    const passes = lv5 >= minLv;
+    const gap    = minLv - lv5;
+    const borderC = passes ? '#16a34a' : (gap === 1 ? '#b45309' : '#e11d48');
+    const bgC     = passes ? '#f0fdf4'  : (gap === 1 ? '#fff7ed'  : '#fff1f3');
+    const LV5N = {1:'Muy Bajo',2:'Bajo',3:'Medio',4:'Alto',5:'Muy Alto'};
+    var vigText = lv5 >= 4 ? 'Mantuvo alta concentración y precisión durante la evaluación, detectando correctamente los estímulos relevantes con mínimo margen de error.'
+      : lv5 >= 3 ? 'Evidenció un desempeño adecuado en la tarea de vigilancia. Puede mostrar algunas omisiones en condiciones de mayor duración o monotonía.'
+      : lv5 >= 2 ? 'Aptitud básica de vigilancia. Requiere capacitación formal en protocolos antes de asumir funciones autónomas.'
       : 'Aptitud de vigilancia por debajo de lo requerido. Se recomienda evaluación complementaria.';
     html += '<div class="rpt-tab-panel" id="rpt-panel-vigilancia" style="display:none;flex-direction:column;gap:16px">';
-    html += '<div style="background:#fff;border:1px solid #e5e5e5;border-radius:10px;padding:20px 22px">'
+    html += '<div style="background:#fff;border:1px solid #e5e5ea;border-radius:10px;padding:20px 22px">'
       + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;flex-wrap:wrap;gap:8px">'
       + '<div style="font-size:17px;font-weight:700">🛡 Aptitud de Vigilancia</div>'
-      + '<div style="display:flex;align-items:center;gap:8px">' + gaugeHtml(pct, secLv.color, 64)
-      + '<div><div style="font-size:13px;font-weight:800;color:' + secLv.color + '">' + s.vigilancia.correct + '/' + s.vigilancia.total + ' correctas</div><div style="font-size:10px;color:#999">' + secLv.label + '</div></div></div></div>'
-      + '<div style="font-size:12px;color:#999;margin-bottom:16px">Mide atención sostenida y criterio ante situaciones de seguridad.</div>'
-      + '<div style="display:flex;align-items:center;gap:20px;padding:16px;background:#f9f9f9;border-radius:8px;border:1px solid #e5e5e5">'
-      + '<div style="min-width:90px;text-align:center">'
-      + '<div style="font-size:40px;font-weight:900;color:' + secLv.color + ';line-height:1">' + pct + '%</div>'
-      + '<div style="font-size:11px;color:#999;margin-top:2px">' + s.vigilancia.correct + ' de ' + s.vigilancia.total + ' correctas</div>'
-      + '<div style="margin-top:8px">'
-      + Array.from({length:s.vigilancia.total},function(_,i){
-          return '<span style="display:inline-block;width:16px;height:16px;border-radius:50%;margin:2px;background:' + (i<s.vigilancia.correct?secLv.color:'#e5e5e5') + '"></span>';
-        }).join('')
+      + '<div style="display:flex;align-items:center;gap:8px">'
+      + gaugeHtml(pct, borderC, 64)
+      + '<div><div style="font-size:13px;font-weight:800;color:' + borderC + '">Nivel ' + lv5 + '/5</div>'
+      + '<div style="font-size:10px;color:#8e8e93">' + LV5N[lv5] + '</div></div></div></div>'
+      + '<div style="font-size:12px;color:#8e8e93;margin-bottom:16px">Mide atención sostenida y criterio ante situaciones de seguridad.</div>'
+      + '<div style="display:flex;align-items:center;gap:20px;padding:16px;background:' + bgC + ';border-radius:10px;border:2px solid ' + borderC + '40">'
+      + '<div style="min-width:100px;text-align:center;flex-shrink:0">'
+      + '<div style="font-size:56px;font-weight:900;color:' + borderC + ';line-height:1">' + lv5 + '</div>'
+      + '<div style="font-size:13px;font-weight:700;color:' + borderC + '">/5 · ' + LV5N[lv5] + '</div>'
+      + '<div style="font-size:11px;color:#8e8e93;margin-top:4px">' + s.vigilancia.correct + ' de ' + s.vigilancia.total + ' correctas</div>'
+      + '</div>'
+      + '<div style="flex:1">'
+      + passBadge(passes, gap)
+      + '<div style="margin:10px 0 4px;position:relative;height:8px;background:#e5e5ea;border-radius:100px">'
+      + '<div style="position:absolute;top:0;bottom:0;left:0;width:' + ((lv5-1)/4*100) + '%;background:' + borderC + ';border-radius:100px"></div>'
+      + '<div style="position:absolute;top:-3px;bottom:-3px;left:' + ((minLv-1)/4*100) + '%;width:2px;background:#1d1d1f;border-radius:1px;transform:translateX(-50%)"></div>'
+      + '</div>'
+      + '<div style="display:flex;justify-content:space-between;font-size:9px;color:#aeaeb2;margin-bottom:10px">'
+      + '<span>1</span><span>2</span><span>3</span><span>4</span><span>5</span></div>'
+      + '<div style="font-size:12px;font-weight:600;color:#48484a;margin-bottom:6px">Mínimo requerido: <span style="color:' + (passes?'#16a34a':'#e11d48') + '">nivel ' + minLv + ' · ' + LV5N[minLv] + '</span></div>'
+      + '<div style="font-size:13px;line-height:1.65;color:#48484a">' + vigText + '</div>'
       + '</div></div>'
-      + '<div style="flex:1;font-size:13px;line-height:1.65;color:#444">' + vigText + '</div>'
-      + '</div></div>';
+      + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:14px;align-items:center">'
+      + '<span style="font-size:11px;color:#8e8e93;margin-right:4px">Respuestas:</span>'
+      + Array.from({length:s.vigilancia.total}, function(_,i){
+          return '<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:' + (i<s.vigilancia.correct ? '#dcfce7' : '#f1f5f9') + ';border:1.5px solid ' + (i<s.vigilancia.correct ? '#16a34a' : '#d1d1d6') + ';font-size:12px">' + (i<s.vigilancia.correct ? '✓' : '✕') + '</span>';
+        }).join('')
+      + '</div>'
+      + '</div>';
     html += '</div>';
   }
 
