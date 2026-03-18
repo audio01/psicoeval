@@ -651,6 +651,7 @@ input,select,textarea{font-family:inherit;outline:none}
           <div class="field"><label>Apellidos *</label><input id="r-apellido" placeholder="Ej: González"><span class="err" id="e-apellido"></span></div>
         </div>
         <div class="field"><label>Correo electrónico *</label><input id="r-email" type="email" placeholder="correo@ejemplo.com"><span class="err" id="e-email"></span></div>
+      <div class="field"><label>Teléfono *</label><input id="r-telefono" type="tel" placeholder="9 123 4567" maxlength="9"><span class="err" id="e-telefono"></span><span style="font-size:11px;color:var(--ink4);margin-top:2px;display:block">Sin +56 · Ej: 9 123 4567</span></div>
         <div class="form-row">
           <div class="field"><label>RUT / DNI</label><input id="r-rut" placeholder="12.345.678-9"></div>
           <div class="field">
@@ -660,6 +661,7 @@ input,select,textarea{font-family:inherit;outline:none}
               <option value="jefatura">Jefatura</option>
               <option value="administrativo">Administrativo</option>
               <option value="guardia">Guardia de Seguridad</option>
+              <option value="supervisor">Supervisor de Seguridad</option>
             </select>
             <span class="err" id="e-perfil"></span>
           </div>
@@ -715,7 +717,7 @@ input,select,textarea{font-family:inherit;outline:none}
             <label id="edu-g-sin4-lbl" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s">
               <input type="radio" name="edu-guardia" id="r-edu-g-sin4" value="media_incompleta" onchange="styleEduG()" style="width:18px;height:18px;accent-color:var(--accent)">
               <div>
-                <div style="font-size:13px;font-weight:600;color:var(--ink)">Enseñanza Media incompleta</div>
+                <div style="font-size:13px;font-weight:600;color:var(--ink)">Educación Media incompleta</div>
                 <div style="font-size:11px;color:#e11d48;font-weight:600">No cumple el requisito mínimo</div>
               </div>
             </label>
@@ -740,6 +742,56 @@ input,select,textarea{font-family:inherit;outline:none}
                 <div style="font-size:11px;color:#16a34a;font-weight:600">✓ Cumple el requisito mínimo</div>
               </div>
             </label>
+
+            <!-- Separador FF.AA. / Carabineros -->
+            <div style="display:flex;align-items:center;gap:8px;margin:4px 0 2px">
+              <div style="flex:1;height:1px;background:var(--border)"></div>
+              <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink4)">Personal en retiro</span>
+              <div style="flex:1;height:1px;background:var(--border)"></div>
+            </div>
+
+            <label id="edu-g-ej-retiro-lbl" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s">
+              <input type="radio" name="edu-guardia" id="r-edu-g-ej-retiro" value="ejercito_retiro" onchange="styleEduG()" style="width:18px;height:18px;accent-color:var(--accent)">
+              <div>
+                <div style="font-size:13px;font-weight:600;color:var(--ink)">🎖 Retirado/a del Ejército — carrera completa</div>
+                <div style="font-size:11px;color:#16a34a;font-weight:600">✓ Cumple · Situación de retiro reconocida</div>
+              </div>
+            </label>
+            <label id="edu-g-ej-baja-lbl" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s">
+              <input type="radio" name="edu-guardia" id="r-edu-g-ej-baja" value="ejercito_baja" onchange="styleEduG()" style="width:18px;height:18px;accent-color:var(--accent)">
+              <div>
+                <div style="font-size:13px;font-weight:600;color:var(--ink)">🎖 Retirado/a del Ejército — antes de completar carrera</div>
+                <div style="font-size:11px;color:#2563eb;font-weight:600">✓ Cumple · Considerar años de servicio en evaluación</div>
+              </div>
+            </label>
+            <label id="edu-g-car-retiro-lbl" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s">
+              <input type="radio" name="edu-guardia" id="r-edu-g-car-retiro" value="carabineros_retiro" onchange="styleEduG()" style="width:18px;height:18px;accent-color:var(--accent)">
+              <div>
+                <div style="font-size:13px;font-weight:600;color:var(--ink)">👮 Retirado/a de Carabineros — carrera completa</div>
+                <div style="font-size:11px;color:#16a34a;font-weight:600">✓ Cumple · Situación de retiro reconocida</div>
+              </div>
+            </label>
+            <label id="edu-g-car-baja-lbl" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s">
+              <input type="radio" name="edu-guardia" id="r-edu-g-car-baja" value="carabineros_baja" onchange="styleEduG()" style="width:18px;height:18px;accent-color:var(--accent)">
+              <div>
+                <div style="font-size:13px;font-weight:600;color:var(--ink)">👮 Retirado/a de Carabineros — antes de completar carrera</div>
+                <div style="font-size:11px;color:#2563eb;font-weight:600">✓ Cumple · Considerar años de servicio en evaluación</div>
+              </div>
+            </label>
+            <label id="edu-g-arm-retiro-lbl" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s">
+              <input type="radio" name="edu-guardia" id="r-edu-g-arm-retiro" value="armada_retiro" onchange="styleEduG()" style="width:18px;height:18px;accent-color:var(--accent)">
+              <div>
+                <div style="font-size:13px;font-weight:600;color:var(--ink)">⚓ Retirado/a de la Armada — carrera completa</div>
+                <div style="font-size:11px;color:#16a34a;font-weight:600">✓ Cumple · Situación de retiro reconocida</div>
+              </div>
+            </label>
+            <label id="edu-g-arm-baja-lbl" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s">
+              <input type="radio" name="edu-guardia" id="r-edu-g-arm-baja" value="armada_baja" onchange="styleEduG()" style="width:18px;height:18px;accent-color:var(--accent)">
+              <div>
+                <div style="font-size:13px;font-weight:600;color:var(--ink)">⚓ Retirado/a de la Armada — antes de completar carrera</div>
+                <div style="font-size:11px;color:#2563eb;font-weight:600">✓ Cumple · Considerar años de servicio en evaluación</div>
+              </div>
+            </label>
           </div>
           <span class="err" id="e-edu-guardia"></span>
         </div>
@@ -760,10 +812,19 @@ input,select,textarea{font-family:inherit;outline:none}
           <label>Nivel educacional *</label>
           <select id="r-educacion">
             <option value="">Selecciona tu nivel…</option>
+            <option value="media_incompleta">Educación Media incompleta</option>
             <option value="media">4º Medio completo</option>
             <option value="tecnica">Técnico de Nivel Superior</option>
             <option value="universitaria">Universitaria (en curso o completa)</option>
             <option value="postgrado">Postgrado / Magíster / Doctorado</option>
+            <optgroup label="Personal en retiro">
+              <option value="ejercito_retiro">🎖 Retirado/a del Ejército — carrera completa</option>
+              <option value="ejercito_baja">🎖 Retirado/a del Ejército — antes de completar carrera</option>
+              <option value="carabineros_retiro">👮 Retirado/a de Carabineros — carrera completa</option>
+              <option value="carabineros_baja">👮 Retirado/a de Carabineros — antes de completar carrera</option>
+              <option value="armada_retiro">⚓ Retirado/a de la Armada — carrera completa</option>
+              <option value="armada_baja">⚓ Retirado/a de la Armada — antes de completar carrera</option>
+            </optgroup>
           </select>
           <span class="err" id="e-educacion"></span>
         </div>
@@ -993,7 +1054,9 @@ input,select,textarea{font-family:inherit;outline:none}
           <button id="dptab-all"           onclick="setDashPerfil('all',this)"           style="padding:8px 18px;border-radius:100px;border:1.5px solid var(--accent);background:var(--accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s">Todos</button>
           <button id="dptab-jefatura"      onclick="setDashPerfil('jefatura',this)"      style="padding:8px 18px;border-radius:100px;border:1.5px solid var(--border2);background:var(--surface);color:var(--ink2);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s">👔 Jefatura</button>
           <button id="dptab-administrativo" onclick="setDashPerfil('administrativo',this)" style="padding:8px 18px;border-radius:100px;border:1.5px solid var(--border2);background:var(--surface);color:var(--ink2);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s">💼 Administrativo</button>
-          <button id="dptab-guardia"       onclick="setDashPerfil('guardia',this)"       style="padding:8px 18px;border-radius:100px;border:1.5px solid var(--border2);background:var(--surface);color:var(--ink2);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s">🛡 Guardia</button>
+          <button id="dptab-guardia"       onclick="setDashPerfil('guardia',this)"
+          style="padding:8px 18px;border-radius:100px;border:1.5px solid var(--border2);background:var(--surface);color:var(--ink2);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s">🛡 Guardia</button>
+          <button id="dptab-supervisor" onclick="setDashPerfil(\'supervisor\',this)" style="padding:8px 18px;border-radius:100px;border:1.5px solid var(--border2);background:var(--surface);color:var(--ink2);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s">⚙️ Supervisor</button>
         </div>
         <!-- KPI row -->
         <div class="stat-grid" id="stat-grid"></div>
@@ -1177,12 +1240,14 @@ const PERFIL_TESTS = {
   jefatura:      ['barratt','dc0','pai','situacional','comprension'],
   administrativo:['barratt','dc0','pai','comprension'],
   guardia:       ['barratt','pai','situacional','vigilancia','comprension'],
+  supervisor:    ['barratt','dc0','pai','situacional','comprension'],
 };
 
 const PERFIL_META = {
   jefatura:      { label:'Jefatura',            icon:'👔', color:'var(--blue)',  desc:'Evaluación para cargos de liderazgo y gestión de equipos. Incluye personalidad, aptitud cognitiva, ajuste psicológico y juicio situacional.' },
   administrativo:{ label:'Administrativo',      icon:'💼', color:'var(--green)', desc:'Evaluación para roles administrativos y de soporte. Incluye personalidad, aptitud cognitiva y ajuste psicológico.' },
   guardia:       { label:'Guardia de Seguridad',icon:'🛡', color:'var(--ink2)',  desc:'Evaluación para roles de seguridad. Incluye personalidad, ajuste psicológico, juicio situacional y aptitud de vigilancia.' },
+  supervisor:    { label:'Supervisor de Seguridad', icon:'⚙️', color:'var(--amber)', desc:'Evaluación para supervisores de turno u operaciones. Incluye control impulsivo, aptitud cognitiva, ajuste psicológico, juicio situacional y comprensión de procedimientos.' },
 };
 
 // ═══════════════════════════════════════════════════════════
@@ -1652,6 +1717,44 @@ const COMP_GUARDIA = [
 // ═══════════════════════════════════════════════════════════
 //  CONSTRUCCIÓN DE PREGUNTAS POR PERFIL
 // ═══════════════════════════════════════════════════════════
+const SIT_SUPERVISOR = [
+  {id:'ss1', text:'Un operario de tu turno llega 20 minutos tarde por segunda vez esta semana. Falta 1 hora para el cierre de turno. ¿Qué haces?', opts:[
+    {t:'Lo llamas aparte, registras la situación y acuerdan cómo evitar que se repita.',ok:true},
+    {t:'Lo regañas delante del equipo para que sirva de ejemplo.',ok:false},
+    {t:'No dices nada para no generar tensión antes del cierre.',ok:false},
+    {t:'Lo reportas directamente a RRHH sin hablar con él primero.',ok:false}]},
+  {id:'ss2', text:'Faltan 2 horas para finalizar el turno y la meta de producción está al 60%. El equipo está trabajando a ritmo normal. ¿Cómo actúas?', opts:[
+    {t:'Evalúas causas, redistribuyes tareas donde sea posible y comunicas el estado al turno siguiente.',ok:true},
+    {t:'Presionas al equipo para que acelere sin dar más contexto.',ok:false},
+    {t:'No haces nada, la meta del turno anterior también quedó baja.',ok:false},
+    {t:'Esperas que el jefe de turno llegue para que decida.',ok:false}]},
+  {id:'ss3', text:'Dos operarios del mismo turno tienen una disputa personal que está afectando el trabajo en línea. ¿Cuál es tu primera acción?', opts:[
+    {t:'Los separes momentáneamente en tareas distintas y conversas con cada uno por separado durante el turno.',ok:true},
+    {t:'Los reúnes a los dos frente al equipo y exiges que lo resuelvan ahora.',ok:false},
+    {t:'Ignoras el problema mientras no afecte la producción directamente.',ok:false},
+    {t:'Envías el caso a RRHH sin intervenir.',ok:false}]},
+  {id:'ss4', text:'Un equipo crítico falla a mitad de turno. No hay técnico disponible de inmediato. ¿Qué haces?', opts:[
+    {t:'Activas el protocolo de contingencia, reorganizas el flujo de trabajo y escalas la falla a mantenimiento.',ok:true},
+    {t:'Detienes toda la operación hasta que llegue el técnico.',ok:false},
+    {t:'Intentas repararlo tú mismo aunque no tengas formación técnica.',ok:false},
+    {t:'Continúas la operación sin reportar para no frenar la producción.',ok:false}]},
+  {id:'ss5', text:'Tu jefe de turno te pide saltarte un paso del protocolo de seguridad para acelerar la producción. ¿Cómo respondes?', opts:[
+    {t:'Explicas el riesgo que implica y propones una alternativa que no comprometa la seguridad.',ok:true},
+    {t:'Lo haces porque es tu jefe quien lo pide.',ok:false},
+    {t:'Te niegas sin dar explicación y lo reportas a otro superior.',ok:false},
+    {t:'Preguntas al equipo si están de acuerdo antes de decidir.',ok:false}]},
+  {id:'ss6', text:'Un trabajador nuevo comete un error que podría haber causado un accidente, aunque no lo causó. ¿Qué haces?', opts:[
+    {t:'Corriges el error en el momento, lo documentas y aprovechas para capacitarlo en el procedimiento correcto.',ok:true},
+    {t:'Lo reprendes fuerte para que no lo vuelva a hacer.',ok:false},
+    {t:'No dices nada porque no hubo consecuencias.',ok:false},
+    {t:'Lo cambias de puesto inmediatamente sin explicación.',ok:false}]},
+  {id:'ss7', text:'Al hacer el traspaso de turno, detectas que el turno saliente dejó incompleto un registro obligatorio. ¿Cómo actúas?', opts:[
+    {t:'Completas el registro con los datos disponibles, documentas la observación y lo informas al supervisor saliente.',ok:true},
+    {t:'Dejas el registro incompleto, no es tu responsabilidad.',ok:false},
+    {t:'Lo ignoras si la operación va bien.',ok:false},
+    {t:'Reportas la falta sin completar el registro tú mismo.',ok:false}]},
+];
+
 function buildQuestions(perfil) {
   const qs = [];
   const add = (arr, testId, type) => arr.forEach(q => qs.push({...q, testId, type}));
@@ -1673,6 +1776,12 @@ function buildQuestions(perfil) {
     add(SIT_GUARDIA,                     'situacional', 'situacional');
     add(VIGQ,                            'vigilancia',  'choice');
     add(COMP_GUARDIA,                    'comprension', 'choice');
+  } else if (perfil === 'supervisor') {
+    add(BIS11_ITEMS,                     'barratt',     'likert');
+    add([...DC0_BASE, ...DC0_JEFATURA],  'dc0',         'choice');
+    add(PAI_BASE,                        'pai',         'pai');
+    add(SIT_SUPERVISOR,                  'situacional', 'situacional');
+    add(COMP_JEFATURA,                   'comprension', 'choice');
   }
   return qs;
 }
@@ -1820,21 +1929,16 @@ async function getDB() {
 }
 async function addToDB(c) {
   // Store extended fields inside scores._meta to avoid schema changes
-  const scoresWithMeta = Object.assign({}, c.scores || {}, {
-    _meta: {
-      educacion:        c.educacion        || null,
-      educacion_label:  c.educacion_label  || null,
-      os10:             c.os10             || null,
-      rubro:            c.rubro            || null,
-      rubro_label:      c.rubro_label      || null,
-      historial:        c.historial        || null,
-    }
-  });
   const row = {
     id: c.id, nombre: c.nombre, apellido: c.apellido, email: c.email,
     rut: c.rut||'', cargo: c.cargo||'', perfil: c.perfil||'',
     fecha: c.fecha, tests: c.tests, estado: c.estado,
-    scores: scoresWithMeta,
+    scores: c.scores || null,
+    telefono:   c.telefono   || null,
+    educacion:  c.educacion  || null,
+    os10:       c.os10       || null,
+    rubro:      c.rubro      || null,
+    historial:  c.historial  || null,
   };
   const r = await fetch(`${SUPA_URL}/rest/v1/candidates`,{method:'POST',headers:DB_HEADERS,body:JSON.stringify(row)});
   if (!r.ok) {
@@ -1869,8 +1973,7 @@ function styleOs10() {
 }
 
 function styleEduG() {
-  const CUMPLE = ['media','tecnica','universitaria'];
-  ['basica','sin4','4medio','tecnica','univ'].forEach(function(k) {
+  ['basica','sin4','4medio','tecnica','univ','ej-retiro','ej-baja','car-retiro','car-baja','arm-retiro','arm-baja'].forEach(function(k) {
     const radio = document.getElementById('r-edu-g-' + k);
     const lbl   = document.getElementById('edu-g-' + k + '-lbl');
     if (!radio || !lbl) return;
@@ -1913,6 +2016,8 @@ function regNext(fromStep) {
     if (!nombre)  { document.getElementById('e-nombre').textContent = 'Requerido'; ok = false; } else document.getElementById('e-nombre').textContent = '';
     if (!apellido){ document.getElementById('e-apellido').textContent = 'Requerido'; ok = false; } else document.getElementById('e-apellido').textContent = '';
     if (!email || !email.includes('@')) { document.getElementById('e-email').textContent = 'Email inválido'; ok = false; } else document.getElementById('e-email').textContent = '';
+    const telefono = document.getElementById('r-telefono').value.replace(/\s/g,'');
+    if (!telefono || telefono.length < 8) { document.getElementById('e-telefono').textContent = 'Ingresa un teléfono válido (8-9 dígitos)'; ok = false; } else document.getElementById('e-telefono').textContent = '';
     if (!perfil)  { document.getElementById('e-perfil').textContent = 'Selecciona un cargo'; ok = false; } else document.getElementById('e-perfil').textContent = '';
     if (!ok) return;
     regSetStep(2);
@@ -1969,7 +2074,7 @@ function submitRegister() {
   const salida2 = document.getElementById('r-salida2')?.value        || '';
 
   // Labels
-  const EDU_LABELS = { basica:'Educación Básica', media_incompleta:'Media incompleta', media:'4º Medio completo', tecnica:'Técnico Superior', universitaria:'Universitaria', postgrado:'Postgrado' };
+  const EDU_LABELS = { basica:'Educación Básica', media_incompleta:'Media incompleta', media:'4º Medio completo', tecnica:'Técnico Superior', universitaria:'Universitaria', postgrado:'Postgrado', ejercito_retiro:'Retirado/a Ejército (carrera completa)', ejercito_baja:'Retirado/a Ejército (antes de completar)', carabineros_retiro:'Retirado/a Carabineros (carrera completa)', carabineros_baja:'Retirado/a Carabineros (antes de completar)', armada_retiro:'Retirado/a Armada (carrera completa)', armada_baja:'Retirado/a Armada (antes de completar)' };
   const DUR_LABELS = { menos_6m:'< 6 meses', '6m_1a':'6m–1 año', '1_2a':'1–2 años', '2_5a':'2–5 años', mas_5a:'> 5 años' };
   const SALIDA_LABELS = { termino_contrato:'Término contrato', renuncia:'Renuncia', despido:'Desvinculación', mutual:'Acuerdo mutuo', actual:'Trabajo actual' };
   const RUBRO_LABELS = { seguridad:'Seguridad', comercio:'Comercio', administracion:'Administración', salud:'Salud', construccion:'Construcción', logistica:'Logística', educacion:'Educación', tecnologia:'Tecnología', otro:'Otro' };
@@ -1982,6 +2087,7 @@ function submitRegister() {
   S.candidate = {
     id: genUUID(), nombre, apellido, email,
     rut: document.getElementById('r-rut').value.trim(),
+    telefono: document.getElementById('r-telefono')?.value.trim() || '',
     perfil, cargo: PERFIL_META[perfil].label,
     fecha: new Date().toLocaleDateString('es-CL'),
     tests: PERFIL_TESTS[perfil], estado: 'pending', scores: {},
@@ -2299,10 +2405,32 @@ const PERFIL_IDEAL = {
     vigilancia:  { min:65, max:100, peso:5, label:'Apt. Vigilancia',             req:'Atención sostenida y aplicación de protocolos.' },
     comprension: { min:80, max:100, peso:5, label:'Comprensión de Instrucciones', req:'Aplica protocolos de seguridad con precisión; sin ambigüedad ante instrucciones multi-condición.' },
   },
+  supervisor: {
+    barratt: {
+      AI: { min:60, max:100, peso:3, label:'Control Atencional', req:'Mantiene foco en múltiples frentes simultáneos durante el turno.' },
+      IM: { min:70, max:100, peso:5, label:'Control Motor',      req:'Responde sin impulsividad ante incidentes operativos o conflictos de equipo.' },
+      NP: { min:65, max:100, peso:4, label:'Planificación',      req:'Anticipa problemas de turno y organiza recursos antes de que escalen.' },
+    },
+    dc0: {
+      V: { min:60, max:100, peso:3, label:'Verbal',           req:'Comprende y transmite instrucciones operativas con claridad.' },
+      N: { min:50, max:100, peso:2, label:'Numérico',         req:'Manejo básico de indicadores de producción y métricas de turno.' },
+      L: { min:60, max:100, peso:3, label:'Lógico-Abstracto', req:'Diagnóstico de problemas operativos y aplicación de procedimientos.' },
+    },
+    pai: {
+      EE: { min:70, max:100, peso:4, label:'Est. Emocional',    req:'Mantiene la calma y toma decisiones bajo presión de turno.' },
+      AS: { min:65, max:100, peso:3, label:'Adapt. Social',     req:'Gestión de equipo diverso y resolución de conflictos interpersonales.' },
+      ON: { min:70, max:100, peso:4, label:'Orient. Normativa', req:'Cumple y hace cumplir los protocolos operativos y de seguridad.' },
+      ME: { min:70, max:100, peso:4, label:'Manejo del Estrés', req:'Rendimiento sostenido en turnos de alta exigencia o contingencias.' },
+      IL: { min:75, max:100, peso:5, label:'Integridad',        req:'Referente de conducta ética para los operarios a su cargo.' },
+      ML: { min:60, max:100, peso:2, label:'Motivación',        req:'Impulso propio que sostiene el ritmo del equipo.' },
+    },
+    situacional: { min:70, max:100, peso:5, label:'Juicio Situacional', req:'Toma decisiones correctas ante escenarios típicos de supervisión operativa.' },
+    comprension: { min:75, max:100, peso:4, label:'Comprensión de Instrucciones', req:'Interpreta y aplica procedimientos operativos complejos con precisión.' },
+  },
 };
 // ── Ensure minLv is set on all cfg entries ──────────────────
 (function initMinLv() {
-  ['jefatura','administrativo','guardia'].forEach(function(pf) {
+  ['jefatura','administrativo','guardia','supervisor'].forEach(function(pf) {
     var ideal = PERFIL_IDEAL[pf];
     if (!ideal) return;
     Object.keys(ideal).forEach(function(secId) {
@@ -2823,15 +2951,19 @@ function buildReportHtml(c, withClose) {
   const s = c.scores;
   // Restore extended fields from scores._meta for candidates loaded from DB
   if (s && s._meta) {
+    // Legacy: restore from _meta for records saved before direct columns existed
     const m = s._meta;
     if (!c.educacion_label && m.educacion_label) c.educacion_label = m.educacion_label;
     else if (!c.educacion_label && m.educacion)  c.educacion_label = m.educacion;
-    if (!c.os10     && m.os10)    c.os10     = m.os10;
+    if (!c.os10        && m.os10)        c.os10        = m.os10;
     if (!c.rubro_label && m.rubro_label) c.rubro_label = m.rubro_label;
     if (!c.historial   && m.historial)   c.historial   = m.historial;
+    if (!c.telefono    && m.telefono)    c.telefono    = m.telefono;
+    if (!c.educacion   && m.educacion)   c.educacion   = m.educacion;
+    if (!c.rubro       && m.rubro)       c.rubro       = m.rubro;
   }
   // Resolve labels from codes if still missing
-  const EDU_LABELS   = { basica:'Educación Básica', media_incompleta:'Media incompleta', media:'4º Medio completo', tecnica:'Técnico Superior', universitaria:'Universitaria', postgrado:'Postgrado / Magíster' };
+  const EDU_LABELS   = { basica:'Educación Básica', media_incompleta:'Media incompleta', media:'4º Medio completo', tecnica:'Técnico Superior', universitaria:'Universitaria', postgrado:'Postgrado / Magíster', ejercito_retiro:'Retirado/a Ejército (carrera completa)', ejercito_baja:'Retirado/a Ejército (antes de completar)', carabineros_retiro:'Retirado/a Carabineros (carrera completa)', carabineros_baja:'Retirado/a Carabineros (antes de completar)', armada_retiro:'Retirado/a Armada (carrera completa)', armada_baja:'Retirado/a Armada (antes de completar)' };
   const RUBRO_LABELS = { seguridad:'Seguridad / Vigilancia', comercio:'Comercio / Retail', administracion:'Administración', salud:'Salud', construccion:'Construcción', logistica:'Logística', educacion:'Educación', tecnologia:'Tecnología', otro:'Otro' };
   if (!c.educacion_label && c.educacion) c.educacion_label = EDU_LABELS[c.educacion]   || c.educacion;
   if (!c.rubro_label     && c.rubro)     c.rubro_label     = RUBRO_LABELS[c.rubro]     || c.rubro;
@@ -3615,7 +3747,7 @@ function persistParams() {
   try {
     // Extract only what changed: min per dim per perfil
     const snapshot = {};
-    ['jefatura','administrativo','guardia'].forEach(function(pf) {
+    ['jefatura','administrativo','guardia','supervisor'].forEach(function(pf) {
       snapshot[pf] = {};
       const ideal = PERFIL_IDEAL[pf];
       if (!ideal) return;
@@ -3643,7 +3775,7 @@ function restoreParams() {
     const raw = localStorage.getItem('psicoeval_params');
     if (!raw) return;
     const snapshot = JSON.parse(raw);
-    ['jefatura','administrativo','guardia'].forEach(function(pf) {
+    ['jefatura','administrativo','guardia','supervisor'].forEach(function(pf) {
       if (!snapshot[pf]) return;
       const ideal = PERFIL_IDEAL[pf];
       if (!ideal) return;
@@ -4323,8 +4455,8 @@ async function renderDashboard() {
   const nComp    = completed.length;
 
   // Profile label for context
-  const PLABEL = { all:'Todos los perfiles', jefatura:'Jefatura', administrativo:'Administrativo', guardia:'Guardia de Seguridad' };
-  const PICON  = { all:'', jefatura:'👔 ', administrativo:'💼 ', guardia:'🛡 ' };
+  const PLABEL = { all:'Todos los perfiles', jefatura:'Jefatura', administrativo:'Administrativo', guardia:'Guardia de Seguridad', supervisor:'Supervisor de Seguridad' };
+  const PICON  = { all:'', jefatura:'👔 ', administrativo:'💼 ', guardia:'🛡 ', supervisor:'⚙️ ' };
 
   const reports = completed
     .filter(c => c.scores)
@@ -4628,7 +4760,7 @@ async function renderCandidatesTable() {
   tbody.innerHTML = cands.map(c => `
     <tr data-id="${c.id}">
       <td><input type="checkbox" class="row-chk" data-id="${c.id}" onchange="updateBulkBar()" style="cursor:pointer;width:16px;height:16px"></td>
-      <td><strong>${c.nombre} ${c.apellido}</strong><br><span style="color:var(--ink3);font-size:11px">${c.email}</span>${c.educacion_label||c.educacion ? '<br><span style="color:var(--ink4);font-size:10px">🎓 '+(c.educacion_label||c.educacion)+(c.experiencia_label||c.experiencia?' · 💼 '+(c.experiencia_label||c.experiencia):'')+'</span>' : ''}</td>
+      <td><strong>${c.nombre} ${c.apellido}</strong><br><span style="color:var(--ink3);font-size:11px">${c.email}</span>${c.telefono ? '<br><span style="color:var(--ink4);font-size:10px">📞 +56 '+c.telefono+'</span>' : ''}${c.educacion_label||c.educacion ? '<br><span style="color:var(--ink4);font-size:10px">🎓 '+(c.educacion_label||c.educacion)+(c.experiencia_label||c.experiencia?' · 💼 '+(c.experiencia_label||c.experiencia):'')+'</span>' : ''}</td>
       <td>${c.cargo||'—'}</td>
       <td>${(c.tests||[]).map(t=>TESTS_META[t]?.icon).join(' ')||'—'}</td>
       <td>${statusBadge(c.estado)}</td>
