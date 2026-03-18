@@ -2961,11 +2961,10 @@ function scoreLevel(v) {
 }
 
 function fitLabel(fit) {
-  if (fit >= 85) return { label:'Muy adecuado',  color:'#1a7a40', bg:'#e6f7ed' };
-  if (fit >= 70) return { label:'Adecuado',      color:'#3a7850', bg:'#edf5f0' };
-  if (fit >= 50) return { label:'Aceptable',     color:'#a07528', bg:'#faf5e4' };
-  if (fit >= 30) return { label:'A desarrollar', color:'#c04b1c', bg:'#fdf0eb' };
-  return               { label:'No adecuado',   color:'#8b0000', bg:'#fdecea' };
+  var lv = fitToLevel5(fit);
+  if (lv === 5) return { label:'Apto',                  color:'#16a34a', bg:'#f0fdf4' };
+  if (lv >= 3)  return { label:'Apto con Observaciones', color:'#b45309', bg:'#fffbeb' };
+  return               { label:'No Apto',               color:'#dc2626', bg:'#fef2f2' };
 }
 
 function buildFitReport(c) {
@@ -4538,7 +4537,7 @@ async function openCompareModal() {
   const FIT_COLORS = { 85: '#16a34a', 70: '#2563eb', 50: '#b45309', 0: '#dc2626' };
   function fitColor(f) { return f >= 85 ? '#16a34a' : f >= 70 ? '#2563eb' : f >= 50 ? '#b45309' : '#dc2626'; }
   function fitBg(f)    { return f >= 85 ? '#f0fdf4' : f >= 70 ? '#eff6ff' : f >= 50 ? '#fff7ed' : '#fff1f3'; }
-  function fitLabel2(f){ return f >= 85 ? 'Muy apto' : f >= 70 ? 'Apto' : f >= 50 ? 'Parcial' : 'No apto'; }
+  function fitLabel2(f){ var lv=fitToLevel5(f); return lv===5?'Apto':lv>=3?'Apto con Observaciones':'No Apto'; }
   const LV = {1:'Muy Bajo',2:'Bajo',3:'Medio',4:'Alto',5:'Muy Alto'};
 
   // ── Find winner per dimension (highest score) ──
@@ -5222,10 +5221,9 @@ async function renderDashboard() {
 
   // ── Fit distribution ──────────────────────────────────────────────────────
   const RANGES = [
-    { label:'Muy apto', min:85, max:100, color:'#16a34a' },
-    { label:'Apto',     min:70, max:84,  color:'#2563eb' },
-    { label:'Parcial',  min:50, max:69,  color:'#b45309' },
-    { label:'No apto',  min:0,  max:49,  color:'#e11d48' },
+    { label:'Apto',                  min:90, max:100, color:'#16a34a' },
+    { label:'Apto con Observaciones',min:55, max:89,  color:'#b45309' },
+    { label:'No Apto',               min:0,  max:54,  color:'#e11d48' },
   ];
   const fitDistEl = document.getElementById('fit-dist-content');
   // Update card title to reflect filter
@@ -5348,12 +5346,12 @@ async function renderDashboard() {
       perfilCard.querySelector('.res-section-title').textContent = '📋 Estado — ' + PLABEL[perfil];
     }
     // Show aptos vs no aptos vs en progreso for this profile
-    const aptosN   = fits.filter(f=>f>=70).length;
-    const parcial  = fits.filter(f=>f>=50&&f<70).length;
-    const noApto   = fits.filter(f=>f<50).length;
-    const breakdown = { 'Aptos (≥70%)':aptosN, 'Parcial (50-69%)':parcial, 'No aptos (<50%)':noApto, 'En progreso':inProg, 'Pendientes':pending };
+    const aptosN   = fits.filter(f=>fitToLevel5(f)===5).length;
+    const conObs   = fits.filter(f=>{var lv=fitToLevel5(f);return lv>=3&&lv<5;}).length;
+    const noApto   = fits.filter(f=>fitToLevel5(f)<3).length;
+    const breakdown = { 'Apto':aptosN, 'Apto con Observaciones':conObs, 'No Apto':noApto, 'En progreso':inProg, 'Pendientes':pending };
     document.getElementById('perfil-dist-bars').innerHTML =
-      `<div class="bar-chart">${distBars(breakdown,{'Aptos (≥70%)':'#16a34a','Parcial (50-69%)':'#b45309','No aptos (<50%)':'#e11d48','En progreso':'#2563eb','Pendientes':'#94a3b8'})}</div>`;
+      `<div class="bar-chart">${distBars(breakdown,{'Apto':'#16a34a','Apto con Observaciones':'#b45309','No Apto':'#e11d48','En progreso':'#2563eb','Pendientes':'#94a3b8'})}</div>`;
   }
 
   // ── Ranking ───────────────────────────────────────────────────────────────
@@ -5380,7 +5378,7 @@ async function renderDashboard() {
           const fit=r.globalFit;
           const col=fit>=85?'#16a34a':fit>=70?'#2563eb':fit>=50?'#b45309':'#e11d48';
           const bg =fit>=85?'#f0fdf4':fit>=70?'#eff6ff':fit>=50?'#fff7ed':'#fff1f3';
-          const lbl=fit>=85?'Muy apto':fit>=70?'Apto':fit>=50?'Parcial':'No apto';
+          const lbl=(function(lv){return lv===5?'Apto':lv>=3?'Apto con Observaciones':'No Apto';})(fitToLevel5(fit));
           const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
           const brechasN = r.brechas ? r.brechas.length : 0;
           return `<tr style="border-bottom:1px solid var(--surface2)">
@@ -5732,9 +5730,9 @@ async function renderReports() {
     const s = c.scores;
     const rpt = buildFitReport(c);
     const fit = rpt ? rpt.globalFit : null;
-    const fitC = fit === null ? '#94a3b8' : fit >= 70 ? '#16a34a' : fit >= 50 ? '#b45309' : '#dc2626';
-    const fitBg = fit === null ? '#f1f5f9' : fit >= 70 ? '#f0fdf4' : fit >= 50 ? '#fff7ed' : '#fff1f3';
-    const fitLbl = fit === null ? '—' : fit >= 85 ? 'Muy apto' : fit >= 70 ? 'Apto' : fit >= 50 ? 'Parcial' : 'No apto';
+    const fitC = fit === null ? '#94a3b8' : (fitToLevel5(fit)===5?'#16a34a':fitToLevel5(fit)>=3?'#b45309':'#dc2626');
+    const fitBg = fit === null ? '#f1f5f9' : (fitToLevel5(fit)===5?'#f0fdf4':fitToLevel5(fit)>=3?'#fffbeb':'#fef2f2');
+    const fitLbl = fit === null ? '—' : (function(lv){ return lv===5?'Apto':lv>=3?'Apto con Observaciones':'No Apto'; })(fitToLevel5(fit));
 
     // Build scores mini grid
     const testIds = (c.tests || []).filter(t => s[t]);
