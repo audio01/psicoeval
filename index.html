@@ -720,7 +720,8 @@ input,select,textarea{font-family:inherit;outline:none}
           <div class="field"><label>RUT / DNI</label><input id="r-rut" placeholder="12.345.678-9" oninput="formatRut(this)" onblur="validateRutBlur()" maxlength="12"><span class="err" id="e-rut"></span></div>
           <div class="field">
             <label>Fecha de nacimiento *</label>
-            <input id="r-fechanac" type="date" max="" style="width:100%">
+            <input id="r-fechanac" type="date" style="width:100%"
+              max="" oninput="validateFechanacLive(this.value)">
             <span class="err" id="e-fechanac"></span>
           </div>
         </div>
@@ -2253,6 +2254,16 @@ function comunaKey(e) {
   items.forEach((el,i) => el.classList.toggle('active', i === _comunaHL));
 }
 
+function validateFechanacLive(val) {
+  var e = document.getElementById('e-fechanac'); if (!e) return;
+  if (!val) { e.textContent = ''; return; }
+  var fnDate = new Date(val), hoy = new Date();
+  var edad16 = new Date(hoy.getFullYear()-16, hoy.getMonth(), hoy.getDate());
+  if (fnDate > hoy)    { e.textContent = 'La fecha no puede ser futura'; e.style.color='var(--rose)'; }
+  else if (fnDate > edad16) { e.textContent = 'Debe tener al menos 16 años'; e.style.color='var(--rose)'; }
+  else                 { e.textContent = '✓ Fecha válida'; e.style.color='#16a34a'; }
+}
+
 function styleSup140() {
   var si  = document.getElementById('r-sup140-si')?.checked;
   var no  = document.getElementById('r-sup140-no')?.checked;
@@ -2411,7 +2422,12 @@ function regSetStep(step) {
   // Show correct panel
   var perfil = document.getElementById('r-perfil') ? document.getElementById('r-perfil').value : '';
   if      (step === 0) document.getElementById('reg-step-0').style.display = 'block';
-  else if (step === 1) document.getElementById('reg-step-1').style.display = 'block';
+  else if (step === 1) {
+    document.getElementById('reg-step-1').style.display = 'block';
+    // Block future dates at input level
+    var fn = document.getElementById('r-fechanac');
+    if (fn) fn.max = new Date().toISOString().split('T')[0];
+  }
   else if (step === 2) {
     var p2 = perfil === 'guardia' ? 'reg-step-2-guardia' : perfil === 'supervisor' ? 'reg-step-2-supervisor' : 'reg-step-2-general';
     document.getElementById(p2).style.display = 'block';
@@ -2503,9 +2519,11 @@ function regNext(fromStep) {
       document.getElementById('e-comuna').textContent = '';
     }
     if (!ok) {
-      // Scroll to first visible error
-      var firstErr = document.querySelector('.err:not(:empty)');
-      if (firstErr) firstErr.scrollIntoView({behavior:'smooth', block:'center'});
+      var firstErr = document.querySelector('#reg-step-1 .err:not(:empty)');
+      if (firstErr) {
+        var field = firstErr.closest('.field') || firstErr;
+        field.scrollIntoView({behavior:'smooth', block:'center'});
+      }
       return;
     }
     regSetStep(2);
