@@ -334,6 +334,226 @@ input,select,textarea{font-family:inherit;outline:none}
   #toasts,#print-actions{display:none!important}
   .view{display:block!important}
 }
+
+/* ── Mobile Test Experience ── */
+.test-view-body {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 24px 16px 100px;
+}
+@media (min-width: 600px) {
+  .test-view-body { padding: 40px 36px 100px; }
+}
+.test-bottom-bar {
+  position: sticky;
+  bottom: 0;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  z-index: 50;
+}
+@media (min-width: 600px) {
+  .test-bottom-bar { padding: 14px 36px; }
+}
+
+/* ── Scale question row (likert / PAI) ── */
+.q-scale-row {
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  margin-bottom: 10px;
+  transition: border-color .15s, background .15s;
+}
+.q-scale-row.answered {
+  border-color: rgba(52,199,89,.3);
+  background: var(--mint-l);
+}
+.q-scale-text {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--ink);
+  margin-bottom: 12px;
+}
+.q-scale-num {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink4);
+  margin-right: 5px;
+}
+.q-scale-btns {
+  display: flex;
+  gap: 6px;
+  justify-content: stretch;
+}
+.q-scale-btns button {
+  flex: 1;
+  min-height: 44px;
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  background: var(--surface2);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--ink3);
+  cursor: pointer;
+  transition: all .15s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 8px 4px;
+  -webkit-tap-highlight-color: transparent;
+}
+.q-scale-btns button.sel {
+  border-color: var(--accent);
+  background: var(--accent-l);
+  color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-m);
+}
+.q-scale-btns button .scale-lbl {
+  font-size: 8px;
+  font-weight: 600;
+  color: inherit;
+  opacity: .7;
+  line-height: 1.1;
+  text-align: center;
+  display: none;
+}
+@media (min-width: 420px) {
+  .q-scale-btns button .scale-lbl { display: block; }
+}
+
+/* ── Choice question row ── */
+.q-choice-row {
+  padding: 16px;
+  border-radius: 12px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  margin-bottom: 12px;
+  transition: border-color .15s, background .15s;
+}
+.q-choice-row.answered {
+  border-color: rgba(52,199,89,.3);
+  background: var(--mint-l);
+}
+.q-choice-text {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.65;
+  color: var(--ink);
+  margin-bottom: 12px;
+}
+.q-choice-opt {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  width: 100%;
+  padding: 11px 13px;
+  border-radius: 10px;
+  text-align: left;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  cursor: pointer;
+  transition: all .15s;
+  margin-bottom: 7px;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 44px;
+}
+.q-choice-opt:last-child { margin-bottom: 0; }
+.q-choice-opt.sel {
+  border-color: var(--accent);
+  background: var(--accent-l);
+}
+.q-choice-opt .opt-radio {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--border2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+  transition: all .15s;
+  flex-shrink: 0;
+}
+.q-choice-opt.sel .opt-radio {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+.q-choice-opt .opt-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #fff;
+  display: none;
+}
+.q-choice-opt.sel .opt-dot { display: block; }
+.q-choice-opt .opt-label {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink);
+  font-weight: 400;
+}
+.q-choice-opt.sel .opt-label {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* ── Scale legend strip ── */
+.scale-legend {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.scale-legend span {
+  background: var(--surface2);
+  border-radius: 6px;
+  padding: 3px 9px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink2);
+}
+
+/* ── Progress header ── */
+.test-header-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.test-header-progress .prog-label {
+  font-size: 12px;
+  color: var(--ink3);
+  white-space: nowrap;
+}
+.test-header-progress .prog-bar {
+  width: 80px;
+  background: var(--border);
+  height: 5px;
+  border-radius: 3px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+@media (min-width: 400px) {
+  .test-header-progress .prog-bar { width: 120px; }
+}
+
+/* ── Test select view ── */
+.testselect-body {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 32px 16px 40px;
+}
+@media (min-width: 600px) {
+  .testselect-body { padding: 52px 40px; }
+}
+
 </style>
 </head>
 <body>
@@ -343,78 +563,310 @@ input,select,textarea{font-family:inherit;outline:none}
      LANDING
 ════════════════════════════════════════ -->
 <div id="view-landing" class="view">
-  <nav class="l-nav">
-    <div class="logo" style="font-size:17px;font-weight:700;letter-spacing:-.02em">PsicoEval</div>
-    <div style="display:flex;gap:10px">
-      <button class="btn btn-ghost" onclick="gotoAdminLogin()" style="font-size:13px">Panel Admin</button>
-      <button class="btn btn-primary" onclick="gotoRegister()">Iniciar evaluación →</button>
-    </div>
-  </nav>
-  <div class="l-hero">
-    <div class="l-glow"></div>
-    <div style="position:relative;z-index:1">
-      <div class="hero-badge">Plataforma Psicolaboral</div>
-      <h1 class="hero-title">Evalúa el <em>potencial humano</em><br>con precisión científica</h1>
-      <p class="hero-sub">Tests validados de personalidad, aptitudes cognitivas y perfil DISC. Resultados automáticos y reportes profesionales al instante.</p>
-      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
-        <button class="btn btn-primary btn-lg" onclick="gotoRegister()" style="padding:15px 34px;font-size:15px">▶ Comenzar evaluación</button>
-        <button class="btn btn-outline btn-lg" onclick="gotoAdminLogin()" style="padding:15px 34px;font-size:15px">Panel admin →</button>
-      </div>
-    </div>
+  <!-- Minimal top bar — admin access only, discreet -->
+  <div style="position:absolute;top:16px;right:20px;z-index:10">
+    <button onclick="gotoAdminLogin()" style="background:none;border:none;font-size:12px;color:var(--ink4);cursor:pointer;padding:6px 10px;border-radius:8px;font-family:inherit;transition:color .15s" onmouseover="this.style.color='var(--ink2)'" onmouseout="this.style.color='var(--ink4)'">Admin</button>
   </div>
-  <div class="l-features">
-    <div class="lf-card">
-      <div class="lf-icon">🧠</div>
-      <div class="lf-title">Big Five (OCEAN)</div>
-      <div class="lf-desc">Mide los 5 grandes rasgos de personalidad con alta validez psicométrica para el contexto laboral.</div>
-    </div>
-    <div class="lf-card">
-      <div class="lf-icon">⚡</div>
-      <div class="lf-title">Aptitudes Cognitivas</div>
-      <div class="lf-desc">Evalúa razonamiento verbal, numérico y lógico. Predictor clave del desempeño y aprendizaje.</div>
-    </div>
-    <div class="lf-card">
-      <div class="lf-icon">🎯</div>
-      <div class="lf-title">Perfil DISC</div>
-      <div class="lf-desc">Identifica el estilo conductual dominante: Dominancia, Influencia, Estabilidad o Cumplimiento.</div>
+
+  <!-- Centered card layout -->
+  <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px 20px;background:var(--bg)">
+    <div style="width:100%;max-width:460px">
+
+      <!-- Logo + title -->
+      <div style="text-align:center;margin-bottom:36px">
+        <div style="width:56px;height:56px;background:var(--accent-l);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;border:1px solid var(--accent-m)">
+          <span style="font-size:26px">📋</span>
+        </div>
+        <h1 style="font-size:24px;font-weight:800;color:var(--ink);margin-bottom:8px;letter-spacing:-.02em">Evaluación Psicolaboral</h1>
+        <p style="font-size:15px;color:var(--ink3);line-height:1.6;max-width:340px;margin:0 auto">Esta plataforma aplica una batería de evaluaciones psicológicas para procesos de selección de personal.</p>
+      </div>
+
+      <!-- Info cards -->
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:28px">
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:14px 16px;background:var(--surface);border-radius:12px;border:1px solid var(--border)">
+          <span style="font-size:20px;flex-shrink:0;margin-top:1px">⏱</span>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:2px">Duración estimada</div>
+            <div style="font-size:13px;color:var(--ink3);line-height:1.5">Entre 30 y 50 minutos según el cargo. Responde con tranquilidad, no hay respuestas correctas o incorrectas en todos los instrumentos.</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:14px 16px;background:var(--surface);border-radius:12px;border:1px solid var(--border)">
+          <span style="font-size:20px;flex-shrink:0;margin-top:1px">🔒</span>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:2px">Confidencialidad</div>
+            <div style="font-size:13px;color:var(--ink3);line-height:1.5">Tus respuestas son privadas. Solo el equipo de RRHH tiene acceso a tus resultados, los cuales se usan exclusivamente para el proceso de selección en curso.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Privacy consent notice -->
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:14px 16px;margin-bottom:24px">
+        <div style="font-size:12px;color:#166534;line-height:1.65">
+          <strong>Autorización de uso de datos:</strong> Al continuar con esta evaluación, autorizas el almacenamiento y uso de tus datos personales y resultados con fines exclusivos de selección laboral. La información no será compartida con terceros ni utilizada para otros fines.
+        </div>
+      </div>
+
+      <!-- CTA -->
+      <button class="btn btn-primary btn-lg" onclick="gotoRegister()" style="width:100%;justify-content:center;font-size:15px;padding:15px">
+        Entiendo y acepto — Comenzar →
+      </button>
+      <div style="text-align:center;margin-top:14px;font-size:12px;color:var(--ink4)">
+        Al continuar confirmas haber leído el aviso de privacidad anterior.
+      </div>
+
     </div>
   </div>
 </div>
 
 <!-- ════════════════════════════════════════
-     REGISTER
+     REGISTER — Wizard 3 pasos
 ════════════════════════════════════════ -->
 <div id="view-register" class="view">
-  <div class="reg-card card cp">
-    <div style="margin-bottom:26px">
-      <div class="logo" style="margin-bottom:24px;font-size:20px">Psico<span>Eval</span></div>
-      <h2 style="font-size:26px;font-weight:800;margin-bottom:5px">Datos del candidato</h2>
-      <p style="font-size:13px;color:var(--ink3)">Complete sus datos para iniciar la evaluación</p>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:14px">
-      <div class="form-row">
-        <div class="field"><label>Nombres *</label><input id="r-nombre" placeholder="Ej: María José"><span class="err" id="e-nombre"></span></div>
-        <div class="field"><label>Apellidos *</label><input id="r-apellido" placeholder="Ej: González"><span class="err" id="e-apellido"></span></div>
+  <div style="min-height:100vh;background:var(--bg);display:flex;align-items:flex-start;justify-content:center;padding:32px 16px 60px">
+  <div style="width:100%;max-width:520px">
+
+    <!-- Progress bar -->
+    <div style="margin-bottom:28px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div class="logo" style="font-size:17px;font-weight:700">Psico<span>Eval</span></div>
+        <span id="reg-step-label" style="font-size:12px;color:var(--ink3);font-weight:600">Paso 1 de 3</span>
       </div>
-      <div class="field"><label>Correo electrónico *</label><input id="r-email" type="email" placeholder="correo@ejemplo.com"><span class="err" id="e-email"></span></div>
-      <div class="form-row">
-        <div class="field"><label>RUT / DNI</label><input id="r-rut" placeholder="12.345.678-9"></div>
-        <div class="field">
-          <label>Tipo de cargo *</label>
-          <select id="r-perfil">
-            <option value="">Selecciona un cargo…</option>
-            <option value="jefatura">Jefatura</option>
-            <option value="administrativo">Administrativo</option>
-            <option value="guardia">Guardia de Seguridad</option>
-          </select>
-          <span class="err" id="e-perfil"></span>
+      <div style="height:4px;background:var(--border);border-radius:100px;overflow:hidden">
+        <div id="reg-progress-bar" style="height:100%;background:var(--accent);border-radius:100px;width:33%;transition:width .35s ease"></div>
+      </div>
+      <div style="display:flex;gap:0;margin-top:10px">
+        <div id="reg-dot-1" style="flex:1;text-align:center;font-size:11px;font-weight:700;color:var(--accent)">Datos personales</div>
+        <div id="reg-dot-2" style="flex:1;text-align:center;font-size:11px;font-weight:600;color:var(--ink4)">Perfil</div>
+        <div id="reg-dot-3" style="flex:1;text-align:center;font-size:11px;font-weight:600;color:var(--ink4)">Experiencia</div>
+      </div>
+    </div>
+
+    <!-- ── STEP 1: Datos personales ── -->
+    <div id="reg-step-1" class="card cp">
+      <h2 style="font-size:22px;font-weight:800;margin-bottom:4px">Datos personales</h2>
+      <p style="font-size:13px;color:var(--ink3);margin-bottom:22px">Información básica para identificarte en el proceso.</p>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="form-row">
+          <div class="field"><label>Nombres *</label><input id="r-nombre" placeholder="Ej: María José"><span class="err" id="e-nombre"></span></div>
+          <div class="field"><label>Apellidos *</label><input id="r-apellido" placeholder="Ej: González"><span class="err" id="e-apellido"></span></div>
+        </div>
+        <div class="field"><label>Correo electrónico *</label><input id="r-email" type="email" placeholder="correo@ejemplo.com"><span class="err" id="e-email"></span></div>
+        <div class="form-row">
+          <div class="field"><label>RUT / DNI</label><input id="r-rut" placeholder="12.345.678-9"></div>
+          <div class="field">
+            <label>Tipo de cargo *</label>
+            <select id="r-perfil" onchange="onPerfilChange()">
+              <option value="">Selecciona un cargo…</option>
+              <option value="jefatura">Jefatura</option>
+              <option value="administrativo">Administrativo</option>
+              <option value="guardia">Guardia de Seguridad</option>
+            </select>
+            <span class="err" id="e-perfil"></span>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:6px">
+          <button class="btn btn-outline" onclick="gotoLanding()">← Volver</button>
+          <button class="btn btn-primary btn-lg" style="flex:1" onclick="regNext(1)">Continuar →</button>
         </div>
       </div>
-      <div style="display:flex;gap:10px;margin-top:6px">
-        <button class="btn btn-outline" onclick="gotoLanding()">← Volver</button>
-        <button class="btn btn-primary btn-lg" style="flex:1" onclick="submitRegister()">Continuar →</button>
+    </div>
+
+    <!-- ── STEP 2a: Perfil GUARDIA ── -->
+    <div id="reg-step-2-guardia" class="card cp" style="display:none">
+      <div style="display:inline-flex;align-items:center;gap:7px;padding:4px 12px;border-radius:100px;background:var(--surface2);font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:16px">🛡 Guardia de Seguridad</div>
+      <h2 style="font-size:22px;font-weight:800;margin-bottom:4px">Requisitos del cargo</h2>
+      <p style="font-size:13px;color:var(--ink3);margin-bottom:22px">Información específica para el proceso de selección de Guardia.</p>
+      <div style="display:flex;flex-direction:column;gap:16px">
+
+        <!-- OS-10 -->
+        <div class="field">
+          <label>¿Posees curso OS-10 vigente? *</label>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px">
+            <label style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s" id="os10-yes-lbl">
+              <input type="radio" name="os10" id="r-os10-si" value="si" onchange="styleOs10()" style="width:18px;height:18px;accent-color:var(--accent)">
+              <div>
+                <div style="font-size:14px;font-weight:600;color:var(--ink)">Sí, tengo OS-10 vigente</div>
+                <div style="font-size:12px;color:var(--ink3)">Curso aprobado y al día con Carabineros de Chile</div>
+              </div>
+            </label>
+            <label style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s" id="os10-no-lbl">
+              <input type="radio" name="os10" id="r-os10-no" value="no" onchange="styleOs10()" style="width:18px;height:18px;accent-color:var(--accent)">
+              <div>
+                <div style="font-size:14px;font-weight:600;color:var(--ink)">No tengo OS-10 o está vencido</div>
+                <div style="font-size:12px;color:var(--ink3)">Sin curso vigente o en proceso de renovación</div>
+              </div>
+            </label>
+          </div>
+          <span class="err" id="e-os10"></span>
+        </div>
+
+        <!-- Nivel educativo guardia — explícito -->
+        <div class="field">
+          <label>Nivel educacional *</label>
+          <p style="font-size:12px;color:var(--ink3);margin:4px 0 8px;line-height:1.5">El cargo requiere <strong>mínimo 4º Medio completo</strong>. Selecciona tu nivel actual.</p>
+          <div style="display:flex;flex-direction:column;gap:7px">
+            <label id="edu-g-basica-lbl" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s">
+              <input type="radio" name="edu-guardia" id="r-edu-g-basica" value="basica" onchange="styleEduG()" style="width:18px;height:18px;accent-color:var(--accent)">
+              <div>
+                <div style="font-size:13px;font-weight:600;color:var(--ink)">Educación Básica</div>
+                <div style="font-size:11px;color:#e11d48;font-weight:600">No cumple el requisito mínimo</div>
+              </div>
+            </label>
+            <label id="edu-g-sin4-lbl" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s">
+              <input type="radio" name="edu-guardia" id="r-edu-g-sin4" value="media_incompleta" onchange="styleEduG()" style="width:18px;height:18px;accent-color:var(--accent)">
+              <div>
+                <div style="font-size:13px;font-weight:600;color:var(--ink)">Enseñanza Media incompleta</div>
+                <div style="font-size:11px;color:#e11d48;font-weight:600">No cumple el requisito mínimo</div>
+              </div>
+            </label>
+            <label id="edu-g-4medio-lbl" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s">
+              <input type="radio" name="edu-guardia" id="r-edu-g-4medio" value="media" onchange="styleEduG()" style="width:18px;height:18px;accent-color:var(--accent)">
+              <div>
+                <div style="font-size:13px;font-weight:600;color:var(--ink)">4º Medio completo</div>
+                <div style="font-size:11px;color:#16a34a;font-weight:600">✓ Cumple el requisito mínimo</div>
+              </div>
+            </label>
+            <label id="edu-g-tecnica-lbl" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s">
+              <input type="radio" name="edu-guardia" id="r-edu-g-tecnica" value="tecnica" onchange="styleEduG()" style="width:18px;height:18px;accent-color:var(--accent)">
+              <div>
+                <div style="font-size:13px;font-weight:600;color:var(--ink)">Técnico de Nivel Superior</div>
+                <div style="font-size:11px;color:#16a34a;font-weight:600">✓ Cumple el requisito mínimo</div>
+              </div>
+            </label>
+            <label id="edu-g-univ-lbl" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s">
+              <input type="radio" name="edu-guardia" id="r-edu-g-univ" value="universitaria" onchange="styleEduG()" style="width:18px;height:18px;accent-color:var(--accent)">
+              <div>
+                <div style="font-size:13px;font-weight:600;color:var(--ink)">Universitaria o superior</div>
+                <div style="font-size:11px;color:#16a34a;font-weight:600">✓ Cumple el requisito mínimo</div>
+              </div>
+            </label>
+          </div>
+          <span class="err" id="e-edu-guardia"></span>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:4px">
+          <button class="btn btn-outline" onclick="regBack(2)">← Anterior</button>
+          <button class="btn btn-primary btn-lg" style="flex:1" onclick="regNext(2)">Continuar →</button>
+        </div>
       </div>
     </div>
+
+    <!-- ── STEP 2b: Perfil GENERAL (jefatura / administrativo) ── -->
+    <div id="reg-step-2-general" class="card cp" style="display:none">
+      <h2 style="font-size:22px;font-weight:800;margin-bottom:4px">Perfil educativo</h2>
+      <p style="font-size:13px;color:var(--ink3);margin-bottom:22px">Indica tu nivel educativo y área de formación principal.</p>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="field">
+          <label>Nivel educacional *</label>
+          <select id="r-educacion">
+            <option value="">Selecciona tu nivel…</option>
+            <option value="media">4º Medio completo</option>
+            <option value="tecnica">Técnico de Nivel Superior</option>
+            <option value="universitaria">Universitaria (en curso o completa)</option>
+            <option value="postgrado">Postgrado / Magíster / Doctorado</option>
+          </select>
+          <span class="err" id="e-educacion"></span>
+        </div>
+        <div class="field">
+          <label>Rubro de experiencia principal</label>
+          <select id="r-rubro">
+            <option value="">Selecciona…</option>
+            <option value="seguridad">Seguridad / Vigilancia</option>
+            <option value="comercio">Comercio / Retail</option>
+            <option value="administracion">Administración / Oficina</option>
+            <option value="salud">Salud</option>
+            <option value="construccion">Construcción / Obras</option>
+            <option value="logistica">Logística / Transporte</option>
+            <option value="educacion">Educación</option>
+            <option value="tecnologia">Tecnología</option>
+            <option value="otro">Otro rubro</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:4px">
+          <button class="btn btn-outline" onclick="regBack(2)">← Anterior</button>
+          <button class="btn btn-primary btn-lg" style="flex:1" onclick="regNext(2)">Continuar →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── STEP 3: Experiencia laboral ── -->
+    <div id="reg-step-3" class="card cp" style="display:none">
+      <h2 style="font-size:22px;font-weight:800;margin-bottom:4px">Experiencia laboral</h2>
+      <p style="font-size:13px;color:var(--ink3);margin-bottom:4px">Indica tus dos últimas experiencias laborales más estables.</p>
+      <p style="font-size:12px;color:var(--ink4);margin-bottom:20px">Si no tienes experiencia, puedes continuar sin llenar estos campos.</p>
+
+      <!-- Experiencia 1 -->
+      <div style="background:var(--surface2);border-radius:12px;padding:16px;margin-bottom:14px;border:1px solid var(--border)">
+        <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--accent);margin-bottom:12px">Experiencia más reciente</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div class="field"><label>Empresa / Organización</label><input id="r-emp1" placeholder="Ej: Empresa de Seguridad XYZ"></div>
+          <div class="field"><label>Cargo desempeñado</label><input id="r-cargo1" placeholder="Ej: Guardia de Seguridad"></div>
+          <div class="form-row">
+            <div class="field">
+              <label>Duración</label>
+              <select id="r-dur1">
+                <option value="">Selecciona…</option>
+                <option value="menos_6m">Menos de 6 meses</option>
+                <option value="6m_1a">6 meses a 1 año</option>
+                <option value="1_2a">1 a 2 años</option>
+                <option value="2_5a">2 a 5 años</option>
+                <option value="mas_5a">Más de 5 años</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Motivo de salida</label>
+              <select id="r-salida1">
+                <option value="">Selecciona…</option>
+                <option value="termino_contrato">Término de contrato</option>
+                <option value="renuncia">Renuncia voluntaria</option>
+                <option value="despido">Desvinculación</option>
+                <option value="mutual">Acuerdo mutuo</option>
+                <option value="actual">Es mi trabajo actual</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Experiencia 2 -->
+      <div style="background:var(--surface2);border-radius:12px;padding:16px;margin-bottom:18px;border:1px solid var(--border)">
+        <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);margin-bottom:12px">Experiencia anterior</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div class="field"><label>Empresa / Organización</label><input id="r-emp2" placeholder="Ej: Retail ABC (opcional)"></div>
+          <div class="field"><label>Cargo desempeñado</label><input id="r-cargo2" placeholder="Ej: Vendedor (opcional)"></div>
+          <div class="form-row">
+            <div class="field">
+              <label>Duración</label>
+              <select id="r-dur2">
+                <option value="">Selecciona…</option>
+                <option value="menos_6m">Menos de 6 meses</option>
+                <option value="6m_1a">6 meses a 1 año</option>
+                <option value="1_2a">1 a 2 años</option>
+                <option value="2_5a">2 a 5 años</option>
+                <option value="mas_5a">Más de 5 años</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Motivo de salida</label>
+              <select id="r-salida2">
+                <option value="">Selecciona…</option>
+                <option value="termino_contrato">Término de contrato</option>
+                <option value="renuncia">Renuncia voluntaria</option>
+                <option value="despido">Desvinculación</option>
+                <option value="mutual">Acuerdo mutuo</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-outline" onclick="regBack(3)">← Anterior</button>
+        <button class="btn btn-primary btn-lg" style="flex:1" onclick="submitRegister()">Finalizar y comenzar →</button>
+      </div>
+    </div>
+
+  </div>
   </div>
 </div>
 
@@ -429,7 +881,7 @@ input,select,textarea{font-family:inherit;outline:none}
       <span id="sel-name">Candidato</span>
     </div>
   </header>
-  <div style="max-width:700px;margin:0 auto;padding:52px 40px">
+  <div class="testselect-body">
     <button class="btn btn-ghost btn-sm" onclick="gotoRegister()" style="margin-bottom:24px;color:var(--ink3)">← Volver</button>
     <h2 style="font-size:30px;font-weight:800;margin-bottom:6px" id="sel-title">Tu evaluación</h2>
     <p style="color:var(--ink3);font-size:14px;margin-bottom:32px" id="sel-subtitle">A continuación se describen las evaluaciones asignadas a tu cargo.</p>
@@ -446,20 +898,20 @@ input,select,textarea{font-family:inherit;outline:none}
 <div id="view-test" class="view">
   <header class="app-header" style="position:sticky;top:0;z-index:100;background:var(--surface);border-bottom:1px solid var(--border)">
     <div class="logo" style="font-size:17px;font-weight:700;letter-spacing:-.02em">PsicoEval</div>
-    <div style="display:flex;align-items:center;gap:12px">
-      <span style="font-size:12px;color:var(--ink3)" id="test-pct-label">Test 1 de 3</span>
-      <div style="width:120px;background:var(--border);height:5px;border-radius:3px;overflow:hidden">
+    <div class="test-header-progress">
+      <span class="prog-label" id="test-pct-label">Test 1 de 3</span>
+      <div class="prog-bar">
         <div id="test-global-bar" style="height:100%;background:var(--accent);border-radius:3px;width:0%;transition:width .4s"></div>
       </div>
     </div>
   </header>
-  <div style="max-width:760px;margin:0 auto;padding:40px 36px 80px" id="test-body">
+  <div class="test-view-body" id="test-body">
     <!-- filled by renderTestBlock() -->
   </div>
-  <div style="position:sticky;bottom:0;background:var(--surface);border-top:1px solid var(--border);padding:14px 36px;display:flex;justify-content:space-between;align-items:center">
-    <button class="btn btn-outline" id="btn-prev-test" onclick="prevTest()">← Anterior</button>
-    <span style="font-size:13px;color:var(--ink3)" id="test-unanswered"></span>
-    <button class="btn btn-primary" id="btn-next-test" onclick="nextTest()">Siguiente →</button>
+  <div class="test-bottom-bar">
+    <button class="btn btn-outline btn-sm" id="btn-prev-test" onclick="prevTest()">← Anterior</button>
+    <span style="font-size:12px;color:var(--ink3);text-align:center" id="test-unanswered"></span>
+    <button class="btn btn-primary btn-sm" id="btn-next-test" onclick="nextTest()">Siguiente →</button>
   </div>
 </div>
 
@@ -526,15 +978,22 @@ input,select,textarea{font-family:inherit;outline:none}
     <main style="padding:28px 36px;overflow-y:auto;background:var(--bg);height:100vh">
       <!-- Dashboard -->
       <div id="tab-dashboard">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
           <div>
             <h2 style="font-size:26px;font-weight:800;margin-bottom:4px">Dashboard</h2>
-            <p style="font-size:13px;color:var(--ink3)">Resumen general de evaluaciones</p>
+            <p style="font-size:13px;color:var(--ink3)">Resumen por perfil de cargo</p>
           </div>
           <div style="display:flex;gap:8px">
             <button class="btn btn-outline btn-sm" onclick="renderDashboard()">↻ Actualizar</button>
             <button class="btn btn-sm" onclick="seedTestData()" id="btn-seed" style="background:var(--blue);color:#fff">⚡ Datos de prueba</button>
           </div>
+        </div>
+        <!-- Profile filter tabs -->
+        <div style="display:flex;gap:6px;margin-bottom:22px;flex-wrap:wrap" id="dash-perfil-tabs">
+          <button id="dptab-all"           onclick="setDashPerfil('all',this)"           style="padding:8px 18px;border-radius:100px;border:1.5px solid var(--accent);background:var(--accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s">Todos</button>
+          <button id="dptab-jefatura"      onclick="setDashPerfil('jefatura',this)"      style="padding:8px 18px;border-radius:100px;border:1.5px solid var(--border2);background:var(--surface);color:var(--ink2);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s">👔 Jefatura</button>
+          <button id="dptab-administrativo" onclick="setDashPerfil('administrativo',this)" style="padding:8px 18px;border-radius:100px;border:1.5px solid var(--border2);background:var(--surface);color:var(--ink2);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s">💼 Administrativo</button>
+          <button id="dptab-guardia"       onclick="setDashPerfil('guardia',this)"       style="padding:8px 18px;border-radius:100px;border:1.5px solid var(--border2);background:var(--surface);color:var(--ink2);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s">🛡 Guardia</button>
         </div>
         <!-- KPI row -->
         <div class="stat-grid" id="stat-grid"></div>
@@ -706,7 +1165,7 @@ input,select,textarea{font-family:inherit;outline:none}
 //  TEST METADATA
 // ═══════════════════════════════════════════════════════════
 const TESTS_META = {
-  barratt:      { name:'Impulsividad Barratt (BIS-11)',      icon:'🧩', color:'var(--navy)'   },
+  barratt:      { name:'Impulsividad Barratt (BIS-15)',      icon:'🧩', color:'var(--navy)'   },
   dc0:          { name:'Aptitud Cognitiva (DC-0)',            icon:'⚡', color:'var(--green)'  },
   pai:          { name:'Ajuste Psicológico (PAI)',            icon:'🔎', color:'var(--gold)'   },
   situacional:  { name:'Juicio Situacional',                 icon:'💡', color:'var(--accent)' },
@@ -732,37 +1191,33 @@ const PERFIL_META = {
 //  Likert 1–4 (1=Rara vez, 4=Siempre). Subescalas: AI, IM, NP.
 //  Score final invertido: alto = BUEN control del impulso.
 // ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
+//  BIS-15 — Escala de Impulsividad Barratt versión breve
+//  15 ítems · 3 subescalas · Likert 1–4
+//  Spinella (2007). Correlación r>.90 con BIS-11.
+//  r:true = ítem directo (más puntaje = más impulsivo)
+//  r:false = ítem inverso (se invierte antes de calcular)
+//  Scoring: alto puntaje = BUEN autocontrol (invertido al 0-100)
+// ═══════════════════════════════════════════════════════════
 const BIS11_ITEMS = [
-  {id:'b01',sub:'AI',r:false,text:'Planifico mis tareas con cuidado antes de empezar.'},
-  {id:'b02',sub:'AI',r:true, text:'Hago cosas sin pensar en las consecuencias.'},
-  {id:'b03',sub:'AI',r:false,text:'Me concentro con facilidad cuando es necesario.'},
-  {id:'b04',sub:'AI',r:true, text:'Me distraigo fácilmente mientras trabajo.'},
-  {id:'b05',sub:'AI',r:false,text:'Pienso en los problemas con detenimiento antes de actuar.'},
-  {id:'b06',sub:'AI',r:true, text:'Me cuesta mantener la atención en una tarea por mucho tiempo.'},
-  {id:'b07',sub:'AI',r:false,text:'Evalúo consecuencias antes de tomar una decisión.'},
-  {id:'b08',sub:'AI',r:true, text:'Cambio de tema en conversaciones sin seguir un hilo lógico.'},
-  {id:'b09',sub:'AI',r:false,text:'Resuelvo los problemas considerando varias opciones.'},
-  {id:'b10',sub:'AI',r:true, text:'Cuando pienso en algo, otros pensamientos me interrumpen.'},
-  {id:'b11',sub:'IM',r:true, text:'Actúo impulsivamente ante situaciones nuevas.'},
-  {id:'b12',sub:'IM',r:true, text:'Gasto más dinero del que debería.'},
-  {id:'b13',sub:'IM',r:true, text:'Digo lo que pienso sin medir las palabras.'},
-  {id:'b14',sub:'IM',r:true, text:'Actúo rápido cuando me enfrento a un problema, sin detenerme a pensar.'},
-  {id:'b15',sub:'IM',r:false,text:'Controlo mi carácter ante situaciones difíciles.'},
-  {id:'b16',sub:'IM',r:true, text:'Reacciono antes de evaluar las opciones disponibles.'},
-  {id:'b17',sub:'IM',r:false,text:'Me contengo cuando estoy emocionalmente alterado/a.'},
-  {id:'b18',sub:'IM',r:true, text:'Tomo decisiones sin pensar suficientemente en ellas.'},
-  {id:'b19',sub:'IM',r:false,text:'Mantengo la calma ante situaciones de conflicto.'},
-  {id:'b20',sub:'IM',r:true, text:'Compro cosas sin haberlo planeado.'},
-  {id:'b21',sub:'NP',r:true, text:'Me preocupa más lo que pasa hoy que lo que pasará después.'},
-  {id:'b22',sub:'NP',r:false,text:'Me oriento hacia el logro de metas a largo plazo.'},
-  {id:'b23',sub:'NP',r:true, text:'Cambio de trabajo o proyectos con frecuencia.'},
-  {id:'b24',sub:'NP',r:false,text:'Soy más cuidadoso/a que la mayoría de las personas en mis decisiones.'},
-  {id:'b25',sub:'NP',r:true, text:'Los detalles me aburren y los paso por alto.'},
-  {id:'b26',sub:'NP',r:false,text:'Me controlo ante las tentaciones de actuar sin pensar.'},
-  {id:'b27',sub:'NP',r:true, text:'Busco resultados rápidos en lugar de beneficios futuros.'},
-  {id:'b28',sub:'NP',r:false,text:'Tengo claro hacia dónde quiero llegar en mi carrera.'},
-  {id:'b29',sub:'NP',r:true, text:'Tomo decisiones sin planificarlas.'},
-  {id:'b30',sub:'NP',r:false,text:'Pienso en las consecuencias de mis actos antes de decidir.'},
+  // ── Atencional (AI) — 5 ítems ──
+  {id:'b01',sub:'AI',r:true, text:'Me distraigo fácilmente cuando tengo que concentrarme en algo.'},
+  {id:'b02',sub:'AI',r:true, text:'Me resulta difícil mantener la atención en una tarea que requiere esfuerzo.'},
+  {id:'b03',sub:'AI',r:false,text:'Me concentro bien en lo que estoy haciendo.'},
+  {id:'b04',sub:'AI',r:true, text:'Cuando pienso en algo, me interrumpen otros pensamientos sin quererlo.'},
+  {id:'b05',sub:'AI',r:false,text:'Pienso con detenimiento antes de tomar una decisión.'},
+  // ── Motor (IM) — 5 ítems ──
+  {id:'b06',sub:'IM',r:true, text:'Actúo por impulso sin pensar en las consecuencias.'},
+  {id:'b07',sub:'IM',r:true, text:'Digo cosas sin pensar y luego me arrepiento.'},
+  {id:'b08',sub:'IM',r:false,text:'Controlo mis reacciones incluso cuando estoy enojado/a o frustrado/a.'},
+  {id:'b09',sub:'IM',r:true, text:'Actúo rápido ante un problema antes de analizar bien la situación.'},
+  {id:'b10',sub:'IM',r:false,text:'Me contengo cuando siento el impulso de hacer algo que podría ser un error.'},
+  // ── No Planificación (NP) — 5 ítems ──
+  {id:'b11',sub:'NP',r:true, text:'Me importa más lo que pasa hoy que lo que pueda pasar en el futuro.'},
+  {id:'b12',sub:'NP',r:false,text:'Pienso en las consecuencias de mis decisiones antes de actuar.'},
+  {id:'b13',sub:'NP',r:true, text:'Tomo decisiones sin planificarlas con anticipación.'},
+  {id:'b14',sub:'NP',r:false,text:'Me oriento hacia el logro de metas a largo plazo.'},
+  {id:'b15',sub:'NP',r:true, text:'Me resulta difícil pensar en el futuro cuando el presente me exige atención.'},
 ];
 
 // ═══════════════════════════════════════════════════════════
@@ -1317,7 +1772,7 @@ function showView(id) {
   window.scrollTo(0,0);
 }
 function gotoLanding()    { showView('landing'); }
-function gotoRegister()   { showView('register'); }
+function gotoRegister()   { showView('register'); regSetStep(1); }
 function gotoAdminLogin() { showView('adminlogin'); }
 
 // ═══════════════════════════════════════════════════════════
@@ -1368,10 +1823,18 @@ async function addToDB(c) {
     id: c.id, nombre: c.nombre, apellido: c.apellido, email: c.email,
     rut: c.rut||'', cargo: c.cargo||'', perfil: c.perfil||'',
     fecha: c.fecha, tests: c.tests, estado: c.estado,
-    scores: c.scores||null
+    scores: c.scores||null,
+    educacion: c.educacion||null,
+    os10: c.os10||null,
+    rubro: c.rubro||null,
+    historial: c.historial||null,
   };
   const r = await fetch(`${SUPA_URL}/rest/v1/candidates`,{method:'POST',headers:DB_HEADERS,body:JSON.stringify(row)});
-  if (!r.ok) throw new Error(await r.text());
+  if (!r.ok) {
+    const txt = await r.text();
+    console.error('addToDB failed:', r.status, txt);
+    throw new Error('HTTP ' + r.status + ': ' + txt);
+  }
 }
 async function deleteFromDB(id) {
   await fetch(`${SUPA_URL}/rest/v1/candidates?id=eq.${id}`,{method:'DELETE',headers:DB_HEADERS});
@@ -1380,38 +1843,166 @@ async function deleteFromDB(id) {
 // ═══════════════════════════════════════════════════════════
 //  REGISTER
 // ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
+//  REGISTER WIZARD
+// ═══════════════════════════════════════════════════════════
+
+function onPerfilChange() {
+  // nothing at step 1 — just store selection
+}
+
+function styleOs10() {
+  const si = document.getElementById('r-os10-si').checked;
+  const no = document.getElementById('r-os10-no').checked;
+  const ylbl = document.getElementById('os10-yes-lbl');
+  const nlbl = document.getElementById('os10-no-lbl');
+  if (ylbl) { ylbl.style.borderColor = si ? 'var(--accent)' : 'var(--border)'; ylbl.style.background = si ? 'var(--accent-l)' : 'var(--surface)'; }
+  if (nlbl) { nlbl.style.borderColor = no ? 'var(--accent)' : 'var(--border)'; nlbl.style.background = no ? 'var(--accent-l)' : 'var(--surface)'; }
+  document.getElementById('e-os10').textContent = '';
+}
+
+function styleEduG() {
+  const CUMPLE = ['media','tecnica','universitaria'];
+  ['basica','sin4','4medio','tecnica','univ'].forEach(function(k) {
+    const radio = document.getElementById('r-edu-g-' + k);
+    const lbl   = document.getElementById('edu-g-' + k + '-lbl');
+    if (!radio || !lbl) return;
+    lbl.style.borderColor = radio.checked ? 'var(--accent)' : 'var(--border)';
+    lbl.style.background  = radio.checked ? 'var(--accent-l)' : 'var(--surface)';
+  });
+  document.getElementById('e-edu-guardia').textContent = '';
+}
+
+function regSetStep(step) {
+  // Hide all panels
+  ['reg-step-1','reg-step-2-guardia','reg-step-2-general','reg-step-3'].forEach(function(id) {
+    const el = document.getElementById(id); if (el) el.style.display = 'none';
+  });
+  // Show correct panel
+  const perfil = document.getElementById('r-perfil').value;
+  if      (step === 1) document.getElementById('reg-step-1').style.display = 'block';
+  else if (step === 2) document.getElementById(perfil === 'guardia' ? 'reg-step-2-guardia' : 'reg-step-2-general').style.display = 'block';
+  else if (step === 3) document.getElementById('reg-step-3').style.display = 'block';
+  // Update progress
+  const pct = step === 1 ? 33 : step === 2 ? 66 : 100;
+  document.getElementById('reg-progress-bar').style.width = pct + '%';
+  document.getElementById('reg-step-label').textContent = 'Paso ' + step + ' de 3';
+  ['reg-dot-1','reg-dot-2','reg-dot-3'].forEach(function(id, i) {
+    const el = document.getElementById(id); if (!el) return;
+    el.style.color  = (i + 1) === step ? 'var(--accent)' : (i + 1) < step ? 'var(--ink3)' : 'var(--ink4)';
+    el.style.fontWeight = (i + 1) === step ? '700' : '500';
+  });
+  window.scrollTo(0, 0);
+}
+
+function regNext(fromStep) {
+  if (fromStep === 1) {
+    // Validate step 1
+    const nombre   = document.getElementById('r-nombre').value.trim();
+    const apellido = document.getElementById('r-apellido').value.trim();
+    const email    = document.getElementById('r-email').value.trim();
+    const perfil   = document.getElementById('r-perfil').value;
+    let ok = true;
+    if (!nombre)  { document.getElementById('e-nombre').textContent = 'Requerido'; ok = false; } else document.getElementById('e-nombre').textContent = '';
+    if (!apellido){ document.getElementById('e-apellido').textContent = 'Requerido'; ok = false; } else document.getElementById('e-apellido').textContent = '';
+    if (!email || !email.includes('@')) { document.getElementById('e-email').textContent = 'Email inválido'; ok = false; } else document.getElementById('e-email').textContent = '';
+    if (!perfil)  { document.getElementById('e-perfil').textContent = 'Selecciona un cargo'; ok = false; } else document.getElementById('e-perfil').textContent = '';
+    if (!ok) return;
+    regSetStep(2);
+
+  } else if (fromStep === 2) {
+    const perfil = document.getElementById('r-perfil').value;
+    if (perfil === 'guardia') {
+      // Validate OS-10
+      const os10 = document.querySelector('input[name="os10"]:checked');
+      if (!os10) { document.getElementById('e-os10').textContent = 'Selecciona una opción'; return; }
+      // Validate education
+      const edu = document.querySelector('input[name="edu-guardia"]:checked');
+      if (!edu) { document.getElementById('e-edu-guardia').textContent = 'Selecciona tu nivel educativo'; return; }
+    } else {
+      const edu = document.getElementById('r-educacion').value;
+      if (!edu) { document.getElementById('e-educacion').textContent = 'Selecciona tu nivel'; return; }
+      document.getElementById('e-educacion').textContent = '';
+    }
+    regSetStep(3);
+  }
+}
+
+function regBack(fromStep) {
+  regSetStep(fromStep - 1);
+}
+
 function submitRegister() {
+  // All 3 steps passed — collect everything
   const nombre   = document.getElementById('r-nombre').value.trim();
   const apellido = document.getElementById('r-apellido').value.trim();
   const email    = document.getElementById('r-email').value.trim();
   const perfil   = document.getElementById('r-perfil').value;
-  let ok = true;
-  if (!nombre)  { document.getElementById('e-nombre').textContent='Requerido'; ok=false; } else document.getElementById('e-nombre').textContent='';
-  if (!apellido){ document.getElementById('e-apellido').textContent='Requerido'; ok=false; } else document.getElementById('e-apellido').textContent='';
-  if (!email||!email.includes('@')){ document.getElementById('e-email').textContent='Email inválido'; ok=false; } else document.getElementById('e-email').textContent='';
-  if (!perfil)  { document.getElementById('e-perfil').textContent='Selecciona un cargo'; ok=false; } else document.getElementById('e-perfil').textContent='';
-  if (!ok) return;
-  S.candidate = { id:genUUID(), nombre, apellido, email, rut:document.getElementById('r-rut').value.trim(),
-    perfil, cargo:PERFIL_META[perfil].label, fecha:new Date().toLocaleDateString('es-CL'),
-    tests:PERFIL_TESTS[perfil], estado:'pending', scores:{} };
-  const init = (nombre[0]||'')+(apellido[0]||'');
+
+  // Education & profile data
+  let educacion = '', os10 = '';
+  if (perfil === 'guardia') {
+    const eduG = document.querySelector('input[name="edu-guardia"]:checked');
+    educacion = eduG ? eduG.value : '';
+    const os10R = document.querySelector('input[name="os10"]:checked');
+    os10 = os10R ? os10R.value : '';
+  } else {
+    educacion = document.getElementById('r-educacion')?.value || '';
+  }
+  const rubro = document.getElementById('r-rubro')?.value || '';
+
+  // Experience
+  const emp1    = document.getElementById('r-emp1')?.value.trim()   || '';
+  const cargo1  = document.getElementById('r-cargo1')?.value.trim() || '';
+  const dur1    = document.getElementById('r-dur1')?.value           || '';
+  const salida1 = document.getElementById('r-salida1')?.value        || '';
+  const emp2    = document.getElementById('r-emp2')?.value.trim()   || '';
+  const cargo2  = document.getElementById('r-cargo2')?.value.trim() || '';
+  const dur2    = document.getElementById('r-dur2')?.value           || '';
+  const salida2 = document.getElementById('r-salida2')?.value        || '';
+
+  // Labels
+  const EDU_LABELS = { basica:'Educación Básica', media_incompleta:'Media incompleta', media:'4º Medio completo', tecnica:'Técnico Superior', universitaria:'Universitaria', postgrado:'Postgrado' };
+  const DUR_LABELS = { menos_6m:'< 6 meses', '6m_1a':'6m–1 año', '1_2a':'1–2 años', '2_5a':'2–5 años', mas_5a:'> 5 años' };
+  const SALIDA_LABELS = { termino_contrato:'Término contrato', renuncia:'Renuncia', despido:'Desvinculación', mutual:'Acuerdo mutuo', actual:'Trabajo actual' };
+  const RUBRO_LABELS = { seguridad:'Seguridad', comercio:'Comercio', administracion:'Administración', salud:'Salud', construccion:'Construcción', logistica:'Logística', educacion:'Educación', tecnologia:'Tecnología', otro:'Otro' };
+
+  // Build experiencia structure
+  const historial = [];
+  if (emp1 || cargo1) historial.push({ empresa: emp1, cargo: cargo1, duracion: dur1, duracion_label: DUR_LABELS[dur1]||'', salida: salida1, salida_label: SALIDA_LABELS[salida1]||'' });
+  if (emp2 || cargo2) historial.push({ empresa: emp2, cargo: cargo2, duracion: dur2, duracion_label: DUR_LABELS[dur2]||'', salida: salida2, salida_label: SALIDA_LABELS[salida2]||'' });
+
+  S.candidate = {
+    id: genUUID(), nombre, apellido, email,
+    rut: document.getElementById('r-rut').value.trim(),
+    perfil, cargo: PERFIL_META[perfil].label,
+    fecha: new Date().toLocaleDateString('es-CL'),
+    tests: PERFIL_TESTS[perfil], estado: 'pending', scores: {},
+    // Extended fields
+    educacion, educacion_label: EDU_LABELS[educacion] || educacion,
+    os10: os10 || null,
+    rubro, rubro_label: RUBRO_LABELS[rubro] || '',
+    historial: historial.length ? historial : null,
+  };
+
+  const init = (nombre[0]||'') + (apellido[0]||'');
   document.getElementById('sel-avatar').textContent = init.toUpperCase();
-  document.getElementById('sel-name').textContent = nombre+' '+apellido;
+  document.getElementById('sel-name').textContent = nombre + ' ' + apellido;
   const pm = PERFIL_META[perfil];
-  document.getElementById('sel-title').textContent = 'Evaluación: '+pm.label;
+  document.getElementById('sel-title').textContent = 'Evaluación: ' + pm.label;
   document.getElementById('sel-subtitle').textContent = pm.desc;
   const banner = document.getElementById('sel-profile-banner');
-  banner.style.background = pm.color+'10'; banner.style.borderColor = pm.color+'40';
-  banner.innerHTML = '<span style="font-size:24px">'+pm.icon+'</span><div style="margin-top:8px"><strong style="font-size:15px">'+pm.label+'</strong><div style="font-size:13px;color:var(--ink3);margin-top:3px">'+pm.desc+'</div></div>';
+  banner.style.background = pm.color + '10'; banner.style.borderColor = pm.color + '40';
+  banner.innerHTML = '<span style="font-size:24px">' + pm.icon + '</span><div style="margin-top:8px"><strong style="font-size:15px">' + pm.label + '</strong><div style="font-size:13px;color:var(--ink3);margin-top:3px">' + pm.desc + '</div></div>';
   const tests = PERFIL_TESTS[perfil];
-  const testMins = {barratt:12,dc0:20,pai:15,situacional:12,vigilancia:10,comprension:10};
-  document.getElementById('sel-tests-list').innerHTML = tests.map(t => {
+  const testMins = { barratt:5, dc0:20, pai:15, situacional:12, vigilancia:10, comprension:10 };
+  document.getElementById('sel-tests-list').innerHTML = tests.map(function(t) {
     const m = TESTS_META[t];
-    return '<div style="display:flex;align-items:center;gap:14px;padding:13px 16px;border-radius:10px;background:var(--bg);border:1px solid var(--border)"><span style="font-size:22px">'+m.icon+'</span><div style="flex:1"><div style="font-weight:700;font-size:14px">'+m.name+'</div></div><span style="font-size:12px;color:var(--ink3)">~'+testMins[t]+' min</span></div>';
+    return '<div style="display:flex;align-items:center;gap:14px;padding:13px 16px;border-radius:10px;background:var(--bg);border:1px solid var(--border)"><span style="font-size:22px">' + m.icon + '</span><div style="flex:1"><div style="font-weight:700;font-size:14px">' + m.name + '</div></div><span style="font-size:12px;color:var(--ink3)">~' + testMins[t] + ' min</span></div>';
   }).join('');
-  const total = tests.reduce((a,t)=>a+(testMins[t]||10),0);
+  const totalMin = tests.reduce(function(a,t){ return a + (testMins[t]||10); }, 0);
   const ttEl = document.getElementById('sel-total-time');
-  if (ttEl) ttEl.textContent = 'Tiempo estimado total: ~'+total+' minutos';
+  if (ttEl) ttEl.textContent = 'Tiempo estimado total: ~' + totalMin + ' minutos';
   showView('testselect');
 }
 
@@ -1432,36 +2023,70 @@ function renderTestBlock() {
   const block = S.testBlocks[S.blockIdx];
   const meta  = TESTS_META[block.testId];
   const total = S.testBlocks.length;
-  const pct   = Math.round(S.blockIdx/total*100);
-  document.getElementById('test-global-bar').style.width = pct+'%';
-  document.getElementById('test-pct-label').textContent  = 'Test '+(S.blockIdx+1)+' de '+total;
-  document.getElementById('btn-prev-test').style.visibility = S.blockIdx===0?'hidden':'visible';
-  document.getElementById('btn-next-test').textContent = S.blockIdx===total-1?'Finalizar evaluación →':'Siguiente test →';
-  const type = block.qs[0]?.type;
+  const pct   = Math.round(S.blockIdx / total * 100);
+  document.getElementById('test-global-bar').style.width = pct + '%';
+  document.getElementById('test-pct-label').textContent  = 'Test ' + (S.blockIdx + 1) + ' de ' + total;
+  document.getElementById('btn-prev-test').style.visibility = S.blockIdx === 0 ? 'hidden' : 'visible';
+  document.getElementById('btn-next-test').textContent = S.blockIdx === total - 1 ? 'Finalizar →' : 'Siguiente →';
+
+  const type    = block.qs[0]?.type;
+  const isScale = type === 'likert' || type === 'pai';
+  const scaleMax = type === 'pai' ? 4 : 5;
+
+  // Legend for scale types
+  const LIKERT_LABELS = { 1:'Muy en\ndesacuerdo', 2:'En\ndesacuerdo', 3:'Neutral', 4:'De\nacuerdo', 5:'Muy de\nacuerdo' };
+  const PAI_LABELS    = { 1:'Nunca', 2:'A veces', 3:'Frecuente', 4:'Siempre' };
+  const scaleLabels   = type === 'pai' ? PAI_LABELS : LIKERT_LABELS;
+  const legendKeys    = type === 'pai' ? [1,2,3,4] : [1,2,3,4,5];
+
   let instrHtml = '';
-  if (type==='likert') instrHtml = `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">${['1 Muy en desacuerdo','2 En desacuerdo','3 Neutral','4 De acuerdo','5 Muy de acuerdo'].map(l=>`<span style="background:var(--surface2);border-radius:6px;padding:4px 10px;font-size:11px;font-weight:600;color:var(--ink2)">${l}</span>`).join('')}</div>`;
-  else if (type==='pai') instrHtml = `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">${['1 Nunca','2 A veces','3 Con frecuencia','4 Siempre'].map(l=>`<span style="background:var(--surface2);border-radius:6px;padding:4px 10px;font-size:11px;font-weight:600;color:var(--ink2)">${l}</span>`).join('')}</div>`;
-  const isScale = type==='likert'||type==='pai';
-  const scaleMax = type==='pai'?4:5;
-  const questionsHtml = block.qs.map((q,qi) => {
+  if (isScale) {
+    instrHtml = '<div class="scale-legend">'
+      + legendKeys.map(n => `<span><strong>${n}</strong> — ${(scaleLabels[n]||'').replace('\n',' ')}</span>`).join('')
+      + '</div>';
+  }
+
+  const questionsHtml = block.qs.map((q, qi) => {
     const ans = S.answers[q.id];
+    const answered = ans !== undefined;
+
     if (isScale) {
-      const btns = Array.from({length:scaleMax},(_,i)=>i+1).map(n=>`<button class="scale-btn${ans===n?' sel':''}" onclick="answerScale('${q.id}',${n})" style="min-width:44px;padding:8px 4px;border-radius:8px;border:1.5px solid ${ans===n?'var(--accent)':'var(--border)'};background:${ans===n?'var(--accent-l)':'var(--surface)'};font-weight:700;font-size:13px;color:${ans===n?'var(--accent)':'var(--ink3)'};cursor:pointer;transition:all .15s">${n}</button>`).join('');
-      return `<div class="q-row" id="qrow-${q.id}" style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:16px;padding:14px 18px;border-radius:10px;border:1.5px solid ${ans!==undefined?'var(--green)30':'var(--border)'};background:${ans!==undefined?'var(--green-l)':'var(--surface)'};margin-bottom:8px"><div style="font-size:14px;line-height:1.6;color:var(--ink)"><span style="font-weight:700;color:var(--ink3);margin-right:6px;font-size:12px">${qi+1}.</span>${q.text}</div><div style="display:flex;gap:5px;flex-shrink:0">${btns}</div></div>`;
+      const btns = legendKeys.map(n => {
+        const sel = ans === n;
+        return `<button class="scale-btn${sel?' sel':''}" onclick="answerScale('${q.id}',${n})">`
+          + `<span>${n}</span>`
+          + `<span class="scale-lbl">${(scaleLabels[n]||'').replace('\n','<br>')}</span>`
+          + `</button>`;
+      }).join('');
+      return `<div class="q-scale-row${answered?' answered':''}" id="qrow-${q.id}">
+        <div class="q-scale-text"><span class="q-scale-num">${qi+1}.</span>${q.text}</div>
+        <div class="q-scale-btns">${btns}</div>
+      </div>`;
     } else {
-      const opts = (q.opts||[]).map((o,i)=>`<button onclick="answerChoice('${q.id}',${i})" style="display:flex;align-items:flex-start;gap:10px;width:100%;padding:10px 13px;border-radius:8px;text-align:left;border:1.5px solid ${ans===i?'var(--accent)':'var(--border)'};background:${ans===i?'var(--accent-l)':'var(--surface)'};cursor:pointer;transition:all .15s;margin-bottom:6px"><div style="width:20px;height:20px;border-radius:50%;border:2px solid ${ans===i?'var(--accent)':'var(--border2)'};background:${ans===i?'var(--accent)':'transparent'};flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center">${ans===i?'<div style="width:8px;height:8px;border-radius:50%;background:#fff"></div>':''}</div><span style="font-size:13px;line-height:1.55;color:${ans===i?'var(--accent)':'var(--ink)'};font-weight:${ans===i?'600':'400'}">${o.t||o.text}</span></button>`).join('');
-      return `<div class="q-row" id="qrow-${q.id}" style="padding:16px 18px;border-radius:12px;border:1.5px solid ${ans!==undefined?'var(--green)30':'var(--border)'};background:${ans!==undefined?'var(--green-l)':'var(--surface)'};margin-bottom:12px"><div style="font-size:14px;font-weight:600;line-height:1.6;margin-bottom:12px;color:var(--ink)"><span style="font-weight:700;color:var(--ink3);margin-right:6px;font-size:12px">${qi+1}.</span>${q.text}</div><div>${opts}</div></div>`;
+      const opts = (q.opts || []).map((o, i) => {
+        const sel = ans === i;
+        return `<button class="q-choice-opt${sel?' sel':''}" onclick="answerChoice('${q.id}',${i})">
+          <div class="opt-radio"><div class="opt-dot"></div></div>
+          <span class="opt-label">${o.t || o.text}</span>
+        </button>`;
+      }).join('');
+      return `<div class="q-choice-row${answered?' answered':''}" id="qrow-${q.id}">
+        <div class="q-choice-text"><span class="q-scale-num">${qi+1}.</span>${q.text}</div>
+        <div>${opts}</div>
+      </div>`;
     }
   }).join('');
+
   document.getElementById('test-body').innerHTML = `
-    <div style="display:inline-flex;align-items:center;gap:8px;padding:5px 14px;border-radius:100px;font-size:12px;font-weight:700;background:${meta.color}15;border:1px solid ${meta.color}30;color:${meta.color};margin-bottom:20px">${meta.icon} ${meta.name}</div>
-    <h2 style="font-size:22px;font-weight:800;margin-bottom:6px">${meta.name}</h2>
-    <p style="font-size:13px;color:var(--ink3);margin-bottom:8px">${block.qs.length} preguntas · Responde todas antes de continuar</p>
+    <div style="display:inline-flex;align-items:center;gap:8px;padding:5px 14px;border-radius:100px;font-size:12px;font-weight:700;background:${meta.color}15;border:1px solid ${meta.color}30;color:${meta.color};margin-bottom:16px">${meta.icon} ${meta.name}</div>
+    <h2 style="font-size:20px;font-weight:800;margin-bottom:4px;line-height:1.2">${meta.name}</h2>
+    <p style="font-size:13px;color:var(--ink3);margin-bottom:14px">${block.qs.length} preguntas · Responde todas antes de continuar</p>
     ${instrHtml}
-    <div style="height:1px;background:var(--border);margin:16px 0 20px"></div>
+    <div style="height:1px;background:var(--border);margin:14px 0 18px"></div>
     <div>${questionsHtml}</div>`;
+
   updateUnanswered();
-  window.scrollTo(0,0);
+  window.scrollTo(0, 0);
 }
 
 function updateUnanswered() {
@@ -1473,26 +2098,24 @@ function updateUnanswered() {
 
 function answerScale(qid, val) {
   S.answers[qid] = val;
-  const block = S.testBlocks[S.blockIdx];
-  const q = block.qs.find(x=>x.id===qid);
-  const row = document.getElementById('qrow-'+qid);
+  const row = document.getElementById('qrow-' + qid);
   if (!row) return;
-  row.style.borderColor='var(--green)30'; row.style.background='var(--green-l)';
-  const scaleMax = q.type==='pai'?4:5;
-  const btns = row.querySelectorAll('button');
-  btns.forEach((btn,i)=>{ const n=i+1; btn.style.borderColor=n===val?'var(--accent)':'var(--border)'; btn.style.background=n===val?'var(--accent-l)':'var(--surface)'; btn.style.color=n===val?'var(--accent)':'var(--ink3)'; });
+  row.classList.add('answered');
+  row.querySelectorAll('.scale-btn').forEach((btn, i) => {
+    const n = i + 1;
+    btn.classList.toggle('sel', n === val);
+  });
   updateUnanswered();
 }
 
 function answerChoice(qid, idx) {
   S.answers[qid] = idx;
-  const block = S.testBlocks[S.blockIdx];
-  const q = block.qs.find(x=>x.id===qid);
-  const row = document.getElementById('qrow-'+qid);
+  const row = document.getElementById('qrow-' + qid);
   if (!row) return;
-  row.style.borderColor='var(--green)30'; row.style.background='var(--green-l)';
-  const btns = row.querySelectorAll('button');
-  btns.forEach((btn,i)=>{ const sel=i===idx; btn.style.borderColor=sel?'var(--accent)':'var(--border)'; btn.style.background=sel?'var(--accent-l)':'var(--surface)'; const radio=btn.querySelector('div'); const text=btn.querySelector('span'); if(radio){radio.style.borderColor=sel?'var(--accent)':'var(--border2)';radio.style.background=sel?'var(--accent)':'transparent';radio.innerHTML=sel?'<div style="width:8px;height:8px;border-radius:50%;background:#fff"></div>':'';} if(text){text.style.color=sel?'var(--accent)':'var(--ink)';text.style.fontWeight=sel?'600':'400';} });
+  row.classList.add('answered');
+  row.querySelectorAll('.q-choice-opt').forEach((btn, i) => {
+    btn.classList.toggle('sel', i === idx);
+  });
   updateUnanswered();
 }
 
@@ -1514,11 +2137,89 @@ async function finishTests() {
   const scores = calcScores(S.answers, S.selectedTests, S.candidate.perfil);
   S.candidate.tests = S.selectedTests; S.candidate.scores = scores; S.candidate.estado = 'completed';
   const btnFin = document.getElementById('btn-next-test');
-  if (btnFin){btnFin.disabled=true;btnFin.textContent='Guardando…';}
-  try { await addToDB(S.candidate); }
-  catch(e) { toast('Error al guardar. Verifica tu conexión.','er'); if(btnFin){btnFin.disabled=false;btnFin.textContent='Finalizar evaluación →';} return; }
+  if (btnFin) { btnFin.disabled = true; btnFin.textContent = 'Guardando…'; }
+
+  // ── Helper: show detailed error overlay ──────────────────────────────────
+  function showSaveError(title, body) {
+    if (btnFin) { btnFin.disabled = false; btnFin.textContent = 'Reintentar →'; }
+    const existing = document.getElementById('save-error-overlay');
+    if (existing) existing.remove();
+    const div = document.createElement('div');
+    div.id = 'save-error-overlay';
+    div.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px';
+    div.innerHTML = `
+      <div style="background:#fff;border-radius:16px;padding:28px;max-width:400px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.2);font-size:13px;line-height:1.65">
+        <div style="font-size:22px;margin-bottom:10px">⚠️</div>
+        <div style="font-size:16px;font-weight:700;color:#1d1d1f;margin-bottom:6px">${title}</div>
+        <div style="color:#6e6e73;margin-bottom:20px">${body}</div>
+        <div style="display:flex;gap:8px">
+          <button onclick="document.getElementById('save-error-overlay').remove();finishTests()" style="flex:1;padding:11px;background:#6366f1;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">🔄 Reintentar</button>
+          <button onclick="document.getElementById('save-error-overlay').remove()" style="padding:11px 14px;background:#f2f2f7;color:#1d1d1f;border:none;border-radius:10px;font-size:13px;cursor:pointer;font-family:inherit">Cerrar</button>
+        </div>
+      </div>`;
+    document.body.appendChild(div);
+  }
+
+  // ── Attempt save ──────────────────────────────────────────────────────────
+  // First make sure we have a valid UUID
+  if (!S.candidate.id) S.candidate.id = genUUID();
+
+  try {
+    await addToDB(S.candidate);
+  } catch(e) {
+    const msg = e.message || String(e);
+    console.error('finishTests error:', msg);
+
+    // Detect project paused (Supabase free tier)
+    if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('fetch')) {
+      // Try a quick ping to distinguish network vs paused project
+      let paused = false;
+      try {
+        const ping = await fetch(`${SUPA_URL}/rest/v1/candidates?limit=1`, { headers: DB_HEADERS });
+        if (!ping.ok && ping.status !== 200 && ping.status !== 406) paused = true;
+      } catch { paused = true; }
+
+      if (paused) {
+        showSaveError(
+          'Servidor temporalmente inactivo',
+          'El servicio de base de datos está pausado. Esto ocurre automáticamente tras períodos sin actividad.<br><br>' +
+          'Por favor avisa al equipo de RRHH para que reactiven el servicio, y luego presiona <strong>Reintentar</strong>.<br><br>' +
+          '<span style="color:#6366f1;font-weight:600">Tus respuestas están guardadas en esta sesión — no las perderás si recargas.</span>'
+        );
+      } else {
+        showSaveError(
+          'Sin conexión a internet',
+          'No se pudo conectar al servidor. Verifica que tengas acceso a internet y presiona <strong>Reintentar</strong>.'
+        );
+      }
+      return;
+    }
+
+    // Null id error — retry with fresh UUID
+    if (msg.includes('null value') && msg.includes('"id"')) {
+      S.candidate.id = genUUID();
+      try {
+        await addToDB(S.candidate);
+      } catch(e2) {
+        showSaveError('Error al guardar', 'Código: ' + (e2.message||'').slice(0,120) + '<br><br>Intenta de nuevo o contacta al equipo de RRHH.');
+        return;
+      }
+    } else {
+      showSaveError(
+        'Error al guardar',
+        'Detalles: <code style="font-size:11px;background:#f2f2f7;padding:2px 6px;border-radius:4px">' + msg.slice(0, 120) + '</code><br><br>Presiona Reintentar o avisa al equipo de RRHH.'
+      );
+      return;
+    }
+  }
+
+  // ── Success ───────────────────────────────────────────────────────────────
   document.getElementById('done-name').textContent = S.candidate.nombre;
-  document.getElementById('done-tests').innerHTML = S.selectedTests.map(t=>'<div style="display:flex;align-items:center;gap:10px;font-size:14px;font-weight:500"><span style="width:28px;height:28px;border-radius:50%;background:var(--green-l);border:1.5px solid var(--green);display:flex;align-items:center;justify-content:center;font-size:13px">✓</span><span>'+TESTS_META[t].icon+' '+TESTS_META[t].name+'</span></div>').join('');
+  document.getElementById('done-tests').innerHTML = S.selectedTests.map(t =>
+    '<div style="display:flex;align-items:center;gap:10px;font-size:14px;font-weight:500">' +
+    '<span style="width:28px;height:28px;border-radius:50%;background:var(--green-l);border:1.5px solid var(--green);display:flex;align-items:center;justify-content:center;font-size:13px">✓</span>' +
+    '<span>' + TESTS_META[t].icon + ' ' + TESTS_META[t].name + '</span></div>'
+  ).join('');
   showView('results');
 }
 
@@ -1667,7 +2368,7 @@ function buildFitReport(c) {
         ideal:`${cfg.min}–${cfg.max}`, gap: scoreToLevel5(score) < minLv ? 'bajo' : 'ok' });
     });
     const secFit = Math.round(dims.reduce((a,d)=>a+d.fit*d.peso,0)/dims.reduce((a,d)=>a+d.peso,0));
-    sections.push({ id:'barratt', icon:'⚡', title:'Control Impulsivo (BIS-11)', dims, secFit,
+    sections.push({ id:'barratt', icon:'⚡', title:'Control Impulsivo (BIS-15)', dims, secFit,
       desc:'Evalúa el nivel de control de los impulsos en tres dimensiones.' });
   }
 
@@ -2112,6 +2813,13 @@ function switchReportTab(tabId, el) {
 }
 
 function buildReportHtml(c, withClose) {
+  // Resolve human-readable labels for fields that may only have codes (loaded from DB)
+  const EDU_LABELS = { basica:'Educación Básica', media:'Educación Media', tecnica:'Técnico de Nivel Superior', universitaria:'Universitaria', postgrado:'Postgrado / Magíster' };
+  const EXP_LABELS = { sin_experiencia:'Sin experiencia', menos_1:'Menos de 1 año', '1_3':'1 a 3 años', '3_5':'3 a 5 años', '5_10':'5 a 10 años', mas_10:'Más de 10 años' };
+  const RUBRO_LABELS = { seguridad:'Seguridad / Vigilancia', comercio:'Comercio / Retail', administracion:'Administración', salud:'Salud', construccion:'Construcción', logistica:'Logística', educacion:'Educación', tecnologia:'Tecnología', otro:'Otro' };
+  if (!c.educacion_label   && c.educacion)   c.educacion_label   = EDU_LABELS[c.educacion]   || c.educacion;
+  if (!c.experiencia_label && c.experiencia) c.experiencia_label = EXP_LABELS[c.experiencia]  || c.experiencia;
+  if (!c.rubro_label       && c.rubro)       c.rubro_label       = RUBRO_LABELS[c.rubro]       || c.rubro;
   const s = c.scores;
   if (!s) return '<div style="padding:40px;text-align:center;color:#999">Sin datos de evaluación.</div>';
   const perfil = c.perfil || 'administrativo';
@@ -2125,7 +2833,11 @@ function buildReportHtml(c, withClose) {
     + '<div>'
     + '<div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:6px">INFORME PSICOLABORAL — USO INTERNO RRHH</div>'
     + '<div style="font-size:22px;font-weight:800;margin-bottom:2px">' + c.nombre + ' ' + c.apellido + '</div>'
-    + '<div style="font-size:13px;color:rgba(255,255,255,.45)">' + pm.icon + ' ' + pm.label + ' &nbsp;·&nbsp; Evaluado el ' + c.fecha + '</div>'
+    + '<div style="font-size:13px;color:rgba(255,255,255,.45)">' + pm.icon + ' ' + pm.label + ' &nbsp;·&nbsp; Evaluado el ' + c.fecha
+    + (c.educacion_label ? ' &nbsp;·&nbsp; ' + c.educacion_label : '')
+    + (c.experiencia_label ? ' &nbsp;·&nbsp; ' + c.experiencia_label + ' de experiencia' : '')
+    + (c.rubro_label ? ' — ' + c.rubro_label : '')
+    + '</div>'
     + '</div>'
     + (withClose ? '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0"><button onclick="downloadPdfReport(currentReportId)" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:12px;font-weight:600;padding:6px 12px;border-radius:6px;cursor:pointer">⬇ Descargar PDF</button><button onclick="closeCandModal()" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:20px;cursor:pointer;line-height:1">✕</button></div>' : '')
     + '</div></div>';
@@ -2254,7 +2966,7 @@ function buildReportHtml(c, withClose) {
     // Header card
     html += '<div style="background:#fff;border-radius:10px;box-shadow:0 1px 8px rgba(15,45,82,.07);padding:22px 24px">'
       + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:8px">'
-      + '<div style="font-size:17px;font-weight:700">⚡ Control Impulsivo — BIS-11</div>'
+      + '<div style="font-size:17px;font-weight:700">⚡ Control Impulsivo — BIS-15</div>'
       + '<div style="display:flex;align-items:center;gap:8px">' + gaugeHtml(sec.secFit, secLv.color, 60)
       + '<div><div style="font-size:13px;font-weight:800;color:' + secLv.color + '">' + sec.secFit + '%</div>'
       + '<div style="font-size:10px;color:#999">' + secLv.label + '</div></div></div></div>'
@@ -2611,7 +3323,7 @@ function buildReportHtml(c, withClose) {
   }
 
   // Disclaimer
-  html += '<div style="font-size:11px;color:#bbb;padding:8px 0;line-height:1.6">⚠ Informe de uso interno RRHH. No reemplaza el juicio de un psicólogo habilitado. Basado en constructos IPIP / PAI / DC-0 de dominio público.</div>';
+  html += '<div style="font-size:11px;color:#bbb;padding:8px 0;line-height:1.6">⚠ Informe de uso interno RRHH. No reemplaza el juicio de un psicólogo habilitado. Basado en BIS-15 (Spinella, 2007), PAI y DC-0. Instrumentos de uso libre para investigación y selección.</div>';
 
   html += '</div>'; // end panels wrap
   html += '</div>'; // end rpt-modal
@@ -2715,7 +3427,7 @@ function renderParams() {
     if (!ideal) { document.getElementById('params-content').innerHTML = '<p>Perfil no encontrado.</p>'; return; }
 
     var SECTION_META = {
-      barratt:     { icon:'🧩', title:'Control Impulsivo (BIS-11)',  keys:['AI','IM','NP'] },
+      barratt:     { icon:'🧩', title:'Control Impulsivo (BIS-15)',  keys:['AI','IM','NP'] },
       pai:         { icon:'🔎', title:'Ajuste Psicológico (PAI)',     keys:['EE','AS','ON','ME','IL','ML'] },
       dc0:         { icon:'⚡', title:'Aptitud Cognitiva (DC-0)',      keys:['V','N','L'] },
       situacional: { icon:'💡', title:'Juicio Situacional',           keys:['_self'] },
@@ -3217,6 +3929,10 @@ function printCompare() {
 body{font-size:11px;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
 div{break-inside:avoid}
+@media (min-width: 600px) {
+  .testselect-body { padding: 52px 40px; }
+}
+
 </style></head><body>${body.innerHTML}</body></html>`;
   const blob = new Blob([printHtml], {type:'text/html;charset=utf-8'});
   const url  = URL.createObjectURL(blob);
@@ -3485,7 +4201,11 @@ async function downloadPdfReport(id) {
   const html = `<!DOCTYPE html>
 <html lang="es"><head>
 <meta charset="UTF-8"><title>${fname}</title>
-<style>${inlineStyle}\n${PDF_EXTRA}</style>
+<style>${inlineStyle}\n${PDF_EXTRA}@media (min-width: 600px) {
+  .testselect-body { padding: 52px 40px; }
+}
+
+</style>
 </head><body>
 <div id="pdf-bar" style="position:fixed;top:0;left:0;right:0;background:#1d1d1f;color:#fff;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;z-index:9999;font-family:inherit;font-size:13px;gap:12px">
   <span style="font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.nombre} ${c.apellido} — Informe Psicolaboral</span>
@@ -3507,24 +4227,22 @@ async function downloadPdfReport(id) {
 function printReport() {
   const content = document.getElementById('cand-modal-content');
   if (!content) return;
-  const w = window.open('', '_blank', 'width=900,height=700');
-  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Informe PsicoEval</title><style>');
-  w.document.write('*{box-sizing:border-box;margin:0;padding:0}');
-  w.document.write('body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;font-size:13px;line-height:1.5;color:#111;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}');
-  w.document.write('.card{background:#fff;border:1px solid #e5e5e5;border-radius:8px;margin-bottom:14px}');
-  w.document.write('.cp{padding:20px}');
-  w.document.write('@media print{body{margin:0}@page{margin:15mm;size:A4}}');
-  w.document.write('</style></head><body>');
-  // Clone content, hide close/print buttons
+  const inlineStyle = document.querySelector('style') ? document.querySelector('style').textContent : '';
   const clone = content.cloneNode(true);
-  const btns = clone.querySelectorAll('button');
-  btns.forEach(b => b.style.display = 'none');
-  w.document.write(clone.innerHTML);
-  w.document.write('</body></html>');
-  w.document.close();
-  setTimeout(function() { w.focus(); w.print(); }, 600);
+  clone.querySelectorAll('button').forEach(b => b.style.display = 'none');
+  const printHtml = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Informe PsicoEval</title>
+<style>${inlineStyle}
+@page{margin:14mm 12mm;size:A4}
+body{font-size:11px;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+.rpt-tab-panel{display:block!important}
+div{break-inside:avoid}
+</style></head><body>${clone.innerHTML}</body></html>`;
+  const blob = new Blob([printHtml], { type: 'text/html;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const w = window.open(url, '_blank', 'width=900,height=700');
+  if (w) setTimeout(() => { w.print(); URL.revokeObjectURL(url); }, 600);
 }
-
 function closeCandModal() {
   document.getElementById('cand-modal-overlay').style.display = 'none';
   document.getElementById('cand-modal-content').innerHTML = '';
@@ -3564,14 +4282,35 @@ function distBars(data, colors) {
     </div>`).join('');
 }
 
+let _dashPerfil = 'all';
+
+function setDashPerfil(perfil, btn) {
+  _dashPerfil = perfil;
+  document.querySelectorAll('#dash-perfil-tabs button').forEach(b => {
+    const active = b === btn;
+    b.style.background = active ? 'var(--accent)' : 'var(--surface)';
+    b.style.color      = active ? '#fff'           : 'var(--ink2)';
+    b.style.borderColor = active ? 'var(--accent)' : 'var(--border2)';
+  });
+  renderDashboard();
+}
+
 async function renderDashboard() {
   document.getElementById('stat-grid').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--ink3);font-size:13px">Cargando…</div>';
-  const cands    = await getDB();
+  const allCands = await getDB();
+  const perfil   = _dashPerfil;
+
+  // Filter by selected profile
+  const cands    = perfil === 'all' ? allCands : allCands.filter(c => c.perfil === perfil);
   const total    = cands.length;
   const completed = cands.filter(c => c.estado === 'completed');
   const inProg   = cands.filter(c => c.estado === 'in_progress').length;
   const pending  = cands.filter(c => c.estado === 'pending').length;
   const nComp    = completed.length;
+
+  // Profile label for context
+  const PLABEL = { all:'Todos los perfiles', jefatura:'Jefatura', administrativo:'Administrativo', guardia:'Guardia de Seguridad' };
+  const PICON  = { all:'', jefatura:'👔 ', administrativo:'💼 ', guardia:'🛡 ' };
 
   const reports = completed
     .filter(c => c.scores)
@@ -3590,7 +4329,13 @@ async function renderDashboard() {
   }
   const kTasa  = kpiStatus(tasa,   70, 40);
   const kFit   = kpiStatus(avgFit, 70, 50);
-  const kAptos = fits.length ? kpiStatus(Math.round(aptos/fits.length*100), 60, 30) : { color:'var(--ink3)', bg:'var(--surface2)', border:'var(--border)', icon:'—' };
+  const kAptos = fits.length ? kpiStatus(Math.round(aptos/fits.length*100), 60, 30)
+               : { color:'var(--ink3)', bg:'var(--surface2)', border:'var(--border)', icon:'—' };
+
+  // Context badge shown in each KPI
+  const ctxBadge = perfil !== 'all'
+    ? `<div style="font-size:10px;color:var(--ink3);margin-top:2px">${PICON[perfil]}${PLABEL[perfil]}</div>`
+    : '';
 
   const kpis = [
     { label:'Total candidatos', val:total,
@@ -3603,7 +4348,8 @@ async function renderDashboard() {
     { label:'Ajuste promedio', val:avgFit+'%',
       sub:fits.length?`sobre ${fits.length} evaluado${fits.length!==1?'s':''}`:'Sin evaluados aún',
       color:kFit.color, bg:kFit.bg, border:kFit.border,
-      icon:kFit.icon==='↑'?'🟢':kFit.icon==='→'?'🟡':'🔴', prog:avgFit, progLabel:avgFit>=70?'Bueno':avgFit>=50?'Regular':'Bajo' },
+      icon:kFit.icon==='↑'?'🟢':kFit.icon==='→'?'🟡':'🔴', prog:avgFit,
+      progLabel:avgFit>=70?'Bueno':avgFit>=50?'Regular':'Bajo' },
     { label:'Candidatos aptos', val:aptos,
       sub:fits.length?`${Math.round(aptos/fits.length*100)}% del pool evaluado`:'Ajuste ≥ 70%',
       color:kAptos.color, bg:kAptos.bg, border:kAptos.border,
@@ -3631,14 +4377,19 @@ async function renderDashboard() {
 
   // ── Fit distribution ──────────────────────────────────────────────────────
   const RANGES = [
-    { label:'Muy apto',  min:85, max:100, color:'#16a34a' },
-    { label:'Apto',      min:70, max:84,  color:'#2563eb' },
-    { label:'Parcial',   min:50, max:69,  color:'#b45309' },
-    { label:'No apto',   min:0,  max:49,  color:'#e11d48' },
+    { label:'Muy apto', min:85, max:100, color:'#16a34a' },
+    { label:'Apto',     min:70, max:84,  color:'#2563eb' },
+    { label:'Parcial',  min:50, max:69,  color:'#b45309' },
+    { label:'No apto',  min:0,  max:49,  color:'#e11d48' },
   ];
   const fitDistEl = document.getElementById('fit-dist-content');
+  // Update card title to reflect filter
+  const fitCard = document.getElementById('fit-dist-card');
+  if (fitCard) fitCard.querySelector('.res-section-title').textContent =
+    '📊 Distribución de ajuste' + (perfil !== 'all' ? ' — ' + PLABEL[perfil] : '');
+
   if (!fits.length) {
-    fitDistEl.innerHTML = '<div style="color:var(--ink3);font-size:13px;padding:12px 0">Sin evaluados aún.</div>';
+    fitDistEl.innerHTML = '<div style="color:var(--ink3);font-size:13px;padding:12px 0">Sin evaluados en este perfil.</div>';
   } else {
     const maxCount = Math.max(...RANGES.map(r => fits.filter(f=>f>=r.min&&f<=r.max).length), 1);
     fitDistEl.innerHTML = '<div style="display:flex;flex-direction:column;gap:10px">'
@@ -3664,7 +4415,7 @@ async function renderDashboard() {
           </div>`;
         }).join('')
       + `<div style="margin-top:8px;padding-top:10px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:12px;color:var(--ink3)">
-          <span>${fits.length} evaluado${fits.length!==1?'s':''} en total</span>
+          <span>${fits.length} evaluado${fits.length!==1?'s':''}</span>
           <span>Promedio: <strong style="color:${kFit.color}">${avgFit}%</strong></span>
         </div>`
       + '</div>';
@@ -3672,18 +4423,18 @@ async function renderDashboard() {
 
   // ── Brechas más frecuentes ────────────────────────────────────────────────
   const DIM_SECTION = {
-    AI:'Control Impulsivo',IM:'Control Impulsivo',NP:'Control Impulsivo',
-    EE:'Aj. Psicológico',AS:'Aj. Psicológico',ON:'Aj. Psicológico',
-    ME:'Aj. Psicológico',IL:'Aj. Psicológico',ML:'Aj. Psicológico',
-    V:'Apt. Cognitiva',N:'Apt. Cognitiva',L:'Apt. Cognitiva',
-    comp:'Comprensión',vig:'Vigilancia',sit:'Situacional'
+    AI:'Control Impulsivo', IM:'Control Impulsivo', NP:'Control Impulsivo',
+    EE:'Aj. Psicológico',   AS:'Aj. Psicológico',   ON:'Aj. Psicológico',
+    ME:'Aj. Psicológico',   IL:'Aj. Psicológico',   ML:'Aj. Psicológico',
+    V:'Apt. Cognitiva', N:'Apt. Cognitiva', L:'Apt. Cognitiva',
+    comp:'Comprensión', vig:'Vigilancia', sit:'Situacional'
   };
   const DIM_NAMES_G = {
-    AI:'Control Atencional',IM:'Control Motor',NP:'Planificación',
-    EE:'Est. Emocional',AS:'Adapt. Social',ON:'Orient. Normativa',
-    ME:'Manejo Estrés',IL:'Integridad',ML:'Motivación',
-    V:'Verbal',N:'Numérico',L:'Lógico',
-    comp:'Comprensión Instrucciones',vig:'Apt. Vigilancia',sit:'Juicio Situacional'
+    AI:'Control Atencional', IM:'Control Motor', NP:'Planificación',
+    EE:'Est. Emocional', AS:'Adapt. Social', ON:'Orient. Normativa',
+    ME:'Manejo Estrés', IL:'Integridad', ML:'Motivación',
+    V:'Verbal', N:'Numérico', L:'Lógico',
+    comp:'Comprensión Instrucciones', vig:'Apt. Vigilancia', sit:'Juicio Situacional'
   };
   const gapCounts = {};
   reports.forEach(({ r }) => {
@@ -3696,13 +4447,19 @@ async function renderDashboard() {
       });
     });
   });
+
   const gapsEl = document.getElementById('gaps-content');
+  const gapsCard = document.getElementById('gaps-card');
+  if (gapsCard) gapsCard.querySelector('.res-section-title').textContent =
+    '⚠️ Brechas más frecuentes' + (perfil !== 'all' ? ' — ' + PLABEL[perfil] : '');
+
   const sortedGaps = Object.entries(gapCounts)
     .filter(([,v]) => v.total > 0)
     .sort((a,b) => (b[1].count/b[1].total) - (a[1].count/a[1].total))
     .slice(0, 6);
+
   if (!sortedGaps.length || !reports.length) {
-    gapsEl.innerHTML = '<div style="color:var(--ink3);font-size:13px;padding:12px 0">Sin datos suficientes aún.</div>';
+    gapsEl.innerHTML = '<div style="color:var(--ink3);font-size:13px;padding:12px 0">Sin datos suficientes en este perfil.</div>';
   } else {
     gapsEl.innerHTML = '<div style="display:flex;flex-direction:column;gap:8px">'
       + sortedGaps.map(([key, v]) => {
@@ -3727,24 +4484,49 @@ async function renderDashboard() {
   }
 
   // ── Estado ────────────────────────────────────────────────────────────────
-  document.getElementById('estado-dist-bars').innerHTML = `<div class="bar-chart">${distBars({'Completados':nComp,'En progreso':inProg,'Pendientes':pending},{'Completados':'#16a34a','En progreso':'#2563eb','Pendientes':'#94a3b8'})}</div>`;
+  document.getElementById('estado-dist-bars').innerHTML =
+    `<div class="bar-chart">${distBars({'Completados':nComp,'En progreso':inProg,'Pendientes':pending},
+    {'Completados':'#16a34a','En progreso':'#2563eb','Pendientes':'#94a3b8'})}</div>`;
 
-  // ── Por perfil ─────────────────────────────────────────────────────────────
-  const perfilCount = {};
-  cands.forEach(c => { const p=c.perfil||'N/A'; perfilCount[p]=(perfilCount[p]||0)+1; });
-  document.getElementById('perfil-dist-bars').innerHTML = `<div class="bar-chart">${distBars(perfilCount,{jefatura:'#6366f1',administrativo:'#2563eb',guardia:'#10b981'})}</div>`;
+  // ── Por perfil (only show when "all" is selected) ──────────────────────────
+  const perfilCard = document.getElementById('perfil-dist-card');
+  if (perfil === 'all') {
+    if (perfilCard) perfilCard.style.display = 'block';
+    const perfilCount = {};
+    allCands.forEach(c => { const p=c.perfil||'N/A'; perfilCount[p]=(perfilCount[p]||0)+1; });
+    document.getElementById('perfil-dist-bars').innerHTML =
+      `<div class="bar-chart">${distBars(perfilCount,{jefatura:'#6366f1',administrativo:'#2563eb',guardia:'#10b981'})}</div>`;
+  } else {
+    // When filtered: show estado breakdown by sub-state with context
+    if (perfilCard) {
+      perfilCard.style.display = 'block';
+      perfilCard.querySelector('.res-section-title').textContent = '📋 Estado — ' + PLABEL[perfil];
+    }
+    // Show aptos vs no aptos vs en progreso for this profile
+    const aptosN   = fits.filter(f=>f>=70).length;
+    const parcial  = fits.filter(f=>f>=50&&f<70).length;
+    const noApto   = fits.filter(f=>f<50).length;
+    const breakdown = { 'Aptos (≥70%)':aptosN, 'Parcial (50-69%)':parcial, 'No aptos (<50%)':noApto, 'En progreso':inProg, 'Pendientes':pending };
+    document.getElementById('perfil-dist-bars').innerHTML =
+      `<div class="bar-chart">${distBars(breakdown,{'Aptos (≥70%)':'#16a34a','Parcial (50-69%)':'#b45309','No aptos (<50%)':'#e11d48','En progreso':'#2563eb','Pendientes':'#94a3b8'})}</div>`;
+  }
 
   // ── Ranking ───────────────────────────────────────────────────────────────
+  const rankCard = document.getElementById('ranking-card');
+  if (rankCard) rankCard.querySelector('.res-section-title').textContent =
+    '🏅 Ranking' + (perfil !== 'all' ? ' — ' + PLABEL[perfil] : ' general');
+
   const ranked = [...reports].sort((a,b)=>b.r.globalFit-a.r.globalFit).slice(0,10);
   if (!ranked.length) {
-    document.getElementById('ranking-table').innerHTML = '<div style="color:var(--ink3);font-size:13px;padding:12px 0">No hay candidatos completados aún.</div>';
+    document.getElementById('ranking-table').innerHTML =
+      '<div style="color:var(--ink3);font-size:13px;padding:12px 0">No hay candidatos completados en este perfil.</div>';
   } else {
     document.getElementById('ranking-table').innerHTML =
       '<table style="width:100%;border-collapse:collapse;font-size:13px">'
       +'<thead><tr style="border-bottom:2px solid var(--border)">'
       +'<th style="text-align:left;padding:8px 6px;color:var(--ink3);font-weight:600;font-size:11px">#</th>'
       +'<th style="text-align:left;padding:8px 6px;color:var(--ink3);font-weight:600;font-size:11px">Candidato</th>'
-      +'<th style="text-align:left;padding:8px 6px;color:var(--ink3);font-weight:600;font-size:11px">Perfil</th>'
+      +(perfil==='all'?'<th style="text-align:left;padding:8px 6px;color:var(--ink3);font-weight:600;font-size:11px">Perfil</th>':'')
       +'<th style="text-align:center;padding:8px 6px;color:var(--ink3);font-weight:600;font-size:11px">Ajuste</th>'
       +'<th style="text-align:center;padding:8px 6px;color:var(--ink3);font-weight:600;font-size:11px">Estado</th>'
       +'<th style="padding:8px 6px"></th>'
@@ -3755,10 +4537,14 @@ async function renderDashboard() {
           const bg =fit>=85?'#f0fdf4':fit>=70?'#eff6ff':fit>=50?'#fff7ed':'#fff1f3';
           const lbl=fit>=85?'Muy apto':fit>=70?'Apto':fit>=50?'Parcial':'No apto';
           const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+          const brechasN = r.brechas ? r.brechas.length : 0;
           return `<tr style="border-bottom:1px solid var(--surface2)">
             <td style="padding:10px 6px;font-weight:700;color:var(--ink3)">${medal||'<span style="color:var(--ink4)">'+(i+1)+'</span>'}</td>
-            <td style="padding:10px 6px"><strong style="color:var(--ink)">${c.nombre} ${c.apellido}</strong><br><span style="font-size:11px;color:var(--ink3)">${c.cargo||'—'}</span></td>
-            <td style="padding:10px 6px;color:var(--ink2);font-size:12px;text-transform:capitalize">${c.perfil||'—'}</td>
+            <td style="padding:10px 6px">
+              <strong style="color:var(--ink)">${c.nombre} ${c.apellido}</strong><br>
+              <span style="font-size:11px;color:var(--ink3)">${c.cargo||'—'} · ${brechasN} brecha${brechasN!==1?'s':''}</span>
+            </td>
+            ${perfil==='all'?`<td style="padding:10px 6px;color:var(--ink2);font-size:12px;text-transform:capitalize">${c.perfil||'—'}</td>`:''}
             <td style="padding:10px 6px;text-align:center">
               <div style="display:inline-flex;align-items:center;gap:7px">
                 <div style="width:52px;height:6px;background:var(--surface2);border-radius:100px;overflow:hidden">
@@ -3828,7 +4614,7 @@ async function renderCandidatesTable() {
   tbody.innerHTML = cands.map(c => `
     <tr data-id="${c.id}">
       <td><input type="checkbox" class="row-chk" data-id="${c.id}" onchange="updateBulkBar()" style="cursor:pointer;width:16px;height:16px"></td>
-      <td><strong>${c.nombre} ${c.apellido}</strong><br><span style="color:var(--ink3);font-size:11px">${c.email}</span></td>
+      <td><strong>${c.nombre} ${c.apellido}</strong><br><span style="color:var(--ink3);font-size:11px">${c.email}</span>${c.educacion_label||c.educacion ? '<br><span style="color:var(--ink4);font-size:10px">🎓 '+(c.educacion_label||c.educacion)+(c.experiencia_label||c.experiencia?' · 💼 '+(c.experiencia_label||c.experiencia):'')+'</span>' : ''}</td>
       <td>${c.cargo||'—'}</td>
       <td>${(c.tests||[]).map(t=>TESTS_META[t]?.icon).join(' ')||'—'}</td>
       <td>${statusBadge(c.estado)}</td>
@@ -3858,9 +4644,9 @@ async function renderRaw() {
   }
 
   const TESTS_ORDER = ['barratt','dc0','pai','situacional','vigilancia','comprension'];
-  const TESTS_LABELS = { barratt:'BIS-11 Control Impulsivo', dc0:'DC-0 Aptitud Cognitiva', pai:'PAI Ajuste Psicológico', situacional:'Juicio Situacional', vigilancia:'Apt. Vigilancia', comprension:'Comprensión de Instrucciones' };
+  const TESTS_LABELS = { barratt:'BIS-15 Control Impulsivo', dc0:'DC-0 Aptitud Cognitiva', pai:'PAI Ajuste Psicológico', situacional:'Juicio Situacional', vigilancia:'Apt. Vigilancia', comprension:'Comprensión de Instrucciones' };
   const DIM_LABELS = {
-    barratt: { AI:'Control Atencional', IM:'Control Motor', NP:'Planificación', total:'Total BIS-11' },
+    barratt: { AI:'Control Atencional', IM:'Control Motor', NP:'Planificación', total:'Total BIS-15' },
     dc0:     { V:'Verbal', N:'Numérico', L:'Lógico', total:'Total DC-0' },
     pai:     { EE:'Est. Emocional', AS:'Adapt. Social', ON:'Orient. Normativa', ME:'Manejo Estrés', IL:'Integridad', ML:'Motivación' },
     situacional: { pct:'Puntaje', correct:'Correctas', total:'Total ítems' },
@@ -3960,7 +4746,7 @@ async function renderReports() {
 
   const LV5  = {1:'Muy Bajo', 2:'Bajo', 3:'Medio', 4:'Alto', 5:'Muy Alto'};
   const TCOL = { barratt:'#6366f1', dc0:'#2563eb', pai:'#b45309', situacional:'#10b981', vigilancia:'#64748b', comprension:'#8b5cf6' };
-  const TNAME = { barratt:'BIS-11', dc0:'DC-0', pai:'PAI', situacional:'Situacional', vigilancia:'Vigilancia', comprension:'Comprensión' };
+  const TNAME = { barratt:'BIS-15', dc0:'DC-0', pai:'PAI', situacional:'Situacional', vigilancia:'Vigilancia', comprension:'Comprensión' };
   const DIMS  = {
     barratt:     ['AI','IM','NP'],
     dc0:         ['V','N','L'],
