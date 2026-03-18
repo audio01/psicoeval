@@ -1097,7 +1097,10 @@ input,select,textarea{font-family:inherit;outline:none}
             <h2 style="font-size:26px;font-weight:800;margin-bottom:4px">Candidatos e Informes</h2>
             <p style="font-size:13px;color:var(--ink3)">Gestión, seguimiento y acceso a informes</p>
           </div>
-          <button class="btn btn-outline btn-sm" onclick="renderCandidatesTable()">↻ Actualizar</button>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-outline btn-sm" onclick="exportCSV()" style="color:var(--accent);border-color:var(--accent)">⬇ Exportar CSV</button>
+            <button class="btn btn-outline btn-sm" onclick="renderCandidatesTable()">↻ Actualizar</button>
+          </div>
         </div>
         <!-- Cargo tabs -->
         <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:16px">
@@ -2490,9 +2493,9 @@ function calcFit(score, min, max) {
 }
 
 function scoreLevel(v) {
-  if (v>=80) return {label:'Muy Alto',color:'#1c5d8c'};
-  if (v>=65) return {label:'Alto',    color:'#3a7850'};
-  if (v>=45) return {label:'Medio',   color:'#a07528'};
+  if (v>=90) return {label:'Muy Alto',color:'#1c5d8c'};
+  if (v>=75) return {label:'Alto',    color:'#3a7850'};
+  if (v>=55) return {label:'Medio',   color:'#a07528'};
   if (v>=30) return {label:'Bajo',    color:'#c04b1c'};
   return              {label:'Muy Bajo',color:'#8b0000'};
 }
@@ -2860,13 +2863,35 @@ function gaugeHtml(pct, color, size=90) {
 // ── Mini horizontal bar ──────────────────────────────────────
 const NIVEL_LABELS_RPT = {1:"Muy Bajo",2:"Bajo",3:"Medio",4:"Alto",5:"Muy Alto"};
 function scoreToLevel5(score100) {
-  if (score100 >= 80) return 5;
-  if (score100 >= 60) return 4;
-  if (score100 >= 40) return 3;
-  if (score100 >= 20) return 2;
-  return 1;
+  // Calibrated thresholds — more discriminative (fewer 4s/5s)
+  if (score100 >= 90) return 5;  // top 10%
+  if (score100 >= 75) return 4;  // above average
+  if (score100 >= 55) return 3;  // average
+  if (score100 >= 30) return 2;  // below average
+  return 1;                       // low
 }
 const LEVEL5_NAMES = {1:'Muy Bajo',2:'Bajo',3:'Medio',4:'Alto',5:'Muy Alto'};
+
+// Convert fit% (0-100) to 1-5 — same calibrated thresholds
+function fitToLevel5(fit) {
+  if (fit >= 90) return 5;
+  if (fit >= 75) return 4;
+  if (fit >= 55) return 3;
+  if (fit >= 30) return 2;
+  return 1;
+}
+
+// Render a compact dual badge: "Obtenido: 3/5 Medio  |  Ajuste al cargo: 4/5 Alto"
+function dualBadge(scoreLv, fitPct, color) {
+  var fitLv  = fitToLevel5(fitPct);
+  var fitCol = fitLv >= 4 ? '#16a34a' : fitLv >= 3 ? '#2563eb' : fitLv >= 2 ? '#b45309' : '#e11d48';
+  return '<div style="display:flex;gap:8px;flex-wrap:wrap;margin:6px 0">'
+    + '<div style="padding:4px 10px;border-radius:6px;background:#f1f5f9;font-size:11px;font-weight:600;color:#475569">'
+    + 'Obtenido: <span style="color:' + color + '">' + scoreLv + '/5 · ' + LEVEL5_NAMES[scoreLv] + '</span></div>'
+    + '<div style="padding:4px 10px;border-radius:6px;background:#f1f5f9;font-size:11px;font-weight:600;color:#475569">'
+    + 'Ajuste al cargo: <span style="color:' + fitCol + '">' + fitLv + '/5 · ' + LEVEL5_NAMES[fitLv] + '</span></div>'
+    + '</div>';
+}
 
 // ── Track helpers ─────────────────────────────────────────────────────────
 // Renders a 1-5 sleek horizontal track with:
@@ -3062,6 +3087,7 @@ function buildReportHtml(c, withClose) {
     + '<div style="text-align:center;min-width:100px">'
     + gaugeHtml(rpt.globalFit, fitLv.color, 100)
     + '<div style="font-size:12px;font-weight:700;color:' + fitLv.color + ';margin-top:3px">' + fitLv.label + '</div>'
+    + '<div style="font-size:11px;font-weight:600;color:' + fitLv.color + '">' + fitToLevel5(rpt.globalFit) + '/5</div>'
     + '<div style="font-size:10px;color:#999">Ajuste al perfil</div>'
     + '</div>'
     + '<div style="flex:1;min-width:200px">'
@@ -3076,7 +3102,7 @@ function buildReportHtml(c, withClose) {
         return '<div style="text-align:center;padding:10px 6px;background:#f9f9f9;border-radius:8px;border:1px solid #e5e5e5">'
           + '<div style="font-size:16px">' + sec.icon + '</div>'
           + '<div style="font-size:10px;font-weight:600;color:#555;margin:3px 0;line-height:1.3">' + sec.title.split('(')[0].trim() + '</div>'
-          + '<div style="font-size:20px;font-weight:900;color:' + lv2.color + ';line-height:1">' + sec.secFit + '%</div>'
+          + '<div style="font-size:20px;font-weight:900;color:' + lv2.color + ';line-height:1">' + fitToLevel5(sec.secFit) + '/5</div>'
           + '<div style="font-size:9px;font-weight:700;color:' + lv2.color + '">' + lv2.label + '</div>'
           + '</div>';
       }).join('')
@@ -3170,7 +3196,8 @@ function buildReportHtml(c, withClose) {
             + passBadge(passes, gap)
             + '</div></div>'
             + trackBar(d.score, idealMin100, idealMax100, true, d.fit, lv2)
-            + '<div style="font-size:10px;color:#94a3b8;margin-bottom:10px">Mínimo requerido: <strong style="color:' + borderColor + '">nivel ' + minLv + '</strong> &nbsp;·&nbsp; Ajuste: <strong style="color:' + lv2.color + '">' + d.fit + '%</strong></div>'
+            + '<div style="font-size:10px;color:#94a3b8;margin-bottom:6px">Mínimo requerido: <strong style="color:' + borderColor + '">nivel ' + minLv + '</strong></div>'
+            + dualBadge(scoreToLevel5(d.score), d.fit, borderColor)
             + '<div style="font-size:12px;color:#475569;line-height:1.6;padding-top:10px;border-top:1px solid ' + borderColor + '30">' + desc + '</div>'
             + '</div>';
         }).join('')
@@ -3250,7 +3277,8 @@ function buildReportHtml(c, withClose) {
             + '<div style="height:100%;width:' + d.score + '%;background:' + scoreC + ';border-radius:4px"></div>'
             + '<div style="position:absolute;top:0;height:100%;left:' + pts[0] + '%;width:' + Math.max(0,parseInt(pts[1]||100)-parseInt(pts[0]||0)) + '%;background:rgba(0,0,0,.1);border-left:2px solid rgba(0,0,0,.2);border-right:2px solid rgba(0,0,0,.2)"></div>'
             + '</div>'
-            + '<div style="font-size:10px;color:#94a3b8;margin-bottom:8px">Mínimo requerido: <strong style="color:' + borderC + '">nivel ' + minLv + '</strong> &nbsp;·&nbsp; Ajuste: <strong style="color:' + borderC + '">' + d.fit + '%</strong></div>'
+            + '<div style="font-size:10px;color:#94a3b8;margin-bottom:6px">Mínimo requerido: <strong style="color:' + borderC + '">nivel ' + minLv + '</strong></div>'
+            + dualBadge(scoreToLevel5(d.score), d.fit, borderC)
             + '<div style="font-size:11px;color:#475569;line-height:1.55;padding-top:8px;border-top:1px solid ' + borderC + '30">' + desc + '</div>'
             + '</div>';
         }).join('')
@@ -3306,7 +3334,7 @@ function buildReportHtml(c, withClose) {
             + passBadge(passes, gap)
             + '</div>'
             + '<div style="font-size:11px;color:#475569;line-height:1.55">' + desc + '</div>'
-            + (dim ? '<div style="font-size:10px;font-weight:700;color:' + borderC + ';margin-top:6px">Ajuste al cargo: ' + dim.fit + '% · Mín. requerido: nivel ' + minLv + '</div>' : '')
+            + (dim ? dualBadge(scoreL5, dim.fit, borderC) : '')
             + '</div>';
         }).join('')
       + '</div></div>';
@@ -4754,6 +4782,131 @@ function setCandTab(perfil, btn) {
     b.style.borderBottomColor = active ? 'var(--accent)' : 'transparent';
   });
   renderCandidatesTable();
+}
+
+async function exportCSV() {
+  const btn = document.querySelector('[onclick="exportCSV()"]');
+  if (btn) { btn.disabled = true; btn.textContent = 'Generando…'; }
+
+  const all = await getDB();
+  const completed = all.filter(c => c.estado === 'completed' && c.scores);
+  if (!completed.length) { toast('No hay candidatos completados para exportar', 'er'); if (btn) { btn.disabled = false; btn.textContent = '⬇ Exportar CSV'; } return; }
+
+  const LV5 = s => {
+    if (s === null || s === undefined) return '';
+    const n = Number(s);
+    if (n >= 80) return '5'; if (n >= 60) return '4';
+    if (n >= 40) return '3'; if (n >= 20) return '2'; return '1';
+  };
+  const LV5N = {'5':'Muy Alto','4':'Alto','3':'Medio','2':'Bajo','1':'Muy Bajo',''  :''};
+  const pctToLv = s => LV5(s);
+
+  // ── Build headers ──────────────────────────────────────────────────────────
+  const headers = [
+    'Nombre','Apellido','Email','Teléfono','RUT','Cargo','Perfil','Fecha',
+    'Educación','OS-10','Rubro',
+    'Ajuste Global %',
+    // BIS-15
+    'BIS Control Atencional (1-5)','BIS Control Motor (1-5)','BIS Planificación (1-5)','BIS Total (1-5)',
+    // PAI
+    'PAI Est. Emocional (1-5)','PAI Adapt. Social (1-5)','PAI Orient. Normativa (1-5)',
+    'PAI Manejo Estrés (1-5)','PAI Integridad (1-5)','PAI Motivación (1-5)',
+    // DC-0
+    'DC0 Verbal (1-5)','DC0 Numérico (1-5)','DC0 Lógico (1-5)','DC0 Total (1-5)',
+    // Situacional / Vigilancia / Comprensión
+    'Juicio Situacional (1-5)','Apt. Vigilancia (1-5)','Comprensión Instrucciones (1-5)',
+    // Ajuste por sección
+    'Ajuste BIS %','Ajuste PAI %','Ajuste DC0 %','Ajuste Situacional %','Ajuste Vigilancia %','Ajuste Comprensión %',
+    // Historial
+    'Empresa 1','Cargo 1','Duración 1','Salida 1',
+    'Empresa 2','Cargo 2','Duración 2','Salida 2',
+  ];
+
+  const EDU_LABELS = {
+    basica:'Educación Básica', media_incompleta:'Media incompleta', media:'4º Medio',
+    tecnica:'Técnico Superior', universitaria:'Universitaria', postgrado:'Postgrado',
+    ejercito_retiro:'Retirado Ejército (completa)', ejercito_baja:'Retirado Ejército (parcial)',
+    carabineros_retiro:'Retirado Carabineros (completa)', carabineros_baja:'Retirado Carabineros (parcial)',
+    armada_retiro:'Retirado Armada (completa)', armada_baja:'Retirado Armada (parcial)',
+  };
+
+  // ── Build rows ─────────────────────────────────────────────────────────────
+  const rows = completed.map(c => {
+    const s = c.scores || {};
+    const meta = s._meta || {};
+    const telefono  = c.telefono  || meta.telefono  || '';
+    const educacion = c.educacion || meta.educacion  || '';
+    const os10      = c.os10      || meta.os10       || '';
+    const rubro     = c.rubro     || meta.rubro      || '';
+    const historial = c.historial || meta.historial  || [];
+    const h1 = historial[0] || {};
+    const h2 = historial[1] || {};
+
+    // Build fit report for global + section fits
+    const rpt = buildFitReport(c);
+    const globalFit = rpt ? rpt.globalFit : '';
+    const secFit = {};
+    if (rpt) rpt.sections.forEach(sec => { secFit[sec.id] = sec.secFit; });
+
+    // Scores as 1-5
+    const b  = s.barratt || {};
+    const p  = s.pai     || {};
+    const d  = s.dc0     || {};
+    const si = s.situacional || {};
+    const vi = s.vigilancia  || {};
+    const co = s.comprension || {};
+
+    const esc = v => v !== undefined && v !== null ? pctToLv(v) : '';
+
+    return [
+      c.nombre, c.apellido, c.email,
+      telefono ? '+56 ' + telefono : '',
+      c.rut || '',
+      c.cargo || '', c.perfil || '', c.fecha || '',
+      EDU_LABELS[educacion] || educacion,
+      os10 === 'si' ? 'Sí' : os10 === 'no' ? 'No' : '',
+      rubro,
+      globalFit,
+      // BIS-15
+      esc(b.AI), esc(b.IM), esc(b.NP), esc(b.total),
+      // PAI
+      esc(p.EE), esc(p.AS), esc(p.ON), esc(p.ME), esc(p.IL), esc(p.ML),
+      // DC-0
+      esc(d.V), esc(d.N), esc(d.L), esc(d.total),
+      // Situacional / Vigilancia / Comprensión
+      si.pct !== undefined ? pctToLv(si.pct) : '',
+      vi.pct !== undefined ? pctToLv(vi.pct) : '',
+      co.pct !== undefined ? pctToLv(co.pct) : '',
+      // Section fits
+      secFit.barratt || '', secFit.pai || '', secFit.dc0 || '',
+      secFit.situacional || '', secFit.vigilancia || '', secFit.comprension || '',
+      // Historial
+      h1.empresa || '', h1.cargo || '', h1.duracion_label || '', h1.salida_label || '',
+      h2.empresa || '', h2.cargo || '', h2.duracion_label || '', h2.salida_label || '',
+    ];
+  });
+
+  // ── Build CSV string ───────────────────────────────────────────────────────
+  const escape = v => {
+    const s = String(v === null || v === undefined ? '' : v);
+    return s.includes(',') || s.includes('"') || s.includes('\n')
+      ? '"' + s.replace(/"/g, '""') + '"'
+      : s;
+  };
+  const csv = [headers, ...rows].map(r => r.map(escape).join(',')).join('\n');
+  const bom  = '\uFEFF'; // UTF-8 BOM for Excel
+  const blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = 'PsicoEval_Resultados_' + new Date().toLocaleDateString('es-CL').replace(/\//g,'-') + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+
+  if (btn) { btn.disabled = false; btn.textContent = '⬇ Exportar CSV'; }
+  toast(completed.length + ' candidatos exportados ✓', 'ok');
 }
 
 async function renderCandidatesTable() {
