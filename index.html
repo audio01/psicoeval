@@ -95,6 +95,19 @@ input,select,textarea{font-family:inherit;outline:none}
   padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;
   background:var(--surface2);font-size:14px;color:var(--ink);
   transition:border-color .15s,background .15s,box-shadow .15s;
+  width:100%;
+}
+.field select{
+  -webkit-appearance:none;-moz-appearance:none;appearance:none;
+  padding-right:36px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238e8e93' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:right 12px center;
+  cursor:pointer;
+}
+.field select:focus{
+  border-color:var(--accent);background:#fff;
+  box-shadow:0 0 0 3px var(--accent-m)44;
 }
 .field input:focus,.field select:focus{
   border-color:var(--accent);background:#fff;
@@ -103,6 +116,11 @@ input,select,textarea{font-family:inherit;outline:none}
 .field input::placeholder{color:var(--ink4)}
 .field .err{font-size:11px;color:var(--rose)}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+/* ── Commune autocomplete ── */
+#comuna-suggestions{position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid var(--accent);border-top:none;border-radius:0 0 10px 10px;max-height:200px;overflow-y:auto;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,.1)}
+#comuna-suggestions div{padding:10px 14px;font-size:13px;color:var(--ink);cursor:pointer;border-bottom:1px solid var(--border)}
+#comuna-suggestions div:last-child{border-bottom:none}
+#comuna-suggestions div:hover,#comuna-suggestions div.active{background:var(--accent-l);color:var(--accent);font-weight:600}
 
 /* ── Card ── */
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--sh)}
@@ -587,7 +605,7 @@ input,select,textarea{font-family:inherit;outline:none}
           <span style="font-size:20px;flex-shrink:0;margin-top:1px">⏱</span>
           <div>
             <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:2px">Duración estimada</div>
-            <div style="font-size:13px;color:var(--ink3);line-height:1.5">Entre 30 y 50 minutos según el cargo. Responde con tranquilidad, no hay respuestas correctas o incorrectas en todos los instrumentos.</div>
+            <div style="font-size:13px;color:var(--ink3);line-height:1.5">Entre 30 y 40 minutos según el cargo. Responde con tranquilidad, no hay respuestas correctas o incorrectas en todos los instrumentos.</div>
           </div>
         </div>
         <div style="display:flex;align-items:flex-start;gap:12px;padding:14px 16px;background:var(--surface);border-radius:12px;border:1px solid var(--border)">
@@ -651,20 +669,34 @@ input,select,textarea{font-family:inherit;outline:none}
           <div class="field"><label>Apellidos *</label><input id="r-apellido" placeholder="Ej: González"><span class="err" id="e-apellido"></span></div>
         </div>
         <div class="field"><label>Correo electrónico *</label><input id="r-email" type="email" placeholder="correo@ejemplo.com"><span class="err" id="e-email"></span></div>
-      <div class="field"><label>Teléfono *</label><input id="r-telefono" type="tel" placeholder="9 123 4567" maxlength="9"><span class="err" id="e-telefono"></span><span style="font-size:11px;color:var(--ink4);margin-top:2px;display:block">Sin +56 · Ej: 9 123 4567</span></div>
+      <div class="field"><label>Teléfono *</label><input id="r-telefono" type="tel" placeholder="9 1234 5678" maxlength="11" oninput="formatTel(this)"><span class="err" id="e-telefono"></span><span style="font-size:11px;color:var(--ink4);margin-top:2px;display:block">Sin +56 · Solo celulares · Ej: 9 1234 5678</span></div>
         <div class="form-row">
-          <div class="field"><label>RUT / DNI</label><input id="r-rut" placeholder="12.345.678-9"></div>
+          <div class="field"><label>RUT / DNI</label><input id="r-rut" placeholder="12.345.678-9" oninput="formatRut(this)" onblur="validateRutBlur()" maxlength="12"><span class="err" id="e-rut"></span></div>
           <div class="field">
-            <label>Tipo de cargo *</label>
-            <select id="r-perfil" onchange="onPerfilChange()">
-              <option value="">Selecciona un cargo…</option>
-              <option value="jefatura">Jefatura</option>
-              <option value="administrativo">Administrativo</option>
-              <option value="guardia">Guardia de Seguridad</option>
-              <option value="supervisor">Supervisor de Seguridad</option>
-            </select>
-            <span class="err" id="e-perfil"></span>
+            <label>Fecha de nacimiento *</label>
+            <input id="r-fechanac" type="date" max="" style="width:100%">
+            <span class="err" id="e-fechanac"></span>
           </div>
+        </div>
+        <div class="field">
+          <label>Tipo de cargo *</label>
+          <select id="r-perfil" onchange="onPerfilChange()">
+            <option value="">Selecciona un cargo…</option>
+            <option value="jefatura">Jefatura</option>
+            <option value="administrativo">Administrativo</option>
+            <option value="guardia">Guardia de Seguridad</option>
+            <option value="supervisor">Supervisor de Seguridad</option>
+          </select>
+          <span class="err" id="e-perfil"></span>
+        </div>
+
+        <div class="field" style="position:relative">
+          <label>Comuna de residencia *</label>
+          <input id="r-comuna" placeholder="Ej: Maipú, Viña del Mar…" autocomplete="off"
+            oninput="comunaInput(this.value)" onkeydown="comunaKey(event)" onblur="validateComunaBlur()"
+            style="width:100%">
+          <div id="comuna-suggestions" style="display:none"></div>
+          <span class="err" id="e-comuna"></span>
         </div>
         <div style="display:flex;gap:10px;margin-top:6px">
           <button class="btn btn-outline" onclick="gotoLanding()">← Volver</button>
@@ -809,6 +841,22 @@ input,select,textarea{font-family:inherit;outline:none}
       <p style="font-size:13px;color:var(--ink3);margin-bottom:22px">Indica tu nivel educativo y área de formación principal.</p>
       <div style="display:flex;flex-direction:column;gap:14px">
         <div class="field">
+          <label>¿Eres personal en retiro de FF.AA. o Carabineros? *</label>
+          <div style="display:flex;gap:8px;margin-top:6px">
+            <label style="flex:1;display:flex;align-items:center;gap:8px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s" id="retiro-no-lbl">
+              <input type="radio" name="es-retiro" value="no" id="r-retiro-no" onchange="onRetiroChange()" style="width:17px;height:17px;accent-color:var(--accent)">
+              <span style="font-size:13px;font-weight:600;color:var(--ink)">No</span>
+            </label>
+            <label style="flex:1;display:flex;align-items:center;gap:8px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s" id="retiro-si-lbl">
+              <input type="radio" name="es-retiro" value="si" id="r-retiro-si" onchange="onRetiroChange()" style="width:17px;height:17px;accent-color:var(--accent)">
+              <span style="font-size:13px;font-weight:600;color:var(--ink)">Sí, soy personal en retiro</span>
+            </label>
+          </div>
+          <span class="err" id="e-retiro"></span>
+        </div>
+
+        <!-- Educación civil (visible si No) -->
+        <div class="field" id="edu-civil-block" style="display:none">
           <label>Nivel educacional *</label>
           <select id="r-educacion">
             <option value="">Selecciona tu nivel…</option>
@@ -817,16 +865,23 @@ input,select,textarea{font-family:inherit;outline:none}
             <option value="tecnica">Técnico de Nivel Superior</option>
             <option value="universitaria">Universitaria (en curso o completa)</option>
             <option value="postgrado">Postgrado / Magíster / Doctorado</option>
-            <optgroup label="Personal en retiro">
-              <option value="ejercito_retiro">🎖 Retirado/a del Ejército — carrera completa</option>
-              <option value="ejercito_baja">🎖 Retirado/a del Ejército — antes de completar carrera</option>
-              <option value="carabineros_retiro">👮 Retirado/a de Carabineros — carrera completa</option>
-              <option value="carabineros_baja">👮 Retirado/a de Carabineros — antes de completar carrera</option>
-              <option value="armada_retiro">⚓ Retirado/a de la Armada — carrera completa</option>
-              <option value="armada_baja">⚓ Retirado/a de la Armada — antes de completar carrera</option>
-            </optgroup>
           </select>
           <span class="err" id="e-educacion"></span>
+        </div>
+
+        <!-- Educación retiro (visible si Sí) -->
+        <div class="field" id="edu-retiro-block" style="display:none">
+          <label>Institución y situación de egreso *</label>
+          <select id="r-educacion-retiro">
+            <option value="">Selecciona…</option>
+            <option value="ejercito_retiro">🎖 Ejército — carrera completa (retiro)</option>
+            <option value="ejercito_baja">🎖 Ejército — antes de completar carrera (baja)</option>
+            <option value="carabineros_retiro">👮 Carabineros — carrera completa (retiro)</option>
+            <option value="carabineros_baja">👮 Carabineros — antes de completar carrera (baja)</option>
+            <option value="armada_retiro">⚓ Armada — carrera completa (retiro)</option>
+            <option value="armada_baja">⚓ Armada — antes de completar carrera (baja)</option>
+          </select>
+          <span class="err" id="e-educacion-retiro"></span>
         </div>
         <div class="field">
           <label>Rubro de experiencia principal</label>
@@ -843,6 +898,98 @@ input,select,textarea{font-family:inherit;outline:none}
             <option value="otro">Otro rubro</option>
           </select>
         </div>
+        <div style="display:flex;gap:10px;margin-top:4px">
+          <button class="btn btn-outline" onclick="regBack(2)">← Anterior</button>
+          <button class="btn btn-primary btn-lg" style="flex:1" onclick="regNext(2)">Continuar →</button>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ── STEP 2c: Perfil SUPERVISOR ── -->
+    <div id="reg-step-2-supervisor" class="card cp" style="display:none">
+      <div style="display:inline-flex;align-items:center;gap:7px;padding:4px 12px;border-radius:100px;background:#f0f9ff;border:1px solid #bae6fd;font-size:12px;font-weight:700;color:#0369a1;margin-bottom:18px">⚙️ Supervisor de Seguridad</div>
+      <h2 style="font-size:22px;font-weight:800;margin-bottom:4px">Antecedentes del cargo</h2>
+      <p style="font-size:13px;color:var(--ink3);margin-bottom:24px">Cuéntanos sobre tu formación y certificaciones para este cargo.</p>
+      <div style="display:flex;flex-direction:column;gap:20px">
+
+        <!-- Sección 1: Nivel educacional -->
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+            <div style="width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div>
+            <span style="font-size:14px;font-weight:700;color:var(--ink)">Nivel educacional</span>
+          </div>
+
+          <!-- Retiro question -->
+          <div class="field" style="margin-bottom:10px">
+            <label style="font-size:12px">¿Eres personal en retiro de FF.AA. o Carabineros? *</label>
+            <div style="display:flex;gap:8px;margin-top:6px">
+              <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 13px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s" id="retiro-sup-no-lbl">
+                <input type="radio" name="es-retiro-sup" value="no" id="r-retiro-sup-no" onchange="onRetiroSupChange()" style="width:16px;height:16px;accent-color:var(--accent)">
+                <span style="font-size:13px;font-weight:600;color:var(--ink)">No</span>
+              </label>
+              <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 13px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s" id="retiro-sup-si-lbl">
+                <input type="radio" name="es-retiro-sup" value="si" id="r-retiro-sup-si" onchange="onRetiroSupChange()" style="width:16px;height:16px;accent-color:var(--accent)">
+                <span style="font-size:13px;font-weight:600;color:var(--ink)">Sí, soy personal en retiro</span>
+              </label>
+            </div>
+            <span class="err" id="e-retiro-sup"></span>
+          </div>
+
+          <!-- Civil education (No) -->
+          <div class="field" id="edu-sup-civil-block" style="display:none">
+            <select id="r-educacion-sup">
+              <option value="">Selecciona tu nivel…</option>
+              <option value="media_incompleta">Educación Media incompleta</option>
+              <option value="media">4º Medio completo</option>
+              <option value="tecnica">Técnico de Nivel Superior</option>
+              <option value="universitaria">Universitaria (en curso o completa)</option>
+              <option value="postgrado">Postgrado / Magíster / Doctorado</option>
+            </select>
+            <span class="err" id="e-educacion-sup"></span>
+          </div>
+
+          <!-- Retiro education (Sí) -->
+          <div class="field" id="edu-sup-retiro-block" style="display:none">
+            <select id="r-educacion-sup-retiro">
+              <option value="">Selecciona institución y situación…</option>
+              <option value="ejercito_retiro">🎖 Ejército — carrera completa (retiro)</option>
+              <option value="ejercito_baja">🎖 Ejército — antes de completar carrera (baja)</option>
+              <option value="carabineros_retiro">👮 Carabineros — carrera completa (retiro)</option>
+              <option value="carabineros_baja">👮 Carabineros — antes de completar carrera (baja)</option>
+              <option value="armada_retiro">⚓ Armada — carrera completa (retiro)</option>
+              <option value="armada_baja">⚓ Armada — antes de completar carrera (baja)</option>
+            </select>
+            <span class="err" id="e-educacion-sup-retiro"></span>
+          </div>
+        </div>
+
+        <!-- Separador -->
+        <div style="height:1px;background:var(--border)"></div>
+
+        <!-- Sección 2: Certificación 140h -->
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+            <div style="width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div>
+            <span style="font-size:14px;font-weight:700;color:var(--ink)">Certificación de supervisor</span>
+          </div>
+          <p style="font-size:12px;color:var(--ink3);margin-bottom:10px;line-height:1.5">Curso de Supervisor de Seguridad (140 horas) emitido por OS-10 / Carabineros de Chile.</p>
+          <div class="field">
+            <label style="font-size:12px">¿Posees el curso vigente? *</label>
+            <div style="display:flex;gap:8px;margin-top:6px">
+              <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 13px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s" id="sup140-yes-lbl">
+                <input type="radio" name="sup140" id="r-sup140-si" value="si" onchange="styleSup140()" style="width:16px;height:16px;accent-color:var(--accent)">
+                <span style="font-size:13px;font-weight:600;color:var(--ink)">Sí, tengo el curso vigente</span>
+              </label>
+              <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 13px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s" id="sup140-no-lbl">
+                <input type="radio" name="sup140" id="r-sup140-no" value="no" onchange="styleSup140()" style="width:16px;height:16px;accent-color:var(--accent)">
+                <span style="font-size:13px;font-weight:600;color:var(--ink)">No, no tengo el curso o está vencido</span>
+              </label>
+            </div>
+            <span class="err" id="e-sup140"></span>
+          </div>
+        </div>
+
         <div style="display:flex;gap:10px;margin-top:4px">
           <button class="btn btn-outline" onclick="regBack(2)">← Anterior</button>
           <button class="btn btn-primary btn-lg" style="flex:1" onclick="regNext(2)">Continuar →</button>
@@ -1030,8 +1177,6 @@ input,select,textarea{font-family:inherit;outline:none}
       <div class="logo" style="font-size:17px;font-weight:700;letter-spacing:-.02em">PsicoEval</div>
       <button class="nav-btn active" id="nav-dashboard" onclick="adminTab('dashboard',this)"><span>📊</span><span>Dashboard</span></button>
       <button class="nav-btn" id="nav-candidates" onclick="adminTab('candidates',this)"><span>👥</span><span>Candidatos</span></button>
-      <button class="nav-btn" id="nav-reports" onclick="adminTab('reports',this)"><span>📄</span><span>Informes</span></button>
-      <button class="nav-btn" id="nav-raw" onclick="adminTab('raw',this)"><span>🔢</span><span>Datos Brutos</span></button>
       <button class="nav-btn" id="nav-params" onclick="adminTab('params',this)"><span>⚙</span><span>Parámetros</span></button>
       <button class="nav-btn" id="nav-users" onclick="adminTab('users',this)"><span>👤</span><span>Usuarios</span></button>
       <div style="flex:1"></div>
@@ -1092,28 +1237,39 @@ input,select,textarea{font-family:inherit;outline:none}
       </div>
       <!-- Candidates -->
       <div id="tab-candidates" style="display:none">
+        <!-- Header -->
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px">
           <div>
-            <h2 style="font-size:26px;font-weight:800;margin-bottom:4px">Candidatos e Informes</h2>
-            <p style="font-size:13px;color:var(--ink3)">Gestión, seguimiento y acceso a informes</p>
+            <h2 style="font-size:26px;font-weight:800;margin-bottom:4px">Candidatos</h2>
+            <p style="font-size:13px;color:var(--ink3)">Gestión, informes y datos de evaluación</p>
           </div>
-          <div style="display:flex;gap:8px">
+          <div style="display:flex;gap:8px" id="cand-action-btns">
             <button class="btn btn-outline btn-sm" onclick="exportCSV()" style="color:var(--accent);border-color:var(--accent)">⬇ Exportar CSV</button>
-            <button class="btn btn-outline btn-sm" onclick="renderCandidatesTable()">↻ Actualizar</button>
+            <button class="btn btn-outline btn-sm" id="btn-refresh-cand" onclick="refreshCandView()">↻ Actualizar</button>
           </div>
         </div>
+        <!-- Sub-tabs: Tabla / Informes / Datos Brutos -->
+        <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:20px">
+          <button id="subtab-tabla" onclick="setCandSubTab('tabla',this)" style="padding:9px 18px;border:none;background:none;font-size:13px;font-weight:700;color:var(--accent);border-bottom:2px solid var(--accent);margin-bottom:-2px;cursor:pointer">👥 Candidatos</button>
+          <button id="subtab-informes" onclick="setCandSubTab('informes',this)" style="padding:9px 18px;border:none;background:none;font-size:13px;font-weight:500;color:var(--ink3);border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer">📄 Informes</button>
+          <button id="subtab-raw" onclick="setCandSubTab('raw',this)" style="padding:9px 18px;border:none;background:none;font-size:13px;font-weight:500;color:var(--ink3);border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer">🔢 Datos Brutos</button>
+        </div>
+
+        <!-- ── Subtab: Tabla ── -->
+        <div id="cand-sub-tabla">
         <!-- Cargo tabs -->
         <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:16px">
           <button id="ctab-all" onclick="setCandTab('all',this)" style="padding:9px 18px;border:none;background:none;font-size:13px;font-weight:700;color:var(--accent);border-bottom:2px solid var(--accent);margin-bottom:-2px;cursor:pointer">Todos</button>
           <button id="ctab-jefatura" onclick="setCandTab('jefatura',this)" style="padding:9px 18px;border:none;background:none;font-size:13px;font-weight:500;color:var(--ink3);border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer">👔 Jefatura</button>
           <button id="ctab-administrativo" onclick="setCandTab('administrativo',this)" style="padding:9px 18px;border:none;background:none;font-size:13px;font-weight:500;color:var(--ink3);border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer">💼 Administrativo</button>
           <button id="ctab-guardia" onclick="setCandTab('guardia',this)" style="padding:9px 18px;border:none;background:none;font-size:13px;font-weight:500;color:var(--ink3);border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer">🛡 Guardia</button>
+          <button id="ctab-supervisor" onclick="setCandTab('supervisor',this)" style="padding:9px 18px;border:none;background:none;font-size:13px;font-weight:500;color:var(--ink3);border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer">⚙️ Supervisor</button>
         </div>
         <!-- Search + filter -->
         <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap">
           <input id="search-input" placeholder="Buscar por nombre o email…" oninput="renderCandidatesTable()"
             style="flex:1;min-width:180px;padding:9px 13px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);font-size:13px;font-family:inherit">
-          <select id="filter-status" onchange="renderCandidatesTable()" style="padding:9px 13px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);font-size:13px;font-family:inherit;color:var(--ink)">
+          <select id="filter-status" onchange="renderCandidatesTable()" style="padding:9px 36px 9px 13px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);font-size:13px;font-family:inherit;color:var(--ink);-webkit-appearance:none;-moz-appearance:none;appearance:none;background-image:url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2716%27 height=%2716%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%238e8e93%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpolyline points=%276 9 12 15 18 9%27/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 10px center;cursor:pointer">
             <option value="">Todos los estados</option>
             <option value="completed">Completados</option>
             <option value="in_progress">En progreso</option>
@@ -1134,33 +1290,19 @@ input,select,textarea{font-family:inherit;outline:none}
             <th>Candidato</th><th>Cargo</th><th>Tests</th><th>Estado</th><th>Fecha</th><th>Acciones</th>
           </tr></thead><tbody id="cand-tbody"></tbody></table>
         </div>
-      </div>
+        </div><!-- /cand-sub-tabla -->
 
-
-
-      <!-- Users -->
-      <!-- Reports -->
-      <div id="tab-reports" style="display:none">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:22px">
-          <div>
-            <h2 style="font-size:26px;font-weight:800;margin-bottom:4px">Informes</h2>
-            <p style="font-size:13px;color:var(--ink3)">Evaluaciones completadas con informe disponible</p>
-          </div>
-          <button class="btn btn-outline btn-sm" onclick="renderReports()">↻ Actualizar</button>
+        <!-- ── Subtab: Informes ── -->
+        <div id="cand-sub-informes" style="display:none">
+          <div id="reports-list"></div>
         </div>
-        <div id="reports-list"></div>
-      </div>
-      <!-- Raw Data -->
-      <div id="tab-raw" style="display:none">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:22px">
-          <div>
-            <h2 style="font-size:26px;font-weight:800;margin-bottom:4px">Datos Brutos</h2>
-            <p style="font-size:13px;color:var(--ink3)">Puntajes directos de cada test sin interpretación</p>
-          </div>
-          <button class="btn btn-outline btn-sm" onclick="renderRaw()">↻ Actualizar</button>
+
+        <!-- ── Subtab: Datos Brutos ── -->
+        <div id="cand-sub-raw" style="display:none">
+          <div id="raw-content"></div>
         </div>
-        <div id="raw-content"></div>
-      </div>
+
+      </div><!-- /tab-candidates -->
       <div id="tab-users" style="display:none;padding-bottom:40px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px">
           <div>
@@ -1963,10 +2105,13 @@ async function addToDB(c) {
     fecha: c.fecha, tests: c.tests, estado: c.estado,
     scores: c.scores || null,
     telefono:   c.telefono   || null,
+    fechanac:   c.fechanac   || null,
+    edad:       c.edad       || null,
     educacion:  c.educacion  || null,
     os10:       c.os10       || null,
     rubro:      c.rubro      || null,
     historial:  c.historial  || null,
+    comuna:     c.comuna     || null,
   };
   const r = await fetch(`${SUPA_URL}/rest/v1/candidates`,{method:'POST',headers:DB_HEADERS,body:JSON.stringify(row)});
   if (!r.ok) {
@@ -1983,8 +2128,192 @@ async function deleteFromDB(id) {
 //  REGISTER
 // ═══════════════════════════════════════════════════════════
 // ═══════════════════════════════════════════════════════════
+//  COMMUNE AUTOCOMPLETE
+// ═══════════════════════════════════════════════════════════
+const COMUNAS_CL = [
+  // RM
+  'Cerrillos','Cerro Navia','Conchalí','El Bosque','Estación Central','Huechuraba','Independencia',
+  'La Cisterna','La Florida','La Granja','La Pintana','La Reina','Las Condes','Lo Barnechea',
+  'Lo Espejo','Lo Prado','Macul','Maipú','Ñuñoa','Padre Hurtado','Peñaflor','Peñalolén',
+  'Pedro Aguirre Cerda','Providencia','Pudahuel','Puente Alto','Quilicura','Quinta Normal',
+  'Recoleta','Renca','San Bernardo','San Joaquín','San Miguel','San Ramón','Santiago','Vitacura',
+  'Buin','Calera de Tango','Colina','Curacaví','El Monte','Isla de Maipo','Lampa','Melipilla',
+  'Paine','Pirque','San José de Maipo','Talagante','Tiltil',
+  // V Región
+  'Valparaíso','Viña del Mar','Concón','Quilpué','Villa Alemana','San Antonio','Quillota',
+  'Los Andes','San Felipe','La Calera','Limache','Casablanca','Algarrobo','El Quisco',
+  // VI Región
+  'Rancagua','San Fernando','Machalí','Requínoa','Graneros','Rengo','Chimbarongo',
+  // VII Región
+  'Talca','Curicó','Linares','Constitución','Molina','Cauquenes',
+  // VIII Región
+  'Concepción','Talcahuano','Chiguayante','San Pedro de la Paz','Hualpén','Coronel','Lota',
+  'Los Ángeles','Chillán','Chillán Viejo','Tomé','Penco',
+  // IX Región
+  'Temuco','Padre Las Casas','Villarrica','Pucón','Nueva Imperial','Angol',
+  // X Región
+  'Puerto Montt','Osorno','Puerto Varas','Castro','Ancud',
+  // Norte
+  'Iquique','Alto Hospicio','Antofagasta','Calama','Copiapó','La Serena','Coquimbo','Ovalle',
+  // Sur
+  'Coyhaique','Punta Arenas',
+];
+
+let _comunaHL = -1;
+
+let _comunaValid = false;
+
+function comunaInput(val) {
+  _comunaValid = false; // reset whenever user types
+  document.getElementById('e-comuna').textContent = '';
+  const box = document.getElementById('comuna-suggestions');
+  const q = val.trim().toLowerCase();
+  if (q.length < 2) { box.style.display = 'none'; return; }
+  const matches = COMUNAS_CL.filter(c => c.toLowerCase().startsWith(q)).slice(0, 8);
+  if (!matches.length) { box.style.display = 'none'; return; }
+  _comunaHL = -1;
+  box.innerHTML = matches.map((c,i) => `<div onclick="selectComuna('${c}')" data-idx="${i}">${c}</div>`).join('');
+  box.style.display = 'block';
+}
+
+function validateComunaBlur() {
+  var val = document.getElementById('r-comuna').value.trim();
+  // Accept only exact matches (case-insensitive)
+  var exact = COMUNAS_CL.find(c => c.toLowerCase() === val.toLowerCase());
+  if (!exact) {
+    _comunaValid = false;
+    if (val.length > 0) {
+      document.getElementById('e-comuna').textContent = 'Selecciona una comuna del listado';
+    }
+  } else {
+    _comunaValid = true;
+    document.getElementById('r-comuna').value = exact; // normalize capitalization
+    document.getElementById('e-comuna').textContent = '';
+  }
+}
+
+function selectComuna(val) {
+  document.getElementById('r-comuna').value = val;
+  document.getElementById('comuna-suggestions').style.display = 'none';
+  document.getElementById('e-comuna').textContent = '';
+  _comunaValid = true;
+}
+
+function comunaKey(e) {
+  const box = document.getElementById('comuna-suggestions');
+  const items = box.querySelectorAll('div');
+  if (!items.length) return;
+  if      (e.key === 'ArrowDown')  { e.preventDefault(); _comunaHL = Math.min(_comunaHL+1, items.length-1); }
+  else if (e.key === 'ArrowUp')    { e.preventDefault(); _comunaHL = Math.max(_comunaHL-1, 0); }
+  else if (e.key === 'Enter' && _comunaHL >= 0) { e.preventDefault(); selectComuna(items[_comunaHL].textContent); return; }
+  else if (e.key === 'Escape')     { box.style.display = 'none'; return; }
+  else return;
+  items.forEach((el,i) => el.classList.toggle('active', i === _comunaHL));
+}
+
+function styleSup140() {
+  var si  = document.getElementById('r-sup140-si')?.checked;
+  var no  = document.getElementById('r-sup140-no')?.checked;
+  var ylbl = document.getElementById('sup140-yes-lbl');
+  var nlbl = document.getElementById('sup140-no-lbl');
+  if (ylbl) { ylbl.style.borderColor = si ? 'var(--accent)' : 'var(--border)'; ylbl.style.background = si ? 'var(--accent-l)' : 'var(--surface)'; }
+  if (nlbl) { nlbl.style.borderColor = no ? 'var(--accent)' : 'var(--border)'; nlbl.style.background = no ? 'var(--accent-l)' : 'var(--surface)'; }
+  var e = document.getElementById('e-sup140'); if (e) e.textContent = '';
+}
+
+// ═══════════════════════════════════════════════════════════
 //  REGISTER WIZARD
 // ═══════════════════════════════════════════════════════════
+
+function formatTel(input) {
+  var raw = input.value.replace(/\D/g, '').slice(0, 9);
+  // Format: 9 1234 5678 (celular) or 2 1234 5678 (fijo)
+  if (raw.length === 0)      input.value = '';
+  else if (raw.length <= 1)  input.value = raw;
+  else if (raw.length <= 5)  input.value = raw[0] + ' ' + raw.slice(1);
+  else                       input.value = raw[0] + ' ' + raw.slice(1,5) + ' ' + raw.slice(5);
+
+  // Live validation feedback
+  var err = document.getElementById('e-telefono');
+  if (!err) return;
+  if (raw.length === 0) { err.textContent = ''; return; }
+  if (raw.length < 9)   { err.textContent = 'Faltan ' + (9 - raw.length) + ' dígitos'; err.style.color = '#b45309'; return; }
+  if (raw[0] !== '9')   { err.textContent = 'Los celulares comienzan con 9'; err.style.color = '#e11d48'; return; }
+  err.textContent = '✓ Número válido';
+  err.style.color = '#16a34a';
+}
+
+// ── RUT Chilean validation ───────────────────────────────────────
+function formatRut(input) {
+  // Strip everything except digits and k/K
+  var raw = input.value.replace(/[^0-9kK]/g,'');
+  if (raw.length === 0) { input.value = ''; return; }
+  // Last char is verifier digit
+  var body = raw.slice(0, -1).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); // add dots
+  var dv   = raw.slice(-1).toUpperCase();
+  input.value = body + '-' + dv;
+  // Clear error while typing
+  var e = document.getElementById('e-rut'); if (e) e.textContent = '';
+}
+
+function calcRutDV(rutNum) {
+  var sum = 0, mul = 2;
+  var num = parseInt(rutNum, 10);
+  while (num > 0) {
+    sum += (num % 10) * mul;
+    num = Math.floor(num / 10);
+    mul = mul === 7 ? 2 : mul + 1;
+  }
+  var res = 11 - (sum % 11);
+  if (res === 11) return '0';
+  if (res === 10) return 'K';
+  return String(res);
+}
+
+function validateRutBlur() {
+  var val = document.getElementById('r-rut').value.trim();
+  var e = document.getElementById('e-rut');
+  if (!val || !e) return;
+  var clean = val.replace(/[^0-9kK]/g,'');
+  if (clean.length < 2) { e.textContent = 'RUT inválido'; e.style.color = 'var(--rose)'; return; }
+  var dv   = clean.slice(-1).toUpperCase();
+  var body = clean.slice(0,-1);
+  if (!/^\d+$/.test(body)) { e.textContent = 'RUT inválido'; e.style.color = 'var(--rose)'; return; }
+  var expected = calcRutDV(body);
+  if (dv !== expected) {
+    e.textContent = 'RUT inválido — dígito verificador incorrecto'; e.style.color = 'var(--rose)';
+  } else {
+    e.textContent = '✓ RUT válido'; e.style.color = '#16a34a';
+  }
+}
+
+function onRetiroSupChange() {
+  var si = document.getElementById('r-retiro-sup-si')?.checked;
+  var no = document.getElementById('r-retiro-sup-no')?.checked;
+  var siLbl = document.getElementById('retiro-sup-si-lbl');
+  var noLbl = document.getElementById('retiro-sup-no-lbl');
+  if (siLbl) { siLbl.style.borderColor = si ? 'var(--accent)' : 'var(--border)'; siLbl.style.background = si ? 'var(--accent-l)' : 'var(--surface)'; }
+  if (noLbl) { noLbl.style.borderColor = no ? 'var(--accent)' : 'var(--border)'; noLbl.style.background = no ? 'var(--accent-l)' : 'var(--surface)'; }
+  var civil  = document.getElementById('edu-sup-civil-block');
+  var retiro = document.getElementById('edu-sup-retiro-block');
+  if (civil)  civil.style.display  = no ? 'block' : 'none';
+  if (retiro) retiro.style.display = si ? 'block' : 'none';
+  var e = document.getElementById('e-retiro-sup'); if (e) e.textContent = '';
+}
+
+function onRetiroChange() {
+  var esRetiro = document.getElementById('r-retiro-si')?.checked;
+  var noRetiro = document.getElementById('r-retiro-no')?.checked;
+  var siLbl = document.getElementById('retiro-si-lbl');
+  var noLbl = document.getElementById('retiro-no-lbl');
+  if (siLbl) { siLbl.style.borderColor = esRetiro ? 'var(--accent)' : 'var(--border)'; siLbl.style.background = esRetiro ? 'var(--accent-l)' : 'var(--surface)'; }
+  if (noLbl) { noLbl.style.borderColor = noRetiro ? 'var(--accent)' : 'var(--border)'; noLbl.style.background = noRetiro ? 'var(--accent-l)' : 'var(--surface)'; }
+  var civilBlock  = document.getElementById('edu-civil-block');
+  var retiroBlock = document.getElementById('edu-retiro-block');
+  if (civilBlock)  civilBlock.style.display  = noRetiro ? 'block' : 'none';
+  if (retiroBlock) retiroBlock.style.display = esRetiro ? 'block' : 'none';
+  var e = document.getElementById('e-retiro'); if (e) e.textContent = '';
+}
 
 function onPerfilChange() {
   // nothing at step 1 — just store selection
@@ -2013,13 +2342,16 @@ function styleEduG() {
 
 function regSetStep(step) {
   // Hide all panels
-  ['reg-step-1','reg-step-2-guardia','reg-step-2-general','reg-step-3'].forEach(function(id) {
+  ['reg-step-1','reg-step-2-guardia','reg-step-2-general','reg-step-2-supervisor','reg-step-3'].forEach(function(id) {
     const el = document.getElementById(id); if (el) el.style.display = 'none';
   });
   // Show correct panel
   const perfil = document.getElementById('r-perfil').value;
   if      (step === 1) document.getElementById('reg-step-1').style.display = 'block';
-  else if (step === 2) document.getElementById(perfil === 'guardia' ? 'reg-step-2-guardia' : 'reg-step-2-general').style.display = 'block';
+  else if (step === 2) {
+    var p2 = perfil === 'guardia' ? 'reg-step-2-guardia' : perfil === 'supervisor' ? 'reg-step-2-supervisor' : 'reg-step-2-general';
+    document.getElementById(p2).style.display = 'block';
+  }
   else if (step === 3) document.getElementById('reg-step-3').style.display = 'block';
   // Update progress
   const pct = step === 1 ? 33 : step === 2 ? 66 : 100;
@@ -2044,9 +2376,30 @@ function regNext(fromStep) {
     if (!nombre)  { document.getElementById('e-nombre').textContent = 'Requerido'; ok = false; } else document.getElementById('e-nombre').textContent = '';
     if (!apellido){ document.getElementById('e-apellido').textContent = 'Requerido'; ok = false; } else document.getElementById('e-apellido').textContent = '';
     if (!email || !email.includes('@')) { document.getElementById('e-email').textContent = 'Email inválido'; ok = false; } else document.getElementById('e-email').textContent = '';
-    const telefono = document.getElementById('r-telefono').value.replace(/\s/g,'');
-    if (!telefono || telefono.length < 8) { document.getElementById('e-telefono').textContent = 'Ingresa un teléfono válido (8-9 dígitos)'; ok = false; } else document.getElementById('e-telefono').textContent = '';
+    const telefonoClean = document.getElementById('r-telefono').value.replace(/\D/g,'');
+    if (!telefonoClean || telefonoClean.length !== 9) {
+      document.getElementById('e-telefono').textContent = 'Ingresa los 9 dígitos del número'; document.getElementById('e-telefono').style.color='var(--rose)'; ok = false;
+    } else if (telefonoClean[0] !== '9') {
+      document.getElementById('e-telefono').textContent = 'Los celulares comienzan con 9'; document.getElementById('e-telefono').style.color='var(--rose)'; ok = false;
+    } else {
+      document.getElementById('e-telefono').textContent = ''; 
+    }
+    var rutVal = document.getElementById('r-rut').value.trim();
+    if (rutVal) {
+      var rutClean = rutVal.replace(/[^0-9kK]/g,'');
+      var rutDV = rutClean.slice(-1).toUpperCase();
+      var rutBody = rutClean.slice(0,-1);
+      if (rutClean.length < 2 || !/^\d+$/.test(rutBody) || rutDV !== calcRutDV(rutBody)) {
+        document.getElementById('e-rut').textContent = 'RUT inválido — verifica el dígito verificador';
+        document.getElementById('e-rut').style.color = 'var(--rose)';
+        ok = false;
+      }
+    }
+    const fechanac = document.getElementById('r-fechanac').value;
+    if (!fechanac) { document.getElementById('e-fechanac').textContent = 'Requerido'; ok = false; } else document.getElementById('e-fechanac').textContent = '';
     if (!perfil)  { document.getElementById('e-perfil').textContent = 'Selecciona un cargo'; ok = false; } else document.getElementById('e-perfil').textContent = '';
+    var comunaVal = document.getElementById('r-comuna').value.trim();
+    if (!comunaVal || !_comunaValid) { document.getElementById('e-comuna').textContent = comunaVal ? 'Selecciona una comuna del listado' : 'Ingresa tu comuna de residencia'; ok = false; } else document.getElementById('e-comuna').textContent = '';
     if (!ok) return;
     regSetStep(2);
 
@@ -2059,10 +2412,32 @@ function regNext(fromStep) {
       // Validate education
       const edu = document.querySelector('input[name="edu-guardia"]:checked');
       if (!edu) { document.getElementById('e-edu-guardia').textContent = 'Selecciona tu nivel educativo'; return; }
+    } else if (perfil === 'supervisor') {
+      // 1. Education
+      var retiroSup = document.querySelector('input[name="es-retiro-sup"]:checked');
+      if (!retiroSup) { document.getElementById('e-retiro-sup').textContent = 'Selecciona una opción'; return; }
+      if (retiroSup.value === 'no') {
+        var eduSup = document.getElementById('r-educacion-sup').value;
+        if (!eduSup) { document.getElementById('e-educacion-sup').textContent = 'Selecciona tu nivel'; return; }
+      } else {
+        var eduSupR = document.getElementById('r-educacion-sup-retiro').value;
+        if (!eduSupR) { document.getElementById('e-educacion-sup-retiro').textContent = 'Selecciona tu institución'; return; }
+      }
+      // 2. Certificate
+      var sup140 = document.querySelector('input[name="sup140"]:checked');
+      if (!sup140) { document.getElementById('e-sup140').textContent = 'Selecciona una opción'; return; }
     } else {
-      const edu = document.getElementById('r-educacion').value;
-      if (!edu) { document.getElementById('e-educacion').textContent = 'Selecciona tu nivel'; return; }
-      document.getElementById('e-educacion').textContent = '';
+      var retiro = document.querySelector('input[name="es-retiro"]:checked');
+      if (!retiro) { document.getElementById('e-retiro').textContent = 'Selecciona una opción'; return; }
+      if (retiro.value === 'no') {
+        var edu = document.getElementById('r-educacion').value;
+        if (!edu) { document.getElementById('e-educacion').textContent = 'Selecciona tu nivel'; return; }
+        document.getElementById('e-educacion').textContent = '';
+      } else {
+        var eduR = document.getElementById('r-educacion-retiro').value;
+        if (!eduR) { document.getElementById('e-educacion-retiro').textContent = 'Selecciona tu institución'; return; }
+        document.getElementById('e-educacion-retiro').textContent = '';
+      }
     }
     regSetStep(3);
   }
@@ -2086,8 +2461,22 @@ function submitRegister() {
     educacion = eduG ? eduG.value : '';
     const os10R = document.querySelector('input[name="os10"]:checked');
     os10 = os10R ? os10R.value : '';
+  } else if (perfil === 'supervisor') {
+    var retiroSupSel = document.querySelector('input[name="es-retiro-sup"]:checked');
+    if (retiroSupSel && retiroSupSel.value === 'si') {
+      educacion = document.getElementById('r-educacion-sup-retiro')?.value || '';
+    } else {
+      educacion = document.getElementById('r-educacion-sup')?.value || '';
+    }
+    const sup140R = document.querySelector('input[name="sup140"]:checked');
+    os10 = sup140R ? 'sup140_' + sup140R.value : '';
   } else {
-    educacion = document.getElementById('r-educacion')?.value || '';
+    var retiroSel = document.querySelector('input[name="es-retiro"]:checked');
+    if (retiroSel && retiroSel.value === 'si') {
+      educacion = document.getElementById('r-educacion-retiro')?.value || '';
+    } else {
+      educacion = document.getElementById('r-educacion')?.value || '';
+    }
   }
   const rubro = document.getElementById('r-rubro')?.value || '';
 
@@ -2116,10 +2505,13 @@ function submitRegister() {
     id: genUUID(), nombre, apellido, email,
     rut: document.getElementById('r-rut').value.trim(),
     telefono: document.getElementById('r-telefono')?.value.trim() || '',
+    fechanac: document.getElementById('r-fechanac')?.value || '',
+    edad: (function(){ var fn = document.getElementById('r-fechanac')?.value; if(!fn) return null; var hoy = new Date(); var nac = new Date(fn); var age = hoy.getFullYear()-nac.getFullYear(); if(hoy.getMonth()<nac.getMonth()||(hoy.getMonth()===nac.getMonth()&&hoy.getDate()<nac.getDate())) age--; return age; })(),
     perfil, cargo: PERFIL_META[perfil].label,
     fecha: new Date().toLocaleDateString('es-CL'),
     tests: PERFIL_TESTS[perfil], estado: 'pending', scores: {},
     // Extended fields
+    comuna: document.getElementById('r-comuna')?.value.trim() || '',
     educacion, educacion_label: EDU_LABELS[educacion] || educacion,
     os10: os10 || null,
     rubro, rubro_label: RUBRO_LABELS[rubro] || '',
@@ -2137,13 +2529,14 @@ function submitRegister() {
   banner.innerHTML = '<span style="font-size:24px">' + pm.icon + '</span><div style="margin-top:8px"><strong style="font-size:15px">' + pm.label + '</strong><div style="font-size:13px;color:var(--ink3);margin-top:3px">' + pm.desc + '</div></div>';
   const tests = PERFIL_TESTS[perfil];
   const testMins = { barratt:5, dc0:20, pai:15, situacional:12, vigilancia:10, comprension:10 };
-  document.getElementById('sel-tests-list').innerHTML = tests.map(function(t) {
+  document.getElementById('sel-tests-list').innerHTML = tests.map(function(t, idx) {
     const m = TESTS_META[t];
-    return '<div style="display:flex;align-items:center;gap:14px;padding:13px 16px;border-radius:10px;background:var(--bg);border:1px solid var(--border)"><span style="font-size:22px">' + m.icon + '</span><div style="flex:1"><div style="font-weight:700;font-size:14px">' + m.name + '</div></div><span style="font-size:12px;color:var(--ink3)">~' + testMins[t] + ' min</span></div>';
+    const pN = 'Prueba ' + (idx + 1);
+    return '<div style="display:flex;align-items:center;gap:14px;padding:13px 16px;border-radius:10px;background:var(--bg);border:1px solid var(--border)"><span style="font-size:22px">📝</span><div style="flex:1"><div style="font-weight:700;font-size:14px">' + pN + '</div></div></div>';
   }).join('');
   const totalMin = tests.reduce(function(a,t){ return a + (testMins[t]||10); }, 0);
   const ttEl = document.getElementById('sel-total-time');
-  if (ttEl) ttEl.textContent = 'Tiempo estimado total: ~' + totalMin + ' minutos';
+  if (ttEl) ttEl.textContent = 'Tiempo estimado total: 30–40 minutos';
   showView('testselect');
 }
 
@@ -2218,9 +2611,10 @@ function renderTestBlock() {
     }
   }).join('');
 
+  const pruebaN = 'Prueba ' + (S.blockIdx + 1);
   document.getElementById('test-body').innerHTML = `
-    <div style="display:inline-flex;align-items:center;gap:8px;padding:5px 14px;border-radius:100px;font-size:12px;font-weight:700;background:${meta.color}15;border:1px solid ${meta.color}30;color:${meta.color};margin-bottom:16px">${meta.icon} ${meta.name}</div>
-    <h2 style="font-size:20px;font-weight:800;margin-bottom:4px;line-height:1.2">${meta.name}</h2>
+    <div style="display:inline-flex;align-items:center;gap:8px;padding:5px 14px;border-radius:100px;font-size:12px;font-weight:700;background:${meta.color}15;border:1px solid ${meta.color}30;color:${meta.color};margin-bottom:16px">📝 ${pruebaN}</div>
+    <h2 style="font-size:20px;font-weight:800;margin-bottom:4px;line-height:1.2">${pruebaN}</h2>
     <p style="font-size:13px;color:var(--ink3);margin-bottom:14px">${block.qs.length} preguntas · Responde todas antes de continuar</p>
     ${instrHtml}
     <div style="height:1px;background:var(--border);margin:14px 0 18px"></div>
@@ -3022,129 +3416,195 @@ function buildReportHtml(c, withClose) {
   const pm = PERFIL_META[perfil];
   const isLegacy = !s.barratt && !s.dc0 && !s.pai && (s.bigfive || s.disc || s.cognitivo);
 
-  // ── Header (always visible) ──
-  let html = '<div class="rpt-modal">';
-  html += '<div style="background:#111;color:#fff;padding:24px 28px">'
-    + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px">'
-    + '<div>'
-    + '<div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:6px">INFORME PSICOLABORAL — USO INTERNO RRHH</div>'
-    + '<div style="font-size:22px;font-weight:800;margin-bottom:2px">' + c.nombre + ' ' + c.apellido + '</div>'
-    + '<div style="font-size:13px;color:rgba(255,255,255,.45)">' + pm.icon + ' ' + pm.label + ' &nbsp;·&nbsp; Evaluado el ' + c.fecha
-    + (c.educacion_label ? ' &nbsp;·&nbsp; ' + c.educacion_label : '')
-    + (c.experiencia_label ? ' &nbsp;·&nbsp; ' + c.experiencia_label + ' de experiencia' : '')
-    + (c.rubro_label ? ' — ' + c.rubro_label : '')
-    + '</div>'
-    + '</div>'
-    + (withClose ? '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0"><button onclick="downloadPdfReport(currentReportId)" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:12px;font-weight:600;padding:6px 12px;border-radius:6px;cursor:pointer">⬇ Descargar PDF</button><button onclick="closeCandModal()" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:20px;cursor:pointer;line-height:1">✕</button></div>' : '')
-    + '</div></div>';
+  // ══════════════════════════════════════════════════════════════
+  //  REPORT HEADER + GENERAL TAB — Redesigned
+  // ══════════════════════════════════════════════════════════════
+  const edad   = c.edad    || '';
+  const tel    = c.telefono ? '+56 ' + c.telefono : '';
+  const comuna = c.comuna  || '';
+  const eduLbl = c.educacion_label || '';
+  const os10Lbl = (function(){
+    var v = c.os10||'';
+    if (v==='si') return 'OS-10 vigente';
+    if (v==='no') return 'Sin OS-10';
+    if (v==='sup140_si') return 'Curso 140h vigente';
+    if (v==='sup140_no') return 'Sin curso 140h';
+    return '';
+  })();
+  const chips = [
+    edad ? edad + ' años' : '',
+    pm.icon + ' ' + pm.label,
+    eduLbl,
+    os10Lbl,
+    c.rubro_label || '',
+    tel,
+    comuna,
+  ].filter(Boolean);
+
+  // ── Veredicto global ──────────────────────────────────────────
+  var veredicto, verColor, verBg, verIcon;
+  var gFit = rpt.globalFit;
+  var gLv  = fitToLevel5(gFit);
+  if (gLv >= 4)      { veredicto='APTO'; verColor='#16a34a'; verBg='#f0fdf4'; verIcon='✅'; }
+  else if (gLv === 3){ veredicto='APTO CON RESERVAS'; verColor='#b45309'; verBg='#fffbeb'; verIcon='⚠️'; }
+  else               { veredicto='NO CUMPLE PERFIL'; verColor='#dc2626'; verBg='#fef2f2'; verIcon='❌'; }
+
+  let html = '<div class="rpt-modal" style="font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif">';
+
+  // ── HEADER ────────────────────────────────────────────────────
+  html += '<div style="background:#fff;border-bottom:1px solid #e5e5ea">';
+  // Top indigo stripe
+  html += '<div style="background:#6366f1;height:5px"></div>';
+  // Content
+  html += '<div style="padding:22px 28px">';
+  html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap">';
+  // Left: name + chips
+  html += '<div>';
+  html += '<div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#94a3b8;margin-bottom:6px;font-weight:600">Informe Psicolaboral · Uso Interno RRHH</div>';
+  html += '<div style="font-size:24px;font-weight:900;color:#0f172a;margin-bottom:10px;letter-spacing:-.02em">' + c.nombre + ' ' + c.apellido + '</div>';
+  // Chips row
+  html += '<div style="display:flex;flex-wrap:wrap;gap:6px">';
+  chips.forEach(function(ch) {
+    html += '<span style="padding:3px 10px;background:#f1f5f9;border-radius:100px;font-size:12px;font-weight:500;color:#475569">' + ch + '</span>';
+  });
+  html += '</div>';
+  html += '</div>';
+  // Right: actions + fecha
+  html += '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0">';
+  if (withClose) {
+    html += '<div style="display:flex;gap:8px">';
+    html += '<button onclick="downloadPdfReport(currentReportId)" style="background:#6366f1;border:none;color:#fff;font-size:12px;font-weight:700;padding:7px 14px;border-radius:8px;cursor:pointer;font-family:inherit">⬇ Descargar PDF</button>';
+    html += '<button onclick="closeCandModal()" style="background:#f1f5f9;border:none;color:#64748b;font-size:18px;cursor:pointer;padding:4px 10px;border-radius:8px;line-height:1">✕</button>';
+    html += '</div>';
+  }
+  html += '<div style="font-size:11px;color:#94a3b8">Evaluado el ' + c.fecha + '</div>';
+  html += '</div>';
+  html += '</div>';
+  html += '</div></div>'; // /content /header
 
   if (isLegacy) {
     html += '<div style="padding:24px"><div style="background:#fffbeb;border:1px solid #e5d4a0;border-radius:8px;padding:14px;font-size:13px;color:#555">⚠ Evaluado con versión anterior. Requiere nueva evaluación.</div></div></div>';
     return html;
   }
-
-  const rpt = buildFitReport(c);
   if (!rpt) {
     html += '<div style="padding:24px;color:#999">No se pudo generar el análisis.</div></div>';
     return html;
   }
 
-  const fitLv = fitLabel(rpt.globalFit);
+  // ── TAB BAR ───────────────────────────────────────────────────
+  const tabs = [{ id:'general', label:'Resumen', icon:'📋' }];
+  if (s.barratt && rpt.sections.find(function(x){return x.id==='barratt';})) tabs.push({ id:'barratt', label:'Control Impulsivo', icon:'⚡' });
+  if (s.pai     && rpt.sections.find(function(x){return x.id==='pai';}))     tabs.push({ id:'pai',        label:'Aj. Psicológico', icon:'🔎' });
+  if (s.dc0     && rpt.sections.find(function(x){return x.id==='dc0';}))     tabs.push({ id:'dc0',        label:'Aptitud Cognitiva', icon:'🧠' });
+  if (s.situacional && rpt.sections.find(function(x){return x.id==='situacional';})) tabs.push({ id:'situacional', label:'Juicio Situacional', icon:'💡' });
+  if (s.vigilancia  && rpt.sections.find(function(x){return x.id==='vigilancia';}))  tabs.push({ id:'vigilancia',  label:'Vigilancia', icon:'🛡' });
+  if (s.comprension && rpt.sections.find(function(x){return x.id==='comprension';})) tabs.push({ id:'comprension', label:'Comprensión', icon:'📖' });
 
-  // ── Tab bar ──
-  const tabs = [{ id:'general', label:'Resumen General', icon:'📋' }];
-  if (s.barratt && rpt.sections.find(x=>x.id==='barratt')) tabs.push({ id:'barratt', label:'Control Impulsivo', icon:'⚡' });
-  if (s.pai  && rpt.sections.find(x=>x.id==='pai'))         tabs.push({ id:'pai',        label:'Aj. Psicológico', icon:'🔎' });
-  if (s.dc0  && rpt.sections.find(x=>x.id==='dc0'))         tabs.push({ id:'dc0',        label:'Aptitud Cognitiva', icon:'⚡' });
-  if (s.situacional && rpt.sections.find(x=>x.id==='situacional')) tabs.push({ id:'situacional', label:'Juicio Situacional', icon:'💡' });
-  if (s.vigilancia  && rpt.sections.find(x=>x.id==='vigilancia'))  tabs.push({ id:'vigilancia',  label:'Vigilancia', icon:'🛡' });
-  if (s.comprension && rpt.sections.find(x=>x.id==='comprension')) tabs.push({ id:'comprension', label:'Comprensión', icon:'📋' });
-
-  html += '<div style="border-bottom:1px solid #e5e5e5;background:#fff;padding:0 28px;display:flex;gap:0;overflow-x:auto;flex-shrink:0">';
+  html += '<div style="background:#fff;border-bottom:2px solid #f1f5f9;padding:0 28px;display:flex;gap:0;overflow-x:auto;flex-shrink:0">';
   tabs.forEach(function(t, i) {
     var first = i === 0;
     html += '<button class="rpt-tab-btn" onclick="switchReportTab(\'' + t.id + '\',this)"'
-      + ' style="padding:12px 16px;border:none;background:none;cursor:pointer;font-size:13px;white-space:nowrap;'
-      + 'border-bottom:2px solid ' + (first?'#111':'transparent') + ';'
-      + 'color:' + (first?'#111':'#999') + ';'
-      + 'font-weight:' + (first?'700':'500') + '">'
-      + t.icon + ' ' + t.label
-      + '</button>';
+      + ' style="padding:11px 16px;border:none;background:none;cursor:pointer;font-size:13px;white-space:nowrap;font-family:inherit;'
+      + 'border-bottom:2px solid ' + (first ? '#6366f1' : 'transparent') + ';margin-bottom:-2px;'
+      + 'color:' + (first ? '#6366f1' : '#64748b') + ';'
+      + 'font-weight:' + (first ? '700' : '500') + '">'
+      + t.icon + ' ' + t.label + '</button>';
   });
   html += '</div>';
 
-  // ── Tab panels container ──
-  html += '<div style="overflow-y:auto;flex:1;padding:24px 28px;background:#f9f9f9;display:flex;flex-direction:column;gap:16px" id="rpt-panels-wrap">';
+  // ── PANELS WRAPPER ────────────────────────────────────────────
+  html += '<div style="overflow-y:auto;flex:1;padding:24px 28px;background:#f8fafc;display:flex;flex-direction:column;gap:16px" id="rpt-panels-wrap">';
 
-  // ════════════════════════════════════════════
-  // TAB: GENERAL
-  // ════════════════════════════════════════════
-  html += '<div class="rpt-tab-panel" id="rpt-panel-general" style="display:block;display:flex;flex-direction:column;gap:16px">';
+  // ══════════════════════════════════════════════════════════════
+  // TAB: GENERAL (Resumen)
+  // ══════════════════════════════════════════════════════════════
+  html += '<div class="rpt-tab-panel" id="rpt-panel-general" style="display:block;flex-direction:column;gap:16px">';
 
-  // Índice global
-  html += '<div style="background:#fff;border:1px solid #e5e5e5;border-radius:10px;padding:20px 22px">'
-    + '<div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap">'
-    + '<div style="text-align:center;min-width:100px">'
-    + gaugeHtml(rpt.globalFit, fitLv.color, 100)
-    + '<div style="font-size:12px;font-weight:700;color:' + fitLv.color + ';margin-top:3px">' + fitLv.label + '</div>'
-    + '<div style="font-size:11px;font-weight:600;color:' + fitLv.color + '">' + fitToLevel5(rpt.globalFit) + '/5</div>'
-    + '<div style="font-size:10px;color:#999">Ajuste al perfil</div>'
-    + '</div>'
-    + '<div style="flex:1;min-width:200px">'
-    + '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#999;margin-bottom:6px">Resumen Ejecutivo</div>'
-    + '<div style="font-size:13px;line-height:1.7;color:#111">' + rpt.resumen + '</div>'
-    + '</div></div>'
-    // Section scores grid
-    + '<div style="height:1px;background:#e5e5e5;margin:16px 0"></div>'
-    + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px">'
-    + rpt.sections.map(function(sec) {
-        var lv2 = fitLabel(sec.secFit);
-        return '<div style="text-align:center;padding:10px 6px;background:#f9f9f9;border-radius:8px;border:1px solid #e5e5e5">'
-          + '<div style="font-size:16px">' + sec.icon + '</div>'
-          + '<div style="font-size:10px;font-weight:600;color:#555;margin:3px 0;line-height:1.3">' + sec.title.split('(')[0].trim() + '</div>'
-          + '<div style="font-size:20px;font-weight:900;color:' + lv2.color + ';line-height:1">' + fitToLevel5(sec.secFit) + '/5</div>'
-          + '<div style="font-size:9px;font-weight:700;color:' + lv2.color + '">' + lv2.label + '</div>'
-          + '</div>';
-      }).join('')
-    + '</div></div>';
+  // ── Veredicto card ────────────────────────────────────────────
+  html += '<div style="background:' + verBg + ';border:2px solid ' + verColor + '30;border-radius:14px;padding:20px 24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap">';
+  html += '<div style="font-size:40px;line-height:1">' + verIcon + '</div>';
+  html += '<div style="flex:1;min-width:180px">';
+  html += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:' + verColor + ';margin-bottom:4px">Resultado general</div>';
+  html += '<div style="font-size:22px;font-weight:900;color:' + verColor + ';letter-spacing:-.01em">' + veredicto + '</div>';
+  html += '</div>';
+  // Global score badge
+  html += '<div style="text-align:center;background:#fff;border-radius:12px;padding:12px 20px;border:1.5px solid ' + verColor + '30">';
+  html += '<div style="font-size:36px;font-weight:900;color:' + verColor + ';line-height:1">' + gLv + '/5</div>';
+  html += '<div style="font-size:11px;font-weight:600;color:' + verColor + ';margin-top:2px">' + (gLv>=4?'Muy apto':gLv>=3?'Parcialmente apto':'Por debajo del perfil') + '</div>';
+  html += '<div style="font-size:10px;color:#94a3b8;margin-top:1px">Ajuste al perfil</div>';
+  html += '</div>';
+  html += '</div>';
 
-  // Fortalezas y áreas de desarrollo
-  html += '<div style="background:#fff;border:1px solid #e5e5e5;border-radius:10px;padding:20px 22px">'
-    + '<div style="font-size:16px;font-weight:700;margin-bottom:4px">Fortalezas y Áreas de Desarrollo</div>'
-    + '<div style="font-size:12px;color:#999;margin-bottom:16px">Dimensiones con mayor y menor ajuste al perfil del cargo.</div>'
-    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">'
-    + '<div>'
-    + '<div style="font-size:12px;font-weight:700;color:#16a34a;border-bottom:2px solid #16a34a;padding-bottom:6px;margin-bottom:10px">✓ Fortalezas</div>'
-    + (rpt.fortalezas.length ? rpt.fortalezas.map(function(f){
-        var l5 = scoreToLevel5(f.score);
-        var desc = dimDesc(f.testId, f.key, f.score);
-        return '<div style="padding:12px 0;border-bottom:1px solid #f5f5f5">'
-          + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">'
-          + '<div style="width:22px;height:22px;border-radius:6px;background:#f0fdf4;font-size:11px;font-weight:800;color:#16a34a;display:flex;align-items:center;justify-content:center;flex-shrink:0">' + l5 + '</div>'
-          + '<span style="font-size:13px;font-weight:700;color:#0f172a">' + f.label + '</span>'
-          + '<span style="font-size:10px;color:#94a3b8">' + (f.section||'') + '</span>'
-          + '</div>'
-          + '<div style="font-size:12px;color:#475569;line-height:1.6;padding-left:30px">' + desc + '</div>'
-          + '</div>';
-      }).join('') : '<div style="font-size:13px;color:#94a3b8;padding:12px 0">Sin fortalezas destacadas en esta evaluación.</div>')
-    + '</div>'
-    + '<div>'
-    + '<div style="font-size:12px;font-weight:700;color:#dc2626;border-bottom:2px solid #dc2626;padding-bottom:6px;margin-bottom:10px">△ Áreas de Desarrollo</div>'
-    + (rpt.brechas.length ? rpt.brechas.map(function(b){
-        var l5 = scoreToLevel5(b.score);
-        var desc = dimDesc(b.testId, b.key, b.score);
-        return '<div style="padding:12px 0;border-bottom:1px solid #f5f5f5">'
-          + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">'
-          + '<div style="width:22px;height:22px;border-radius:6px;background:#fef2f2;font-size:11px;font-weight:800;color:#dc2626;display:flex;align-items:center;justify-content:center;flex-shrink:0">' + l5 + '</div>'
-          + '<span style="font-size:13px;font-weight:700;color:#0f172a">' + b.label + '</span>'
-          + '<span style="font-size:10px;color:#94a3b8">' + (b.section||'') + '</span>'
-          + '</div>'
-          + '<div style="font-size:12px;color:#475569;line-height:1.6;padding-left:30px">' + desc + '</div>'
-          + '</div>';
-      }).join('') : '<div style="font-size:13px;color:#94a3b8;padding:12px 0">No se detectaron brechas significativas en esta evaluación.</div>')
-    + '</div></div></div>';
+  // ── Resumen ejecutivo ─────────────────────────────────────────
+  html += '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:20px 24px">';
+  html += '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#94a3b8;margin-bottom:10px">Resumen Ejecutivo</div>';
+  html += '<div style="font-size:14px;line-height:1.8;color:#1e293b">' + rpt.resumen + '</div>';
+  html += '</div>';
 
-  // (preguntas de entrevista eliminadas)
+  // ── Secciones grid ────────────────────────────────────────────
+  html += '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:20px 24px">';
+  html += '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#94a3b8;margin-bottom:14px">Resultado por Test</div>';
+  html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px">';
+  rpt.sections.forEach(function(sec) {
+    var lv = fitToLevel5(sec.secFit);
+    var slv = fitLabel(sec.secFit);
+    var bg  = lv >= 4 ? '#f0fdf4' : lv >= 3 ? '#fffbeb' : '#fef2f2';
+    var col = lv >= 4 ? '#16a34a' : lv >= 3 ? '#b45309' : '#dc2626';
+    var brd = lv >= 4 ? '#bbf7d0' : lv >= 3 ? '#fde68a' : '#fecaca';
+    html += '<div style="background:' + bg + ';border:1.5px solid ' + brd + ';border-radius:12px;padding:14px 12px;text-align:center">';
+    html += '<div style="font-size:20px;margin-bottom:6px">' + sec.icon + '</div>';
+    html += '<div style="font-size:11px;font-weight:600;color:#475569;margin-bottom:8px;line-height:1.3">' + sec.title.split('(')[0].trim() + '</div>';
+    html += '<div style="font-size:28px;font-weight:900;color:' + col + ';line-height:1">' + lv + '/5</div>';
+    html += '<div style="font-size:10px;font-weight:700;color:' + col + ';margin-top:3px">' + slv.label + '</div>';
+    html += '</div>';
+  });
+  html += '</div></div>';
+
+  // ── Fortalezas y Brechas ──────────────────────────────────────
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">';
+
+  // Fortalezas
+  html += '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:18px 20px">';
+  html += '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#16a34a;border-bottom:2px solid #bbf7d0;padding-bottom:8px;margin-bottom:12px">✓ Fortalezas</div>';
+  if (rpt.fortalezas.length) {
+    rpt.fortalezas.forEach(function(f) {
+      var l5  = scoreToLevel5(f.score);
+      var desc = dimDesc(f.testId, f.key, f.score);
+      html += '<div style="padding:10px 0;border-bottom:1px solid #f1f5f9">';
+      html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">';
+      html += '<div style="width:24px;height:24px;border-radius:8px;background:#f0fdf4;font-size:11px;font-weight:900;color:#16a34a;display:flex;align-items:center;justify-content:center;flex-shrink:0">' + l5 + '</div>';
+      html += '<div><div style="font-size:13px;font-weight:700;color:#0f172a">' + f.label + '</div>';
+      html += '<div style="font-size:10px;color:#94a3b8">' + (f.section||'') + '</div></div>';
+      html += '</div>';
+      html += '<div style="font-size:12px;color:#475569;line-height:1.6;padding-left:32px">' + desc + '</div>';
+      html += '</div>';
+    });
+  } else {
+    html += '<div style="font-size:13px;color:#94a3b8;padding:12px 0">Sin fortalezas destacadas.</div>';
+  }
+  html += '</div>';
+
+  // Brechas
+  html += '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:18px 20px">';
+  html += '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#dc2626;border-bottom:2px solid #fecaca;padding-bottom:8px;margin-bottom:12px">△ Áreas de Desarrollo</div>';
+  if (rpt.brechas.length) {
+    rpt.brechas.forEach(function(b) {
+      var l5  = scoreToLevel5(b.score);
+      var desc = dimDesc(b.testId, b.key, b.score);
+      html += '<div style="padding:10px 0;border-bottom:1px solid #f1f5f9">';
+      html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">';
+      html += '<div style="width:24px;height:24px;border-radius:8px;background:#fef2f2;font-size:11px;font-weight:900;color:#dc2626;display:flex;align-items:center;justify-content:center;flex-shrink:0">' + l5 + '</div>';
+      html += '<div><div style="font-size:13px;font-weight:700;color:#0f172a">' + b.label + '</div>';
+      html += '<div style="font-size:10px;color:#94a3b8">' + (b.section||'') + '</div></div>';
+      html += '</div>';
+      html += '<div style="font-size:12px;color:#475569;line-height:1.6;padding-left:32px">' + desc + '</div>';
+      html += '</div>';
+    });
+  } else {
+    html += '<div style="font-size:13px;color:#94a3b8;padding:12px 0">No se detectaron brechas significativas.</div>';
+  }
+  html += '</div>';
+  html += '</div>'; // /grid fortalezas-brechas
 
   html += '</div>'; // end tab-panel general
 
@@ -4370,56 +4830,63 @@ async function downloadPdfReport(id) {
   const c = all.find(x => x.id === id);
   if (!c) { toast('Candidato no encontrado', 'er'); return; }
 
-  // Build report HTML with all tabs shown
+  // Build full report — all tabs visible, no interactive buttons
   const reportBody = buildReportHtml(c, false)
     .replace(/display:none/g, 'display:block')
     .replace(/<button[^>]*class="rpt-tab-btn[^"]*"[^>]*>[\s\S]*?<\/button>/g, '');
 
-  // Extract inline <style> block from the page — most reliable approach
-  const inlineStyle = document.querySelector('style') ? document.querySelector('style').textContent : '';
+  const fname = (c.nombre + '_' + c.apellido + '_Informe').replace(/\s+/g, '_');
 
-  const PDF_EXTRA = `
-    @page { margin: 14mm 12mm; size: A4 portrait; }
-    body { font-size: 11px !important; background: #fff !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-    #pdf-bar { display: none !important; }
-    .rpt-tab-panel { display: block !important; }
-    /* hide the tab nav bar */
-    .rpt-modal > div:nth-child(2) { display: none !important; }
-    /* ensure backgrounds print */
-    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-    /* page breaks between sections */
-    .rpt-tab-panel + .rpt-tab-panel { page-break-before: always; break-before: always; }
+  // ── Minimal print-optimised CSS (no app styles) ─────────────
+  const PDF_CSS = `
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 11px; line-height: 1.5; color: #0f172a; background: #fff;
+      -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+    @page { margin: 12mm 14mm; size: A4 portrait; }
+    @media print { #pdf-bar { display: none !important; } body { margin: 0; } }
+
+    /* Layout */
+    .rpt-modal { display: flex; flex-direction: column; min-height: 100vh; }
+    #rpt-panels-wrap { padding: 20px 24px; background: #f8fafc; flex: 1; display: flex; flex-direction: column; gap: 14px; }
+
+    /* Tab panels — all shown in PDF */
+    .rpt-tab-panel { display: block !important; break-before: auto; }
+    .rpt-tab-panel + .rpt-tab-panel { break-before: page; margin-top: 0; }
+
+    /* Section spacing */
     div { break-inside: avoid; }
-    /* details summary — show content open in PDF */
-    details { display: block !important; }
-    details > div { display: block !important; }
-    @media print { #pdf-bar { display: none !important; } }
+
+    /* Hide tab bar and action buttons */
+    .rpt-tab-btn { display: none !important; }
+    button { display: none !important; }
+
+    /* Colors */
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
   `;
 
-  const fname = (c.nombre + '_' + c.apellido + '_Informe').replace(/\s+/g, '_');
   const html = `<!DOCTYPE html>
 <html lang="es"><head>
-<meta charset="UTF-8"><title>${fname}</title>
-<style>${inlineStyle}\n${PDF_EXTRA}@media (min-width: 600px) {
-  .testselect-body { padding: 52px 40px; }
-}
-
-</style>
+<meta charset="UTF-8">
+<title>${fname}</title>
+<style>${PDF_CSS}</style>
 </head><body>
 <div id="pdf-bar" style="position:fixed;top:0;left:0;right:0;background:#1d1d1f;color:#fff;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;z-index:9999;font-family:inherit;font-size:13px;gap:12px">
-  <span style="font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.nombre} ${c.apellido} — Informe Psicolaboral</span>
+  <span style="font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.nombre} ${c.apellido} — Informe Psicolaboral</span>
   <div style="display:flex;gap:8px;flex-shrink:0">
-    <button onclick="window.print()" style="background:#6366f1;border:none;color:#fff;padding:8px 18px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">⬇ Guardar como PDF</button>
-    <button onclick="document.getElementById('pdf-bar').style.display='none'" style="background:rgba(255,255,255,.12);border:none;color:rgba(255,255,255,.7);padding:8px 12px;border-radius:8px;font-size:12px;cursor:pointer">✕</button>
+    <button onclick="window.print()" style="background:#6366f1;border:none;color:#fff;padding:7px 16px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:block!important">⬇ Guardar como PDF</button>
+    <button onclick="document.getElementById('pdf-bar').style.display='none'" style="background:rgba(255,255,255,.12);border:none;color:rgba(255,255,255,.7);padding:7px 12px;border-radius:8px;font-size:12px;cursor:pointer;display:block!important">✕</button>
   </div>
 </div>
-<div style="margin-top:52px">${reportBody}</div>
+<div style="padding-top:52px">${reportBody}</div>
 </body></html>`;
 
   const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
   const url  = URL.createObjectURL(blob);
   const w = window.open(url, '_blank', 'width=980,height=840,scrollbars=yes');
-  if (!w) { toast('Permite ventanas emergentes para descargar el PDF', 'er'); }
+  if (!w) toast('Permite ventanas emergentes para descargar el PDF', 'er');
   setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 
@@ -4456,17 +4923,43 @@ function closeDelModal() {
   document.getElementById('del-modal').style.display = 'none';
 }
 
+function setCandSubTab(sub, btn) {
+  // Switch sub-tab buttons
+  ['subtab-tabla','subtab-informes','subtab-raw'].forEach(function(id) {
+    var el = document.getElementById(id); if (!el) return;
+    var active = el === btn;
+    el.style.color       = active ? 'var(--accent)' : 'var(--ink3)';
+    el.style.fontWeight  = active ? '700' : '500';
+    el.style.borderBottom= active ? '2px solid var(--accent)' : '2px solid transparent';
+  });
+  // Show correct panel
+  ['tabla','informes','raw'].forEach(function(s) {
+    var el = document.getElementById('cand-sub-' + s);
+    if (el) el.style.display = s === sub ? 'block' : 'none';
+  });
+  // Load data
+  if (sub === 'tabla')    renderCandidatesTable();
+  else if (sub === 'informes') renderReports();
+  else if (sub === 'raw')      renderRaw();
+}
+
+function refreshCandView() {
+  var activeBtn = ['subtab-tabla','subtab-informes','subtab-raw']
+    .map(function(id){ return document.getElementById(id); })
+    .find(function(el){ return el && el.style.fontWeight === '700'; });
+  if (activeBtn) activeBtn.click();
+  else renderCandidatesTable();
+}
+
 function adminTab(id, btn) {
   S.currentAdminTab = id;
   saveSession();
-  ['dashboard','candidates','reports','raw','params','users'].forEach(t => {
+  ['dashboard','candidates','params','users'].forEach(t => {
     const el = document.getElementById('tab-' + t); if(el) el.style.display = t === id ? 'block' : 'none';
     const nb = document.getElementById('nav-' + t); if(nb) nb.classList.toggle('active', t === id);
   });
-  if (id === 'candidates') renderCandidatesTable();
+  if (id === 'candidates') { setCandSubTab('tabla', document.getElementById('subtab-tabla')); }
   else if (id === 'dashboard') renderDashboard();
-  else if (id === 'reports') renderReports();
-  else if (id === 'raw') renderRaw();
   else if (id === 'params') renderParams();
   else if (id === 'users') renderUsersTab();
 }
@@ -4940,7 +5433,7 @@ async function renderCandidatesTable() {
   tbody.innerHTML = cands.map(c => `
     <tr data-id="${c.id}">
       <td><input type="checkbox" class="row-chk" data-id="${c.id}" onchange="updateBulkBar()" style="cursor:pointer;width:16px;height:16px"></td>
-      <td><strong>${c.nombre} ${c.apellido}</strong><br><span style="color:var(--ink3);font-size:11px">${c.email}</span>${c.telefono ? '<br><span style="color:var(--ink4);font-size:10px">📞 +56 '+c.telefono+'</span>' : ''}${c.educacion_label||c.educacion ? '<br><span style="color:var(--ink4);font-size:10px">🎓 '+(c.educacion_label||c.educacion)+(c.experiencia_label||c.experiencia?' · 💼 '+(c.experiencia_label||c.experiencia):'')+'</span>' : ''}</td>
+      <td><strong>${c.nombre} ${c.apellido}</strong><br><span style="color:var(--ink3);font-size:11px">${c.email}</span>${c.edad ? '<br><span style="color:var(--ink4);font-size:10px">🎂 '+c.edad+' años</span>' : ''}${c.telefono ? '<br><span style="color:var(--ink4);font-size:10px">📞 +56 '+c.telefono+'</span>' : ''}${c.educacion_label||c.educacion ? '<br><span style="color:var(--ink4);font-size:10px">🎓 '+(c.educacion_label||c.educacion)+(c.experiencia_label||c.experiencia?' · 💼 '+(c.experiencia_label||c.experiencia):'')+'</span>' : ''}</td>
       <td>${c.cargo||'—'}</td>
       <td>${(c.tests||[]).map(t=>TESTS_META[t]?.icon).join(' ')||'—'}</td>
       <td>${statusBadge(c.estado)}</td>
