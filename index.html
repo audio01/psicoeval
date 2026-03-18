@@ -1819,15 +1819,22 @@ async function getDB() {
   return r.json();
 }
 async function addToDB(c) {
+  // Store extended fields inside scores._meta to avoid schema changes
+  const scoresWithMeta = Object.assign({}, c.scores || {}, {
+    _meta: {
+      educacion:        c.educacion        || null,
+      educacion_label:  c.educacion_label  || null,
+      os10:             c.os10             || null,
+      rubro:            c.rubro            || null,
+      rubro_label:      c.rubro_label      || null,
+      historial:        c.historial        || null,
+    }
+  });
   const row = {
     id: c.id, nombre: c.nombre, apellido: c.apellido, email: c.email,
     rut: c.rut||'', cargo: c.cargo||'', perfil: c.perfil||'',
     fecha: c.fecha, tests: c.tests, estado: c.estado,
-    scores: c.scores||null,
-    educacion: c.educacion||null,
-    os10: c.os10||null,
-    rubro: c.rubro||null,
-    historial: c.historial||null,
+    scores: scoresWithMeta,
   };
   const r = await fetch(`${SUPA_URL}/rest/v1/candidates`,{method:'POST',headers:DB_HEADERS,body:JSON.stringify(row)});
   if (!r.ok) {
@@ -2813,14 +2820,21 @@ function switchReportTab(tabId, el) {
 }
 
 function buildReportHtml(c, withClose) {
-  // Resolve human-readable labels for fields that may only have codes (loaded from DB)
-  const EDU_LABELS = { basica:'Educación Básica', media:'Educación Media', tecnica:'Técnico de Nivel Superior', universitaria:'Universitaria', postgrado:'Postgrado / Magíster' };
-  const EXP_LABELS = { sin_experiencia:'Sin experiencia', menos_1:'Menos de 1 año', '1_3':'1 a 3 años', '3_5':'3 a 5 años', '5_10':'5 a 10 años', mas_10:'Más de 10 años' };
-  const RUBRO_LABELS = { seguridad:'Seguridad / Vigilancia', comercio:'Comercio / Retail', administracion:'Administración', salud:'Salud', construccion:'Construcción', logistica:'Logística', educacion:'Educación', tecnologia:'Tecnología', otro:'Otro' };
-  if (!c.educacion_label   && c.educacion)   c.educacion_label   = EDU_LABELS[c.educacion]   || c.educacion;
-  if (!c.experiencia_label && c.experiencia) c.experiencia_label = EXP_LABELS[c.experiencia]  || c.experiencia;
-  if (!c.rubro_label       && c.rubro)       c.rubro_label       = RUBRO_LABELS[c.rubro]       || c.rubro;
   const s = c.scores;
+  // Restore extended fields from scores._meta for candidates loaded from DB
+  if (s && s._meta) {
+    const m = s._meta;
+    if (!c.educacion_label && m.educacion_label) c.educacion_label = m.educacion_label;
+    else if (!c.educacion_label && m.educacion)  c.educacion_label = m.educacion;
+    if (!c.os10     && m.os10)    c.os10     = m.os10;
+    if (!c.rubro_label && m.rubro_label) c.rubro_label = m.rubro_label;
+    if (!c.historial   && m.historial)   c.historial   = m.historial;
+  }
+  // Resolve labels from codes if still missing
+  const EDU_LABELS   = { basica:'Educación Básica', media_incompleta:'Media incompleta', media:'4º Medio completo', tecnica:'Técnico Superior', universitaria:'Universitaria', postgrado:'Postgrado / Magíster' };
+  const RUBRO_LABELS = { seguridad:'Seguridad / Vigilancia', comercio:'Comercio / Retail', administracion:'Administración', salud:'Salud', construccion:'Construcción', logistica:'Logística', educacion:'Educación', tecnologia:'Tecnología', otro:'Otro' };
+  if (!c.educacion_label && c.educacion) c.educacion_label = EDU_LABELS[c.educacion]   || c.educacion;
+  if (!c.rubro_label     && c.rubro)     c.rubro_label     = RUBRO_LABELS[c.rubro]     || c.rubro;
   if (!s) return '<div style="padding:40px;text-align:center;color:#999">Sin datos de evaluación.</div>';
   const perfil = c.perfil || 'administrativo';
   const pm = PERFIL_META[perfil];
