@@ -1030,6 +1030,8 @@ input,select,textarea{font-family:inherit;outline:none}
       <div class="logo" style="font-size:17px;font-weight:700;letter-spacing:-.02em">PsicoEval</div>
       <button class="nav-btn active" id="nav-dashboard" onclick="adminTab('dashboard',this)"><span>📊</span><span>Dashboard</span></button>
       <button class="nav-btn" id="nav-candidates" onclick="adminTab('candidates',this)"><span>👥</span><span>Candidatos</span></button>
+      <button class="nav-btn" id="nav-reports" onclick="adminTab('reports',this)"><span>📄</span><span>Informes</span></button>
+      <button class="nav-btn" id="nav-raw" onclick="adminTab('raw',this)"><span>🔢</span><span>Datos Brutos</span></button>
       <button class="nav-btn" id="nav-params" onclick="adminTab('params',this)"><span>⚙</span><span>Parámetros</span></button>
       <button class="nav-btn" id="nav-users" onclick="adminTab('users',this)"><span>👤</span><span>Usuarios</span></button>
       <div style="flex:1"></div>
@@ -1056,7 +1058,7 @@ input,select,textarea{font-family:inherit;outline:none}
           <button id="dptab-administrativo" onclick="setDashPerfil('administrativo',this)" style="padding:8px 18px;border-radius:100px;border:1.5px solid var(--border2);background:var(--surface);color:var(--ink2);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s">💼 Administrativo</button>
           <button id="dptab-guardia"       onclick="setDashPerfil('guardia',this)"
           style="padding:8px 18px;border-radius:100px;border:1.5px solid var(--border2);background:var(--surface);color:var(--ink2);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s">🛡 Guardia</button>
-          <button id="dptab-supervisor" onclick="setDashPerfil(\'supervisor\',this)" style="padding:8px 18px;border-radius:100px;border:1.5px solid var(--border2);background:var(--surface);color:var(--ink2);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s">⚙️ Supervisor</button>
+          <button id="dptab-supervisor" onclick="setDashPerfil('supervisor',this)" style="padding:8px 18px;border-radius:100px;border:1.5px solid var(--border2);background:var(--surface);color:var(--ink2);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s">⚙️ Supervisor</button>
         </div>
         <!-- KPI row -->
         <div class="stat-grid" id="stat-grid"></div>
@@ -1134,6 +1136,28 @@ input,select,textarea{font-family:inherit;outline:none}
 
 
       <!-- Users -->
+      <!-- Reports -->
+      <div id="tab-reports" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:22px">
+          <div>
+            <h2 style="font-size:26px;font-weight:800;margin-bottom:4px">Informes</h2>
+            <p style="font-size:13px;color:var(--ink3)">Evaluaciones completadas con informe disponible</p>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="renderReports()">↻ Actualizar</button>
+        </div>
+        <div id="reports-list"></div>
+      </div>
+      <!-- Raw Data -->
+      <div id="tab-raw" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:22px">
+          <div>
+            <h2 style="font-size:26px;font-weight:800;margin-bottom:4px">Datos Brutos</h2>
+            <p style="font-size:13px;color:var(--ink3)">Puntajes directos de cada test sin interpretación</p>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="renderRaw()">↻ Actualizar</button>
+        </div>
+        <div id="raw-content"></div>
+      </div>
       <div id="tab-users" style="display:none;padding-bottom:40px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px">
           <div>
@@ -1161,6 +1185,7 @@ input,select,textarea{font-family:inherit;outline:none}
           <button class="param-tab-btn active" onclick="switchParamTab('jefatura',this)" style="padding:7px 16px;border-radius:7px;border:1.5px solid #111;background:#111;color:#fff;font-size:13px;font-weight:600;cursor:pointer">Jefatura</button>
           <button class="param-tab-btn" onclick="switchParamTab('administrativo',this)" style="padding:7px 16px;border-radius:7px;border:1.5px solid var(--border);background:#fff;color:#555;font-size:13px;font-weight:600;cursor:pointer">Administrativo</button>
           <button class="param-tab-btn" onclick="switchParamTab('guardia',this)" style="padding:7px 16px;border-radius:7px;border:1.5px solid var(--border);background:#fff;color:#555;font-size:13px;font-weight:600;cursor:pointer">Guardia</button>
+          <button class="param-tab-btn" onclick="switchParamTab('supervisor',this)" style="padding:7px 16px;border-radius:7px;border:1.5px solid var(--border);background:#fff;color:#555;font-size:13px;font-weight:600;cursor:pointer">Supervisor</button>
         </div>
         <div id="params-content"></div>
       </div></div>
@@ -4406,12 +4431,14 @@ function closeDelModal() {
 function adminTab(id, btn) {
   S.currentAdminTab = id;
   saveSession();
-  ['dashboard','candidates','raw','params','users'].forEach(t => {
+  ['dashboard','candidates','reports','raw','params','users'].forEach(t => {
     const el = document.getElementById('tab-' + t); if(el) el.style.display = t === id ? 'block' : 'none';
     const nb = document.getElementById('nav-' + t); if(nb) nb.classList.toggle('active', t === id);
   });
   if (id === 'candidates') renderCandidatesTable();
   else if (id === 'dashboard') renderDashboard();
+  else if (id === 'reports') renderReports();
+  else if (id === 'raw') renderRaw();
   else if (id === 'params') renderParams();
   else if (id === 'users') renderUsersTab();
 }
