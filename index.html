@@ -518,7 +518,6 @@ input,select,textarea{font-family:inherit;outline:none}
       <button class="nav-btn active" id="nav-dashboard" onclick="adminTab('dashboard',this)"><span>📊</span><span>Dashboard</span></button>
       <button class="nav-btn" id="nav-candidates" onclick="adminTab('candidates',this)"><span>👥</span><span>Candidatos</span></button>
       <button class="nav-btn" id="nav-reports" onclick="adminTab('reports',this)"><span>📄</span><span>Informes</span></button>
-      <button class="nav-btn" id="nav-raw" onclick="adminTab('raw',this)"><span>🔢</span><span>Datos Brutos</span></button>
       <button class="nav-btn" id="nav-params" onclick="adminTab('params',this)"><span>⚙</span><span>Parámetros</span></button>
       <button class="nav-btn" id="nav-users" onclick="adminTab('users',this)"><span>👤</span><span>Usuarios</span></button>
       <div style="flex:1"></div>
@@ -564,15 +563,23 @@ input,select,textarea{font-family:inherit;outline:none}
       </div>
       <!-- Candidates -->
       <div id="tab-candidates" style="display:none">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px">
           <div>
             <h2 style="font-size:26px;font-weight:800;margin-bottom:4px">Candidatos</h2>
             <p style="font-size:13px;color:var(--ink3)">Gestión y seguimiento</p>
           </div>
           <button class="btn btn-outline btn-sm" onclick="renderCandidatesTable()">↻ Actualizar</button>
         </div>
-        <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
-          <input id="search-input" placeholder="Buscar por nombre, email, empresa…" oninput="renderCandidatesTable()"
+        <!-- Cargo tabs -->
+        <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:16px">
+          <button id="ctab-all" onclick="setCandTab('all',this)" style="padding:9px 18px;border:none;background:none;font-size:13px;font-weight:700;color:var(--accent);border-bottom:2px solid var(--accent);margin-bottom:-2px;cursor:pointer">Todos</button>
+          <button id="ctab-jefatura" onclick="setCandTab('jefatura',this)" style="padding:9px 18px;border:none;background:none;font-size:13px;font-weight:500;color:var(--ink3);border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer">👔 Jefatura</button>
+          <button id="ctab-administrativo" onclick="setCandTab('administrativo',this)" style="padding:9px 18px;border:none;background:none;font-size:13px;font-weight:500;color:var(--ink3);border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer">💼 Administrativo</button>
+          <button id="ctab-guardia" onclick="setCandTab('guardia',this)" style="padding:9px 18px;border:none;background:none;font-size:13px;font-weight:500;color:var(--ink3);border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer">🛡 Guardia</button>
+        </div>
+        <!-- Search + filter -->
+        <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+          <input id="search-input" placeholder="Buscar por nombre o email…" oninput="renderCandidatesTable()"
             style="flex:1;min-width:180px;padding:9px 13px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);font-size:13px;font-family:inherit">
           <select id="filter-status" onchange="renderCandidatesTable()" style="padding:9px 13px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);font-size:13px;font-family:inherit;color:var(--ink)">
             <option value="">Todos los estados</option>
@@ -581,6 +588,7 @@ input,select,textarea{font-family:inherit;outline:none}
             <option value="pending">Pendientes</option>
           </select>
         </div>
+        <!-- Bulk bar -->
         <div id="bulk-bar" style="display:none;align-items:center;gap:10px;padding:11px 16px;background:var(--accent-l);border:1.5px solid var(--accent-m);border-radius:10px;margin-bottom:10px;flex-wrap:wrap">
           <span id="bulk-count" style="font-size:13px;font-weight:700;color:var(--accent)">0 seleccionados</span>
           <button id="btn-compare" class="btn btn-sm" onclick="openCompareModal()" style="background:var(--ink);color:#fff;display:none">⚖ Comparar candidatos</button>
@@ -595,22 +603,17 @@ input,select,textarea{font-family:inherit;outline:none}
           </tr></thead><tbody id="cand-tbody"></tbody></table>
         </div>
       </div>
-      <!-- Raw Data -->
-      <div id="tab-raw" style="display:none">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:22px">
-          <div>
-            <h2 style="font-size:26px;font-weight:800;margin-bottom:4px">Datos Brutos</h2>
-            <p style="font-size:13px;color:var(--ink3)">Puntajes directos de cada test sin interpretación</p>
-          </div>
-          <button class="btn btn-outline btn-sm" onclick="renderRaw()">↻ Actualizar</button>
-        </div>
-        <div id="raw-content"></div>
-      </div>
-      <!-- Reports -->
+
+      <!-- Reports (merged with raw data) -->
       <div id="tab-reports" style="display:none">
-        <h2 style="font-size:26px;font-weight:800;margin-bottom:4px">Informes</h2>
-        <p style="font-size:13px;color:var(--ink3);margin-bottom:24px">Evaluaciones completadas con informe disponible</p>
-        <div id="reports-list" style="display:flex;flex-direction:column;gap:11px"></div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px">
+          <div>
+            <h2 style="font-size:26px;font-weight:800;margin-bottom:4px">Informes</h2>
+            <p style="font-size:13px;color:var(--ink3)">Datos de evaluación y acceso a informes por candidato</p>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="renderReports()">↻ Actualizar</button>
+        </div>
+        <div id="reports-list" style="display:flex;flex-direction:column;gap:14px"></div>
       </div>
 
       <!-- Users -->
@@ -626,7 +629,7 @@ input,select,textarea{font-family:inherit;outline:none}
       </div>
 
       <!-- Params -->
-      <div id="tab-params" style="display:none;padding-bottom:40px">
+      <div id="tab-params" style="display:none;padding-bottom:40px"><div style="max-width:820px;margin:0 auto">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
           <div>
             <div style="font-size:20px;font-weight:700;margin-bottom:2px">Parámetros</div>
@@ -643,7 +646,7 @@ input,select,textarea{font-family:inherit;outline:none}
           <button class="param-tab-btn" onclick="switchParamTab('guardia',this)" style="padding:7px 16px;border-radius:7px;border:1.5px solid var(--border);background:#fff;color:#555;font-size:13px;font-weight:600;cursor:pointer">Guardia</button>
         </div>
         <div id="params-content"></div>
-      </div>
+      </div></div>
     </main>
   </div>
 </div>
@@ -3485,14 +3488,13 @@ function closeDelModal() {
 function adminTab(id, btn) {
   S.currentAdminTab = id;
   saveSession();
-  ['dashboard','candidates','reports','raw','params','users'].forEach(t => {
+  ['dashboard','candidates','reports','params','users'].forEach(t => {
     const el = document.getElementById('tab-' + t); if(el) el.style.display = t === id ? 'block' : 'none';
     const nb = document.getElementById('nav-' + t); if(nb) nb.classList.toggle('active', t === id);
   });
   if (id === 'candidates') renderCandidatesTable();
   else if (id === 'reports') renderReports();
   else if (id === 'dashboard') renderDashboard();
-  else if (id === 'raw') renderRaw();
   else if (id === 'params') renderParams();
   else if (id === 'users') renderUsersTab();
 }
@@ -3631,6 +3633,19 @@ function statusBadge(estado) {
   return `<span class="badge ${s.cls}">${s.lbl}</span>`;
 }
 
+// ── Candidates cargo tab ─────────────────────────────────────
+let _candPerfil = 'all';
+function setCandTab(perfil, btn) {
+  _candPerfil = perfil;
+  document.querySelectorAll('[id^="ctab-"]').forEach(b => {
+    const active = b === btn;
+    b.style.color      = active ? 'var(--accent)' : 'var(--ink3)';
+    b.style.fontWeight = active ? '700' : '500';
+    b.style.borderBottomColor = active ? 'var(--accent)' : 'transparent';
+  });
+  renderCandidatesTable();
+}
+
 async function renderCandidatesTable() {
   const tbody = document.getElementById('cand-tbody');
   if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:28px;color:var(--ink3)">Cargando candidatos…</td></tr>';
@@ -3639,11 +3654,24 @@ async function renderCandidatesTable() {
   const filter = document.getElementById('filter-status')?.value||'';
   const cands = allCands.filter(c => {
     const txt = `${c.nombre} ${c.apellido} ${c.email}`.toLowerCase();
-    return (!search||txt.includes(search)) && (!filter||c.estado===filter);
+    const matchSearch = !search || txt.includes(search);
+    const matchStatus = !filter || c.estado === filter;
+    const matchPerfil = _candPerfil === 'all' || c.perfil === _candPerfil;
+    return matchSearch && matchStatus && matchPerfil;
   });
+
+  // Update tab counts
+  ['all','jefatura','administrativo','guardia'].forEach(p => {
+    const btn = document.getElementById('ctab-' + p);
+    if (!btn) return;
+    const n = p === 'all' ? allCands.length : allCands.filter(c => c.perfil === p).length;
+    const label = {all:'Todos',jefatura:'👔 Jefatura',administrativo:'💼 Administrativo',guardia:'🛡 Guardia'}[p];
+    btn.textContent = label + (n > 0 ? ' (' + n + ')' : '');
+  });
+
   if (!tbody) return;
   if (cands.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--ink3)">No hay candidatos que coincidan</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--ink3)">No hay candidatos que coincidan</td></tr>`;
     return;
   }
   tbody.innerHTML = cands.map(c => `
@@ -3767,22 +3795,83 @@ async function renderRaw() {
 
 async function renderReports() {
   const el = document.getElementById('reports-list');
-  if (el) el.innerHTML = '<div style="text-align:center;padding:32px;color:var(--ink3);font-size:13px">Cargando…</div>';
+  if (!el) return;
+  el.innerHTML = '<div style="text-align:center;padding:32px;color:var(--ink3);font-size:13px">Cargando…</div>';
   const all = await getDB();
-  const cands = all.filter(c=>c.estado==='completed');
-  if (cands.length === 0) { el.innerHTML = `<div style="text-align:center;padding:48px;color:var(--ink3)">No hay informes disponibles aún</div>`; return; }
-  el.innerHTML = cands.map(c => `
-    <div class="card report-card" data-id="${c.id}" style="display:flex;align-items:center;justify-content:space-between;padding:16px 22px;gap:16px">
-      <div>
-        <div style="font-weight:700;font-size:14px">${c.nombre} ${c.apellido}</div>
-        <div style="font-size:12px;color:var(--ink3)">${c.cargo||'Sin cargo'} · ${c.fecha} · ${(c.tests||[]).map(t=>TESTS_META[t]?.icon).join(' ')}</div>
+  const cands = all.filter(c => c.estado === 'completed' && c.scores);
+  if (!cands.length) {
+    el.innerHTML = '<div style="text-align:center;padding:48px;color:var(--ink3)">No hay evaluaciones completadas aún.</div>';
+    return;
+  }
+
+  const LV5  = {1:'Muy Bajo', 2:'Bajo', 3:'Medio', 4:'Alto', 5:'Muy Alto'};
+  const TCOL = { barratt:'#6366f1', dc0:'#2563eb', pai:'#b45309', situacional:'#10b981', vigilancia:'#64748b', comprension:'#8b5cf6' };
+  const TNAME = { barratt:'BIS-11', dc0:'DC-0', pai:'PAI', situacional:'Situacional', vigilancia:'Vigilancia', comprension:'Comprensión' };
+  const DIMS  = {
+    barratt:     ['AI','IM','NP'],
+    dc0:         ['V','N','L'],
+    pai:         ['EE','AS','ON','ME','IL','ML'],
+    situacional: ['pct'],
+    vigilancia:  ['pct'],
+    comprension: ['pct'],
+  };
+  const DLABEL = { AI:'Atencional', IM:'Motor', NP:'Planif.', V:'Verbal', N:'Numérico', L:'Lógico',
+    EE:'Est.Emoc', AS:'Adapt.Soc', ON:'Normativa', ME:'Estrés', IL:'Integridad', ML:'Motivación', pct:'Puntaje' };
+
+  el.innerHTML = cands.map(c => {
+    const s = c.scores;
+    const rpt = buildFitReport(c);
+    const fit = rpt ? rpt.globalFit : null;
+    const fitC = fit === null ? '#94a3b8' : fit >= 70 ? '#16a34a' : fit >= 50 ? '#b45309' : '#dc2626';
+    const fitBg = fit === null ? '#f1f5f9' : fit >= 70 ? '#f0fdf4' : fit >= 50 ? '#fff7ed' : '#fff1f3';
+    const fitLbl = fit === null ? '—' : fit >= 85 ? 'Muy apto' : fit >= 70 ? 'Apto' : fit >= 50 ? 'Parcial' : 'No apto';
+
+    // Build scores mini grid
+    const testIds = (c.tests || []).filter(t => s[t]);
+    const scoreCells = testIds.map(t => {
+      const data = s[t];
+      const col  = TCOL[t] || '#64748b';
+      const dims = DIMS[t] || [];
+      const cells = dims.map(k => {
+        const raw = data[k];
+        if (raw === undefined || raw === null) return '';
+        const lv5 = scoreToLevel5(raw);
+        const lc  = lv5 >= 4 ? '#16a34a' : lv5 >= 3 ? '#2563eb' : lv5 >= 2 ? '#b45309' : '#dc2626';
+        return `<div style="text-align:center;padding:4px 6px;background:#f9f9fb;border-radius:6px;min-width:52px">
+          <div style="font-size:9px;font-weight:600;color:#8e8e93;white-space:nowrap;margin-bottom:2px">${DLABEL[k]||k}</div>
+          <div style="font-size:15px;font-weight:800;color:${lc};line-height:1">${lv5}</div>
+          <div style="font-size:8px;color:${lc};font-weight:600">/5</div>
+        </div>`;
+      }).join('');
+      return `<div style="margin-bottom:8px">
+        <div style="font-size:10px;font-weight:700;color:${col};text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px">${TNAME[t]||t}</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap">${cells}</div>
+      </div>`;
+    }).join('');
+
+    return `<div class="card report-card" data-id="${c.id}" style="padding:16px 20px;gap:0">
+      <!-- Header row -->
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:40px;height:40px;border-radius:50%;background:${fitBg};border:2px solid ${fitC};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:${fitC};flex-shrink:0">${fit !== null ? fit+'%' : '?'}</div>
+          <div>
+            <div style="font-weight:700;font-size:14px;color:var(--ink)">${c.nombre} ${c.apellido}</div>
+            <div style="font-size:11px;color:var(--ink3);margin-top:1px">${c.cargo||'Sin cargo'} · ${c.perfil||''} · ${c.fecha}</div>
+          </div>
+          <span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:100px;background:${fitBg};color:${fitC}">${fitLbl}</span>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          <button class="btn btn-outline btn-sm" onclick="viewCandReport('${c.id}')">📋 Ver informe</button>
+          <button class="btn btn-sm" onclick="downloadPdfReport('${c.id}')" style="background:var(--ink);color:#fff">⬇ PDF</button>
+          <button class="btn btn-outline btn-sm" onclick="openDelModal('${c.id}','${c.nombre} ${c.apellido}')" style="color:#dc2626;border-color:#fca5a5">Eliminar</button>
+        </div>
       </div>
-      <div style="display:flex;gap:6px">
-        <button class="btn btn-outline btn-sm" onclick="viewCandReport('${c.id}')">Ver informe</button>
-        <button class="btn btn-sm" onclick="downloadPdfReport('${c.id}')" style="background:#0f2d52;color:#fff">⬇ Descargar PDF</button>
-        <button class="btn btn-outline btn-sm" onclick="openDelModal('${c.id}','${c.nombre} ${c.apellido}')" style="color:#dc2626;border-color:#dc2626">Eliminar</button>
+      <!-- Raw scores -->
+      <div style="border-top:1px solid var(--border);padding-top:12px;display:flex;gap:20px;flex-wrap:wrap">
+        ${scoreCells || '<span style="font-size:12px;color:var(--ink3)">Sin datos de puntaje</span>'}
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 // viewCandReport defined below
