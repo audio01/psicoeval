@@ -3441,9 +3441,13 @@ function buildReportHtml(c, withClose) {
     comuna,
   ].filter(Boolean);
 
+  // ── Build fit report early (needed for veredicto + tabs) ─────
+  const rpt = buildFitReport(c);
+  const fitLv = rpt ? fitLabel(rpt.globalFit) : null;
+
   // ── Veredicto global ──────────────────────────────────────────
   var veredicto, verColor, verBg, verIcon;
-  var gFit = rpt.globalFit;
+  var gFit = rpt ? rpt.globalFit : 0;
   var gLv  = fitToLevel5(gFit);
   if (gLv >= 4)      { veredicto='APTO'; verColor='#16a34a'; verBg='#f0fdf4'; verIcon='✅'; }
   else if (gLv === 3){ veredicto='APTO CON RESERVAS'; verColor='#b45309'; verBg='#fffbeb'; verIcon='⚠️'; }
@@ -3534,6 +3538,87 @@ function buildReportHtml(c, withClose) {
   html += '<div style="font-size:10px;color:#94a3b8;margin-top:1px">Ajuste al perfil</div>';
   html += '</div>';
   html += '</div>';
+
+  // ── Ficha de datos completa ───────────────────────────────────
+  html += '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:20px 24px">';
+  html += '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#94a3b8;margin-bottom:14px">Ficha del Candidato</div>';
+  html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">';
+
+  var fichaItems = [
+    { icon:'👤', label:'RUT / DNI',    val: c.rut  || '—' },
+    { icon:'📅', label:'Fecha de nac.', val: c.fechanac ? (function(){ var p=c.fechanac.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; })() : '—' },
+    { icon:'🎂', label:'Edad',          val: c.edad ? c.edad + ' años' : '—' },
+    { icon:'📞', label:'Teléfono',      val: c.telefono ? '+56 ' + c.telefono : '—' },
+    { icon:'✉️', label:'Email',          val: c.email || '—' },
+    { icon:'📍', label:'Comuna',         val: c.comuna || '—' },
+    { icon:'🎓', label:'Educación',      val: c.educacion_label || '—' },
+    { icon:'🏢', label:'Rubro previo',   val: c.rubro_label || '—' },
+  ];
+  fichaItems.forEach(function(item) {
+    html += '<div style="display:flex;align-items:flex-start;gap:10px;padding:10px;background:#f8fafc;border-radius:10px;border:1px solid #f1f5f9">';
+    html += '<span style="font-size:16px;flex-shrink:0;margin-top:1px">' + item.icon + '</span>';
+    html += '<div><div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#94a3b8;margin-bottom:2px">' + item.label + '</div>';
+    html += '<div style="font-size:13px;font-weight:600;color:#1e293b;word-break:break-all">' + item.val + '</div></div>';
+    html += '</div>';
+  });
+  html += '</div></div>';
+
+  // ── Cumplimiento de requisitos ────────────────────────────────
+  (function() {
+    // Define requirements per profile
+    var REQ = {
+      guardia: [
+        { label: 'OS-10 vigente', check: function(){ return c.os10 === 'si'; }, na: function(){ return !c.os10; } },
+        { label: '4º Medio completo', check: function(){
+          var ok = ['media','tecnica','universitaria','postgrado','ejercito_retiro','ejercito_baja','carabineros_retiro','carabineros_baja','armada_retiro','armada_baja'];
+          return ok.indexOf(c.educacion) !== -1;
+        }, na: function(){ return !c.educacion; } },
+      ],
+      supervisor: [
+        { label: 'Curso Supervisor 140h vigente', check: function(){ return c.os10 === 'sup140_si'; }, na: function(){ return !c.os10; } },
+        { label: '4º Medio completo', check: function(){
+          var ok = ['media','tecnica','universitaria','postgrado','ejercito_retiro','ejercito_baja','carabineros_retiro','carabineros_baja','armada_retiro','armada_baja'];
+          return ok.indexOf(c.educacion) !== -1;
+        }, na: function(){ return !c.educacion; } },
+      ],
+      jefatura: [
+        { label: 'Universitaria o Técnico Superior', check: function(){
+          return ['tecnica','universitaria','postgrado'].indexOf(c.educacion) !== -1;
+        }, na: function(){ return !c.educacion; } },
+      ],
+      administrativo: [
+        { label: '4º Medio completo', check: function(){
+          var ok = ['media','tecnica','universitaria','postgrado','ejercito_retiro','ejercito_baja','carabineros_retiro','carabineros_baja','armada_retiro','armada_baja'];
+          return ok.indexOf(c.educacion) !== -1;
+        }, na: function(){ return !c.educacion; } },
+      ],
+    };
+
+    var reqs = REQ[perfil];
+    if (!reqs || !reqs.length) return;
+
+    html += '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:20px 24px">';
+    html += '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#94a3b8;margin-bottom:14px">Requisitos del Cargo</div>';
+    html += '<div style="display:flex;flex-direction:column;gap:8px">';
+
+    reqs.forEach(function(req) {
+      var na      = req.na();
+      var cumple  = !na && req.check();
+      var noCumple= !na && !cumple;
+      var bg   = na ? '#f8fafc' : cumple ? '#f0fdf4' : '#fef2f2';
+      var brd  = na ? '#e2e8f0' : cumple ? '#bbf7d0' : '#fecaca';
+      var col  = na ? '#94a3b8' : cumple ? '#16a34a' : '#dc2626';
+      var icon = na ? '— ' : cumple ? '✅ ' : '❌ ';
+      var estado = na ? 'No declarado' : cumple ? 'Cumple' : 'No cumple';
+
+      html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;background:' + bg + ';border:1.5px solid ' + brd + ';border-radius:10px">';
+      html += '<div style="font-size:13px;font-weight:600;color:#1e293b">' + icon + req.label + '</div>';
+      html += '<div style="font-size:11px;font-weight:700;color:' + col + ';white-space:nowrap;background:#fff;padding:3px 10px;border-radius:100px;border:1px solid ' + brd + '">' + estado + '</div>';
+      html += '</div>';
+    });
+
+    html += '</div></div>';
+  })();
 
   // ── Resumen ejecutivo ─────────────────────────────────────────
   html += '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:20px 24px">';
