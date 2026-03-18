@@ -3342,6 +3342,7 @@ async function seedTestData() {
     const d = rndD(); d.total = Math.round((d.V+d.N+d.L)/3);
     const p = rndP();
     SEED.push({
+      id: crypto.randomUUID(),
       nombre, apellido,
       email: `${nombre.toLowerCase()}.${apellido.toLowerCase()}${rnd(1,99)}@test.cl`,
       rut: `${rnd(10,19)}.${rnd(100,999)}.${rnd(100,999)}-${rnd(0,9)}`,
@@ -3360,6 +3361,7 @@ async function seedTestData() {
     const d = rndD(); d.total = Math.round((d.V+d.N+d.L)/3);
     const p = rndP();
     SEED.push({
+      id: crypto.randomUUID(),
       nombre, apellido,
       email: `${nombre.toLowerCase()}.${apellido.toLowerCase()}${rnd(1,99)}@test.cl`,
       rut: `${rnd(10,19)}.${rnd(100,999)}.${rnd(100,999)}-${rnd(0,9)}`,
@@ -3377,6 +3379,7 @@ async function seedTestData() {
     const b = rndB(); b.total = Math.round((b.AI+b.IM+b.NP)/3);
     const p = rndP();
     SEED.push({
+      id: crypto.randomUUID(),
       nombre, apellido,
       email: `${nombre.toLowerCase()}.${apellido.toLowerCase()}${rnd(1,99)}@test.cl`,
       rut: `${rnd(10,19)}.${rnd(100,999)}.${rnd(100,999)}-${rnd(0,9)}`,
