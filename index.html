@@ -2085,7 +2085,15 @@ function showView(id) {
   window.scrollTo(0,0);
 }
 function gotoLanding()    { showView('landing'); }
-function gotoRegister()   { showView('register'); regSetStep(0); }
+function gotoRegister() {
+  showView('register');
+  regSetStep(0);
+  // Set max date = today (block future dates at input level)
+  setTimeout(function() {
+    var fn = document.getElementById('r-fechanac');
+    if (fn) fn.max = new Date().toISOString().split('T')[0];
+  }, 100);
+}
 function gotoAdminLogin() { showView('adminlogin'); }
 
 // ═══════════════════════════════════════════════════════════
@@ -2435,6 +2443,9 @@ function regNext(fromStep) {
     regSetStep(1);
   } else if (fromStep === 1) {
     // Validate step 1
+    var perfil = '';
+    var perfilEl = document.getElementById('r-perfil');
+    if (perfilEl) perfil = perfilEl.value || '';
     const nombre   = document.getElementById('r-nombre').value.trim();
     const apellido = document.getElementById('r-apellido').value.trim();
     const email    = document.getElementById('r-email').value.trim();
@@ -2462,11 +2473,41 @@ function regNext(fromStep) {
       }
     }
     const fechanac = document.getElementById('r-fechanac').value;
-    if (!fechanac) { document.getElementById('e-fechanac').textContent = 'Requerido'; ok = false; } else document.getElementById('e-fechanac').textContent = '';
-    if (!perfil)  { document.getElementById('e-perfil').textContent = 'Selecciona un cargo'; ok = false; } else document.getElementById('e-perfil').textContent = '';
+    if (!fechanac) {
+      document.getElementById('e-fechanac').textContent = 'Requerido'; ok = false;
+    } else {
+      var fnDate  = new Date(fechanac);
+      var hoy     = new Date();
+      var edad16  = new Date(hoy.getFullYear()-16, hoy.getMonth(), hoy.getDate());
+      if (fnDate > hoy) {
+        document.getElementById('e-fechanac').textContent = 'La fecha no puede ser futura'; ok = false;
+      } else if (fnDate > edad16) {
+        document.getElementById('e-fechanac').textContent = 'El candidato debe tener al menos 16 años'; ok = false;
+      } else {
+        document.getElementById('e-fechanac').textContent = '';
+      }
+    }
     var comunaVal = document.getElementById('r-comuna').value.trim();
-    if (!comunaVal || !_comunaValid) { document.getElementById('e-comuna').textContent = comunaVal ? 'Selecciona una comuna del listado' : 'Ingresa tu comuna de residencia'; ok = false; } else document.getElementById('e-comuna').textContent = '';
-    if (!ok) return;
+    // Accept if already valid OR if text exactly matches a comuna
+    if (!_comunaValid && comunaVal) {
+      var exactMatch = COMUNAS_CL.find(function(c){ return c.toLowerCase() === comunaVal.toLowerCase(); });
+      if (exactMatch) { _comunaValid = true; document.getElementById('r-comuna').value = exactMatch; }
+    }
+    if (!comunaVal) {
+      document.getElementById('e-comuna').textContent = 'Ingresa tu comuna de residencia'; ok = false;
+    } else if (!_comunaValid) {
+      document.getElementById('e-comuna').textContent = 'Selecciona una comuna del listado';
+      document.getElementById('r-comuna').scrollIntoView({behavior:'smooth',block:'center'});
+      ok = false;
+    } else {
+      document.getElementById('e-comuna').textContent = '';
+    }
+    if (!ok) {
+      // Scroll to first visible error
+      var firstErr = document.querySelector('.err:not(:empty)');
+      if (firstErr) firstErr.scrollIntoView({behavior:'smooth', block:'center'});
+      return;
+    }
     regSetStep(2);
 
   } else if (fromStep === 2) {
