@@ -527,7 +527,7 @@ input,select,textarea{font-family:inherit;outline:none}
     <main style="padding:28px 36px;overflow-y:auto;background:var(--bg);height:100vh">
       <!-- Dashboard -->
       <div id="tab-dashboard">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:26px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
           <div>
             <h2 style="font-size:26px;font-weight:800;margin-bottom:4px">Dashboard</h2>
             <p style="font-size:13px;color:var(--ink3)">Resumen general de evaluaciones</p>
@@ -539,10 +539,21 @@ input,select,textarea{font-family:inherit;outline:none}
         </div>
         <!-- KPI row -->
         <div class="stat-grid" id="stat-grid"></div>
-        <!-- Row 2: Estado + Perfil breakdown -->
+        <!-- Row 2: Fit distribution + Gaps frecuentes -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px">
+          <div class="card cp" id="fit-dist-card">
+            <div class="res-section-title">📊 Distribución de ajuste al cargo</div>
+            <div id="fit-dist-content"></div>
+          </div>
+          <div class="card cp" id="gaps-card">
+            <div class="res-section-title">⚠️ Brechas más frecuentes</div>
+            <div id="gaps-content"></div>
+          </div>
+        </div>
+        <!-- Row 3: Estado + Perfil -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px">
           <div class="card cp" id="estado-dist-card">
-            <div class="res-section-title">📊 Estado de evaluaciones</div>
+            <div class="res-section-title">🗂 Estado de evaluaciones</div>
             <div id="estado-dist-bars"></div>
           </div>
           <div class="card cp" id="perfil-dist-card">
@@ -550,12 +561,7 @@ input,select,textarea{font-family:inherit;outline:none}
             <div id="perfil-dist-bars"></div>
           </div>
         </div>
-        <!-- Row 3: Ajuste promedio por dimensión -->
-        <div class="card cp" id="dim-avg-card" style="margin-bottom:18px">
-          <div class="res-section-title">📈 Ajuste promedio por dimensión <span style="font-size:11px;font-weight:400;color:var(--ink3);margin-left:6px">(candidatos completados)</span></div>
-          <div id="dim-avg-bars"></div>
-        </div>
-        <!-- Row 4: Tabla ranking candidatos -->
+        <!-- Row 4: Ranking -->
         <div class="card cp" id="ranking-card">
           <div class="res-section-title">🏅 Ranking por ajuste al cargo</div>
           <div id="ranking-table"></div>
@@ -3264,70 +3270,126 @@ async function seedTestData() {
   const btn = document.getElementById('btn-seed');
   btn.disabled = true; btn.textContent = 'Verificando conexión…';
 
-  // ── 1. Test connectivity first ──────────────────────────────────────────
+  // ── Connectivity check ──────────────────────────────────────────────────
   try {
     const ping = await fetch(`${SUPA_URL}/rest/v1/candidates?limit=1`, { headers: DB_HEADERS });
     if (!ping.ok && ping.status !== 406) {
       const txt = await ping.text();
       btn.disabled = false; btn.textContent = '⚡ Insertar datos de prueba';
       toast('Error Supabase ' + ping.status, 'er');
-      console.error('Supabase error:', ping.status, txt);
+      console.error('Supabase ping error:', ping.status, txt);
       return;
     }
   } catch(e) {
     btn.disabled = false; btn.textContent = '⚡ Insertar datos de prueba';
-    // Show pause instructions modal
     const over = document.createElement('div');
     over.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.35);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px';
-    over.innerHTML = `
-      <div style="background:#fff;border-radius:16px;padding:32px;max-width:400px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.2);font-size:13px;line-height:1.7">
-        <div style="font-size:22px;margin-bottom:8px">⏸️</div>
-        <div style="font-size:17px;font-weight:700;color:#1d1d1f;margin-bottom:6px">Proyecto Supabase pausado</div>
-        <div style="color:#6e6e73;margin-bottom:18px">Los proyectos gratuitos se pausan automáticamente tras 7 días sin actividad. Solo toma 1 minuto reactivarlo.</div>
-        <div style="background:#f2f2f7;border-radius:10px;padding:14px;margin-bottom:20px;color:#1d1d1f">
-          <div style="margin-bottom:6px">1. Ir a <a href="https://app.supabase.com" target="_blank" style="color:#6366f1;font-weight:600">app.supabase.com</a></div>
-          <div style="margin-bottom:6px">2. Abrir el proyecto <strong>refjkmmlivssauxdnflf</strong></div>
-          <div style="margin-bottom:6px">3. Clic en <strong>"Restore project"</strong></div>
-          <div>4. Esperar ~1 minuto y volver a intentar</div>
-        </div>
-        <button onclick="this.closest('[style]').remove()" style="width:100%;padding:11px;background:#1d1d1f;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">Entendido</button>
-      </div>`;
+    over.innerHTML = `<div style="background:#fff;border-radius:16px;padding:32px;max-width:400px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.2);font-size:13px;line-height:1.7">
+      <div style="font-size:22px;margin-bottom:8px">⏸️</div>
+      <div style="font-size:17px;font-weight:700;color:#1d1d1f;margin-bottom:6px">Proyecto Supabase pausado</div>
+      <div style="color:#6e6e73;margin-bottom:18px">Los proyectos gratuitos se pausan tras 7 días sin actividad. Solo toma 1 minuto reactivarlo.</div>
+      <div style="background:#f2f2f7;border-radius:10px;padding:14px;margin-bottom:20px;color:#1d1d1f">
+        <div style="margin-bottom:6px">1. Ir a <a href="https://app.supabase.com" target="_blank" style="color:#6366f1;font-weight:600">app.supabase.com</a></div>
+        <div style="margin-bottom:6px">2. Abrir el proyecto <strong>refjkmmlivssauxdnflf</strong></div>
+        <div style="margin-bottom:6px">3. Clic en <strong>"Restore project"</strong></div>
+        <div>4. Esperar ~1 minuto y volver a intentar</div>
+      </div>
+      <button onclick="this.closest('[style]').remove()" style="width:100%;padding:11px;background:#1d1d1f;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">Entendido</button>
+    </div>`;
     document.body.appendChild(over);
     over.addEventListener('click', e => { if (e.target === over) over.remove(); });
     return;
   }
 
-  // ── 2. Insert seed rows (without id — Supabase auto-generates UUID) ──────
-  btn.textContent = 'Insertando…';
-  const fecha = new Date().toLocaleDateString('es-CL');
-  const SEED = [
-    { nombre:'Ana', apellido:'Fuentes', email:'ana.fuentes@test.cl', rut:'12.345.678-9',
-      perfil:'jefatura', cargo:'Jefatura', fecha,
-      tests:['barratt','dc0','pai','situacional'], estado:'completed',
-      scores:{ barratt:{AI:82,IM:75,NP:70,total:76}, dc0:{V:75,N:83,L:71,total:76},
-               pai:{EE:82,AS:75,ON:88,ME:79,IL:91,ML:77}, situacional:{pct:80,correct:4,total:5} } },
-    { nombre:'Carlos', apellido:'Morales', email:'carlos.morales@test.cl', rut:'11.222.333-4',
-      perfil:'administrativo', cargo:'Administrativo', fecha,
-      tests:['barratt','dc0','pai'], estado:'completed',
-      scores:{ barratt:{AI:68,IM:72,NP:80,total:73}, dc0:{V:83,N:70,L:65,total:73},
-               pai:{EE:60,AS:65,ON:85,ME:58,IL:88,ML:62} } },
-    { nombre:'Roberto', apellido:'Díaz', email:'roberto.diaz@test.cl', rut:'15.888.777-6',
-      perfil:'guardia', cargo:'Guardia de Seguridad', fecha,
-      tests:['barratt','pai','situacional','vigilancia'], estado:'completed',
-      scores:{ barratt:{AI:75,IM:85,NP:65,total:75}, pai:{EE:78,AS:65,ON:92,ME:75,IL:90,ML:68},
-               situacional:{pct:60,correct:3,total:5}, vigilancia:{pct:83,correct:5,total:6} } },
-    { nombre:'Daniela', apellido:'Rojas', email:'daniela.rojas@test.cl', rut:'13.777.555-2',
-      perfil:'jefatura', cargo:'Jefatura', fecha,
-      tests:['barratt','dc0','pai','situacional'], estado:'completed',
-      scores:{ barratt:{AI:40,IM:38,NP:35,total:38}, dc0:{V:58,N:50,L:65,total:58},
-               pai:{EE:45,AS:55,ON:60,ME:40,IL:70,ML:80}, situacional:{pct:40,correct:2,total:5} } },
-    { nombre:'Marco', apellido:'Soto', email:'marco.soto@test.cl', rut:'14.666.444-3',
-      perfil:'administrativo', cargo:'Administrativo', fecha,
-      tests:['barratt','dc0','pai'], estado:'completed',
-      scores:{ barratt:{AI:65,IM:70,NP:72,total:69}, dc0:{V:65,N:55,L:60,total:60},
-               pai:{EE:70,AS:72,ON:78,ME:65,IL:82,ML:68} } },
-  ];
+  // ── Random score helpers ────────────────────────────────────────────────
+  const rnd  = (min, max) => Math.round(min + Math.random() * (max - min));
+  const rndB = () => {   // BIS-11: some high, some low
+    const base = rnd(30, 95);
+    return { AI: Math.min(100, base + rnd(-15,15)), IM: Math.min(100, base + rnd(-15,15)), NP: Math.min(100, base + rnd(-15,15)) };
+  };
+  const rndP = () => ({  // PAI 6 dims
+    EE: rnd(30,95), AS: rnd(30,95), ON: rnd(30,95),
+    ME: rnd(30,95), IL: rnd(30,95), ML: rnd(30,95)
+  });
+  const rndD = () => ({  // DC-0 3 areas
+    V: rnd(25,95), N: rnd(25,95), L: rnd(25,95)
+  });
+  const rndC = (total) => { // choice test: random correct out of total
+    const correct = rnd(0, total);
+    return { pct: Math.round(correct / total * 100), correct, total };
+  };
 
+  // ── Name pools ──────────────────────────────────────────────────────────
+  const NOMBRES   = ['Camila','Diego','Valentina','Sebastián','Fernanda','Andrés','Catalina','Matías','Paula','Rodrigo','Daniela','Felipe','Javiera','Cristóbal','Tamara','Ignacio','Constanza','Nicolás','Carla','Tomás'];
+  const APELLIDOS = ['González','Pérez','Rodríguez','Fuentes','Morales','Torres','Ramírez','Flores','Vega','Castro','Muñoz','Díaz','Reyes','Rojas','Herrera','Navarro','Soto','Pizarro','Lagos','Vargas'];
+  const used = new Set();
+  function uniqueName() {
+    let n, a, key;
+    do { n = NOMBRES[rnd(0,NOMBRES.length-1)]; a = APELLIDOS[rnd(0,APELLIDOS.length-1)]; key = n+a; } while (used.has(key));
+    used.add(key);
+    return { nombre: n, apellido: a };
+  }
+
+  const fecha = new Date().toLocaleDateString('es-CL');
+
+  // ── Build 5 candidates per profile ─────────────────────────────────────
+  const SEED = [];
+
+  // JEFATURA — tests: barratt, dc0, pai, situacional, comprension
+  for (let i = 0; i < 5; i++) {
+    const { nombre, apellido } = uniqueName();
+    const b = rndB(); b.total = Math.round((b.AI+b.IM+b.NP)/3);
+    const d = rndD(); d.total = Math.round((d.V+d.N+d.L)/3);
+    const p = rndP();
+    SEED.push({
+      nombre, apellido,
+      email: `${nombre.toLowerCase()}.${apellido.toLowerCase()}${rnd(1,99)}@test.cl`,
+      rut: `${rnd(10,19)}.${rnd(100,999)}.${rnd(100,999)}-${rnd(0,9)}`,
+      perfil: 'jefatura', cargo: 'Jefatura', fecha,
+      tests: ['barratt','dc0','pai','situacional','comprension'],
+      estado: 'completed',
+      scores: { barratt: b, dc0: d, pai: p,
+                situacional: rndC(7), comprension: rndC(8) }
+    });
+  }
+
+  // ADMINISTRATIVO — tests: barratt, dc0, pai, comprension
+  for (let i = 0; i < 5; i++) {
+    const { nombre, apellido } = uniqueName();
+    const b = rndB(); b.total = Math.round((b.AI+b.IM+b.NP)/3);
+    const d = rndD(); d.total = Math.round((d.V+d.N+d.L)/3);
+    const p = rndP();
+    SEED.push({
+      nombre, apellido,
+      email: `${nombre.toLowerCase()}.${apellido.toLowerCase()}${rnd(1,99)}@test.cl`,
+      rut: `${rnd(10,19)}.${rnd(100,999)}.${rnd(100,999)}-${rnd(0,9)}`,
+      perfil: 'administrativo', cargo: 'Administrativo', fecha,
+      tests: ['barratt','dc0','pai','comprension'],
+      estado: 'completed',
+      scores: { barratt: b, dc0: d, pai: p,
+                comprension: rndC(8) }
+    });
+  }
+
+  // GUARDIA — tests: barratt, pai, situacional, vigilancia, comprension
+  for (let i = 0; i < 5; i++) {
+    const { nombre, apellido } = uniqueName();
+    const b = rndB(); b.total = Math.round((b.AI+b.IM+b.NP)/3);
+    const p = rndP();
+    SEED.push({
+      nombre, apellido,
+      email: `${nombre.toLowerCase()}.${apellido.toLowerCase()}${rnd(1,99)}@test.cl`,
+      rut: `${rnd(10,19)}.${rnd(100,999)}.${rnd(100,999)}-${rnd(0,9)}`,
+      perfil: 'guardia', cargo: 'Guardia de Seguridad', fecha,
+      tests: ['barratt','pai','situacional','vigilancia','comprension'],
+      estado: 'completed',
+      scores: { barratt: b, pai: p,
+                situacional: rndC(7), vigilancia: rndC(6), comprension: rndC(8) }
+    });
+  }
+
+  // ── Insert ──────────────────────────────────────────────────────────────
+  btn.textContent = `Insertando 0 / ${SEED.length}…`;
   let ok = 0; const errors = [];
   for (const row of SEED) {
     try {
@@ -3336,14 +3398,14 @@ async function seedTestData() {
         headers: { 'Content-Type':'application/json', 'apikey':SUPA_KEY, 'Authorization':'Bearer '+SUPA_KEY, 'Prefer':'return=minimal' },
         body: JSON.stringify(row)
       });
-      if (r.ok) { ok++; }
-      else { const txt = await r.text(); errors.push(row.nombre + ' ('+r.status+'): ' + txt.slice(0,100)); }
+      if (r.ok) { ok++; btn.textContent = `Insertando ${ok} / ${SEED.length}…`; }
+      else { const txt = await r.text(); errors.push(row.nombre+' ('+r.status+'): '+txt.slice(0,80)); console.error('Seed row error', row.nombre, r.status, txt); }
     } catch(e) { errors.push(row.nombre + ': ' + String(e)); }
   }
 
   btn.disabled = false; btn.textContent = '⚡ Insertar datos de prueba';
   if (ok > 0) {
-    toast(ok + ' candidatos de prueba insertados ✓', 'ok');
+    toast(`${ok} candidatos insertados (5 Jefatura · 5 Administrativo · 5 Guardia) ✓`, 'ok');
     renderDashboard();
     if (document.getElementById('tab-candidates')?.style.display !== 'none') renderCandidatesTable();
   } else {
@@ -3513,119 +3575,217 @@ function distBars(data, colors) {
 
 async function renderDashboard() {
   document.getElementById('stat-grid').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--ink3);font-size:13px">Cargando…</div>';
-  const cands = await getDB();
-  const total     = cands.length;
-  const completed = cands.filter(c=>c.estado==='completed');
-  const inProg    = cands.filter(c=>c.estado==='in_progress').length;
-  const pending   = cands.filter(c=>c.estado==='pending').length;
-  const nComp     = completed.length;
+  const cands    = await getDB();
+  const total    = cands.length;
+  const completed = cands.filter(c => c.estado === 'completed');
+  const inProg   = cands.filter(c => c.estado === 'in_progress').length;
+  const pending  = cands.filter(c => c.estado === 'pending').length;
+  const nComp    = completed.length;
 
-  // ── KPIs ──
-  // Avg global fit for completed
-  const fits = completed.filter(c=>c.scores).map(c => { const r = buildFitReport(c); return r ? r.globalFit : null; }).filter(x=>x!==null);
+  const reports = completed
+    .filter(c => c.scores)
+    .map(c => { const r = buildFitReport(c); return r ? { c, r } : null; })
+    .filter(Boolean);
+
+  const fits   = reports.map(x => x.r.globalFit);
   const avgFit = fits.length ? Math.round(fits.reduce((a,b)=>a+b,0)/fits.length) : 0;
-  const aptos  = fits.filter(f=>f>=70).length;
+  const aptos  = fits.filter(f => f >= 70).length;
+  const tasa   = total ? Math.round(nComp/total*100) : 0;
 
-  document.getElementById('stat-grid').innerHTML = [
-    { label:'Total candidatos', val:total,    sub:'Registrados',                              color:'var(--ink)' },
-    { label:'Completados',      val:nComp,    sub:`${total ? Math.round(nComp/total*100) : 0}% tasa de completitud`, color:'var(--green)' },
-    { label:'Ajuste promedio',  val:avgFit+'%', sub:'Candidatos evaluados',                   color: avgFit>=70?'var(--green)':avgFit>=50?'var(--gold)':'var(--red,#dc2626)' },
-    { label:'Candidatos aptos', val:aptos,    sub:'Ajuste ≥ 70%',                             color:'var(--blue)' },
-  ].map(s => `<div class="stat-card">
-    <div class="stat-label">${s.label}</div>
-    <div class="stat-val" style="color:${s.color}">${s.val}</div>
-    <div class="stat-sub">${s.sub}</div>
-  </div>`).join('');
+  function kpiStatus(val, goodThr, warnThr) {
+    if (val >= goodThr) return { color:'#16a34a', bg:'#f0fdf4', border:'#bbf7d0', icon:'↑' };
+    if (val >= warnThr) return { color:'#b45309', bg:'#fff7ed', border:'#fed7aa', icon:'→' };
+    return { color:'#e11d48', bg:'#fff1f3', border:'#fecdd3', icon:'↓' };
+  }
+  const kTasa  = kpiStatus(tasa,   70, 40);
+  const kFit   = kpiStatus(avgFit, 70, 50);
+  const kAptos = fits.length ? kpiStatus(Math.round(aptos/fits.length*100), 60, 30) : { color:'var(--ink3)', bg:'var(--surface2)', border:'var(--border)', icon:'—' };
 
-  // ── Estado ──
-  const estadoBars = {'Completados':nComp,'En progreso':inProg,'Pendientes':pending};
-  document.getElementById('estado-dist-bars').innerHTML = `<div class="bar-chart">${distBars(estadoBars,{'Completados':'var(--green)','En progreso':'var(--blue)','Pendientes':'var(--ink3)'})}</div>`;
+  const kpis = [
+    { label:'Total candidatos', val:total,
+      sub:`${inProg} en progreso · ${pending} pendientes`,
+      color:'var(--ink)', bg:'var(--surface)', border:'var(--border)', icon:'👥', prog:null },
+    { label:'Completados', val:nComp,
+      sub:`${tasa}% tasa de completitud`,
+      color:kTasa.color, bg:kTasa.bg, border:kTasa.border,
+      icon:kTasa.icon==='↑'?'✅':kTasa.icon==='→'?'⏳':'⚠️', prog:tasa, progLabel:tasa+'%' },
+    { label:'Ajuste promedio', val:avgFit+'%',
+      sub:fits.length?`sobre ${fits.length} evaluado${fits.length!==1?'s':''}`:'Sin evaluados aún',
+      color:kFit.color, bg:kFit.bg, border:kFit.border,
+      icon:kFit.icon==='↑'?'🟢':kFit.icon==='→'?'🟡':'🔴', prog:avgFit, progLabel:avgFit>=70?'Bueno':avgFit>=50?'Regular':'Bajo' },
+    { label:'Candidatos aptos', val:aptos,
+      sub:fits.length?`${Math.round(aptos/fits.length*100)}% del pool evaluado`:'Ajuste ≥ 70%',
+      color:kAptos.color, bg:kAptos.bg, border:kAptos.border,
+      icon:kAptos.icon==='↑'?'🏆':kAptos.icon==='→'?'📋':'❌',
+      prog:fits.length?Math.round(aptos/fits.length*100):0,
+      progLabel:fits.length?Math.round(aptos/fits.length*100)+'%':'—' },
+  ];
 
-  // ── Por perfil ──
-  const perfilCount = {};
-  cands.forEach(c => { perfilCount[c.perfil||'N/A'] = (perfilCount[c.perfil||'N/A']||0) + 1; });
-  const PERFIL_COLORS = { jefatura:'#0f2d52', administrativo:'#2563eb', guardia:'#10b981' };
-  document.getElementById('perfil-dist-bars').innerHTML = `<div class="bar-chart">${distBars(perfilCount, PERFIL_COLORS)}</div>`;
+  document.getElementById('stat-grid').innerHTML = kpis.map(k => `
+    <div style="padding:20px;background:${k.bg};border:1.5px solid ${k.border};border-radius:14px;display:flex;flex-direction:column;gap:6px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--ink3)">${k.label}</div>
+        <span style="font-size:18px">${k.icon}</span>
+      </div>
+      <div style="font-size:30px;font-weight:900;color:${k.color};letter-spacing:-.03em;line-height:1">${k.val}</div>
+      ${k.prog !== null ? `
+        <div style="height:5px;background:rgba(0,0,0,.08);border-radius:100px;overflow:hidden">
+          <div style="height:100%;width:${Math.min(100,k.prog)}%;background:${k.color};border-radius:100px"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:11px;color:var(--ink3)">${k.sub}</span>
+          <span style="font-size:11px;font-weight:700;color:${k.color}">${k.progLabel}</span>
+        </div>` : `<div style="font-size:12px;color:var(--ink3)">${k.sub}</div>`}
+    </div>`).join('');
 
-  // ── Ajuste promedio por dimensión ──
-  const dimSums = {}; const dimCounts = {};
-  const DIM_ORDER = ['AI','IM','NP','EE','AS','ON','ME','IL','ML','V','N','L'];
-  const DIM_LABELS = { AI:'Control Atencional', IM:'Control Motor', NP:'Planificación',
-    EE:'Est. Emocional', AS:'Adapt. Social', ON:'Normativa', ME:'Manejo Estrés',
-    IL:'Integridad', ML:'Motivación', V:'Verbal', N:'Numérico', L:'Lógico' };
-  completed.filter(c=>c.scores).forEach(c => {
-    const r = buildFitReport(c);
-    if (!r) return;
-    r.sections.forEach(sec => {
-      sec.dims.forEach(d => {
-        if (!dimSums[d.key]) { dimSums[d.key] = 0; dimCounts[d.key] = 0; }
-        dimSums[d.key] += d.fit; dimCounts[d.key]++;
-      });
-    });
-  });
-
-  if (Object.keys(dimSums).length === 0) {
-    document.getElementById('dim-avg-bars').innerHTML = '<div style="color:var(--ink3);font-size:13px;padding:12px 0">No hay candidatos completados aún.</div>';
+  // ── Fit distribution ──────────────────────────────────────────────────────
+  const RANGES = [
+    { label:'Muy apto',  min:85, max:100, color:'#16a34a' },
+    { label:'Apto',      min:70, max:84,  color:'#2563eb' },
+    { label:'Parcial',   min:50, max:69,  color:'#b45309' },
+    { label:'No apto',   min:0,  max:49,  color:'#e11d48' },
+  ];
+  const fitDistEl = document.getElementById('fit-dist-content');
+  if (!fits.length) {
+    fitDistEl.innerHTML = '<div style="color:var(--ink3);font-size:13px;padding:12px 0">Sin evaluados aún.</div>';
   } else {
-    const sortedDims = DIM_ORDER.filter(k => dimCounts[k]);
-    document.getElementById('dim-avg-bars').innerHTML =
-      '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px">'
-      + sortedDims.map(k => {
-          const avg = Math.round(dimSums[k]/dimCounts[k]);
-          const lv = fitLabel(avg);
-          return `<div style="background:#f8fafc;border-radius:8px;padding:10px 12px">
-            <div style="font-size:11px;font-weight:600;color:#475569;margin-bottom:6px">${DIM_LABELS[k]||k}</div>
-            <div style="display:flex;align-items:center;gap:8px">
-              <div style="flex:1;height:6px;background:#e2e8f0;border-radius:100px;overflow:hidden">
-                <div style="height:100%;width:${avg}%;background:${lv.color};border-radius:100px"></div>
+    const maxCount = Math.max(...RANGES.map(r => fits.filter(f=>f>=r.min&&f<=r.max).length), 1);
+    fitDistEl.innerHTML = '<div style="display:flex;flex-direction:column;gap:10px">'
+      + RANGES.map(r => {
+          const count = fits.filter(f => f>=r.min && f<=r.max).length;
+          const pct   = Math.round(count/fits.length*100);
+          const barW  = Math.round(count/maxCount*100);
+          return `<div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <div style="width:10px;height:10px;border-radius:50%;background:${r.color};flex-shrink:0"></div>
+                <span style="font-size:13px;font-weight:600;color:var(--ink)">${r.label}</span>
+                <span style="font-size:11px;color:var(--ink3)">${r.min}–${r.max}%</span>
               </div>
-              <span style="font-size:12px;font-weight:700;color:${lv.color};min-width:32px;text-align:right">${avg}%</span>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:14px;font-weight:800;color:${r.color}">${count}</span>
+                <span style="font-size:11px;color:var(--ink3);min-width:30px;text-align:right">${pct}%</span>
+              </div>
             </div>
-            <div style="font-size:10px;font-weight:600;color:${lv.color};margin-top:3px">${lv.label}</div>
+            <div style="height:8px;background:var(--surface2);border-radius:100px;overflow:hidden">
+              <div style="height:100%;width:${barW}%;background:${r.color};border-radius:100px"></div>
+            </div>
           </div>`;
         }).join('')
+      + `<div style="margin-top:8px;padding-top:10px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:12px;color:var(--ink3)">
+          <span>${fits.length} evaluado${fits.length!==1?'s':''} en total</span>
+          <span>Promedio: <strong style="color:${kFit.color}">${avgFit}%</strong></span>
+        </div>`
       + '</div>';
   }
 
-  // ── Ranking ──
-  const ranked = completed.filter(c=>c.scores).map(c => {
-    const r = buildFitReport(c);
-    return r ? { c, fit: r.globalFit } : null;
-  }).filter(Boolean).sort((a,b)=>b.fit-a.fit).slice(0,10);
+  // ── Brechas más frecuentes ────────────────────────────────────────────────
+  const DIM_SECTION = {
+    AI:'Control Impulsivo',IM:'Control Impulsivo',NP:'Control Impulsivo',
+    EE:'Aj. Psicológico',AS:'Aj. Psicológico',ON:'Aj. Psicológico',
+    ME:'Aj. Psicológico',IL:'Aj. Psicológico',ML:'Aj. Psicológico',
+    V:'Apt. Cognitiva',N:'Apt. Cognitiva',L:'Apt. Cognitiva',
+    comp:'Comprensión',vig:'Vigilancia',sit:'Situacional'
+  };
+  const DIM_NAMES_G = {
+    AI:'Control Atencional',IM:'Control Motor',NP:'Planificación',
+    EE:'Est. Emocional',AS:'Adapt. Social',ON:'Orient. Normativa',
+    ME:'Manejo Estrés',IL:'Integridad',ML:'Motivación',
+    V:'Verbal',N:'Numérico',L:'Lógico',
+    comp:'Comprensión Instrucciones',vig:'Apt. Vigilancia',sit:'Juicio Situacional'
+  };
+  const gapCounts = {};
+  reports.forEach(({ r }) => {
+    r.sections.forEach(sec => {
+      sec.dims.forEach(d => {
+        const k = d.key;
+        if (!gapCounts[k]) gapCounts[k] = { label:DIM_NAMES_G[k]||d.label, section:DIM_SECTION[k]||sec.title, count:0, total:0 };
+        gapCounts[k].total++;
+        if (scoreToLevel5(d.score) < (d.minLv||1)) gapCounts[k].count++;
+      });
+    });
+  });
+  const gapsEl = document.getElementById('gaps-content');
+  const sortedGaps = Object.entries(gapCounts)
+    .filter(([,v]) => v.total > 0)
+    .sort((a,b) => (b[1].count/b[1].total) - (a[1].count/a[1].total))
+    .slice(0, 6);
+  if (!sortedGaps.length || !reports.length) {
+    gapsEl.innerHTML = '<div style="color:var(--ink3);font-size:13px;padding:12px 0">Sin datos suficientes aún.</div>';
+  } else {
+    gapsEl.innerHTML = '<div style="display:flex;flex-direction:column;gap:8px">'
+      + sortedGaps.map(([key, v]) => {
+          const pct    = Math.round(v.count/v.total*100);
+          const gColor = pct>=60?'#e11d48':pct>=35?'#b45309':'#8e8e93';
+          const gBg    = pct>=60?'#fff1f3':pct>=35?'#fff7ed':'var(--surface2)';
+          const dot    = pct>=60?'🔴':pct>=35?'🟡':'🟢';
+          return `<div style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:${gBg};border-radius:10px;border:1px solid ${gColor}25">
+            <span style="font-size:15px;flex-shrink:0">${dot}</span>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:12px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${v.label}</div>
+              <div style="font-size:10px;color:var(--ink3)">${v.section}</div>
+            </div>
+            <div style="text-align:right;flex-shrink:0">
+              <div style="font-size:15px;font-weight:900;color:${gColor}">${pct}%</div>
+              <div style="font-size:10px;color:var(--ink3)">${v.count}/${v.total}</div>
+            </div>
+          </div>`;
+        }).join('')
+      + '<div style="margin-top:4px;font-size:11px;color:var(--ink3)">% de candidatos sin alcanzar el mínimo requerido.</div>'
+      + '</div>';
+  }
 
+  // ── Estado ────────────────────────────────────────────────────────────────
+  document.getElementById('estado-dist-bars').innerHTML = `<div class="bar-chart">${distBars({'Completados':nComp,'En progreso':inProg,'Pendientes':pending},{'Completados':'#16a34a','En progreso':'#2563eb','Pendientes':'#94a3b8'})}</div>`;
+
+  // ── Por perfil ─────────────────────────────────────────────────────────────
+  const perfilCount = {};
+  cands.forEach(c => { const p=c.perfil||'N/A'; perfilCount[p]=(perfilCount[p]||0)+1; });
+  document.getElementById('perfil-dist-bars').innerHTML = `<div class="bar-chart">${distBars(perfilCount,{jefatura:'#6366f1',administrativo:'#2563eb',guardia:'#10b981'})}</div>`;
+
+  // ── Ranking ───────────────────────────────────────────────────────────────
+  const ranked = [...reports].sort((a,b)=>b.r.globalFit-a.r.globalFit).slice(0,10);
   if (!ranked.length) {
     document.getElementById('ranking-table').innerHTML = '<div style="color:var(--ink3);font-size:13px;padding:12px 0">No hay candidatos completados aún.</div>';
   } else {
     document.getElementById('ranking-table').innerHTML =
       '<table style="width:100%;border-collapse:collapse;font-size:13px">'
-      + '<thead><tr style="border-bottom:2px solid #e2e8f0">'
-      + '<th style="text-align:left;padding:8px 6px;color:var(--ink3);font-weight:600;font-size:11px">#</th>'
-      + '<th style="text-align:left;padding:8px 6px;color:var(--ink3);font-weight:600;font-size:11px">Candidato</th>'
-      + '<th style="text-align:left;padding:8px 6px;color:var(--ink3);font-weight:600;font-size:11px">Cargo</th>'
-      + '<th style="text-align:center;padding:8px 6px;color:var(--ink3);font-weight:600;font-size:11px">Ajuste</th>'
-      + '<th style="text-align:center;padding:8px 6px;color:var(--ink3);font-weight:600;font-size:11px">Resultado</th>'
-      + '<th style="padding:8px 6px"></th>'
-      + '</tr></thead><tbody>'
-      + ranked.map((item, i) => {
-          const lv = fitLabel(item.fit);
-          const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
-          return `<tr style="border-bottom:1px solid #f1f5f9">
-            <td style="padding:10px 6px;font-weight:700;color:var(--ink3)">${medal||'#'+(i+1)}</td>
-            <td style="padding:10px 6px"><strong>${item.c.nombre} ${item.c.apellido}</strong><br><span style="font-size:11px;color:var(--ink3)">${item.c.email}</span></td>
-            <td style="padding:10px 6px;color:var(--ink2)">${item.c.cargo||'—'}</td>
+      +'<thead><tr style="border-bottom:2px solid var(--border)">'
+      +'<th style="text-align:left;padding:8px 6px;color:var(--ink3);font-weight:600;font-size:11px">#</th>'
+      +'<th style="text-align:left;padding:8px 6px;color:var(--ink3);font-weight:600;font-size:11px">Candidato</th>'
+      +'<th style="text-align:left;padding:8px 6px;color:var(--ink3);font-weight:600;font-size:11px">Perfil</th>'
+      +'<th style="text-align:center;padding:8px 6px;color:var(--ink3);font-weight:600;font-size:11px">Ajuste</th>'
+      +'<th style="text-align:center;padding:8px 6px;color:var(--ink3);font-weight:600;font-size:11px">Estado</th>'
+      +'<th style="padding:8px 6px"></th>'
+      +'</tr></thead><tbody>'
+      + ranked.map(({c,r},i) => {
+          const fit=r.globalFit;
+          const col=fit>=85?'#16a34a':fit>=70?'#2563eb':fit>=50?'#b45309':'#e11d48';
+          const bg =fit>=85?'#f0fdf4':fit>=70?'#eff6ff':fit>=50?'#fff7ed':'#fff1f3';
+          const lbl=fit>=85?'Muy apto':fit>=70?'Apto':fit>=50?'Parcial':'No apto';
+          const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+          return `<tr style="border-bottom:1px solid var(--surface2)">
+            <td style="padding:10px 6px;font-weight:700;color:var(--ink3)">${medal||'<span style="color:var(--ink4)">'+(i+1)+'</span>'}</td>
+            <td style="padding:10px 6px"><strong style="color:var(--ink)">${c.nombre} ${c.apellido}</strong><br><span style="font-size:11px;color:var(--ink3)">${c.cargo||'—'}</span></td>
+            <td style="padding:10px 6px;color:var(--ink2);font-size:12px;text-transform:capitalize">${c.perfil||'—'}</td>
             <td style="padding:10px 6px;text-align:center">
-              <div style="display:inline-flex;align-items:center;gap:6px">
-                <div style="width:48px;height:6px;background:#e2e8f0;border-radius:100px;overflow:hidden"><div style="height:100%;width:${item.fit}%;background:${lv.color};border-radius:100px"></div></div>
-                <span style="font-size:13px;font-weight:800;color:${lv.color}">${item.fit}%</span>
+              <div style="display:inline-flex;align-items:center;gap:7px">
+                <div style="width:52px;height:6px;background:var(--surface2);border-radius:100px;overflow:hidden">
+                  <div style="height:100%;width:${fit}%;background:${col};border-radius:100px"></div>
+                </div>
+                <span style="font-size:13px;font-weight:800;color:${col}">${fit}%</span>
               </div>
             </td>
-            <td style="padding:10px 6px;text-align:center"><span style="font-size:10px;font-weight:700;padding:3px 8px;border-radius:100px;background:${lv.bg};color:${lv.color}">${lv.label}</span></td>
-            <td style="padding:10px 6px"><a onclick="viewCandReport('${item.c.id}')" style="color:var(--navy);font-size:12px;font-weight:600;cursor:pointer">Ver →</a></td>
+            <td style="padding:10px 6px;text-align:center">
+              <span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:100px;background:${bg};color:${col}">${lbl}</span>
+            </td>
+            <td style="padding:10px 6px"><a onclick="viewCandReport('${c.id}')" style="color:var(--accent);font-size:12px;font-weight:600;cursor:pointer">Ver →</a></td>
           </tr>`;
         }).join('')
-      + '</tbody></table>';
+      +'</tbody></table>';
   }
 }
+
 
 function statusBadge(estado) {
   const map = {completed:{cls:'badge-green',lbl:'Completado'},in_progress:{cls:'badge-blue',lbl:'En progreso'},pending:{cls:'badge-gray',lbl:'Pendiente'}};
