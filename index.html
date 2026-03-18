@@ -517,7 +517,6 @@ input,select,textarea{font-family:inherit;outline:none}
       <div class="logo" style="font-size:17px;font-weight:700;letter-spacing:-.02em">PsicoEval</div>
       <button class="nav-btn active" id="nav-dashboard" onclick="adminTab('dashboard',this)"><span>📊</span><span>Dashboard</span></button>
       <button class="nav-btn" id="nav-candidates" onclick="adminTab('candidates',this)"><span>👥</span><span>Candidatos</span></button>
-      <button class="nav-btn" id="nav-reports" onclick="adminTab('reports',this)"><span>📄</span><span>Informes</span></button>
       <button class="nav-btn" id="nav-params" onclick="adminTab('params',this)"><span>⚙</span><span>Parámetros</span></button>
       <button class="nav-btn" id="nav-users" onclick="adminTab('users',this)"><span>👤</span><span>Usuarios</span></button>
       <div style="flex:1"></div>
@@ -571,8 +570,8 @@ input,select,textarea{font-family:inherit;outline:none}
       <div id="tab-candidates" style="display:none">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px">
           <div>
-            <h2 style="font-size:26px;font-weight:800;margin-bottom:4px">Candidatos</h2>
-            <p style="font-size:13px;color:var(--ink3)">Gestión y seguimiento</p>
+            <h2 style="font-size:26px;font-weight:800;margin-bottom:4px">Candidatos e Informes</h2>
+            <p style="font-size:13px;color:var(--ink3)">Gestión, seguimiento y acceso a informes</p>
           </div>
           <button class="btn btn-outline btn-sm" onclick="renderCandidatesTable()">↻ Actualizar</button>
         </div>
@@ -610,17 +609,7 @@ input,select,textarea{font-family:inherit;outline:none}
         </div>
       </div>
 
-      <!-- Reports (merged with raw data) -->
-      <div id="tab-reports" style="display:none">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px">
-          <div>
-            <h2 style="font-size:26px;font-weight:800;margin-bottom:4px">Informes</h2>
-            <p style="font-size:13px;color:var(--ink3)">Datos de evaluación y acceso a informes por candidato</p>
-          </div>
-          <button class="btn btn-outline btn-sm" onclick="renderReports()">↻ Actualizar</button>
-        </div>
-        <div id="reports-list" style="display:flex;flex-direction:column;gap:14px"></div>
-      </div>
+
 
       <!-- Users -->
       <div id="tab-users" style="display:none;padding-bottom:40px">
@@ -1725,9 +1714,9 @@ function buildFitReport(c) {
     const fit = calcFit(score, cfg.min, cfg.max);
     totalPeso += cfg.peso;
     totalFitPeso += fit * cfg.peso;
-    const dim = { key:'sit', label:cfg.label, score, fit, peso:cfg.peso, req:cfg.req,
+    const dim = { testId:'situacional', key:'sit', label:cfg.label, score, fit, peso:cfg.peso, req:cfg.req,
       ideal:`${cfg.min}–${cfg.max}`, extra:`${s.situacional.correct}/${s.situacional.total} correctas`,
-      gap: score < cfg.min ? 'bajo' : 'ok' };
+      minLv: cfg.minLv || scoreToLevel5(cfg.min), gap: score < cfg.min ? 'bajo' : 'ok' };
     const secFit = fit;
     sections.push({ id:'situacional', icon:'💡', title:'Juicio Situacional', dims:[dim], secFit,
       desc:'Decisiones ante escenarios laborales reales del cargo.' });
@@ -1740,9 +1729,9 @@ function buildFitReport(c) {
     const fit = calcFit(score, cfg.min, cfg.max);
     totalPeso += cfg.peso;
     totalFitPeso += fit * cfg.peso;
-    const dim = { key:'vig', label:cfg.label, score, fit, peso:cfg.peso, req:cfg.req,
+    const dim = { testId:'vigilancia', key:'vig', label:cfg.label, score, fit, peso:cfg.peso, req:cfg.req,
       ideal:`${cfg.min}–${cfg.max}`, extra:`${s.vigilancia.correct}/${s.vigilancia.total} correctas`,
-      gap: score < cfg.min ? 'bajo' : 'ok' };
+      minLv: cfg.minLv || scoreToLevel5(cfg.min), gap: score < cfg.min ? 'bajo' : 'ok' };
     sections.push({ id:'vigilancia', icon:'🛡', title:'Aptitud de Vigilancia', dims:[dim], secFit:fit,
       desc:'Atención sostenida y criterio en situaciones de seguridad.' });
   }
@@ -3553,12 +3542,11 @@ function closeDelModal() {
 function adminTab(id, btn) {
   S.currentAdminTab = id;
   saveSession();
-  ['dashboard','candidates','reports','params','users'].forEach(t => {
+  ['dashboard','candidates','raw','params','users'].forEach(t => {
     const el = document.getElementById('tab-' + t); if(el) el.style.display = t === id ? 'block' : 'none';
     const nb = document.getElementById('nav-' + t); if(nb) nb.classList.toggle('active', t === id);
   });
   if (id === 'candidates') renderCandidatesTable();
-  else if (id === 'reports') renderReports();
   else if (id === 'dashboard') renderDashboard();
   else if (id === 'params') renderParams();
   else if (id === 'users') renderUsersTab();
@@ -3846,8 +3834,11 @@ async function renderCandidatesTable() {
       <td>${statusBadge(c.estado)}</td>
       <td style="color:var(--ink3)">${c.fecha}</td>
       <td style="white-space:nowrap">
-        ${c.estado==='completed'?`<a onclick="viewCandReport('${c.id}')">Ver informe</a><a onclick="downloadPdfReport('${c.id}')" style="color:#0f2d52;margin-left:8px">⬇ PDF</a>`:''}
-        <a onclick="openDelModal('${c.id}','${c.nombre} ${c.apellido}')" style="color:#dc2626;margin-left:8px">Eliminar</a>
+        ${c.estado==='completed'
+          ? `<a onclick="viewCandReport('${c.id}')" style="color:var(--accent);font-weight:600">📋 Informe</a>
+             <a onclick="downloadPdfReport('${c.id}')" style="color:var(--ink2);margin-left:10px">⬇ PDF</a>`
+          : `<span style="font-size:11px;color:var(--ink3)">Sin informe</span>`}
+        <a onclick="openDelModal('${c.id}','${c.nombre} ${c.apellido}')" style="color:#e11d48;margin-left:10px;font-size:12px">Eliminar</a>
       </td>
     </tr>`).join('');
 }
