@@ -647,15 +647,61 @@ input,select,textarea{font-family:inherit;outline:none}
     <div style="margin-bottom:28px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <div class="logo" style="font-size:17px;font-weight:700">Psico<span>Eval</span></div>
-        <span id="reg-step-label" style="font-size:12px;color:var(--ink3);font-weight:600">Paso 1 de 3</span>
+        <span id="reg-step-label" style="font-size:12px;color:var(--ink3);font-weight:600">Paso 1 de 4</span>
       </div>
       <div style="height:4px;background:var(--border);border-radius:100px;overflow:hidden">
-        <div id="reg-progress-bar" style="height:100%;background:var(--accent);border-radius:100px;width:33%;transition:width .35s ease"></div>
+        <div id="reg-progress-bar" style="height:100%;background:var(--accent);border-radius:100px;width:25%;transition:width .35s ease"></div>
       </div>
       <div style="display:flex;gap:0;margin-top:10px">
-        <div id="reg-dot-1" style="flex:1;text-align:center;font-size:11px;font-weight:700;color:var(--accent)">Datos personales</div>
-        <div id="reg-dot-2" style="flex:1;text-align:center;font-size:11px;font-weight:600;color:var(--ink4)">Perfil</div>
-        <div id="reg-dot-3" style="flex:1;text-align:center;font-size:11px;font-weight:600;color:var(--ink4)">Experiencia</div>
+        <div id="reg-dot-1" style="flex:1;text-align:center;font-size:11px;font-weight:700;color:var(--accent)">Cargo</div>
+        <div id="reg-dot-2" style="flex:1;text-align:center;font-size:11px;font-weight:600;color:var(--ink4)">Datos personales</div>
+        <div id="reg-dot-3" style="flex:1;text-align:center;font-size:11px;font-weight:600;color:var(--ink4)">Perfil</div>
+        <div id="reg-dot-4" style="flex:1;text-align:center;font-size:11px;font-weight:600;color:var(--ink4)">Experiencia</div>
+      </div>
+    </div>
+
+    <!-- ── STEP 0: Cargo ── -->
+    <div id="reg-step-0" class="card cp">
+      <h2 style="font-size:22px;font-weight:800;margin-bottom:4px">¿A qué cargo postulas?</h2>
+      <p style="font-size:13px;color:var(--ink3);margin-bottom:22px">Selecciona el cargo al que estás aplicando en este proceso.</p>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <label id="cargo-jefatura-lbl" style="display:flex;align-items:center;gap:14px;padding:16px 18px;border-radius:12px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s">
+          <input type="radio" name="cargo-opcion" value="jefatura" onchange="onCargoSelect(this)" style="width:18px;height:18px;accent-color:var(--accent)">
+          <div style="font-size:22px">👔</div>
+          <div>
+            <div style="font-size:14px;font-weight:700;color:var(--ink)">Jefatura</div>
+            <div style="font-size:12px;color:var(--ink3)">Liderazgo y gestión de equipos</div>
+          </div>
+        </label>
+        <label id="cargo-administrativo-lbl" style="display:flex;align-items:center;gap:14px;padding:16px 18px;border-radius:12px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s">
+          <input type="radio" name="cargo-opcion" value="administrativo" onchange="onCargoSelect(this)" style="width:18px;height:18px;accent-color:var(--accent)">
+          <div style="font-size:22px">💼</div>
+          <div>
+            <div style="font-size:14px;font-weight:700;color:var(--ink)">Administrativo</div>
+            <div style="font-size:12px;color:var(--ink3)">Roles de soporte y gestión administrativa</div>
+          </div>
+        </label>
+        <label id="cargo-guardia-lbl" style="display:flex;align-items:center;gap:14px;padding:16px 18px;border-radius:12px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s">
+          <input type="radio" name="cargo-opcion" value="guardia" onchange="onCargoSelect(this)" style="width:18px;height:18px;accent-color:var(--accent)">
+          <div style="font-size:22px">🛡</div>
+          <div>
+            <div style="font-size:14px;font-weight:700;color:var(--ink)">Guardia de Seguridad</div>
+            <div style="font-size:12px;color:var(--ink3)">Vigilancia y control de acceso</div>
+          </div>
+        </label>
+        <label id="cargo-supervisor-lbl" style="display:flex;align-items:center;gap:14px;padding:16px 18px;border-radius:12px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s">
+          <input type="radio" name="cargo-opcion" value="supervisor" onchange="onCargoSelect(this)" style="width:18px;height:18px;accent-color:var(--accent)">
+          <div style="font-size:22px">⚙️</div>
+          <div>
+            <div style="font-size:14px;font-weight:700;color:var(--ink)">Supervisor de Seguridad</div>
+            <div style="font-size:12px;color:var(--ink3)">Supervisión de equipos de seguridad</div>
+          </div>
+        </label>
+      </div>
+      <span class="err" id="e-cargo-opcion" style="margin-top:8px;display:block"></span>
+      <div style="display:flex;gap:10px;margin-top:20px">
+        <button class="btn btn-outline" onclick="gotoLanding()">← Volver</button>
+        <button class="btn btn-primary btn-lg" style="flex:1" onclick="regNext(0)">Continuar →</button>
       </div>
     </div>
 
@@ -678,18 +724,6 @@ input,select,textarea{font-family:inherit;outline:none}
             <span class="err" id="e-fechanac"></span>
           </div>
         </div>
-        <div class="field">
-          <label>Tipo de cargo *</label>
-          <select id="r-perfil" onchange="onPerfilChange()">
-            <option value="">Selecciona un cargo…</option>
-            <option value="jefatura">Jefatura</option>
-            <option value="administrativo">Administrativo</option>
-            <option value="guardia">Guardia de Seguridad</option>
-            <option value="supervisor">Supervisor de Seguridad</option>
-          </select>
-          <span class="err" id="e-perfil"></span>
-        </div>
-
         <div class="field" style="position:relative">
           <label>Comuna de residencia *</label>
           <input id="r-comuna" placeholder="Ej: Maipú, Viña del Mar…" autocomplete="off"
@@ -699,7 +733,7 @@ input,select,textarea{font-family:inherit;outline:none}
           <span class="err" id="e-comuna"></span>
         </div>
         <div style="display:flex;gap:10px;margin-top:6px">
-          <button class="btn btn-outline" onclick="gotoLanding()">← Volver</button>
+          <button class="btn btn-outline" onclick="regSetStep(0)">← Anterior</button>
           <button class="btn btn-primary btn-lg" style="flex:1" onclick="regNext(1)">Continuar →</button>
         </div>
       </div>
@@ -2051,7 +2085,7 @@ function showView(id) {
   window.scrollTo(0,0);
 }
 function gotoLanding()    { showView('landing'); }
-function gotoRegister()   { showView('register'); regSetStep(1); }
+function gotoRegister()   { showView('register'); regSetStep(0); }
 function gotoAdminLogin() { showView('adminlogin'); }
 
 // ═══════════════════════════════════════════════════════════
@@ -2315,6 +2349,27 @@ function onRetiroChange() {
   var e = document.getElementById('e-retiro'); if (e) e.textContent = '';
 }
 
+function onCargoSelect(radio) {
+  // Sync hidden r-perfil value and style the card
+  var val = radio.value;
+  // Create or update hidden input
+  var hidden = document.getElementById('r-perfil');
+  if (!hidden) {
+    hidden = document.createElement('input');
+    hidden.type = 'hidden'; hidden.id = 'r-perfil';
+    document.body.appendChild(hidden);
+  }
+  hidden.value = val;
+  // Style cards
+  ['jefatura','administrativo','guardia','supervisor'].forEach(function(c) {
+    var lbl = document.getElementById('cargo-' + c + '-lbl');
+    if (!lbl) return;
+    lbl.style.borderColor = c === val ? 'var(--accent)' : 'var(--border)';
+    lbl.style.background  = c === val ? 'var(--accent-l)' : 'var(--surface)';
+  });
+  var e = document.getElementById('e-cargo-opcion'); if (e) e.textContent = '';
+}
+
 function onPerfilChange() {
   // nothing at step 1 — just store selection
 }
@@ -2342,36 +2397,47 @@ function styleEduG() {
 
 function regSetStep(step) {
   // Hide all panels
-  ['reg-step-1','reg-step-2-guardia','reg-step-2-general','reg-step-2-supervisor','reg-step-3'].forEach(function(id) {
-    const el = document.getElementById(id); if (el) el.style.display = 'none';
+  ['reg-step-0','reg-step-1','reg-step-2-guardia','reg-step-2-general','reg-step-2-supervisor','reg-step-3'].forEach(function(id) {
+    var el = document.getElementById(id); if (el) el.style.display = 'none';
   });
   // Show correct panel
-  const perfil = document.getElementById('r-perfil').value;
-  if      (step === 1) document.getElementById('reg-step-1').style.display = 'block';
+  var perfil = document.getElementById('r-perfil') ? document.getElementById('r-perfil').value : '';
+  if      (step === 0) document.getElementById('reg-step-0').style.display = 'block';
+  else if (step === 1) document.getElementById('reg-step-1').style.display = 'block';
   else if (step === 2) {
     var p2 = perfil === 'guardia' ? 'reg-step-2-guardia' : perfil === 'supervisor' ? 'reg-step-2-supervisor' : 'reg-step-2-general';
     document.getElementById(p2).style.display = 'block';
   }
   else if (step === 3) document.getElementById('reg-step-3').style.display = 'block';
-  // Update progress
-  const pct = step === 1 ? 33 : step === 2 ? 66 : 100;
+  // Update progress (4 steps: 0,1,2,3)
+  var pct = step === 0 ? 10 : step === 1 ? 35 : step === 2 ? 65 : 100;
   document.getElementById('reg-progress-bar').style.width = pct + '%';
-  document.getElementById('reg-step-label').textContent = 'Paso ' + step + ' de 3';
-  ['reg-dot-1','reg-dot-2','reg-dot-3'].forEach(function(id, i) {
-    const el = document.getElementById(id); if (!el) return;
-    el.style.color  = (i + 1) === step ? 'var(--accent)' : (i + 1) < step ? 'var(--ink3)' : 'var(--ink4)';
-    el.style.fontWeight = (i + 1) === step ? '700' : '500';
+  document.getElementById('reg-step-label').textContent = 'Paso ' + (step + 1) + ' de 4';
+  ['reg-dot-1','reg-dot-2','reg-dot-3','reg-dot-4'].forEach(function(id, i) {
+    var el = document.getElementById(id); if (!el) return;
+    el.style.color      = i === step ? 'var(--accent)' : i < step ? 'var(--ink3)' : 'var(--ink4)';
+    el.style.fontWeight = i === step ? '700' : '500';
   });
   window.scrollTo(0, 0);
 }
 
 function regNext(fromStep) {
-  if (fromStep === 1) {
+  if (fromStep === 0) {
+    var cargo = document.querySelector('input[name="cargo-opcion"]:checked');
+    if (!cargo) { document.getElementById('e-cargo-opcion').textContent = 'Selecciona un cargo para continuar'; return; }
+    // Sync to r-perfil hidden
+    var hidden = document.getElementById('r-perfil');
+    if (!hidden) {
+      hidden = document.createElement('input'); hidden.type='hidden'; hidden.id='r-perfil';
+      document.body.appendChild(hidden);
+    }
+    hidden.value = cargo.value;
+    regSetStep(1);
+  } else if (fromStep === 1) {
     // Validate step 1
     const nombre   = document.getElementById('r-nombre').value.trim();
     const apellido = document.getElementById('r-apellido').value.trim();
     const email    = document.getElementById('r-email').value.trim();
-    const perfil   = document.getElementById('r-perfil').value;
     let ok = true;
     if (!nombre)  { document.getElementById('e-nombre').textContent = 'Requerido'; ok = false; } else document.getElementById('e-nombre').textContent = '';
     if (!apellido){ document.getElementById('e-apellido').textContent = 'Requerido'; ok = false; } else document.getElementById('e-apellido').textContent = '';
@@ -3449,8 +3515,8 @@ function buildReportHtml(c, withClose) {
   var veredicto, verColor, verBg, verIcon;
   var gFit = rpt ? rpt.globalFit : 0;
   var gLv  = fitToLevel5(gFit);
-  if (gLv >= 4)      { veredicto='APTO'; verColor='#16a34a'; verBg='#f0fdf4'; verIcon='✅'; }
-  else if (gLv === 3){ veredicto='APTO CON OBSERVACIONES'; verColor='#b45309'; verBg='#fffbeb'; verIcon='⚠️'; }
+  if (gLv === 5)              { veredicto='APTO'; verColor='#16a34a'; verBg='#f0fdf4'; verIcon='✅'; }
+  else if (gLv >= 3)          { veredicto='APTO CON OBSERVACIONES'; verColor='#b45309'; verBg='#fffbeb'; verIcon='⚠️'; }
   else               { veredicto='NO APTO'; verColor='#dc2626'; verBg='#fef2f2'; verIcon='❌'; }
 
   let html = '<div class="rpt-modal" style="font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif">';
@@ -3534,7 +3600,7 @@ function buildReportHtml(c, withClose) {
   // Global score badge
   html += '<div style="text-align:center;background:#fff;border-radius:12px;padding:12px 20px;border:1.5px solid ' + verColor + '30">';
   html += '<div style="font-size:36px;font-weight:900;color:' + verColor + ';line-height:1">' + gLv + '/5</div>';
-  html += '<div style="font-size:11px;font-weight:600;color:' + verColor + ';margin-top:2px">' + (gLv>=4?'Muy apto':gLv>=3?'Apto con Observaciones':'No Apto') + '</div>';
+  html += '<div style="font-size:11px;font-weight:600;color:' + verColor + ';margin-top:2px">' + (gLv===5?'Apto':gLv>=3?'Apto con Observaciones':'No Apto') + '</div>';
   html += '<div style="font-size:10px;color:#94a3b8;margin-top:1px">Ajuste al perfil</div>';
   html += '</div>';
   html += '</div>';
