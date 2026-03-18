@@ -3450,8 +3450,8 @@ function buildReportHtml(c, withClose) {
   var gFit = rpt ? rpt.globalFit : 0;
   var gLv  = fitToLevel5(gFit);
   if (gLv >= 4)      { veredicto='APTO'; verColor='#16a34a'; verBg='#f0fdf4'; verIcon='✅'; }
-  else if (gLv === 3){ veredicto='APTO CON RESERVAS'; verColor='#b45309'; verBg='#fffbeb'; verIcon='⚠️'; }
-  else               { veredicto='NO CUMPLE PERFIL'; verColor='#dc2626'; verBg='#fef2f2'; verIcon='❌'; }
+  else if (gLv === 3){ veredicto='APTO CON OBSERVACIONES'; verColor='#b45309'; verBg='#fffbeb'; verIcon='⚠️'; }
+  else               { veredicto='NO APTO'; verColor='#dc2626'; verBg='#fef2f2'; verIcon='❌'; }
 
   let html = '<div class="rpt-modal" style="font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif">';
 
@@ -3534,7 +3534,7 @@ function buildReportHtml(c, withClose) {
   // Global score badge
   html += '<div style="text-align:center;background:#fff;border-radius:12px;padding:12px 20px;border:1.5px solid ' + verColor + '30">';
   html += '<div style="font-size:36px;font-weight:900;color:' + verColor + ';line-height:1">' + gLv + '/5</div>';
-  html += '<div style="font-size:11px;font-weight:600;color:' + verColor + ';margin-top:2px">' + (gLv>=4?'Muy apto':gLv>=3?'Parcialmente apto':'Por debajo del perfil') + '</div>';
+  html += '<div style="font-size:11px;font-weight:600;color:' + verColor + ';margin-top:2px">' + (gLv>=4?'Muy apto':gLv>=3?'Apto con Observaciones':'No Apto') + '</div>';
   html += '<div style="font-size:10px;color:#94a3b8;margin-top:1px">Ajuste al perfil</div>';
   html += '</div>';
   html += '</div>';
