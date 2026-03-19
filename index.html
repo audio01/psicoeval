@@ -606,7 +606,7 @@ input,select,textarea{font-family:inherit;outline:none}
           <span style="font-size:20px;flex-shrink:0;margin-top:1px">⏱</span>
           <div>
             <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:2px">Duración estimada</div>
-            <div style="font-size:13px;color:var(--ink3);line-height:1.5">Entre 30 y 40 minutos según el cargo. Responde con tranquilidad, no hay respuestas correctas o incorrectas en todos los instrumentos.</div>
+            <div style="font-size:13px;color:var(--ink3);line-height:1.5">La duración se ajusta automáticamente según las pruebas asignadas a tu cargo. Responde con tranquilidad, no hay respuestas correctas o incorrectas en todos los instrumentos.</div>
           </div>
         </div>
         <div style="display:flex;align-items:flex-start;gap:12px;padding:14px 16px;background:var(--surface);border-radius:12px;border:1px solid var(--border)">
@@ -1141,7 +1141,7 @@ input,select,textarea{font-family:inherit;outline:none}
     <div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:14px;padding:18px 20px;margin-bottom:16px">
       <div style="font-size:13px;font-weight:700;color:#92400e;margin-bottom:10px">⚠️ Condiciones de la evaluación</div>
       <ul style="font-size:13px;color:#78350f;line-height:1.8;padding-left:18px;margin:0">
-        <li>Tienes <strong>40 minutos</strong> para completar todas las pruebas. El tiempo comienza al presionar "Comenzar".</li>
+        <li>Tienes <strong id="disclaimer-time-value">40 minutos</strong> para completar todas las pruebas. El tiempo comienza al presionar "Comenzar".</li>
         <li>Si abandonas esta pestaña o cambias de aplicación, <strong>el tiempo contará el doble</strong> hasta que regreses.</li>
         <li>Al agotarse el tiempo, tus respuestas se enviarán automáticamente.</li>
         <li>Responde con honestidad. No uses asistencia externa durante la evaluación.</li>
@@ -1174,7 +1174,7 @@ input,select,textarea{font-family:inherit;outline:none}
       </div>
     </div>
     <div id="test-timer" style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--ink2);background:var(--surface2);padding:5px 12px;border-radius:100px;border:1px solid var(--border)">
-      <span>⏱</span><span id="test-timer-display">40:00</span>
+      <span>⏱</span><span id="test-timer-display">--:--</span>
     </div>
   </header>
   <div class="test-view-body" id="test-body">
@@ -1241,7 +1241,7 @@ input,select,textarea{font-family:inherit;outline:none}
       <div class="logo" style="font-size:17px;font-weight:700;letter-spacing:-.02em">PsicoEval</div>
       <button class="nav-btn active" id="nav-dashboard" onclick="adminTab('dashboard',this)"><span>📊</span><span>Dashboard</span></button>
       <button class="nav-btn" id="nav-candidates" onclick="adminTab('candidates',this)"><span>👥</span><span>Candidatos</span></button>
-      <button class="nav-btn" id="nav-params" onclick="adminTab('params',this)"><span>⚙</span><span>Parámetros</span></button>
+      <button class="nav-btn" id="nav-params" onclick="adminTab('params',this)"><span>⚙</span><span>Baterías</span></button>
       <button class="nav-btn" id="nav-users" onclick="adminTab('users',this)"><span>👤</span><span>Usuarios</span></button>
       <div style="flex:1"></div>
       <div id="role-badge" style="font-size:10px;font-weight:700;text-align:center;padding:3px 8px;border-radius:100px;background:#f1f5f9;margin:0 8px 4px"></div>
@@ -1378,25 +1378,37 @@ input,select,textarea{font-family:inherit;outline:none}
         <div id="users-list"></div>
       </div>
 
-      <!-- Params -->
-      <div id="tab-params" style="display:none;padding-bottom:40px"><div style="max-width:820px;margin:0 auto">
+      <!-- Baterías -->
+      <div id="tab-params" style="display:none;padding-bottom:40px"><div style="max-width:860px;margin:0 auto">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
           <div>
-            <div style="font-size:20px;font-weight:700;margin-bottom:2px">Parámetros</div>
-            <div style="font-size:13px;color:var(--ink3)">Nivel mínimo requerido por dimensión — se aplica directamente al cálculo de ajuste en los informes</div>
+            <div style="font-size:20px;font-weight:700;margin-bottom:2px">Baterías</div>
+            <div style="font-size:13px;color:var(--ink3)">Configura los tests activos por cargo y consulta la documentación de cada instrumento</div>
           </div>
           <div style="display:flex;gap:8px">
           <button onclick="resetParams()" style="padding:8px 18px;border-radius:7px;background:#fff;color:#64748b;font-size:13px;font-weight:600;border:1.5px solid #e2e8f0;cursor:pointer">Restaurar valores</button>
           <button onclick="saveParams()" style="padding:8px 18px;border-radius:10px;background:var(--accent);color:#fff;font-size:13px;font-weight:600;border:none;cursor:pointer">Guardar cambios</button>
         </div>
         </div>
+
+        <!-- Sub-tabs: Batería / Wiki -->
+        <div style="display:flex;gap:0;margin-bottom:18px;border-bottom:2px solid var(--border)">
+          <button class="params-subtab active" id="subtab-bateria" onclick="switchParamsSubtab('bateria')" style="padding:10px 22px;font-size:13px;font-weight:700;background:none;border:none;border-bottom:2.5px solid var(--accent);color:var(--accent);cursor:pointer;margin-bottom:-2px;transition:all .15s">🧪 Batería</button>
+          <button class="params-subtab" id="subtab-wiki" onclick="switchParamsSubtab('wiki')" style="padding:10px 22px;font-size:13px;font-weight:700;background:none;border:none;border-bottom:2.5px solid transparent;color:var(--ink3);cursor:pointer;margin-bottom:-2px;transition:all .15s">📖 Wiki de Tests</button>
+        </div>
+
+        <!-- Profile tabs (only for Batería) -->
         <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap" id="params-tabs">
           <button class="param-tab-btn active" onclick="switchParamTab('jefatura',this)" style="padding:7px 16px;border-radius:7px;border:1.5px solid #111;background:#111;color:#fff;font-size:13px;font-weight:600;cursor:pointer">Jefatura</button>
           <button class="param-tab-btn" onclick="switchParamTab('administrativo',this)" style="padding:7px 16px;border-radius:7px;border:1.5px solid var(--border);background:#fff;color:#555;font-size:13px;font-weight:600;cursor:pointer">Administrativo</button>
           <button class="param-tab-btn" onclick="switchParamTab('guardia',this)" style="padding:7px 16px;border-radius:7px;border:1.5px solid var(--border);background:#fff;color:#555;font-size:13px;font-weight:600;cursor:pointer">Guardia</button>
           <button class="param-tab-btn" onclick="switchParamTab('supervisor',this)" style="padding:7px 16px;border-radius:7px;border:1.5px solid var(--border);background:#fff;color:#555;font-size:13px;font-weight:600;cursor:pointer">Supervisor</button>
         </div>
-        <div id="params-content"></div>
+
+        <!-- Content areas -->
+        <div id="params-content" style="display:none"></div>
+        <div id="bateria-content"></div>
+        <div id="wiki-content" style="display:none"></div>
       </div></div>
     </main>
   </div>
@@ -1468,14 +1480,45 @@ const TESTS_META = {
   situacional:  { name:'Juicio Situacional',                 icon:'💡', color:'var(--accent)' },
   vigilancia:   { name:'Aptitud de Vigilancia',              icon:'🛡', color:'var(--ink2)'   },
   comprension:  { name:'Comprensión de Instrucciones',       icon:'📋', color:'var(--lilac)'  },
+  disc:         { name:'Estilos Conductuales (DISC-20)',       icon:'🎭', color:'#7c3aed'        },
+  integridad:   { name:'Integridad Laboral (IWS-15)',          icon:'🔐', color:'#0369a1'        },
+  atencion:     { name:'Atención Concentrada (d2)',            icon:'🎯', color:'#b45309'        },
+  cwb:          { name:'Conductas Contraproducentes (CWB-18)', icon:'⚠', color:'#dc2626'        },
+  ausentismo:   { name:'Riesgo de Ausentismo (ABS-10)',        icon:'📅', color:'#9333ea'        },
+  frustracion:  { name:'Tolerancia a la Frustración (TF-12)',  icon:'🔥', color:'#ea580c'        },
 };
 
-const PERFIL_TESTS = {
+// Default batteries — can be overridden via Baterías
+const PERFIL_TESTS_DEFAULT = {
   jefatura:      ['barratt','dc0','pai','situacional','comprension'],
   administrativo:['barratt','dc0','pai','comprension'],
   guardia:       ['barratt','pai','situacional','vigilancia','comprension'],
   supervisor:    ['barratt','dc0','pai','situacional','comprension'],
 };
+
+// All available tests per cargo (max possible)
+const ALL_TESTS_AVAILABLE = ['barratt','dc0','pai','situacional','vigilancia','comprension','disc','integridad','atencion','cwb','ausentismo','frustracion'];
+
+// Active batteries (loaded from localStorage, falls back to default)
+var PERFIL_TESTS = Object.assign({}, PERFIL_TESTS_DEFAULT);
+
+function loadBatteryConfig() {
+  try {
+    var saved = localStorage.getItem('psicoeval_batteries');
+    if (saved) {
+      var parsed = JSON.parse(saved);
+      Object.keys(parsed).forEach(function(pf) {
+        if (PERFIL_TESTS[pf]) PERFIL_TESTS[pf] = parsed[pf];
+      });
+    }
+  } catch(e) {}
+}
+
+function saveBatteryConfig() {
+  try { localStorage.setItem('psicoeval_batteries', JSON.stringify(PERFIL_TESTS)); } catch(e) {}
+}
+
+loadBatteryConfig();
 
 const PERFIL_META = {
   jefatura:      { label:'Jefatura',            icon:'👔', color:'var(--blue)',  desc:'Evaluación para cargos de liderazgo y gestión de equipos. Incluye personalidad, aptitud cognitiva, ajuste psicológico y juicio situacional.' },
@@ -1989,6 +2032,110 @@ const SIT_SUPERVISOR = [
     {t:'Reportas la falta sin completar el registro tú mismo.',ok:false}]},
 ];
 
+// ═══════════════════════════════════════════════════════════
+//  DISC-20 — Estilos Conductuales
+//  Likert 1–5 (1=Nunca, 5=Siempre)
+//  D=Dominancia, I=Influencia, S=Estabilidad, C=Cumplimiento
+// ═══════════════════════════════════════════════════════════
+const DISC_ITEMS = [
+  // D — Dominancia
+  {id:'d1',dim:'D',text:'Tomo la iniciativa cuando hay un problema que resolver, sin esperar que me lo pidan.'},
+  {id:'d2',dim:'D',text:'Me siento cómodo/a tomando decisiones difíciles bajo presión.'},
+  {id:'d3',dim:'D',text:'Cuando tengo una meta, voy directo a ella sin distraerme con obstáculos menores.'},
+  {id:'d4',dim:'D',text:'En situaciones de conflicto, prefiero enfrentarlas de frente que evitarlas.'},
+  {id:'d5',dim:'D',text:'Me cuesta aceptar cuando otros toman decisiones que yo habría tomado diferente.'},
+  // I — Influencia
+  {id:'i1',dim:'I',text:'Me resulta fácil ganarme la confianza de personas que acabo de conocer.'},
+  {id:'i2',dim:'I',text:'En un grupo, suelo ser quien anima el ambiente y motiva a los demás.'},
+  {id:'i3',dim:'I',text:'Disfruto trabajar con otras personas más que hacerlo solo/a.'},
+  {id:'i4',dim:'I',text:'Me comunico con claridad y seguridad, incluso frente a superiores.'},
+  {id:'i5',dim:'I',text:'Puedo convencer a otros de mis ideas sin necesidad de imponerlas.'},
+  // S — Estabilidad
+  {id:'s1',dim:'S',text:'Prefiero un trabajo con tareas predecibles y bien definidas.'},
+  {id:'s2',dim:'S',text:'Termino lo que empiezo, aunque la tarea sea larga o repetitiva.'},
+  {id:'s3',dim:'S',text:'Me adapto bien a rutinas de trabajo sin necesitar variedad constante.'},
+  {id:'s4',dim:'S',text:'En situaciones de tensión, mantengo la calma y espero antes de actuar.'},
+  {id:'s5',dim:'S',text:'Me siento más cómodo/a con cambios graduales que con cambios bruscos.'},
+  // C — Cumplimiento
+  {id:'c1',dim:'C',text:'Sigo los procedimientos al pie de la letra, aunque me parezca que hay una forma más rápida.'},
+  {id:'c2',dim:'C',text:'Verifico mi trabajo antes de darlo por terminado para asegurarme de no cometer errores.'},
+  {id:'c3',dim:'C',text:'Me incomoda actuar fuera de las reglas, incluso cuando hay presión para hacerlo.'},
+  {id:'c4',dim:'C',text:'Prefiero tener instrucciones claras antes de empezar una tarea nueva.'},
+  {id:'c5',dim:'C',text:'Me molesta cuando otros no respetan los protocolos o acuerdos establecidos.'},
+];
+
+// ═══════════════════════════════════════════════════════════
+//  IWS-15 — Integridad Laboral
+//  Likert 1–4 (1=Nunca, 4=Siempre). Alto = mayor integridad.
+//  r:true = ítem inverso (actitud negativa hacia normas)
+// ═══════════════════════════════════════════════════════════
+const IWS_ITEMS = [
+  {id:'iw1', r:false, text:'Reporto cualquier irregularidad que observe en mi lugar de trabajo, aunque no me involucre directamente.'},
+  {id:'iw2', r:false, text:'Me niego a participar en prácticas cuestionables aunque todos a mi alrededor las acepten.'},
+  {id:'iw3', r:true,  text:'A veces es necesario omitir ciertos detalles en un informe para evitar problemas innecesarios.'},
+  {id:'iw4', r:false, text:'Prefiero enfrentar las consecuencias de decir la verdad antes que protegerme con una mentira.'},
+  {id:'iw5', r:true,  text:'Tomar materiales o insumos de la empresa para uso personal es aceptable si nadie lo nota.'},
+  {id:'iw6', r:false, text:'Cumplo con las normas de seguridad incluso cuando no hay supervisión.'},
+  {id:'iw7', r:true,  text:'Si un superior me pide hacer algo cuestionable, prefiero obedecer para no tener conflictos.'},
+  {id:'iw8', r:false, text:'Soy transparente con mis errores, incluso cuando podría ocultarlos sin consecuencias.'},
+  {id:'iw9', r:true,  text:'Está bien saltarse algunos pasos del protocolo si con eso terminas el trabajo más rápido.'},
+  {id:'iw10',r:false, text:'La honestidad es fundamental en mi trabajo, sin excepciones.'},
+  {id:'iw11',r:true,  text:'Ayudar a un compañero a cubrir un error es parte de la lealtad en un equipo.'},
+  {id:'iw12',r:false, text:'Registro fielmente mi jornada de trabajo, sin ajustar los horarios a mi conveniencia.'},
+  {id:'iw13',r:true,  text:'A veces conviene exagerar un poco los logros en un informe para dar mejor impresión.'},
+  {id:'iw14',r:false, text:'Actúo con la misma ética cuando trabajo solo/a que cuando estoy siendo observado/a.'},
+  {id:'iw15',r:false, text:'Denunciaría una irregularidad grave aunque eso me causara problemas con compañeros.'},
+];
+
+// ═══════════════════════════════════════════════════════════
+//  D2-SIMPLIFICADO — Atención Concentrada (20 ítems)
+//  Cada ítem muestra un estímulo y pide identificar el correcto.
+//  Mide velocidad + precisión de atención selectiva.
+// ═══════════════════════════════════════════════════════════
+const D2_ITEMS = [
+  {id:'at1', text:'Identifica el símbolo que aparece DOS VECES en la siguiente serie: ■ ● ▲ ■ ○ ▲ ●', opts:[
+    {t:'■',ok:true},{t:'●',ok:false},{t:'▲',ok:false},{t:'○',ok:false}]},
+  {id:'at2', text:'¿Cuál de estos grupos tiene todos sus elementos DISTINTOS entre sí?', opts:[
+    {t:'A A B C',ok:false},{t:'1 2 3 4',ok:true},{t:'X Y X Z',ok:false},{t:'● ■ ● ▲',ok:false}]},
+  {id:'at3', text:'En la secuencia: 3 7 3 9 7 3 5 — ¿qué número aparece más veces?', opts:[
+    {t:'7',ok:false},{t:'9',ok:false},{t:'3',ok:true},{t:'5',ok:false}]},
+  {id:'at4', text:'Observa: ◆ ◇ ◆ ◆ ◇ ◆ ◇ — ¿cuántas veces aparece ◆?', opts:[
+    {t:'3',ok:false},{t:'4',ok:true},{t:'5',ok:false},{t:'2',ok:false}]},
+  {id:'at5', text:'¿Cuál letra interrumpe el patrón? A B A B A C A B A B', opts:[
+    {t:'A',ok:false},{t:'B',ok:false},{t:'C',ok:true},{t:'Ninguna',ok:false}]},
+  {id:'at6', text:'¿Cuántos números pares hay en: 3 8 5 2 7 4 9 6 1 8?', opts:[
+    {t:'3',ok:false},{t:'4',ok:false},{t:'5',ok:true},{t:'6',ok:false}]},
+  {id:'at7', text:'Serie: ★ ☆ ★ ★ ☆ ★ ☆ ☆ ★ — ¿cuántas ★ hay?', opts:[
+    {t:'4',ok:false},{t:'5',ok:true},{t:'6',ok:false},{t:'3',ok:false}]},
+  {id:'at8', text:'Encuentra el elemento que NO coincide: azul rojo azul verde azul rojo azul AMARILLO rojo azul', opts:[
+    {t:'verde',ok:false},{t:'rojo',ok:false},{t:'AMARILLO',ok:true},{t:'azul',ok:false}]},
+  {id:'at9', text:'¿Cuántas vocales tiene la siguiente frase? "El trabajo es orden"', opts:[
+    {t:'6',ok:false},{t:'7',ok:true},{t:'8',ok:false},{t:'5',ok:false}]},
+  {id:'at10',text:'En: 1 2 3 4 5 6 7 8 9 10 — ¿cuántos números tienen el dígito 1?', opts:[
+    {t:'1',ok:false},{t:'2',ok:true},{t:'3',ok:false},{t:'4',ok:false}]},
+  {id:'at11',text:'¿Qué letra aparece exactamente 3 veces? B A C B A B C A C B', opts:[
+    {t:'A',ok:false},{t:'B',ok:true},{t:'C',ok:false},{t:'Ninguna',ok:false}]},
+  {id:'at12',text:'Serie de formas: □ △ ○ □ △ ○ □ △ ? — ¿cuál sigue?', opts:[
+    {t:'□',ok:false},{t:'△',ok:false},{t:'○',ok:true},{t:'◇',ok:false}]},
+  {id:'at13',text:'¿Cuántos números mayores que 5 hay en: 3 8 2 9 1 7 4 6 5 10?', opts:[
+    {t:'3',ok:false},{t:'4',ok:false},{t:'5',ok:true},{t:'6',ok:false}]},
+  {id:'at14',text:'Encuentra el par distinto: AB CD AB EF AB CD AB GH AB CD', opts:[
+    {t:'EF',ok:false},{t:'GH',ok:true},{t:'AB',ok:false},{t:'CD',ok:false}]},
+  {id:'at15',text:'¿Cuántas veces aparece la letra E en "SEGURIDAD EFECTIVA"?', opts:[
+    {t:'2',ok:false},{t:'3',ok:true},{t:'4',ok:false},{t:'1',ok:false}]},
+  {id:'at16',text:'Secuencia: 2 4 8 16 32 — ¿qué número sigue?', opts:[
+    {t:'48',ok:false},{t:'64',ok:true},{t:'56',ok:false},{t:'40',ok:false}]},
+  {id:'at17',text:'¿Cuántos triángulos tiene este patrón? △ ▲ △ ▽ ▲ △ ▽ △ ▲', opts:[
+    {t:'5',ok:false},{t:'6',ok:true},{t:'7',ok:false},{t:'4',ok:false}]},
+  {id:'at18',text:'Lee: "Guardia de turno, revisa puerta norte". ¿Cuántas palabras tiene?', opts:[
+    {t:'5',ok:false},{t:'6',ok:true},{t:'7',ok:false},{t:'4',ok:false}]},
+  {id:'at19',text:'¿Cuál no pertenece al grupo? LUNES MARTES MIÉRCOLES ABRIL JUEVES VIERNES', opts:[
+    {t:'LUNES',ok:false},{t:'MIÉRCOLES',ok:false},{t:'ABRIL',ok:true},{t:'JUEVES',ok:false}]},
+  {id:'at20',text:'En la serie: 5 10 15 20 25 — ¿cuánto suma el 2.º y el 4.º elemento?', opts:[
+    {t:'25',ok:false},{t:'30',ok:true},{t:'35',ok:false},{t:'20',ok:false}]},
+];
+
+
 function buildQuestions(perfil) {
   const qs = [];
   const add = (arr, testId, type) => arr.forEach(q => qs.push({...q, testId, type}));
@@ -2017,6 +2164,11 @@ function buildQuestions(perfil) {
     add(SIT_SUPERVISOR,                  'situacional', 'situacional');
     add(COMP_JEFATURA,                   'comprension', 'choice');
   }
+  // Add optional tests if active for this perfil
+  const active = PERFIL_TESTS[perfil] || [];
+  if (active.includes('disc'))       add(DISC_ITEMS, 'disc',      'disc');
+  if (active.includes('integridad')) add(IWS_ITEMS,  'integridad','iws');
+  if (active.includes('atencion'))   add(D2_ITEMS,   'atencion',  'choice');
   return qs;
 }
 
@@ -2096,6 +2248,45 @@ function calcScores(answers, selectedTests, perfil) {
     let correct = 0;
     qs2.forEach(q => { const idx = answers[q.id]; if (idx!==undefined && q.opts[idx].ok) correct++; });
     scores.comprension = { pct: qs2.length ? Math.round(correct/qs2.length*100) : 0, correct, total: qs2.length };
+  }
+
+  // DISC-20
+  if (selectedTests.includes('disc')) {
+    const dims = {D:[],I:[],S:[],C:[]};
+    allQs.filter(q=>q.testId==='disc').forEach(q => {
+      const v = answers[q.id]; if (v===undefined) return;
+      if (dims[q.dim]) dims[q.dim].push(v);
+    });
+    scores.disc = {};
+    ['D','I','S','C'].forEach(k => {
+      const vals = dims[k];
+      scores.disc[k] = vals.length ? Math.round((vals.reduce((a,b)=>a+b,0)/vals.length - 1) / 4 * 100) : 50;
+    });
+    // Dominant style
+    const maxDim = ['D','I','S','C'].reduce((a,b) => scores.disc[a] >= scores.disc[b] ? a : b);
+    scores.disc.dominant = maxDim;
+  }
+
+  // Integridad Laboral (IWS-15)
+  if (selectedTests.includes('integridad')) {
+    const vals = [];
+    allQs.filter(q=>q.testId==='integridad').forEach(q => {
+      const v = answers[q.id]; if (v===undefined) return;
+      const adj = q.r ? (5 - v) : v; // r:true = invert (higher = worse integrity)
+      vals.push(adj);
+    });
+    scores.integridad = {
+      pct: vals.length ? Math.round((vals.reduce((a,b)=>a+b,0)/vals.length - 1) / 3 * 100) : 50,
+      total: allQs.filter(q=>q.testId==='integridad').length
+    };
+  }
+
+  // Atención Concentrada (d2)
+  if (selectedTests.includes('atencion')) {
+    const qs2 = allQs.filter(q=>q.testId==='atencion');
+    let correct = 0;
+    qs2.forEach(q => { const idx = answers[q.id]; if (idx!==undefined && q.opts[idx].ok) correct++; });
+    scores.atencion = { pct: qs2.length ? Math.round(correct/qs2.length*100) : 0, correct, total: qs2.length };
   }
 
   return scores;
@@ -2682,15 +2873,26 @@ function submitRegister() {
   banner.style.background = pm.color + '10'; banner.style.borderColor = pm.color + '40';
   banner.innerHTML = '<span style="font-size:24px">' + pm.icon + '</span><div style="margin-top:8px"><strong style="font-size:15px">' + pm.label + '</strong><div style="font-size:13px;color:var(--ink3);margin-top:3px">' + pm.desc + '</div></div>';
   const tests = PERFIL_TESTS[perfil];
-  const testMins = { barratt:5, dc0:20, pai:15, situacional:12, vigilancia:10, comprension:10 };
+  const TEST_TIME_MINUTES = {
+    barratt:5, dc0:20, pai:12, situacional:12, vigilancia:12,
+    comprension:10, disc:8, integridad:6, atencion:8,
+    cwb:8, ausentismo:5, frustracion:6
+  };
+  var totalMin = tests.reduce(function(a,t){ return a + (TEST_TIME_MINUTES[t]||8); }, 0);
+  // Add 5-minute buffer for transitions
+  totalMin = totalMin + 5;
+  S._testTotalMinutes = totalMin;
   document.getElementById('sel-tests-list').innerHTML = tests.map(function(t, idx) {
     const m = TESTS_META[t];
+    const mins = TEST_TIME_MINUTES[t] || 8;
     const pN = 'Prueba ' + (idx + 1);
-    return '<div style="display:flex;align-items:center;gap:14px;padding:13px 16px;border-radius:10px;background:var(--bg);border:1px solid var(--border)"><span style="font-size:22px">📝</span><div style="flex:1"><div style="font-weight:700;font-size:14px">' + pN + '</div></div></div>';
+    return '<div style="display:flex;align-items:center;gap:14px;padding:13px 16px;border-radius:10px;background:var(--bg);border:1px solid var(--border)"><span style="font-size:22px">' + (m ? m.icon : '📝') + '</span><div style="flex:1"><div style="font-weight:700;font-size:14px">' + pN + (m ? ' — ' + m.name : '') + '</div><div style="font-size:11px;color:var(--ink3);margin-top:2px">~' + mins + ' min</div></div></div>';
   }).join('');
-  const totalMin = tests.reduce(function(a,t){ return a + (testMins[t]||10); }, 0);
   const ttEl = document.getElementById('sel-total-time');
-  if (ttEl) ttEl.textContent = 'Tiempo estimado total: 30–40 minutos';
+  if (ttEl) ttEl.textContent = 'Tiempo total asignado: ' + totalMin + ' minutos';
+  // Update disclaimer time
+  var disclaimerTimeEl = document.getElementById('disclaimer-time-value');
+  if (disclaimerTimeEl) disclaimerTimeEl.textContent = totalMin + ' minutos';
   showView('testselect');
 }
 
@@ -2725,12 +2927,13 @@ function startTests() {
 }
 
 // ── Timer & tab detection ─────────────────────────────────────────
-var _timerSeconds = 40 * 60; // 40 minutes
+var _timerSeconds = 40 * 60;
 var _timerInterval = null;
 var _tabHidden = false;
 
 function startTestTimer() {
-  _timerSeconds = 40 * 60;
+  var mins = S._testTotalMinutes || 40;
+  _timerSeconds = mins * 60;
   updateTimerDisplay();
   if (_timerInterval) clearInterval(_timerInterval);
   _timerInterval = setInterval(function() {
@@ -2829,14 +3032,16 @@ function renderTestBlock() {
   document.getElementById('btn-next-test').textContent = S.blockIdx === total - 1 ? 'Finalizar →' : 'Siguiente →';
 
   const type    = block.qs[0]?.type;
-  const isScale = type === 'likert' || type === 'pai';
-  const scaleMax = type === 'pai' ? 4 : 5;
+  const isScale = type === 'likert' || type === 'pai' || type === 'iws' || type === 'disc';
+  const scaleMax = (type === 'pai' || type === 'iws') ? 4 : 5;
 
   // Legend for scale types
-  const LIKERT_LABELS = { 1:'Muy en\ndesacuerdo', 2:'En\ndesacuerdo', 3:'Neutral', 4:'De\nacuerdo', 5:'Muy de\nacuerdo' };
+  const LIKERT_LABELS = { 1:'Nunca', 2:'Rara vez', 3:'A veces', 4:'Frecuente', 5:'Siempre' };
   const PAI_LABELS    = { 1:'Nunca', 2:'A veces', 3:'Frecuente', 4:'Siempre' };
-  const scaleLabels   = type === 'pai' ? PAI_LABELS : LIKERT_LABELS;
-  const legendKeys    = type === 'pai' ? [1,2,3,4] : [1,2,3,4,5];
+  const IWS_LABELS    = { 1:'Nunca', 2:'A veces', 3:'Frecuente', 4:'Siempre' };
+  const DISC_LABELS_S = { 1:'Nunca', 2:'Rara vez', 3:'A veces', 4:'Frecuente', 5:'Siempre' };
+  const scaleLabels   = type === 'pai' ? PAI_LABELS : type === 'iws' ? IWS_LABELS : type === 'disc' ? DISC_LABELS_S : LIKERT_LABELS;
+  const legendKeys    = (type === 'pai' || type === 'iws') ? [1,2,3,4] : [1,2,3,4,5];
 
   let instrHtml = '';
   if (isScale) {
@@ -3114,8 +3319,40 @@ const PERFIL_IDEAL = {
     },
     situacional: { min:70, max:100, peso:5, label:'Juicio Situacional', req:'Toma decisiones correctas ante escenarios típicos de supervisión operativa.' },
     comprension: { min:75, max:100, peso:4, label:'Comprensión de Instrucciones', req:'Interpreta y aplica procedimientos operativos complejos con precisión.' },
+    disc:        { S: { min:60, max:100, peso:3, label:'Estabilidad (DISC)', req:'Alta estabilidad y constancia en el turno.' }, C: { min:65, max:100, peso:4, label:'Cumplimiento (DISC)', req:'Adherencia a protocolos y normas operativas.' }, D: { min:40, max:80, peso:2, label:'Dominancia (DISC)', req:'Iniciativa moderada sin impulsividad.' }, I: { min:30, max:70, peso:1, label:'Influencia (DISC)', req:'Comunicación básica con equipo.' } },
+    integridad:  { pct: { min:70, max:100, peso:5, label:'Integridad Laboral', req:'Alta adherencia a normas éticas y honestidad laboral.' } },
+    atencion:    { pct: { min:65, max:100, peso:4, label:'Atención Concentrada', req:'Detecta detalles relevantes con velocidad y precisión.' } },
   },
 };
+// ── Shared ideal entries for new tests (all profiles) ───────
+['jefatura','administrativo','guardia','supervisor'].forEach(function(pf) {
+  if (!PERFIL_IDEAL[pf]) return;
+  if (!PERFIL_IDEAL[pf].disc) PERFIL_IDEAL[pf].disc = {
+    D: { min:50, max:90, peso:2, label:'Dominancia (DISC)',   req:'Iniciativa y orientación a resultados.' },
+    I: { min:40, max:80, peso:2, label:'Influencia (DISC)',   req:'Comunicación y trabajo en equipo.' },
+    S: { min:55, max:100,peso:3, label:'Estabilidad (DISC)',  req:'Constancia y calma ante rutinas.' },
+    C: { min:60, max:100,peso:3, label:'Cumplimiento (DISC)', req:'Respeto a normas y procedimientos.' },
+  };
+  if (!PERFIL_IDEAL[pf].integridad) PERFIL_IDEAL[pf].integridad = {
+    pct: { min:65, max:100, peso:5, label:'Integridad Laboral', req:'Actitud ética y honesta en el trabajo.' }
+  };
+  if (!PERFIL_IDEAL[pf].atencion) PERFIL_IDEAL[pf].atencion = {
+    pct: { min:60, max:100, peso:4, label:'Atención Concentrada', req:'Capacidad de detectar estímulos relevantes con precisión.' }
+  };
+  if (!PERFIL_IDEAL[pf].cwb) PERFIL_IDEAL[pf].cwb = {
+    AR: { min:65, max:100, peso:4, label:'Abuso de Recursos',       req:'Bajo riesgo de uso indebido de tiempo, materiales o equipos de la organización.' },
+    DI: { min:70, max:100, peso:5, label:'Desviación Interpersonal', req:'Bajo riesgo de conductas hostiles, acoso o sabotaje hacia compañeros.' },
+    NG: { min:60, max:100, peso:3, label:'Negligencia',             req:'Bajo riesgo de incumplimiento deliberado de tareas y responsabilidades.' },
+  };
+  if (!PERFIL_IDEAL[pf].ausentismo) PERFIL_IDEAL[pf].ausentismo = {
+    pct: { min:65, max:100, peso:4, label:'Riesgo de Ausentismo', req:'Actitud responsable hacia la asistencia y cumplimiento de horarios.' }
+  };
+  if (!PERFIL_IDEAL[pf].frustracion) PERFIL_IDEAL[pf].frustracion = {
+    PE: { min:60, max:100, peso:3, label:'Persistencia',          req:'Capacidad de mantener el esfuerzo ante obstáculos y demoras.' },
+    CI: { min:65, max:100, peso:4, label:'Control de Ira',        req:'Regulación de la irritabilidad y reacciones agresivas ante la frustración.' },
+    AC: { min:55, max:100, peso:3, label:'Adaptación al Cambio',  req:'Flexibilidad ante cambios inesperados en las condiciones de trabajo.' },
+  };
+});
 // ── Ensure minLv is set on all cfg entries ──────────────────
 (function initMinLv() {
   ['jefatura','administrativo','guardia','supervisor'].forEach(function(pf) {
@@ -3271,6 +3508,52 @@ function buildFitReport(c) {
       gap: score < cfg.min ? 'bajo' : 'ok', minLv: cfg.minLv || scoreToLevel5(cfg.min), testId:'comprension' };
     sections.push({ id:'comprension', icon:'📋', title:'Comprensión de Instrucciones', dims:[dim], secFit:fit,
       desc:'Capacidad de interpretar y aplicar instrucciones complejas con múltiples condiciones.' });
+  }
+
+  // ── DISC-20 ──────────────────────────────────────────────────
+  if (s.disc && ideal.disc) {
+    const dims = [];
+    let secPeso = 0, secFitPeso = 0;
+    ['D','I','S','C'].forEach(function(k) {
+      const cfg = ideal.disc[k]; if (!cfg) return;
+      const score = s.disc[k] !== undefined ? s.disc[k] : 50;
+      const fit = calcFit(score, cfg.min, cfg.max);
+      totalPeso += cfg.peso; totalFitPeso += fit * cfg.peso;
+      secPeso += cfg.peso; secFitPeso += fit * cfg.peso;
+      const minLv = cfg.minLv || scoreToLevel5(cfg.min);
+      dims.push({ key:k, label:cfg.label, score, fit, peso:cfg.peso, req:cfg.req,
+        ideal:`${cfg.min}–${cfg.max}`, gap: scoreToLevel5(score) < minLv ? 'bajo':'ok', minLv, testId:'disc' });
+    });
+    const secFit = secPeso > 0 ? Math.round(secFitPeso/secPeso) : 0;
+    sections.push({ id:'disc', icon:'🎭', title:'Estilos Conductuales (DISC-20)', dims, secFit,
+      desc:'Perfil conductual: Dominancia, Influencia, Estabilidad y Cumplimiento.' });
+  }
+
+  // ── Integridad Laboral ────────────────────────────────────────
+  if (s.integridad && ideal.integridad) {
+    const cfg = ideal.integridad.pct;
+    const score = s.integridad.pct;
+    const fit = calcFit(score, cfg.min, cfg.max);
+    totalPeso += cfg.peso; totalFitPeso += fit * cfg.peso;
+    const minLv = cfg.minLv || scoreToLevel5(cfg.min);
+    const dim = { key:'pct', label:cfg.label, score, fit, peso:cfg.peso, req:cfg.req,
+      ideal:`${cfg.min}–${cfg.max}`, gap: scoreToLevel5(score) < minLv ? 'bajo':'ok', minLv, testId:'integridad' };
+    sections.push({ id:'integridad', icon:'🔐', title:'Integridad Laboral (IWS-15)', dims:[dim], secFit:fit,
+      desc:'Mide honestidad declarada y actitud hacia normas y procedimientos laborales.' });
+  }
+
+  // ── Atención Concentrada ──────────────────────────────────────
+  if (s.atencion && ideal.atencion) {
+    const cfg = ideal.atencion.pct;
+    const score = s.atencion.pct;
+    const fit = calcFit(score, cfg.min, cfg.max);
+    totalPeso += cfg.peso; totalFitPeso += fit * cfg.peso;
+    const minLv = cfg.minLv || scoreToLevel5(cfg.min);
+    const dim = { key:'pct', label:cfg.label, score, fit, peso:cfg.peso, req:cfg.req,
+      ideal:`${cfg.min}–${cfg.max}`, extra:`${s.atencion.correct}/${s.atencion.total} correctas`,
+      gap: scoreToLevel5(score) < minLv ? 'bajo':'ok', minLv, testId:'atencion' };
+    sections.push({ id:'atencion', icon:'🎯', title:'Atención Concentrada (d2)', dims:[dim], secFit:fit,
+      desc:'Velocidad y precisión en la detección de estímulos relevantes bajo presión.' });
   }
 
   const globalFit = totalPeso > 0 ? Math.round(totalFitPeso / totalPeso) : 0;
@@ -3768,6 +4051,9 @@ function buildReportHtml(c, withClose) {
   if (s.situacional && rpt.sections.find(function(x){return x.id==='situacional';})) tabs.push({ id:'situacional', label:'Juicio Situacional', icon:'💡' });
   if (s.vigilancia  && rpt.sections.find(function(x){return x.id==='vigilancia';}))  tabs.push({ id:'vigilancia',  label:'Vigilancia', icon:'🛡' });
   if (s.comprension && rpt.sections.find(function(x){return x.id==='comprension';})) tabs.push({ id:'comprension', label:'Comprensión', icon:'📖' });
+  if (s.disc      && rpt.sections.find(function(x){return x.id==='disc';}))       tabs.push({ id:'disc',      label:'DISC',        icon:'🎭' });
+  if (s.integridad && rpt.sections.find(function(x){return x.id==='integridad';})) tabs.push({ id:'integridad',label:'Integridad',   icon:'🔐' });
+  if (s.atencion   && rpt.sections.find(function(x){return x.id==='atencion';}))   tabs.push({ id:'atencion',  label:'Atención',     icon:'🎯' });
   tabs.push({ id:'ia', label:'Análisis IA', icon:'🤖' });
 
   html += '<div style="background:#fff;border-bottom:2px solid #f1f5f9;padding:0 28px;display:flex;gap:0;overflow-x:auto;flex-shrink:0">';
@@ -4332,6 +4618,70 @@ function buildReportHtml(c, withClose) {
     html += '</div>';
   }
 
+  // ── Generic panels for new tests ─────────────────────────────
+  ['disc','integridad','atencion'].forEach(function(testId) {
+    if (!s[testId]) return;
+    var sec = rpt ? rpt.sections.find(function(x){return x.id===testId;}) : null;
+    if (!sec) return;
+    var tm = TESTS_META[testId] || {};
+    var lv = fitToLevel5(sec.secFit);
+    var slv = fitLabel(sec.secFit);
+    var bgC = lv>=4?'#f0fdf4':lv>=3?'#fffbeb':'#fef2f2';
+    var col = lv>=4?'#16a34a':lv>=3?'#b45309':'#dc2626';
+    html += '<div class="rpt-tab-panel" id="rpt-panel-' + testId + '" style="display:none;flex-direction:column;gap:14px">';
+    html += '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:20px 24px">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:8px">';
+    html += '<div style="font-size:17px;font-weight:800">' + (tm.icon||'') + ' ' + sec.title + '</div>';
+    html += '<div style="text-align:center;background:' + bgC + ';border-radius:10px;padding:8px 16px;border:1.5px solid ' + col + '40">';
+    html += '<div style="font-size:24px;font-weight:900;color:' + col + ';line-height:1">' + lv + '/5</div>';
+    html += '<div style="font-size:10px;font-weight:700;color:' + col + '">' + slv.label + '</div></div></div>';
+    html += '<div style="font-size:12px;color:#8e8e93;margin-bottom:14px">' + sec.desc + '</div>';
+    // Dimension bars
+    html += '<div style="display:flex;flex-direction:column;gap:10px">';
+    sec.dims.forEach(function(d) {
+      var dlv  = scoreToLevel5(d.score);
+      var dcol = dlv>=4?'#16a34a':dlv>=3?'#b45309':'#dc2626';
+      var passes = dlv >= (d.minLv||1);
+      html += '<div style="background:' + (passes?'#f0fdf4':'#fef2f2') + ';border-radius:10px;padding:14px 16px;border:1.5px solid ' + (passes?'#bbf7d0':'#fecaca') + '">';
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
+      html += '<div style="font-size:14px;font-weight:700;color:#0f172a">' + d.label + '</div>';
+      html += '<div style="font-size:20px;font-weight:900;color:' + dcol + '">' + dlv + '/5</div></div>';
+      html += '<div style="position:relative;height:7px;background:#e5e5ea;border-radius:100px;margin-bottom:6px">';
+      html += '<div style="position:absolute;top:0;bottom:0;left:0;width:' + d.score + '%;background:' + dcol + ';border-radius:100px"></div>';
+      html += '<div style="position:absolute;top:-3px;bottom:-3px;left:' + (d.ideal?d.ideal.split('–')[0]:60) + '%;width:2px;background:#1d1d1f;border-radius:1px"></div>';
+      html += '</div>';
+      html += '<div style="font-size:12px;color:#64748b">' + d.req + '</div>';
+      if (d.extra) html += '<div style="font-size:11px;color:#94a3b8;margin-top:3px">' + d.extra + '</div>';
+      html += '</div>';
+    });
+    html += '</div></div>';
+    // Special DISC radar summary
+    if (testId === 'disc' && s.disc) {
+      var DISC_LABELS = {D:'Dominancia',I:'Influencia',S:'Estabilidad',C:'Cumplimiento'};
+      var DISC_DESC = {
+        D:'Orientación a resultados, iniciativa, toma de decisiones.',
+        I:'Comunicación, entusiasmo, influencia social.',
+        S:'Constancia, paciencia, estabilidad emocional.',
+        C:'Respeto a normas, precisión, calidad del trabajo.'
+      };
+      html += '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:20px 24px">';
+      html += '<div style="font-size:13px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:14px">Perfil DISC</div>';
+      html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
+      ['D','I','S','C'].forEach(function(k) {
+        var v = s.disc[k]||50;
+        var kcol = v>=70?'#16a34a':v>=45?'#b45309':'#64748b';
+        var isDom = s.disc.dominant === k;
+        html += '<div style="padding:12px 14px;border-radius:10px;background:' + (isDom?'#f5f3ff':'#f8fafc') + ';border:1.5px solid ' + (isDom?'#c4b5fd':'#e2e8f0') + '">';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">';
+        html += '<div style="font-size:13px;font-weight:700">' + (isDom?'★ ':'') + DISC_LABELS[k] + '</div>';
+        html += '<div style="font-size:18px;font-weight:900;color:' + kcol + '">' + v + '</div></div>';
+        html += '<div style="font-size:11px;color:#64748b">' + DISC_DESC[k] + '</div></div>';
+      });
+      html += '</div></div>';
+    }
+    html += '</div>';
+  });
+
   // ════════════════════════════════════════════
   // TAB: ANÁLISIS IA
   // ════════════════════════════════════════════
@@ -4492,7 +4842,7 @@ function switchParamTab(perfil, btn) {
     b.style.color = active ? '#fff' : 'var(--ink2)';
     b.style.borderColor = active ? 'var(--accent)' : 'var(--border)';
   });
-  renderParams();
+  renderBateriaTab();
 }
 
 // Conversión escala 1-5 ↔ 0-100
@@ -4659,6 +5009,459 @@ function renderParams() {
   }
 }
 
+// renderBatteryConfig removed — replaced by renderBateriaTab in Batería sub-tab
+
+function toggleBatteryTest(cb) {
+  var tid = cb.dataset.tid;
+  var perfil = cb.dataset.perfil;
+  if (!PERFIL_TESTS[perfil]) PERFIL_TESTS[perfil] = (PERFIL_TESTS_DEFAULT[perfil] || []).slice();
+  if (cb.checked) {
+    if (PERFIL_TESTS[perfil].indexOf(tid) === -1) PERFIL_TESTS[perfil].push(tid);
+  } else {
+    PERFIL_TESTS[perfil] = PERFIL_TESTS[perfil].filter(function(t){ return t !== tid; });
+  }
+  saveBatteryConfig();
+  // Re-render the full battery tab to show/hide parameter sections
+  renderBateriaTab();
+  toast('Batería actualizada para ' + perfil, 'ok');
+}
+
+// ── Sub-tab switching (Batería / Wiki) ──
+var _paramsSubtab = 'bateria';
+function switchParamsSubtab(tab) {
+  _paramsSubtab = tab;
+  document.querySelectorAll('.params-subtab').forEach(function(b) {
+    var isActive = b.id === 'subtab-' + tab;
+    b.style.borderBottomColor = isActive ? 'var(--accent)' : 'transparent';
+    b.style.color = isActive ? 'var(--accent)' : 'var(--ink3)';
+  });
+  // Show/hide profile tabs (only for batería)
+  var profileTabs = document.getElementById('params-tabs');
+  if (profileTabs) profileTabs.style.display = (tab === 'bateria') ? '' : 'none';
+  // Toggle content areas
+  document.getElementById('params-content').style.display = 'none';
+  document.getElementById('bateria-content').style.display = (tab === 'bateria') ? '' : 'none';
+  document.getElementById('wiki-content').style.display = (tab === 'wiki') ? '' : 'none';
+  if (tab === 'bateria') renderBateriaTab();
+  if (tab === 'wiki') renderWikiTab();
+}
+
+// ── Wiki de Tests ──
+function renderWikiTab() {
+  var WIKI_GROUPS = {
+    '🧠 Tests Cognitivos': ['dc0','comprension','atencion'],
+    '🧬 Tests de Personalidad': ['barratt','pai','disc','integridad'],
+    '💡 Tests Situacionales': ['situacional','vigilancia'],
+    '⚠ Riesgo Laboral': ['cwb','ausentismo','frustracion'],
+  };
+  var WIKI_GROUP_DESC = {
+    '🧠 Tests Cognitivos': 'Miden capacidades intelectuales, velocidad de procesamiento y comprensión procedimental.',
+    '🧬 Tests de Personalidad': 'Evalúan rasgos de personalidad, estilos conductuales y disposición ética.',
+    '💡 Tests Situacionales': 'Miden el juicio aplicado y la toma de decisiones ante escenarios laborales reales.',
+    '⚠ Riesgo Laboral': 'Indicadores predictivos de conductas problemáticas, ausentismo y desadaptación en el puesto.',
+  };
+  var WIKI = {
+    dc0: {
+      icon: '⚡', name: 'Test de Aptitud Cognitiva (DC-0)', category: 'Cognitivo', items: 30, time: '15-20 min', format: 'Opción múltiple (4 alternativas)',
+      description: 'Evalúa la capacidad intelectual general aplicada al contexto laboral a través de tres dominios cognitivos fundamentales. Cada dominio presenta 10 ítems de dificultad creciente.',
+      dimensions: [
+        { key:'V', name:'Razonamiento Verbal', desc:'Comprensión lectora, vocabulario, analogías verbales y capacidad de extraer conclusiones de textos. Refleja la aptitud para comunicarse eficazmente y comprender instrucciones complejas.' },
+        { key:'N', name:'Razonamiento Numérico', desc:'Cálculo mental, interpretación de datos numéricos, secuencias y resolución de problemas aritméticos. Indica la capacidad para trabajar con cifras, indicadores y presupuestos.' },
+        { key:'L', name:'Razonamiento Lógico-Abstracto', desc:'Identificación de patrones, series lógicas y relaciones entre figuras. Mide la capacidad de razonamiento fluido independiente del contenido verbal o numérico.' },
+      ],
+      scoring: 'Cada respuesta correcta suma 1 punto por dominio (máx. 10). El porcentaje se calcula sobre el total posible y se normaliza a escala 0-100. Clasificación: Muy Bajo (0-19), Bajo (20-39), Medio (40-59), Alto (60-79), Muy Alto (80-100).',
+      reference: 'Desarrollo propio basado en modelos de aptitud cognitiva de Cattell-Horn-Carroll (CHC).'
+    },
+    comprension: {
+      icon: '📋', name: 'Test de Comprensión de Instrucciones', category: 'Cognitivo', items: 10, time: '8-12 min', format: 'Instrucciones multi-condición con opción múltiple',
+      description: 'Evalúa la capacidad de leer, interpretar y aplicar correctamente instrucciones complejas con múltiples condiciones. Simula situaciones donde se deben seguir procedimientos con precisión sin omitir pasos.',
+      dimensions: [
+        { key:'_self', name:'Comprensión de Instrucciones Global', desc:'Mide la exactitud con que el candidato interpreta y aplica instrucciones que contienen condiciones múltiples, excepciones y secuencias de pasos. Crítico para roles donde los errores de interpretación tienen consecuencias.' },
+      ],
+      scoring: 'Cada ítem correcto suma 1 punto (máx. 10). Se normaliza a 0-100. Clasificación en 5 niveles estándar.',
+      reference: 'Desarrollo propio basado en modelos de comprensión procedimental (Kintsch, 1998).'
+    },
+    atencion: {
+      icon: '🎯', name: 'Test de Atención Concentrada (d2)', category: 'Cognitivo', items: 'Variable', time: '5-8 min', format: 'Tarea de cancelación cronometrada',
+      description: 'Evalúa la atención selectiva, la velocidad de procesamiento y la precisión perceptiva. El candidato debe identificar estímulos objetivo entre distractores bajo presión de tiempo.',
+      dimensions: [
+        { key:'pct', name:'Atención Concentrada Global', desc:'Indicador compuesto que combina velocidad de procesamiento (cantidad de estímulos revisados) con precisión (proporción de aciertos vs. errores). Refleja la capacidad de mantener el foco en tareas repetitivas de detección.' },
+      ],
+      scoring: 'Se calcula: Total de respuestas correctas − errores de comisión. Se normaliza a percentil 0-100 según baremos. Clasificación en 5 niveles estándar.',
+      reference: 'Adaptación del Test d2 de Brickenkamp & Zillmer (1998).'
+    },
+    barratt: {
+      icon: '🧩', name: 'Escala de Impulsividad de Barratt (BIS-15)', category: 'Personalidad', items: 15, time: '3-5 min', format: 'Likert 1-4',
+      description: 'Versión abreviada de la Barratt Impulsiveness Scale. Evalúa la tendencia a actuar sin reflexión previa, midiendo tres facetas diferenciadas del constructo de impulsividad.',
+      dimensions: [
+        { key:'AI', name:'Atención Impulsiva (Control Atencional)', desc:'Capacidad para mantener la concentración y el foco sostenido. Puntuaciones altas indican mayor capacidad de atención; bajas sugieren dispersión cognitiva y dificultad para sostener la atención en tareas prolongadas.' },
+        { key:'IM', name:'Impulsividad Motora (Control Motor)', desc:'Tendencia a actuar sin pensar. Puntuaciones altas indican mayor control y reflexividad antes de actuar; bajas sugieren precipitación conductual y respuestas impulsivas ante estímulos.' },
+        { key:'NP', name:'No Planificación (Planificación)', desc:'Orientación al futuro y capacidad de anticipar consecuencias. Puntuaciones altas indican buena capacidad de planificación; bajas reflejan predominio del presente inmediato y poca consideración de resultados a largo plazo.' },
+      ],
+      scoring: 'Las respuestas se invierten y normalizan a una escala 0-100. A mayor puntaje, mayor autocontrol (escala invertida respecto al BIS original). Se clasifican en 5 niveles: Muy Bajo (0-19), Bajo (20-39), Medio (40-59), Alto (60-79) y Muy Alto (80-100).',
+      reference: 'Spinella, M. (2007). Normative data and a short form of the Barratt Impulsiveness Scale. International Journal of Neuroscience, 117(3), 359–368.'
+    },
+    pai: {
+      icon: '🔎', name: 'Inventario de Ajuste Psicológico (PAI)', category: 'Personalidad', items: 30, time: '8-12 min', format: 'Likert 1-5',
+      description: 'Evalúa el ajuste psicológico general del candidato en el contexto laboral. Mide seis dimensiones clínico-laborales que predicen el desempeño y la adaptación en el puesto de trabajo.',
+      dimensions: [
+        { key:'EE', name:'Estabilidad Emocional', desc:'Capacidad de regulación emocional ante conflictos y presión. Puntuaciones altas indican ecuanimidad y resiliencia; bajas sugieren labilidad emocional y reactividad ante estresores.' },
+        { key:'AS', name:'Adaptación Social', desc:'Habilidad para relacionarse con otros, trabajar en equipo y gestionar relaciones interpersonales. Incluye asertividad, empatía y competencia social.' },
+        { key:'ON', name:'Orientación Normativa', desc:'Grado de adherencia a reglas, normas y protocolos establecidos. Puntuaciones altas reflejan respeto por la autoridad y los procedimientos; bajas sugieren tendencia a la flexibilización excesiva de normas.' },
+        { key:'ME', name:'Manejo del Estrés', desc:'Capacidad para mantener el rendimiento bajo presión, gestionar la carga de trabajo y recuperarse de situaciones demandantes sin deterioro significativo.' },
+        { key:'IL', name:'Integridad Laboral', desc:'Tendencia a actuar con honestidad, transparencia y responsabilidad en el contexto laboral. Evalúa la congruencia entre valores declarados y conducta observable.' },
+        { key:'ML', name:'Motivación Laboral', desc:'Nivel de impulso intrínseco para el trabajo, compromiso con las tareas asignadas y orientación al logro. Puntuaciones altas predicen proactividad y persistencia.' },
+      ],
+      scoring: 'Las respuestas Likert se promedian por dimensión y se normalizan a escala 0-100. Clasificación: Muy Bajo (0-19), Bajo (20-39), Medio (40-59), Alto (60-79), Muy Alto (80-100). Incluye ítems de control de aquiescencia.',
+      reference: 'Adaptación psicolaboral basada en constructos del PAI (Morey, 2007) y NEO-PI-R (Costa & McCrae, 1992).'
+    },
+    disc: {
+      icon: '🎭', name: 'Estilos Conductuales (DISC-20)', category: 'Personalidad', items: 20, time: '5-8 min', format: 'Elección forzada (más/menos como yo)',
+      description: 'Evalúa el estilo conductual predominante del candidato según el modelo DISC. Identifica preferencias naturales de comportamiento en el trabajo, estilo de comunicación y reacción ante el entorno.',
+      dimensions: [
+        { key:'D', name:'Dominancia', desc:'Orientación a resultados, iniciativa, competitividad y control del entorno. Personas altas en D son directas, decididas y orientadas a la acción. En exceso puede implicar autoritarismo.' },
+        { key:'I', name:'Influencia', desc:'Sociabilidad, entusiasmo, persuasión y orientación a las personas. Personas altas en I son comunicativas y optimistas. En exceso puede implicar falta de atención al detalle.' },
+        { key:'S', name:'Estabilidad (Steadiness)', desc:'Paciencia, constancia, lealtad y preferencia por la predictibilidad. Personas altas en S son confiables y cooperativas. En exceso puede implicar resistencia al cambio.' },
+        { key:'C', name:'Cumplimiento (Conscientiousness)', desc:'Precisión, orientación a la calidad, respeto por normas y análisis. Personas altas en C son metódicas y rigurosas. En exceso puede implicar rigidez y sobre-análisis.' },
+      ],
+      scoring: 'Las respuestas generan un perfil porcentual en cada dimensión (0-100%). No hay respuestas correctas o incorrectas; se evalúa el ajuste del perfil al cargo. El estilo predominante se determina por la dimensión con mayor puntuación.',
+      reference: 'Modelo DISC de William Moulton Marston (1928), adaptación contemporánea.'
+    },
+    integridad: {
+      icon: '🔐', name: 'Inventario de Integridad Laboral (IWS-15)', category: 'Personalidad', items: 15, time: '4-6 min', format: 'Likert 1-5',
+      description: 'Mide la predisposición del candidato hacia conductas éticas en el trabajo. Evalúa actitudes frente al robo, fraude, abuso de confianza, uso indebido de recursos y conductas contraproducentes.',
+      dimensions: [
+        { key:'pct', name:'Integridad Laboral Global', desc:'Puntaje único que integra la actitud ética declarada, la tolerancia al comportamiento deshonesto de otros y la consistencia moral del candidato. Puntuaciones altas predicen menor riesgo de conductas contraproducentes.' },
+      ],
+      scoring: 'Las respuestas Likert se promedian y normalizan a 0-100. Incluye ítems inversos de control. Clasificación: Muy Bajo (alto riesgo), Bajo, Medio, Alto, Muy Alto (bajo riesgo).',
+      reference: 'Basado en modelos de integrity testing de Ones, Viswesvaran & Schmidt (1993).'
+    },
+    situacional: {
+      icon: '💡', name: 'Test de Juicio Situacional', category: 'Situacional', items: 10, time: '10-15 min', format: 'Escenarios con 4 opciones de respuesta',
+      description: 'Presenta escenarios laborales realistas donde el candidato debe elegir la mejor respuesta entre cuatro alternativas. Evalúa la capacidad de tomar decisiones acertadas, gestionar conflictos y aplicar criterio profesional.',
+      dimensions: [
+        { key:'_self', name:'Juicio Situacional Global', desc:'Puntaje único que refleja la calidad general de las decisiones del candidato ante dilemas laborales. Incluye manejo de conflictos, priorización, comunicación y ética profesional.' },
+      ],
+      scoring: 'Cada escenario tiene una respuesta óptima (3 pts), una aceptable (2 pts), una subóptima (1 pt) y una inadecuada (0 pts). El puntaje total se normaliza a 0-100. Niveles: Muy Bajo, Bajo, Medio, Alto, Muy Alto.',
+      reference: 'Diseñado según metodología SJT (Situational Judgment Test) de McDaniel et al. (2007).'
+    },
+    vigilancia: {
+      icon: '🛡', name: 'Test de Aptitud de Vigilancia', category: 'Situacional', items: 12, time: '10-15 min', format: 'Escenarios con 4 opciones de respuesta',
+      description: 'Evalúa la capacidad del candidato para aplicar protocolos de seguridad, detectar irregularidades y reaccionar adecuadamente ante situaciones de riesgo en contextos de vigilancia y control de acceso.',
+      dimensions: [
+        { key:'_self', name:'Aptitud de Vigilancia Global', desc:'Puntaje integrado que mide la aplicación de protocolos, detección de amenazas, gestión de incidentes y toma de decisiones bajo presión en escenarios de seguridad.' },
+      ],
+      scoring: 'Mismo sistema que Juicio Situacional: respuesta óptima (3 pts), aceptable (2), subóptima (1), inadecuada (0). Normalizado a 0-100.',
+      reference: 'Basado en competencias de seguridad (ASIS International, 2012).'
+    },
+    cwb: {
+      icon: '⚠', name: 'Conductas Contraproducentes (CWB-18)', category: 'Riesgo Laboral', items: 18, time: '5-8 min', format: 'Likert 1-5',
+      description: 'Evalúa la predisposición del candidato a incurrir en conductas que perjudican a la organización o a sus miembros. Incluye actitudes hacia el hurto, sabotaje, uso indebido de recursos, hostilidad interpersonal y negligencia deliberada.',
+      dimensions: [
+        { key:'AR', name:'Abuso de Recursos', desc:'Tendencia al uso indebido de tiempo laboral, materiales, equipos o información de la organización para fines personales. Puntuaciones altas indican bajo riesgo; bajas sugieren tolerancia al aprovechamiento indebido de recursos.' },
+        { key:'DI', name:'Desviación Interpersonal', desc:'Predisposición a conductas hostiles hacia compañeros: chismes, exclusión, intimidación o sabotaje relacional. Puntuaciones altas indican bajo riesgo de conflicto interpersonal malintencionado.' },
+        { key:'NG', name:'Negligencia', desc:'Tendencia al incumplimiento deliberado de responsabilidades: llegar tarde, hacer el mínimo esfuerzo, ignorar instrucciones a propósito. Puntuaciones altas indican responsabilidad y compromiso.' },
+      ],
+      scoring: 'Las respuestas Likert se invierten (escala de riesgo) y normalizan a 0-100, donde puntajes altos indican menor riesgo. Clasificación: Muy Bajo (alto riesgo), Bajo, Medio, Alto, Muy Alto (bajo riesgo). Incluye ítems inversos de validación.',
+      reference: 'Basado en el modelo CWB de Spector et al. (2006) y la taxonomía de conductas contraproducentes de Robinson & Bennett (1995).'
+    },
+    ausentismo: {
+      icon: '📅', name: 'Riesgo de Ausentismo (ABS-10)', category: 'Riesgo Laboral', items: 10, time: '3-5 min', format: 'Likert 1-5',
+      description: 'Evalúa las actitudes del candidato hacia la asistencia laboral, el cumplimiento de horarios y el compromiso con la presencialidad. Predice el riesgo de ausencias injustificadas, tardanzas recurrentes y abandono de turno.',
+      dimensions: [
+        { key:'pct', name:'Riesgo de Ausentismo Global', desc:'Indicador integrado que combina la valoración del candidato sobre la importancia de la asistencia, su historial autodeclarado de puntualidad, su actitud ante imprevistos y su nivel de compromiso con el horario laboral. Puntuaciones altas predicen asistencia confiable.' },
+      ],
+      scoring: 'Las respuestas Likert se promedian y normalizan a 0-100. Puntajes altos indican bajo riesgo de ausentismo. Clasificación: Muy Bajo (alto riesgo — probable ausentismo frecuente), Bajo, Medio, Alto, Muy Alto (bajo riesgo — asistencia confiable).',
+      reference: 'Basado en modelos predictivos de ausentismo de Harrison & Martocchio (1998) y Steel (2003).'
+    },
+    frustracion: {
+      icon: '🔥', name: 'Tolerancia a la Frustración (TF-12)', category: 'Riesgo Laboral', items: 12, time: '4-6 min', format: 'Likert 1-5',
+      description: 'Mide la capacidad del candidato para mantener un desempeño adecuado cuando enfrenta obstáculos, demoras, cambios inesperados o fracasos. Evalúa la resiliencia ante condiciones laborales adversas y la regulación de la ira.',
+      dimensions: [
+        { key:'PE', name:'Persistencia', desc:'Capacidad de mantener el esfuerzo y la motivación ante obstáculos repetidos o tareas difíciles. Puntuaciones altas indican tenacidad y orientación al logro a pesar de las dificultades; bajas sugieren abandono rápido ante la adversidad.' },
+        { key:'CI', name:'Control de Ira', desc:'Regulación de las reacciones emocionales de irritabilidad, enfado o agresividad ante situaciones frustrantes. Puntuaciones altas indican capacidad de mantener la calma; bajas sugieren explosividad, quejas frecuentes o conductas pasivo-agresivas.' },
+        { key:'AC', name:'Adaptación al Cambio', desc:'Flexibilidad para ajustarse a cambios inesperados en las condiciones, métodos o prioridades de trabajo. Puntuaciones altas reflejan apertura y agilidad; bajas indican rigidez, resistencia activa al cambio y estrés ante la incertidumbre.' },
+      ],
+      scoring: 'Las respuestas Likert se promedian por dimensión y normalizan a 0-100. Clasificación en 5 niveles estándar. El puntaje global se obtiene como promedio ponderado de las tres dimensiones.',
+      reference: 'Basado en constructos de frustration tolerance (Harrington, 2005) y modelos de regulación emocional de Gross (1998).'
+    },
+  };
+
+  var out = '';
+
+  // Search/filter
+  out += '<div style="margin-bottom:20px">'
+       + '<input type="text" id="wiki-search" oninput="filterWiki()" placeholder="Buscar test por nombre, categoría o dimensión..." '
+       + 'style="width:100%;padding:11px 16px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;background:var(--surface2);color:var(--ink)">'
+       + '</div>';
+
+  var WIKI_GROUP_COLORS = {
+    '🧠 Tests Cognitivos': { bg:'#eff6ff', border:'#bfdbfe', text:'#1e40af' },
+    '🧬 Tests de Personalidad': { bg:'#faf5ff', border:'#e9d5ff', text:'#7c3aed' },
+    '💡 Tests Situacionales': { bg:'#fffbeb', border:'#fde68a', text:'#b45309' },
+    '⚠ Riesgo Laboral': { bg:'#fef2f2', border:'#fecaca', text:'#dc2626' },
+  };
+
+  Object.entries(WIKI_GROUPS).forEach(function(entry) {
+    var groupName = entry[0]; var testIds = entry[1];
+    var gc = WIKI_GROUP_COLORS[groupName] || { bg:'#f1f5f9', border:'#e2e8f0', text:'#64748b' };
+    var gdesc = WIKI_GROUP_DESC[groupName] || '';
+
+    // Group header
+    out += '<div class="wiki-group" style="margin-bottom:24px">';
+    out += '<div style="display:flex;align-items:center;gap:10px;margin-top:8px">';
+    out += '<div style="font-size:12px;font-weight:700;letter-spacing:.04em;color:' + gc.text + '">' + groupName + '</div>';
+    out += '<div style="flex:1;height:1px;background:' + gc.border + '"></div>';
+    out += '</div>';
+    out += '<div style="font-size:11px;color:#94a3b8;margin-bottom:14px;margin-top:6px;line-height:1.5">' + gdesc + '</div>';
+
+    testIds.forEach(function(tid) {
+      var t = WIKI[tid]; if (!t) return;
+      out += '<div class="wiki-card" data-search="' + (t.name + ' ' + t.category + ' ' + t.dimensions.map(function(d){return d.name}).join(' ')).toLowerCase() + '" '
+           + 'style="background:#fff;border-radius:14px;border:1px solid #e2e8f0;margin-bottom:16px;overflow:hidden;transition:box-shadow .2s" '
+           + 'onmouseover="this.style.boxShadow=\'0 4px 16px rgba(0,0,0,.08)\'" onmouseout="this.style.boxShadow=\'none\'">';
+
+      // Header
+      out += '<div style="padding:18px 20px;display:flex;align-items:flex-start;gap:14px;cursor:pointer" onclick="toggleWikiCard(this)">';
+      out += '<div style="font-size:28px;line-height:1">' + t.icon + '</div>';
+      out += '<div style="flex:1;min-width:0">';
+      out += '<div style="font-size:15px;font-weight:700;color:#0f172a;margin-bottom:3px">' + t.name + '</div>';
+      out += '<div style="display:flex;gap:6px;flex-wrap:wrap">';
+      out += '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px;background:' + gc.bg + ';color:' + gc.text + '">' + t.category + '</span>';
+      out += '<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:100px;background:#f1f5f9;color:#64748b">' + t.items + ' ítems</span>';
+      out += '<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:100px;background:#f1f5f9;color:#64748b">⏱ ' + t.time + '</span>';
+      out += '<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:100px;background:#f1f5f9;color:#64748b">' + t.format + '</span>';
+      out += '</div></div>';
+      out += '<div style="color:#94a3b8;font-size:18px;transition:transform .2s" class="wiki-chevron">▾</div>';
+      out += '</div>';
+
+      // Expandable body (hidden by default)
+      out += '<div class="wiki-body" style="display:none;border-top:1px solid #f1f5f9;padding:0 20px 20px">';
+
+      // Description
+      out += '<div style="padding:16px 0 12px">';
+      out += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;margin-bottom:6px">Descripción</div>';
+      out += '<div style="font-size:13px;color:#334155;line-height:1.7">' + t.description + '</div>';
+      out += '</div>';
+
+      // Dimensions
+      out += '<div style="margin-bottom:14px">';
+      out += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;margin-bottom:8px">Dimensiones que mide</div>';
+      t.dimensions.forEach(function(d) {
+        out += '<div style="background:#f8fafc;border-radius:10px;padding:12px 14px;margin-bottom:6px;border:1px solid #eef2f6">';
+        out += '<div style="font-size:12px;font-weight:700;color:#0f172a;margin-bottom:3px">';
+        if (d.key !== '_self' && d.key !== 'pct') out += '<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;background:#e0e7ff;color:#4f46e5;font-size:10px;font-weight:800;margin-right:6px">' + d.key + '</span>';
+        out += d.name + '</div>';
+        out += '<div style="font-size:12px;color:#64748b;line-height:1.65">' + d.desc + '</div>';
+        out += '</div>';
+      });
+      out += '</div>';
+
+      // Scoring
+      out += '<div style="margin-bottom:14px">';
+      out += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;margin-bottom:6px">Sistema de puntuación</div>';
+      out += '<div style="font-size:12px;color:#334155;line-height:1.7;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 14px">' + t.scoring + '</div>';
+      out += '</div>';
+
+      // Scale reference
+      out += '<div style="margin-bottom:14px">';
+      out += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;margin-bottom:6px">Escala de clasificación</div>';
+      out += '<div style="display:flex;gap:4px">';
+      var lvNames = ['Muy Bajo','Bajo','Medio','Alto','Muy Alto'];
+      var lvColors2 = ['#94a3b8','#64748b','#f59e0b','#3b82f6','#10b981'];
+      var lvRanges = ['0-19','20-39','40-59','60-79','80-100'];
+      lvNames.forEach(function(n, i) {
+        out += '<div style="flex:1;text-align:center;padding:8px 4px;border-radius:8px;background:' + lvColors2[i] + '15;border:1px solid ' + lvColors2[i] + '30">';
+        out += '<div style="font-size:11px;font-weight:700;color:' + lvColors2[i] + '">' + (i+1) + '</div>';
+        out += '<div style="font-size:9px;font-weight:600;color:' + lvColors2[i] + '">' + n + '</div>';
+        out += '<div style="font-size:9px;color:#94a3b8;margin-top:2px">' + lvRanges[i] + '</div>';
+        out += '</div>';
+      });
+      out += '</div></div>';
+
+      // Reference
+      out += '<div style="font-size:11px;color:#94a3b8;line-height:1.6;padding-top:8px;border-top:1px solid #f1f5f9">';
+      out += '<strong>Referencia:</strong> ' + t.reference;
+      out += '</div>';
+
+      out += '</div>'; // wiki-body
+      out += '</div>'; // wiki-card
+    }); // end testIds forEach
+    out += '</div>'; // close wiki-group
+  }); // end WIKI_GROUPS forEach
+
+  document.getElementById('wiki-content').innerHTML = out;
+}
+
+function toggleWikiCard(header) {
+  var body = header.nextElementSibling;
+  var chevron = header.querySelector('.wiki-chevron');
+  if (body.style.display === 'none') {
+    body.style.display = '';
+    if (chevron) chevron.style.transform = 'rotate(180deg)';
+  } else {
+    body.style.display = 'none';
+    if (chevron) chevron.style.transform = '';
+  }
+}
+
+function filterWiki() {
+  var q = (document.getElementById('wiki-search').value || '').toLowerCase().trim();
+  document.querySelectorAll('.wiki-card').forEach(function(card) {
+    var match = !q || card.dataset.search.indexOf(q) !== -1;
+    card.style.display = match ? '' : 'none';
+  });
+  // Hide group headers if no visible cards
+  document.querySelectorAll('.wiki-group').forEach(function(group) {
+    var visibleCards = group.querySelectorAll('.wiki-card[style=""], .wiki-card:not([style*="display: none"])');
+    var hasVisible = false;
+    group.querySelectorAll('.wiki-card').forEach(function(c) {
+      if (c.style.display !== 'none') hasVisible = true;
+    });
+    group.style.display = hasVisible ? '' : 'none';
+  });
+}
+
+// ── Render Batería Tab ──
+// Maps test IDs to their parameter dimensions for parameterization
+var BATTERY_TEST_DIMENSIONS = {
+  barratt:     { icon:'🧩', title:'Control Impulsivo (BIS-15)',       keys:['AI','IM','NP'] },
+  pai:         { icon:'🔎', title:'Ajuste Psicológico (PAI)',          keys:['EE','AS','ON','ME','IL','ML'] },
+  dc0:         { icon:'⚡', title:'Aptitud Cognitiva (DC-0)',           keys:['V','N','L'] },
+  situacional: { icon:'💡', title:'Juicio Situacional',                keys:['_self'] },
+  vigilancia:  { icon:'🛡', title:'Aptitud Vigilancia',               keys:['_self'] },
+  comprension: { icon:'📋', title:'Comprensión de Instrucciones',     keys:['_self'] },
+  disc:        { icon:'🎭', title:'Estilos Conductuales (DISC-20)',    keys:['D','I','S','C'] },
+  integridad:  { icon:'🔐', title:'Integridad Laboral (IWS-15)',       keys:['pct'] },
+  atencion:    { icon:'🎯', title:'Atención Concentrada (d2)',         keys:['pct'] },
+  cwb:         { icon:'⚠', title:'Conductas Contraproducentes (CWB-18)', keys:['AR','DI','NG'] },
+  ausentismo:  { icon:'📅', title:'Riesgo de Ausentismo (ABS-10)',      keys:['pct'] },
+  frustracion: { icon:'🔥', title:'Tolerancia a la Frustración (TF-12)', keys:['PE','CI','AC'] },
+};
+
+function renderBateriaTab() {
+  var perfil = _paramPerfil;
+  var active = PERFIL_TESTS[perfil] || PERFIL_TESTS_DEFAULT[perfil] || [];
+  var ideal = PERFIL_IDEAL[perfil];
+  if (!ideal) { document.getElementById('bateria-content').innerHTML = '<p>Perfil no encontrado.</p>'; return; }
+
+  var LEVEL_NAMES  = ['','Muy Bajo','Bajo','Medio','Alto','Muy Alto'];
+  var LEVEL_COLORS = ['','#94a3b8','#64748b','#f59e0b','#3b82f6','#10b981'];
+  var LEVEL_BG     = ['','#f1f5f9','#f1f5f9','#fffbeb','#eff6ff','#f0fdf4'];
+
+  var TEST_GROUPS = {
+    '🧠 Tests Cognitivos': ['dc0','comprension','atencion'],
+    '🧬 Tests de Personalidad': ['barratt','pai','disc','integridad'],
+    '💡 Tests Situacionales': ['situacional','vigilancia'],
+    '⚠ Riesgo Laboral': ['cwb','ausentismo','frustracion'],
+  };
+
+  var out = '';
+
+  // Info banner
+  out += '<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 16px;margin-bottom:20px;display:flex;align-items:flex-start;gap:10px">'
+       + '<span style="font-size:18px">🧪</span>'
+       + '<div style="font-size:12px;color:#1e40af;line-height:1.6">'
+       + '<strong>Batería de Tests:</strong> activa o desactiva tests para este cargo. Cuando un test está <span style="color:#16a34a;font-weight:700">activo</span>, '
+       + 'puedes configurar los umbrales mínimos de cada dimensión expandiendo su panel.'
+       + '</div></div>';
+
+  Object.entries(TEST_GROUPS).forEach(function(entry) {
+    var groupName = entry[0]; var testIds = entry[1];
+    out += '<div style="margin-bottom:20px">';
+    out += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#94a3b8;margin-bottom:8px;padding-left:2px">' + groupName + '</div>';
+    out += '<div style="background:#fff;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden">';
+
+    testIds.forEach(function(tid, i) {
+      var tm = TESTS_META[tid]; if (!tm) return;
+      var isOn = active.indexOf(tid) !== -1;
+      var isLast = i === testIds.length - 1;
+      var dimInfo = BATTERY_TEST_DIMENSIONS[tid];
+      var secData = ideal[tid];
+
+      // Toggle row
+      out += '<div style="border-bottom:' + (isLast && !isOn ? 'none' : '1px solid #f1f5f9') + '">';
+      out += '<label style="display:flex;align-items:center;gap:14px;padding:13px 16px;cursor:pointer;transition:background .15s" '
+           + 'onmouseover="this.style.background=\'#f8fafc\'" onmouseout="this.style.background=\'#fff\'">';
+      out += '<input type="checkbox" data-tid="' + tid + '" data-perfil="' + perfil + '" '
+           + (isOn ? 'checked' : '') + ' onchange="toggleBatteryTest(this)" '
+           + 'style="width:17px;height:17px;accent-color:var(--accent);cursor:pointer;flex-shrink:0">';
+      out += '<span style="font-size:16px">' + tm.icon + '</span>';
+      out += '<div style="flex:1"><div style="font-size:13px;font-weight:600;color:#1e293b">' + tm.name + '</div></div>';
+      out += '<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:100px;background:' + (isOn?'#f0fdf4':'#f1f5f9') + ';color:' + (isOn?'#16a34a':'#94a3b8') + ';border:1px solid ' + (isOn?'#bbf7d0':'#e2e8f0') + '">'
+           + (isOn ? 'Activo' : 'Inactivo') + '</span>';
+      out += '</label>';
+
+      // If active: show parameter config for this test's dimensions
+      if (isOn && dimInfo && secData) {
+        out += '<div style="padding:0 16px 14px;background:#fafbfc;border-top:1px dashed #e2e8f0">';
+        out += '<div style="display:flex;align-items:center;gap:6px;padding:10px 0 8px">'
+             + '<span style="font-size:12px">' + dimInfo.icon + '</span>'
+             + '<span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#64748b">Configurar umbrales — ' + dimInfo.title + '</span>'
+             + '</div>';
+        out += '<div style="background:#fff;border-radius:10px;overflow:hidden;border:1px solid #e8ecf0">';
+
+        dimInfo.keys.forEach(function(k, ki) {
+          var cfg = k === '_self' ? secData : (secData[k] || null);
+          if (!cfg) return;
+          var fid = 'b_' + perfil + '_' + tid + '_' + k;
+          var curLv = cfg.minLv || scoreToLevel5(cfg.min) || 3;
+          var isLastDim = (ki === dimInfo.keys.length - 1);
+          var col = LEVEL_COLORS[curLv];
+
+          out += '<div id="row_' + fid + '" style="padding:12px 14px;' + (isLastDim ? '' : 'border-bottom:1px solid #f1f5f9;') + '">';
+          out += '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">';
+          // Label
+          out += '<div style="flex:1;min-width:110px">'
+               + '<div style="font-size:12px;font-weight:600;color:#0f172a">' + cfg.label + '</div>'
+               + '<div style="font-size:10px;color:#94a3b8;margin-top:1px;line-height:1.4">' + cfg.req + '</div>'
+               + '</div>';
+          // Chips 1-5
+          out += '<div style="display:flex;gap:3px;flex-shrink:0">';
+          for (var lv = 1; lv <= 5; lv++) {
+            var active2 = (lv === curLv);
+            out += '<button type="button"'
+                 + ' id="chip_' + fid + '_' + lv + '"'
+                 + ' data-fid="' + fid + '" data-lv="' + lv + '"'
+                 + ' onclick="pickLevel(this.dataset.fid,+this.dataset.lv)"'
+                 + ' title="' + LEVEL_NAMES[lv] + '"'
+                 + ' style="width:30px;height:30px;border-radius:7px;border:none;cursor:pointer;font-size:11px;font-weight:700;transition:all .12s;'
+                 + (active2 ? 'background:' + LEVEL_COLORS[lv] + ';color:#fff;box-shadow:0 2px 6px ' + LEVEL_COLORS[lv] + '55;' : 'background:#f1f5f9;color:#94a3b8;') + '">'
+                 + lv + '</button>';
+          }
+          out += '</div>';
+          // Badge
+          out += '<div id="lbl_' + fid + '" style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px;min-width:62px;text-align:center;background:' + LEVEL_BG[curLv] + ';color:' + col + '">'
+               + LEVEL_NAMES[curLv] + '</div>';
+          out += '</div>';
+
+          // Bar
+          out += '<div style="margin-top:8px;position:relative;height:5px;background:#f1f5f9;border-radius:100px" id="bar_' + fid + '">';
+          var fillPct = ((curLv - 1) / 4) * 100;
+          out += '<div id="fill_' + fid + '" style="position:absolute;top:0;bottom:0;left:0;width:' + fillPct + '%;background:' + col + ';border-radius:100px;transition:all .2s"></div>';
+          for (var t2 = 1; t2 <= 5; t2++) {
+            var tpct = ((t2 - 1) / 4) * 100;
+            out += '<div style="position:absolute;top:-2px;bottom:-2px;left:' + tpct + '%;width:2px;background:#fff;border-radius:1px;transform:translateX(-50%)"></div>';
+          }
+          out += '</div>';
+
+          out += '<input type="hidden" id="hid_' + fid + '_min" value="' + curLv + '">';
+          out += '</div>'; // row
+        });
+
+        out += '</div>'; // inner card
+        out += '</div>'; // config panel
+      }
+
+      out += '</div>'; // test wrapper
+    });
+
+    out += '</div></div>'; // card + group
+  });
+
+  document.getElementById('bateria-content').innerHTML = out;
+}
+
 
 function pickLevel(fid, lv) {
   var LEVEL_NAMES  = ['','Muy Bajo','Bajo','Medio','Alto','Muy Alto'];
@@ -4685,6 +5488,8 @@ function pickLevel(fid, lv) {
 function saveParams() {
   const perfil = _paramPerfil;
   const ideal  = PERFIL_IDEAL[perfil];
+
+  // Umbrales tab fields (prefix: p_)
   const SECTION_KEYS = {
     barratt:     ['AI','IM','NP'],
     pai:         ['EE','AS','ON','ME','IL','ML'],
@@ -4693,7 +5498,25 @@ function saveParams() {
     vigilancia:  ['_self'],
   };
 
+  // Batería tab fields (prefix: b_) — all possible test dimensions
+  const BATTERY_KEYS = {
+    barratt:     ['AI','IM','NP'],
+    pai:         ['EE','AS','ON','ME','IL','ML'],
+    dc0:         ['V','N','L'],
+    situacional: ['_self'],
+    vigilancia:  ['_self'],
+    comprension: ['_self'],
+    disc:        ['D','I','S','C'],
+    integridad:  ['pct'],
+    atencion:    ['pct'],
+    cwb:         ['AR','DI','NG'],
+    ausentismo:  ['pct'],
+    frustracion: ['PE','CI','AC'],
+  };
+
   let changed = 0;
+
+  // Save from Umbrales tab
   Object.entries(SECTION_KEYS).forEach(([secId, keys]) => {
     const secData = ideal[secId];
     if (!secData) return;
@@ -4705,8 +5528,28 @@ function saveParams() {
       if (!minEl) return;
       const v5 = parseInt(minEl.value);
       if (!isNaN(v5) && v5 >= 1 && v5 <= 5) {
-        cfg.minLv = v5;              // native 1-5 — used by report
-        cfg.min   = (v5 - 1) * 20;  // 0-100 equivalent for calcFit
+        cfg.minLv = v5;
+        cfg.min   = (v5 - 1) * 20;
+        cfg.max   = 100;
+        changed++;
+      }
+    });
+  });
+
+  // Save from Batería tab
+  Object.entries(BATTERY_KEYS).forEach(([secId, keys]) => {
+    const secData = ideal[secId];
+    if (!secData) return;
+    keys.forEach(k => {
+      const cfg = k === '_self' ? secData : secData[k];
+      if (!cfg) return;
+      const fieldId = 'b_' + perfil + '_' + secId + '_' + k;
+      const minEl   = document.getElementById('hid_' + fieldId + '_min');
+      if (!minEl) return;
+      const v5 = parseInt(minEl.value);
+      if (!isNaN(v5) && v5 >= 1 && v5 <= 5) {
+        cfg.minLv = v5;
+        cfg.min   = (v5 - 1) * 20;
         cfg.max   = 100;
         changed++;
       }
@@ -4715,7 +5558,7 @@ function saveParams() {
 
   if (changed > 0) {
     persistParams();
-    toast('✓ Parámetros guardados — aplicados al informe', 'ok');
+    toast('✓ Cambios guardados — aplicados al informe', 'ok');
   } else {
     toast('Sin cambios detectados', 'ok');
   }
@@ -4737,16 +5580,18 @@ function persistParams() {
       snapshot[pf] = {};
       const ideal = PERFIL_IDEAL[pf];
       if (!ideal) return;
-      ['barratt','pai','dc0','situacional','vigilancia'].forEach(function(secId) {
+      ['barratt','pai','dc0','situacional','vigilancia','comprension','disc','integridad','atencion','cwb','ausentismo','frustracion'].forEach(function(secId) {
         var sec = ideal[secId];
         if (!sec) return;
         snapshot[pf][secId] = {};
-        // situacional/vigilancia are flat
+        // situacional/vigilancia/comprension are flat
         if (sec.min !== undefined) {
           snapshot[pf][secId]._self = { min: sec.min, max: sec.max, minLv: sec.minLv };
         } else {
           Object.keys(sec).forEach(function(k) {
-            snapshot[pf][secId][k] = { min: sec[k].min, max: sec[k].max, minLv: sec[k].minLv };
+            if (sec[k] && sec[k].min !== undefined) {
+              snapshot[pf][secId][k] = { min: sec[k].min, max: sec[k].max, minLv: sec[k].minLv };
+            }
           });
         }
       });
@@ -5433,7 +6278,7 @@ function adminTab(id, btn) {
   });
   if (id === 'candidates') { setCandSubTab('tabla', document.getElementById('subtab-tabla')); }
   else if (id === 'dashboard') renderDashboard();
-  else if (id === 'params') renderParams();
+  else if (id === 'params') { if (_paramsSubtab === 'wiki') renderWikiTab(); else renderBateriaTab(); }
   else if (id === 'users') renderUsersTab();
 }
 
@@ -5907,7 +6752,7 @@ async function renderCandidatesTable() {
       <td><input type="checkbox" class="row-chk" data-id="${c.id}" onchange="updateBulkBar()" style="cursor:pointer;width:16px;height:16px"></td>
       <td><strong>${c.nombre} ${c.apellido}</strong><br><span style="color:var(--ink3);font-size:11px">${c.email}</span>${c.edad ? '<br><span style="color:var(--ink4);font-size:10px">🎂 '+c.edad+' años</span>' : ''}${c.telefono ? '<br><span style="color:var(--ink4);font-size:10px">📞 +56 '+c.telefono+'</span>' : ''}${c.educacion_label||c.educacion ? '<br><span style="color:var(--ink4);font-size:10px">🎓 '+(c.educacion_label||c.educacion)+(c.experiencia_label||c.experiencia?' · 💼 '+(c.experiencia_label||c.experiencia):'')+'</span>' : ''}</td>
       <td>${c.cargo||'—'}</td>
-      <td>${(c.tests||[]).map(t=>TESTS_META[t]?.icon).join(' ')||'—'}</td>
+      <td><div style="display:flex;flex-direction:column;gap:4px">${(c.tests||[]).map(t=>{var m=TESTS_META[t];return m?'<span style="font-size:11px;white-space:nowrap">'+m.icon+' '+m.name+'</span>':'';}).join('')||'—'}</div></td>
       <td>${statusBadge(c.estado)}</td>
       <td style="color:var(--ink3)">${c.fecha}</td>
       <td style="white-space:nowrap">
