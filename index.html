@@ -591,7 +591,8 @@ input,select,textarea{font-family:inherit;outline:none}
 ════════════════════════════════════════ -->
 <div id="view-landing" class="view">
   <!-- Minimal top bar — admin access only, discreet -->
-  <div style="position:absolute;top:16px;right:20px;z-index:10">
+  <div style="position:absolute;top:16px;right:20px;z-index:10;display:flex;gap:6px">
+    <button onclick="startTestMode()" style="background:#6366f1;border:none;font-size:12px;color:#fff;cursor:pointer;padding:6px 14px;border-radius:8px;font-family:inherit;font-weight:600;transition:opacity .15s" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">🧪 Prueba</button>
     <button onclick="gotoAdminLogin()" style="background:none;border:none;font-size:12px;color:var(--ink4);cursor:pointer;padding:6px 10px;border-radius:8px;font-family:inherit;transition:color .15s" onmouseover="this.style.color='var(--ink2)'" onmouseout="this.style.color='var(--ink4)'">Admin</button>
   </div>
 
@@ -1494,7 +1495,11 @@ const TESTS_META = {
   game_secuencias: { name:'Secuencias (Lógica)',              icon:'🧠', color:'#7c3aed', game:true },
   game_bandeja:    { name:'Bandeja de Entrada (Priorización)',icon:'📥', color:'#0891b2', game:true },
   game_impulsos:   { name:'Control de Impulsos (Go/No-Go)',   icon:'🔥', color:'#ea580c', game:true },
-  game_vigilancia: { name:'Ronda de Vigilancia (Detección)',  icon:'🛡', color:'#16a34a', game:true },
+  game_vigilancia: { name:'Monitoreo en Tiempo Real',          icon:'🛡', color:'#16a34a', game:true },
+  game_cadena:     { name:'Cadena de Mando (Delegación)',      icon:'🔗', color:'#7c3aed', game:true },
+  game_memoria:    { name:'Memoria Operativa',                 icon:'⏱', color:'#0369a1', game:true },
+  game_expedicion: { name:'La Expedición (Riesgo/Esfuerzo)',   icon:'🗺', color:'#854d0e', game:true },
+  game_radar:      { name:'Radar Social (Emociones)',          icon:'🎭', color:'#be185d', game:true },
 };
 
 // Default batteries — can be overridden via Baterías
@@ -1506,7 +1511,7 @@ const PERFIL_TESTS_DEFAULT = {
 };
 
 // All available tests per cargo (max possible)
-const ALL_TESTS_AVAILABLE = ['barratt','dc0','pai','situacional','vigilancia','comprension','disc','atencion','cwb','ausentismo','frustracion','ice','game_detector','game_secuencias','game_bandeja','game_impulsos','game_vigilancia'];
+const ALL_TESTS_AVAILABLE = ['barratt','dc0','pai','situacional','vigilancia','comprension','disc','atencion','cwb','ausentismo','frustracion','ice','game_detector','game_secuencias','game_bandeja','game_impulsos','game_vigilancia','game_cadena','game_memoria','game_expedicion','game_radar'];
 
 // Active batteries (loaded from localStorage, falls back to default)
 var PERFIL_TESTS = Object.assign({}, PERFIL_TESTS_DEFAULT);
@@ -1545,21 +1550,28 @@ var BUILTIN_CARGOS = ['jefatura','administrativo','guardia','supervisor'];
 
 function loadCargosConfig() {
   try {
+    var savedActive = null;
     var saved = localStorage.getItem('psicoeval_cargos');
     if (saved) {
-      var parsed = JSON.parse(saved);
-      Object.keys(parsed).forEach(function(k) {
-        if (CARGOS_ACTIVE[k] !== undefined) CARGOS_ACTIVE[k] = !!parsed[k];
+      savedActive = JSON.parse(saved);
+      // Restore builtin cargos immediately
+      Object.keys(savedActive).forEach(function(k) {
+        if (CARGOS_ACTIVE[k] !== undefined) CARGOS_ACTIVE[k] = !!savedActive[k];
       });
     }
     // Load custom cargos
     var cc = localStorage.getItem('psicoeval_custom_cargos');
     if (cc) {
       CUSTOM_CARGOS = JSON.parse(cc);
-      // Re-register them into system
       CUSTOM_CARGOS.forEach(function(c) {
         registerCustomCargo(c, true);
       });
+      // Now restore active states for custom cargos (they exist after registration)
+      if (savedActive) {
+        Object.keys(savedActive).forEach(function(k) {
+          if (CARGOS_ACTIVE[k] !== undefined) CARGOS_ACTIVE[k] = !!savedActive[k];
+        });
+      }
     }
   } catch(e) {}
 }
@@ -1570,6 +1582,8 @@ function saveCargosConfig() {
   } catch(e) {}
 }
 loadCargosConfig();
+// Re-load battery config AFTER custom cargos exist so their saved batteries are restored
+loadBatteryConfig();
 
 function getAllCargos() {
   return BUILTIN_CARGOS.concat(CUSTOM_CARGOS.map(function(c){ return c.key; }));
@@ -1591,10 +1605,10 @@ function registerCustomCargo(c, skipSave) {
   }
   if (CARGOS_ACTIVE[key] === undefined) CARGOS_ACTIVE[key] = true;
   if (!PERFIL_TESTS_DEFAULT[key]) {
-    PERFIL_TESTS_DEFAULT[key] = ['barratt','dc0','pai','comprension'];
+    PERFIL_TESTS_DEFAULT[key] = [];
   }
   if (!PERFIL_TESTS[key]) {
-    PERFIL_TESTS[key] = (PERFIL_TESTS_DEFAULT[key] || []).slice();
+    PERFIL_TESTS[key] = [];
   }
   // Create PERFIL_IDEAL with sensible defaults
   if (!PERFIL_IDEAL[key]) {
@@ -1621,7 +1635,7 @@ function registerCustomCargo(c, skipSave) {
     };
   }
   // Ensure shared tests exist for this profile
-  ['disc','atencion','cwb','ausentismo','frustracion','ice','game_detector','game_secuencias','game_bandeja','game_impulsos','game_vigilancia'].forEach(function(tid) {
+  ['disc','atencion','cwb','ausentismo','frustracion','ice','game_detector','game_secuencias','game_bandeja','game_impulsos','game_vigilancia','game_cadena','game_memoria','game_expedicion','game_radar'].forEach(function(tid) {
     if (!PERFIL_IDEAL[key][tid]) {
       // Copy from jefatura defaults
       var src = PERFIL_IDEAL['jefatura'][tid];
@@ -1705,7 +1719,7 @@ function renderCargosTab() {
 
     // Info row
     if (isOn) {
-      var TM = { barratt:5, dc0:20, pai:12, situacional:12, vigilancia:12, comprension:10, disc:8, atencion:8, cwb:8, ausentismo:5, frustracion:6, ice:8, game_detector:3, game_secuencias:3, game_bandeja:3, game_impulsos:2, game_vigilancia:3 };
+      var TM = { barratt:5, dc0:20, pai:12, situacional:12, vigilancia:12, comprension:10, disc:8, atencion:8, cwb:8, ausentismo:5, frustracion:6, ice:8, game_detector:3, game_secuencias:3, game_bandeja:3, game_impulsos:2, game_vigilancia:3, game_cadena:4, game_memoria:3, game_expedicion:4, game_radar:4 };
       var totalMin = tests.reduce(function(a,t){ return a + (TM[t]||8); }, 0) + 5;
       h += '<div style="border-top:1px solid #f1f5f9;padding:14px 22px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">';
       h += '<div style="font-size:11px;color:var(--ink3)"><strong style="color:var(--ink2)">' + tests.length + '</strong> tests asignados</div>';
@@ -2503,11 +2517,21 @@ function buildQuestions(perfil) {
     add(PAI_BASE,                        'pai',         'pai');
     add(SIT_SUPERVISOR,                  'situacional', 'situacional');
     add(COMP_JEFATURA,                   'comprension', 'choice');
+  } else {
+    // Custom cargo: add standard tests based on active battery
+    const active0 = PERFIL_TESTS[perfil] || [];
+    if (active0.includes('barratt'))     add(BIS11_ITEMS, 'barratt', 'likert');
+    if (active0.includes('dc0'))         add([...DC0_BASE, ...DC0_ADMIN], 'dc0', 'choice');
+    if (active0.includes('pai'))         add(PAI_BASE, 'pai', 'pai');
+    if (active0.includes('situacional')) add(SIT_JEFATURA, 'situacional', 'situacional');
+    if (active0.includes('vigilancia'))  add(VIGQ, 'vigilancia', 'choice');
+    if (active0.includes('comprension')) add(COMP_ADMIN, 'comprension', 'choice');
   }
   // Add optional tests if active for this perfil
   const active = PERFIL_TESTS[perfil] || [];
   if (active.includes('disc'))       add(DISC_ITEMS, 'disc',      'disc');
   if (active.includes('atencion'))   add(D2_ITEMS,   'atencion',  'choice');
+  // Game tests don't need questions - they render their own UI
   return qs;
 }
 
@@ -2615,7 +2639,7 @@ function calcScores(answers, selectedTests, perfil) {
   }
 
   // ── Game scores ──
-  ['game_detector','game_secuencias','game_bandeja','game_impulsos','game_vigilancia'].forEach(function(gid) {
+  ['game_detector','game_secuencias','game_bandeja','game_impulsos','game_vigilancia','game_cadena','game_memoria','game_expedicion','game_radar'].forEach(function(gid) {
     if (selectedTests.includes(gid) && answers['__game_' + gid] !== undefined) {
       scores[gid] = { pct: answers['__game_' + gid] };
     }
@@ -2648,6 +2672,156 @@ function gotoRegister() {
   }, 100);
 }
 function gotoAdminLogin() { showView('adminlogin'); }
+
+// ═══════════════════════════════════════════════════════════
+//  TEST MODE (temporary - for testing)
+// ═══════════════════════════════════════════════════════════
+function startTestMode() {
+  var TM_MINS = { barratt:5, dc0:20, pai:12, situacional:12, vigilancia:12, comprension:10, disc:8, atencion:8, cwb:8, ausentismo:5, frustracion:6, ice:8, game_detector:3, game_secuencias:3, game_bandeja:3, game_impulsos:2, game_vigilancia:3, game_cadena:4, game_memoria:3, game_expedicion:4, game_radar:4 };
+  var GROUPS = {
+    '🧠 Cognitivos':        ['dc0','comprension','atencion'],
+    '🧬 Personalidad':      ['barratt','pai','disc','ice'],
+    '💡 Situacionales':     ['situacional','vigilancia'],
+    '⚠ Riesgo Laboral':    ['cwb','ausentismo','frustracion'],
+    '🎮 Juegos Gamificados':['game_detector','game_secuencias','game_bandeja','game_impulsos','game_vigilancia','game_cadena','game_memoria','game_expedicion','game_radar'],
+  };
+
+  var h = '<div style="text-align:center;margin-bottom:16px"><span style="font-size:28px">🧪</span></div>';
+  h += '<h3 style="font-size:17px;font-weight:700;margin-bottom:4px;text-align:center">Modo Prueba</h3>';
+  h += '<p style="font-size:12px;color:var(--ink3);text-align:center;margin-bottom:18px;line-height:1.5">Selecciona cualquier test o juego para probarlo individualmente. No se guardan datos.</p>';
+
+  Object.entries(GROUPS).forEach(function(entry) {
+    var groupName = entry[0]; var testIds = entry[1];
+    h += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--ink4);margin:14px 0 6px 2px">' + groupName + '</div>';
+    testIds.forEach(function(tid) {
+      var m = TESTS_META[tid]; if (!m) return;
+      var mins = TM_MINS[tid] || 8;
+      var isGame = m.game;
+      h += '<button onclick="launchSingleTest(\'' + tid + '\')" style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;text-align:left;transition:all .12s;font-family:inherit;width:100%;margin-bottom:4px" '
+         + 'onmouseover="this.style.borderColor=\'var(--accent)\';this.style.background=\'var(--accent-l)\'" '
+         + 'onmouseout="this.style.borderColor=\'var(--border)\';this.style.background=\'var(--surface)\'">';
+      h += '<span style="font-size:20px">' + m.icon + '</span>';
+      h += '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + m.name + '</div>';
+      h += '<div style="font-size:10px;color:var(--ink4)">~' + mins + ' min' + (isGame ? ' · Juego interactivo' : '') + '</div></div>';
+      h += '<span style="font-size:12px;color:var(--ink4)">▶</span>';
+      h += '</button>';
+    });
+  });
+
+  // Divider + full battery option
+  h += '<div style="border-top:1px solid var(--border);margin:16px 0 12px"></div>';
+  h += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--ink4);margin-bottom:6px">📋 Batería completa por cargo</div>';
+  var active = getActiveCargos();
+  active.forEach(function(key) {
+    var pm = PERFIL_META[key]; if (!pm) return;
+    var tests = PERFIL_TESTS[key] || [];
+    h += '<button onclick="launchTestMode(\'' + key + '\')" style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;text-align:left;transition:all .12s;font-family:inherit;width:100%;margin-bottom:4px" '
+       + 'onmouseover="this.style.borderColor=\'var(--accent)\';this.style.background=\'var(--accent-l)\'" '
+       + 'onmouseout="this.style.borderColor=\'var(--border)\';this.style.background=\'var(--surface)\'">';
+    h += '<span style="font-size:20px">' + pm.icon + '</span>';
+    h += '<div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--ink)">' + pm.label + '</div>';
+    h += '<div style="font-size:10px;color:var(--ink4)">' + tests.length + ' tests — batería completa</div></div>';
+    h += '<span style="font-size:12px;color:var(--ink4)">▶</span>';
+    h += '</button>';
+  });
+
+  h += '<button onclick="document.getElementById(\'test-mode-modal\').style.display=\'none\'" style="width:100%;padding:10px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;font-size:13px;font-weight:600;color:var(--ink3);font-family:inherit;margin-top:12px">Cerrar</button>';
+
+  var modal = document.getElementById('test-mode-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'test-mode-modal';
+    modal.className = 'overlay';
+    modal.onclick = function(e) { if (e.target === modal) modal.style.display = 'none'; };
+    modal.innerHTML = '<div class="modal" style="max-width:440px;max-height:85vh;overflow-y:auto" onclick="event.stopPropagation()" id="test-mode-body"></div>';
+    document.body.appendChild(modal);
+  } else {
+    // Update modal max-height for scrollable content
+    var inner = document.getElementById('test-mode-body');
+    if (inner) inner.style.maxHeight = '75vh';
+    if (inner) inner.style.overflowY = 'auto';
+  }
+  document.getElementById('test-mode-body').innerHTML = h;
+  modal.style.display = 'flex';
+}
+
+// Launch a single test in isolation
+function launchSingleTest(testId) {
+  document.getElementById('test-mode-modal').style.display = 'none';
+  var m = TESTS_META[testId]; if (!m) return;
+
+  // Use first active cargo as fallback profile for questions
+  var perfil = getActiveCargos()[0] || 'jefatura';
+
+  S.candidate = {
+    id: 'test_' + Date.now(),
+    nombre: 'Prueba', apellido: 'Demo',
+    rut: '11.111.111-1', email: 'prueba@demo.cl', telefono: '+56 9 1234 5678',
+    perfil: perfil, cargo: m.name,
+    fecha: new Date().toISOString().split('T')[0],
+    tests: [testId], estado: 'pending', scores: {},
+    _testMode: true
+  };
+
+  S._testTotalMinutes = 30; // generous for single test
+  S.selectedTests = [testId];
+  S.allQs = buildQuestions(perfil);
+  S.answers = {};
+  S.testBlocks = [{ testId: testId, qs: S.allQs.filter(function(q){ return q.testId === testId; }) }];
+  S.blockIdx = 0;
+  renderTestBlock();
+  showView('test');
+  startTestTimer();
+}
+
+// Launch full battery for a cargo
+function launchTestMode(perfil) {
+  document.getElementById('test-mode-modal').style.display = 'none';
+  var pm = PERFIL_META[perfil];
+  var tests = PERFIL_TESTS[perfil] || [];
+  if (!tests.length) { toast('Este cargo no tiene tests asignados', 'er'); return; }
+
+  var TM_MINS = { barratt:5, dc0:20, pai:12, situacional:12, vigilancia:12, comprension:10, disc:8, atencion:8, cwb:8, ausentismo:5, frustracion:6, ice:8, game_detector:3, game_secuencias:3, game_bandeja:3, game_impulsos:2, game_vigilancia:3, game_cadena:4, game_memoria:3, game_expedicion:4, game_radar:4 };
+
+  S.candidate = {
+    id: 'test_' + Date.now(),
+    nombre: 'Prueba', apellido: 'Demo',
+    rut: '11.111.111-1', email: 'prueba@demo.cl', telefono: '+56 9 1234 5678',
+    perfil: perfil, cargo: pm.label,
+    fecha: new Date().toISOString().split('T')[0],
+    tests: tests, estado: 'pending', scores: {},
+    _testMode: true
+  };
+
+  var totalMin = tests.reduce(function(a,t){ return a + (TM_MINS[t]||8); }, 0) + 5;
+  S._testTotalMinutes = totalMin;
+
+  document.getElementById('sel-avatar').textContent = 'PD';
+  document.getElementById('sel-name').textContent = '🧪 Candidato de Prueba';
+  document.getElementById('sel-title').textContent = 'Modo Prueba: ' + pm.label;
+  document.getElementById('sel-subtitle').textContent = pm.desc;
+  var banner = document.getElementById('sel-profile-banner');
+  banner.style.background = '#6366f115'; banner.style.borderColor = '#6366f140';
+  banner.innerHTML = '<span style="font-size:24px">' + pm.icon + '</span><div style="margin-top:8px"><strong style="font-size:15px">' + pm.label + '</strong><div style="font-size:13px;color:var(--ink3);margin-top:3px">' + pm.desc + '</div></div>';
+
+  document.getElementById('sel-tests-list').innerHTML = tests.map(function(t, idx) {
+    var m2 = TESTS_META[t];
+    var mins = TM_MINS[t] || 8;
+    var isGame = m2 && m2.game;
+    return '<div style="display:flex;align-items:center;gap:14px;padding:13px 16px;border-radius:10px;background:var(--bg);border:1px solid var(--border)"><span style="font-size:22px">' + (m2 ? m2.icon : '📝') + '</span><div style="flex:1"><div style="font-weight:700;font-size:14px">Prueba ' + (idx+1) + (m2 ? ' — ' + m2.name : '') + '</div><div style="font-size:11px;color:var(--ink3);margin-top:2px">~' + mins + ' min' + (isGame ? ' · 🎮 Juego' : '') + '</div></div></div>';
+  }).join('');
+
+  var ttEl = document.getElementById('sel-total-time');
+  if (ttEl) ttEl.textContent = 'Tiempo total asignado: ' + totalMin + ' minutos';
+  var disclaimerTimeEl = document.getElementById('disclaimer-time-value');
+  if (disclaimerTimeEl) disclaimerTimeEl.textContent = totalMin + ' minutos';
+
+  var cb = document.getElementById('disclaimer-check');
+  if (cb) cb.checked = false;
+  onDisclaimerChange();
+
+  showView('testselect');
+}
 
 // ═══════════════════════════════════════════════════════════
 //  INFORME PROFESIONAL
@@ -3209,7 +3383,7 @@ function submitRegister() {
     barratt:5, dc0:20, pai:12, situacional:12, vigilancia:12,
     comprension:10, disc:8, atencion:8,
     cwb:8, ausentismo:5, frustracion:6, ice:8,
-    game_detector:3, game_secuencias:3, game_bandeja:3, game_impulsos:2, game_vigilancia:3
+    game_detector:3, game_secuencias:3, game_bandeja:3, game_impulsos:2, game_vigilancia:3, game_cadena:4, game_memoria:3, game_expedicion:4, game_radar:4
   };
   var totalMin = tests.reduce(function(a,t){ return a + (TEST_TIME_MINUTES[t]||8); }, 0);
   // Add 5-minute buffer for transitions
@@ -3516,65 +3690,162 @@ function startGame(testId) {
   clearGameTimers();
   var gc = document.getElementById('game-container');
   if (!gc) return;
-  if (testId === 'game_detector')   return gameDetector(gc);
-  if (testId === 'game_secuencias') return gameSecuencias(gc);
-  if (testId === 'game_bandeja')    return gameBandeja(gc);
-  if (testId === 'game_impulsos')   return gameImpulsos(gc);
-  if (testId === 'game_vigilancia') return gameVigilancia(gc);
+  // Read difficulty (1-5) from cargo profile config
+  var perfil = S.candidate ? S.candidate.perfil : 'jefatura';
+  var ideal = PERFIL_IDEAL[perfil];
+  var diff = 3; // default: medium
+  if (ideal && ideal[testId] && ideal[testId].pct) {
+    diff = ideal[testId].pct.minLv || scoreToLevel5(ideal[testId].pct.min) || 3;
+  }
+  if (testId === 'game_detector')   return gameDetector(gc, diff);
+  if (testId === 'game_secuencias') return gameSecuencias(gc, diff);
+  if (testId === 'game_bandeja')    return gameBandeja(gc, diff);
+  if (testId === 'game_impulsos')   return gameImpulsos(gc, diff);
+  if (testId === 'game_vigilancia') return gameVigilancia(gc, diff);
+  if (testId === 'game_cadena')     return gameCadena(gc, diff);
+  if (testId === 'game_memoria')    return gameMemoria(gc, diff);
+  if (testId === 'game_expedicion') return gameExpedicion(gc, diff);
+  if (testId === 'game_radar')      return gameRadar(gc, diff);
 }
 
 // ── GAME 1: Detector (Attention) ──────────────────────────────
-function gameDetector(gc) {
-  var ROUNDS = 20, round = 0, hits = 0, misses = 0, falseAlarms = 0;
-  var SYMBOLS = ['●','■','▲','◆','★','⬟','⬠','◉'];
-  var target = '★';
+function gameDetector(gc, diff) {
+  diff = diff || 3;
+  // Difficulty scaling: rounds, grid growth, time per round
+  var ROUNDS = [6, 7, 8, 9, 10][diff-1];
+  var round = 0, hits = 0, falseAlarms = 0, timeouts = 0;
+  var totalReactionTime = 0;
+  var baseGrid = [10, 12, 14, 16, 18][diff-1];
+  var gridGrowth = [2, 2, 3, 3, 4][diff-1];
+  var baseTime = [6000, 5200, 4500, 3800, 3200][diff-1];
+  var timeShrink = [150, 180, 220, 260, 300][diff-1];
+
+  // Symbol families — distractors are visually similar to target
+  var FAMILIES = [
+    { target:'▲', distractors:['△','▽','▼','◁','◀','▷','▶','⬟'] },
+    { target:'●', distractors:['○','◎','◉','◐','◑','◒','◓','⬤'] },
+    { target:'■', distractors:['□','▪','▫','◻','◼','◽','◾','▣'] },
+    { target:'★', distractors:['☆','✦','✧','⬟','◇','◆','✶','✴'] },
+    { target:'♠', distractors:['♣','♥','♦','♤','♧','♡','♢','⚑'] },
+    { target:'⬢', distractors:['⬡','⬟','⬠','◈','◇','◆','△','○'] },
+  ];
 
   function showIntro() {
-    gc.innerHTML = '<div style="text-align:center;max-width:360px">'
+    gc.innerHTML = '<div style="text-align:center;max-width:380px">'
       + '<div style="font-size:48px;margin-bottom:16px">🎯</div>'
-      + '<div style="font-size:16px;font-weight:700;margin-bottom:8px">Encuentra el símbolo objetivo</div>'
-      + '<div style="font-size:13px;color:var(--ink3);line-height:1.6;margin-bottom:12px">Aparecerá una grilla de símbolos. Toca el <strong style="font-size:18px">' + target + '</strong> lo más rápido que puedas.<br>Tienes ' + ROUNDS + ' rondas.</div>'
+      + '<div style="font-size:16px;font-weight:700;margin-bottom:8px">Detector — Atención Selectiva</div>'
+      + '<div style="font-size:13px;color:var(--ink3);line-height:1.7;margin-bottom:6px">'
+      + 'En cada ronda aparecerá una grilla con un <strong>símbolo objetivo distinto</strong>. '
+      + 'Encuéntralo entre los distractores lo más rápido que puedas.</div>'
+      + '<div style="font-size:12px;color:var(--ink4);line-height:1.6;margin-bottom:16px">'
+      + '• El objetivo <strong>cambia</strong> en cada ronda<br>'
+      + '• Los distractores se parecen al objetivo<br>'
+      + '• Tienes tiempo limitado por ronda<br>'
+      + '• Penalización por tocar el símbolo incorrecto</div>'
       + '<button onclick="this.parentElement.parentElement._start()" class="btn btn-accent" style="padding:12px 32px">Comenzar →</button>'
       + '</div>';
     gc._start = nextRound;
   }
 
   function nextRound() {
-    if (round >= ROUNDS) { gameComplete('game_detector', Math.round((hits / ROUNDS) * 100 - falseAlarms * 5)); return; }
+    if (round >= ROUNDS) {
+      var avgRT = totalReactionTime / Math.max(1, hits);
+      var speedBonus = Math.max(0, Math.round((1 - avgRT / 4000) * 15));
+      var basePct = Math.round((hits / ROUNDS) * 100);
+      var penalty = falseAlarms * 6 + timeouts * 4;
+      gameComplete('game_detector', Math.max(0, basePct + speedBonus - penalty));
+      return;
+    }
     round++;
-    var gridSize = 16 + Math.floor(round / 5) * 4;
+
+    // Pick a family (rotating, not random repeat)
+    var fam = FAMILIES[(round - 1) % FAMILIES.length];
+    var target = fam.target;
+    var distractorPool = fam.distractors;
+
+    // Difficulty scaling
+    var gridSize = baseGrid + round * gridGrowth;
+    var numTargets = 1;
+    var timeLimit = Math.max(2000, baseTime - round * timeShrink);
+
+    // Build grid: 1 target + similar distractors
     var cells = [];
     var targetIdx = Math.floor(Math.random() * gridSize);
     for (var i = 0; i < gridSize; i++) {
-      if (i === targetIdx) cells.push(target);
-      else cells.push(SYMBOLS[Math.floor(Math.random() * (SYMBOLS.length - 1))]);
+      if (i === targetIdx) cells.push({ sym: target, isTarget: true });
+      else {
+        // Higher rounds: more distractors from same family
+        var useSimilar = Math.random() < (0.3 + diff * 0.1 + round * 0.03);
+        var sym = useSimilar
+          ? distractorPool[Math.floor(Math.random() * distractorPool.length)]
+          : distractorPool[Math.floor(Math.random() * distractorPool.length)];
+        cells.push({ sym: sym, isTarget: false });
+      }
     }
     var cols = Math.ceil(Math.sqrt(gridSize));
+    var responded = false;
+    var startTime = Date.now();
+
+    // Timer bar
     gc.innerHTML = '<div style="text-align:center;width:100%">'
-      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;font-size:12px;color:var(--ink3)">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:12px;color:var(--ink3)">'
       + '<span>Ronda ' + round + '/' + ROUNDS + '</span>'
-      + '<span>Encuentra: <strong style="font-size:18px">' + target + '</strong></span>'
-      + '<span>Aciertos: <strong style="color:#16a34a">' + hits + '</strong></span></div>'
-      + '<div style="display:grid;grid-template-columns:repeat(' + cols + ',1fr);gap:6px;max-width:400px;margin:0 auto" id="det-grid"></div></div>';
+      + '<span style="display:flex;align-items:center;gap:6px">Encuentra: <span style="font-size:22px;background:var(--accent-l);padding:2px 10px;border-radius:8px;border:1.5px solid var(--accent-m)">' + target + '</span></span>'
+      + '<span>✓ <strong style="color:#16a34a">' + hits + '</strong> · ✗ <strong style="color:#dc2626">' + falseAlarms + '</strong></span></div>'
+      + '<div style="height:4px;background:#f1f5f9;border-radius:100px;overflow:hidden;margin-bottom:12px"><div id="det-timer-bar" style="height:100%;background:var(--accent);border-radius:100px;width:100%;transition:width ' + (timeLimit/1000) + 's linear"></div></div>'
+      + '<div style="display:grid;grid-template-columns:repeat(' + cols + ',1fr);gap:5px;max-width:420px;margin:0 auto" id="det-grid"></div></div>';
+
+    // Animate timer bar
+    requestAnimationFrame(function() {
+      var bar = document.getElementById('det-timer-bar');
+      if (bar) bar.style.width = '0%';
+    });
+
     var grid = document.getElementById('det-grid');
-    cells.forEach(function(sym, idx) {
+    cells.forEach(function(cell) {
       var btn = document.createElement('button');
-      btn.textContent = sym;
-      btn.style.cssText = 'width:100%;aspect-ratio:1;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);font-size:18px;cursor:pointer;transition:all .1s';
+      btn.textContent = cell.sym;
+      btn.style.cssText = 'width:100%;aspect-ratio:1;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);font-size:' + Math.max(13, 22 - diff - Math.floor(round/3)) + 'px;cursor:pointer;transition:all .1s;line-height:1';
       btn.onclick = function() {
-        if (sym === target) { hits++; btn.style.background = '#f0fdf4'; btn.style.borderColor = '#16a34a'; }
-        else { falseAlarms++; btn.style.background = '#fef2f2'; btn.style.borderColor = '#dc2626'; }
-        setTimeout(nextRound, 300);
+        if (responded) return;
+        responded = true;
+        if (cell.isTarget) {
+          hits++;
+          totalReactionTime += (Date.now() - startTime);
+          btn.style.background = '#f0fdf4'; btn.style.borderColor = '#16a34a'; btn.style.transform = 'scale(1.15)';
+        } else {
+          falseAlarms++;
+          btn.style.background = '#fef2f2'; btn.style.borderColor = '#dc2626';
+          // Show where target was
+          grid.querySelectorAll('button').forEach(function(b) {
+            if (b.textContent === target) { b.style.background = '#fef9c3'; b.style.borderColor = '#f59e0b'; b.style.transform = 'scale(1.1)'; }
+          });
+        }
+        clearTimeout(roundTimer);
+        setTimeout(nextRound, 450);
       };
       grid.appendChild(btn);
     });
+
+    // Timeout
+    var roundTimer = setTimeout(function() {
+      if (responded) return;
+      responded = true;
+      timeouts++;
+      // Highlight target
+      grid.querySelectorAll('button').forEach(function(b) {
+        if (b.textContent === target) { b.style.background = '#fef9c3'; b.style.borderColor = '#f59e0b'; b.style.transform = 'scale(1.1)'; }
+      });
+      setTimeout(nextRound, 600);
+    }, timeLimit);
   }
   showIntro();
 }
 
 // ── GAME 2: Secuencias (Logic) ──────────────────────────────
-function gameSecuencias(gc) {
-  var level = 0, maxLevel = 10, score = 0;
+function gameSecuencias(gc, diff) {
+  diff = diff || 3;
+  var level = 0, maxLevel = [6, 7, 8, 9, 10][diff-1], score = 0;
 
   function showIntro() {
     gc.innerHTML = '<div style="text-align:center;max-width:360px">'
@@ -3587,8 +3858,8 @@ function gameSecuencias(gc) {
 
   function genSequence(lv) {
     var start = Math.floor(Math.random() * 10) + 1;
-    var step1 = Math.floor(Math.random() * (3 + lv)) + 1;
-    var step2 = lv > 4 ? Math.floor(Math.random() * 3) + 1 : 0;
+    var step1 = Math.floor(Math.random() * (2 + lv + diff)) + 1;
+    var step2 = (lv + diff) > 6 ? Math.floor(Math.random() * 3) + 1 : 0;
     var seq = [start];
     for (var i = 1; i < 5; i++) {
       var next = seq[i-1] + step1 + (step2 > 0 ? step2 * i : 0);
@@ -3634,24 +3905,26 @@ function gameSecuencias(gc) {
 }
 
 // ── GAME 3: Bandeja de Entrada (Prioritization) ──────────────
-function gameBandeja(gc) {
-  var TASKS = [
+function gameBandeja(gc, diff) {
+  diff = diff || 3;
+  var ALL_TASKS = [
     { text:'El director necesita el informe para la reunión en 30 min', urg:'urgente' },
     { text:'Organizar la carpeta de archivos del mes pasado', urg:'bajo' },
     { text:'Un cliente reclama por un error en su factura', urg:'urgente' },
     { text:'Reservar sala para reunión de la próxima semana', urg:'normal' },
-    { text:'Actualizar la base de datos de contactos', urg:'bajo' },
     { text:'Responder email del proveedor sobre entrega retrasada', urg:'urgente' },
     { text:'Comprar café para la oficina', urg:'bajo' },
     { text:'Preparar la nómina de hoy antes de las 12:00', urg:'urgente' },
-    { text:'Revisar las redes sociales de la empresa', urg:'bajo' },
     { text:'Coordinar capacitación del equipo nuevo', urg:'normal' },
     { text:'Un empleado reporta una fuga de agua en baño', urg:'urgente' },
-    { text:'Planificar el evento de fin de año', urg:'bajo' },
     { text:'Enviar reporte semanal de asistencia', urg:'normal' },
-    { text:'Ordenar el escritorio', urg:'bajo' },
-    { text:'Atender llamada de emergencia de sucursal', urg:'urgente' },
   ];
+  // At diff 4-5, add ambiguous tasks
+  if (diff >= 4) {
+    ALL_TASKS.push({ text:'Un compañero pide ayuda con su presentación de mañana', urg:'normal' });
+    ALL_TASKS.push({ text:'Revisar si el contrato del proveedor tiene cláusula de penalización', urg:'urgente' });
+  }
+  var TASKS = ALL_TASKS.slice(0, [6, 7, 8, 9, 10][diff-1]);
   var idx = 0, correct = 0, total = TASKS.length;
   var COLORS = { urgente:'#dc2626', normal:'#b45309', bajo:'#64748b' };
   var LABELS = { urgente:'🔴 Urgente', normal:'🟡 Normal', bajo:'🟢 Puede esperar' };
@@ -3694,9 +3967,11 @@ function gameBandeja(gc) {
 }
 
 // ── GAME 4: Control de Impulsos (Go/No-Go) ──────────────────
-function gameImpulsos(gc) {
-  var TOTAL = 30, trial = 0, goHits = 0, noGoErrors = 0, goMisses = 0;
-  var GO_RATIO = 0.7;
+function gameImpulsos(gc, diff) {
+  diff = diff || 3;
+  var TOTAL = [6, 7, 8, 9, 10][diff-1], trial = 0, goHits = 0, noGoErrors = 0, goMisses = 0;
+  var GO_RATIO = [0.8, 0.75, 0.7, 0.65, 0.6][diff-1]; // harder = more no-go traps
+  var stimTime = [1800, 1500, 1200, 1000, 800][diff-1]; // ms to respond
 
   function showIntro() {
     gc.innerHTML = '<div style="text-align:center;max-width:360px">'
@@ -3743,74 +4018,1135 @@ function gameImpulsos(gc) {
         if (isGo) goMisses++;
         stim.style.opacity = '.3';
         setTimeout(nextTrial, 300);
-      }, 1200);
+      }, stimTime);
     }, 400 + Math.random() * 400);
   }
   showIntro();
 }
 
 // ── GAME 5: Ronda de Vigilancia (Anomaly Detection) ──────────
-function gameVigilancia(gc) {
-  var SCENES = [
-    { bg:'🏢', desc:'Entrada principal', items:['🚶','🚶‍♂️','👔','🧳','📦'], anomaly:'🔫', hasAnomaly:true },
-    { bg:'🏢', desc:'Recepción', items:['💼','🪑','🖥','📋','☕'], anomaly:null, hasAnomaly:false },
-    { bg:'🏗', desc:'Bodega', items:['📦','📦','🔧','🪜','📦'], anomaly:'🔥', hasAnomaly:true },
-    { bg:'🅿️', desc:'Estacionamiento', items:['🚗','🚙','🚗','🏍','🚗'], anomaly:null, hasAnomaly:false },
-    { bg:'🏢', desc:'Pasillo nivel 2', items:['🚶','🪑','🖼','🚪','💡'], anomaly:'🧨', hasAnomaly:true },
-    { bg:'🏗', desc:'Acceso trasero', items:['🚪','📦','🗑','💡','🔒'], anomaly:null, hasAnomaly:false },
-    { bg:'🏢', desc:'Sala de reuniones', items:['🪑','🪑','📊','🖥','☕'], anomaly:'🕵️', hasAnomaly:true },
-    { bg:'🅿️', desc:'Entrada vehicular', items:['🚗','🚙','🛻','🏍','🚦'], anomaly:'🔪', hasAnomaly:true },
-    { bg:'🏗', desc:'Zona de carga', items:['📦','📦','🚛','👷','📋'], anomaly:null, hasAnomaly:false },
-    { bg:'🏢', desc:'Cafetería', items:['☕','🍽','🪑','🚶','🚶‍♀️'], anomaly:'💊', hasAnomaly:true },
-    { bg:'🏢', desc:'Oficinas planta baja', items:['🖥','📋','🪑','💡','📁'], anomaly:null, hasAnomaly:false },
-    { bg:'🅿️', desc:'Perímetro norte', items:['🌳','🚗','🔒','💡','🚶'], anomaly:'🧑‍🦱', hasAnomaly:true },
+function gameVigilancia(gc, diff) {
+  diff = diff || 3;
+  var ALL_CAMERAS = [
+    { desc:'Entrada principal',  normal:['🚶','👔','🧳','🚶‍♀️','📦','🚶','💼'], anomaly:'🔫', hasAnomaly:true },
+    { desc:'Recepción',          normal:['💼','🪑','🖥','📋','☕','🚶','🪑'], anomaly:null, hasAnomaly:false },
+    { desc:'Bodega',             normal:['📦','📦','🔧','🪜','📦','👷','📦'], anomaly:'🔥', hasAnomaly:true },
+    { desc:'Estacionamiento',    normal:['🚗','🚙','🚗','🏍','🚗','🚙','🚗'], anomaly:null, hasAnomaly:false },
+    { desc:'Pasillo nivel 2',    normal:['🚶','🪑','🖼','🚪','💡','🚶‍♂️','🚪'], anomaly:'🧨', hasAnomaly:true },
+    { desc:'Acceso trasero',     normal:['🚪','📦','🗑','💡','🔒','📦','🚪'], anomaly:null, hasAnomaly:false },
+    { desc:'Sala de reuniones',  normal:['🪑','🪑','📊','🖥','☕','🪑','📋'], anomaly:'🕵️', hasAnomaly:true },
+    { desc:'Zona de carga',      normal:['📦','🚛','👷','📋','📦','🔧','📦'], anomaly:null, hasAnomaly:false },
+    { desc:'Cafetería',          normal:['☕','🍽','🪑','🚶','🚶‍♀️','☕','🪑'], anomaly:'💊', hasAnomaly:true },
+    { desc:'Perímetro norte',    normal:['🌳','🚗','🔒','💡','🌳','🚶','🌳'], anomaly:'🔪', hasAnomaly:true },
   ];
-  var idx = 0, detections = 0, falseAlarms = 0, missed = 0;
+  var CAMERAS = ALL_CAMERAS.slice(0, [6, 7, 8, 9, 10][diff-1]);
+  var baseAnomalyDuration = [3500, 3100, 2800, 2400, 2000][diff-1];
+  var anomalyShrink = [100, 120, 160, 180, 220][diff-1];
+  var camIdx = 0, detections = 0, falseAlarms = 0, missed = 0;
+  var _vigTimers = [];
+  function clearVigTimers() { _vigTimers.forEach(clearTimeout); _vigTimers = []; }
 
   function showIntro() {
-    gc.innerHTML = '<div style="text-align:center;max-width:360px">'
+    gc.innerHTML = '<div style="text-align:center;max-width:400px">'
       + '<div style="font-size:48px;margin-bottom:16px">🛡</div>'
-      + '<div style="font-size:16px;font-weight:700;margin-bottom:8px">Ronda de Vigilancia</div>'
-      + '<div style="font-size:13px;color:var(--ink3);line-height:1.6;margin-bottom:12px">Revisarás ' + SCENES.length + ' escenas de cámaras. En cada una decide si hay una <strong style="color:#dc2626">anomalía</strong> o si todo está <strong style="color:#16a34a">normal</strong>.<br>Hay penalización por falsas alarmas.</div>'
-      + '<button onclick="this.parentElement.parentElement._start()" class="btn btn-accent" style="padding:12px 32px">Comenzar ronda →</button></div>';
-    gc._start = nextScene;
+      + '<div style="font-size:16px;font-weight:700;margin-bottom:8px">Monitoreo en Tiempo Real</div>'
+      + '<div style="font-size:13px;color:var(--ink3);line-height:1.7;margin-bottom:6px">'
+      + 'Observarás ' + CAMERAS.length + ' cámaras de seguridad en vivo. La escena cambiará constantemente mostrando actividad normal.</div>'
+      + '<div style="font-size:12px;color:var(--ink4);line-height:1.6;margin-bottom:16px">'
+      + '• Cuando detectes algo <strong style="color:#dc2626">sospechoso</strong>, presiona <strong>🚨 ALERTA</strong> de inmediato<br>'
+      + '• Las anomalías aparecen <strong>brevemente</strong> y luego desaparecen<br>'
+      + '• Si no ves nada sospechoso, espera a que la cámara cambie<br>'
+      + '• Cuidado: presionar sin razón cuenta como <strong>falsa alarma</strong></div>'
+      + '<button onclick="this.parentElement.parentElement._start()" class="btn btn-accent" style="padding:12px 32px">Iniciar monitoreo →</button>'
+      + '</div>';
+    gc._start = nextCamera;
   }
 
-  function nextScene() {
-    if (idx >= SCENES.length) {
-      var totalWithAnomaly = SCENES.filter(function(s){ return s.hasAnomaly; }).length;
-      var pct = Math.round((detections / Math.max(1, totalWithAnomaly)) * 100 - falseAlarms * 8);
-      gameComplete('game_vigilancia', pct);
+  function nextCamera() {
+    clearVigTimers();
+    if (camIdx >= CAMERAS.length) {
+      var totalAnom = CAMERAS.filter(function(c){ return c.hasAnomaly; }).length;
+      var pct = Math.round((detections / Math.max(1, totalAnom)) * 100 - falseAlarms * 10);
+      gameComplete('game_vigilancia', Math.max(0, pct));
       return;
     }
-    var scene = SCENES[idx];
-    var allItems = scene.items.slice();
-    if (scene.hasAnomaly) {
-      var insertAt = Math.floor(Math.random() * allItems.length);
-      allItems.splice(insertAt, 0, scene.anomaly);
+    var cam = CAMERAS[camIdx];
+    var roundDone = false;
+    var anomalyVisible = false;
+    var anomalyShown = false;
+    var alertPressed = false;
+
+    // Difficulty: anomaly visible time decreases
+    var anomalyDuration = Math.max(1000, baseAnomalyDuration - camIdx * anomalyShrink);
+    var roundDuration = 8000 + Math.floor(Math.random() * 2000); // 8-10s per camera
+    var anomalyAppearAt = 2000 + Math.floor(Math.random() * 4000); // appears 2-6s into round
+
+    // Current display grid
+    var gridItems = cam.normal.slice();
+    var GRID_SIZE = 8;
+    while (gridItems.length < GRID_SIZE) gridItems.push(cam.normal[Math.floor(Math.random() * cam.normal.length)]);
+    gridItems = gridItems.slice(0, GRID_SIZE);
+
+    function render() {
+      var statusColor = anomalyVisible ? '#dc2626' : '#16a34a';
+      var statusDot = anomalyVisible ? '🔴' : '🟢';
+      gc.innerHTML = '<div style="width:100%;max-width:440px">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:12px;color:var(--ink3)">'
+        + '<span>Cámara ' + (camIdx+1) + '/' + CAMERAS.length + '</span>'
+        + '<span>' + statusDot + ' <strong style="color:' + statusColor + '">' + (anomalyVisible ? 'MOVIMIENTO' : 'EN VIVO') + '</strong></span>'
+        + '<span>✓ ' + detections + '  ✗ ' + falseAlarms + '</span></div>'
+
+        // Camera feed
+        + '<div style="background:#111;border-radius:14px;padding:16px 20px;margin-bottom:12px;position:relative;overflow:hidden">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
+        + '<span style="font-size:9px;color:#555;text-transform:uppercase;letter-spacing:1.5px;font-weight:700">📹 CAM — ' + cam.desc + '</span>'
+        + '<span style="font-size:9px;color:#444;font-family:monospace" id="vig-clock"></span></div>'
+
+        + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:8px 0" id="vig-grid">'
+        + gridItems.map(function(it, i) {
+            return '<div style="text-align:center;font-size:28px;padding:6px;border-radius:8px;background:rgba(255,255,255,.04);transition:all .3s" id="vig-cell-' + i + '">' + it + '</div>';
+          }).join('')
+        + '</div>'
+
+        // Scanline effect
+        + '<div style="position:absolute;top:0;left:0;right:0;height:2px;background:rgba(255,255,255,.03);animation:scanline 3s linear infinite"></div>'
+        + '</div>'
+
+        // Alert button
+        + '<button id="vig-alert-btn" onclick="window._vigAlert()" style="width:100%;padding:16px;border-radius:12px;border:2px solid #dc2626;background:#fff;font-size:15px;font-weight:800;color:#dc2626;cursor:pointer;transition:all .12s;font-family:inherit;letter-spacing:.5px"'
+        + ' onmousedown="this.style.background=\'#fef2f2\';this.style.transform=\'scale(.98)\'" onmouseup="this.style.background=\'#fff\';this.style.transform=\'\'"'
+        + '>🚨 ALERTA</button>'
+        + '<div style="text-align:center;font-size:11px;color:var(--ink4);margin-top:8px">Presiona solo si detectas algo sospechoso</div>'
+        + '</div>';
+
+      // Clock
+      updateClock();
     }
 
-    gc.innerHTML = '<div style="width:100%;max-width:420px">'
-      + '<div style="display:flex;justify-content:space-between;margin-bottom:12px;font-size:12px;color:var(--ink3)">'
-      + '<span>Cámara ' + (idx+1) + '/' + SCENES.length + '</span>'
-      + '<span>Detecciones: <strong style="color:#16a34a">' + detections + '</strong></span></div>'
-      + '<div style="background:#1d1d1f;border-radius:12px;padding:20px;margin-bottom:16px;text-align:center">'
-      + '<div style="font-size:10px;color:#666;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">📹 ' + scene.desc + '</div>'
-      + '<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;font-size:32px;padding:12px 0">'
-      + allItems.map(function(it) { return '<span>' + it + '</span>'; }).join('')
-      + '</div></div>'
-      + '<div style="display:flex;gap:10px">'
-      + '<button onclick="vigAnswer(true)" style="flex:1;padding:14px;border-radius:10px;border:1.5px solid #fecaca;background:#fff;font-size:13px;font-weight:700;color:#dc2626;cursor:pointer">⚠️ Anomalía detectada</button>'
-      + '<button onclick="vigAnswer(false)" style="flex:1;padding:14px;border-radius:10px;border:1.5px solid #bbf7d0;background:#fff;font-size:13px;font-weight:700;color:#16a34a;cursor:pointer">✅ Todo normal</button>'
-      + '</div></div>';
+    function updateClock() {
+      var el = document.getElementById('vig-clock');
+      if (el) {
+        var now = new Date();
+        el.textContent = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0') + ':' + now.getSeconds().toString().padStart(2,'0');
+      }
+    }
 
-    window.vigAnswer = function(flagged) {
-      if (flagged && scene.hasAnomaly) detections++;
-      else if (flagged && !scene.hasAnomaly) falseAlarms++;
-      else if (!flagged && scene.hasAnomaly) missed++;
-      idx++;
-      setTimeout(nextScene, 400);
+    // Shuffle normal elements periodically
+    function shuffleNormal() {
+      if (roundDone) return;
+      var swapIdx = Math.floor(Math.random() * GRID_SIZE);
+      if (!anomalyVisible || swapIdx !== _anomalyCellIdx) {
+        gridItems[swapIdx] = cam.normal[Math.floor(Math.random() * cam.normal.length)];
+        var cell = document.getElementById('vig-cell-' + swapIdx);
+        if (cell) {
+          cell.style.opacity = '0.3';
+          setTimeout(function() {
+            if (cell) { cell.textContent = gridItems[swapIdx]; cell.style.opacity = '1'; }
+          }, 150);
+        }
+      }
+      _vigTimers.push(setTimeout(shuffleNormal, 1200 + Math.random() * 1000));
+    }
+
+    var _anomalyCellIdx = -1;
+
+    // Insert anomaly
+    function showAnomaly() {
+      if (roundDone || !cam.hasAnomaly) return;
+      anomalyVisible = true;
+      anomalyShown = true;
+      _anomalyCellIdx = Math.floor(Math.random() * GRID_SIZE);
+      gridItems[_anomalyCellIdx] = cam.anomaly;
+      var cell = document.getElementById('vig-cell-' + _anomalyCellIdx);
+      if (cell) {
+        cell.style.opacity = '0';
+        setTimeout(function() {
+          if (cell) { cell.textContent = cam.anomaly; cell.style.opacity = '1'; cell.style.background = 'rgba(220,38,38,.12)'; }
+        }, 100);
+      }
+      // Update status
+      var statusEls = gc.querySelectorAll('strong');
+      // Remove anomaly after duration
+      _vigTimers.push(setTimeout(function() {
+        if (roundDone) return;
+        anomalyVisible = false;
+        _anomalyCellIdx = -1;
+        gridItems[_anomalyCellIdx] = cam.normal[Math.floor(Math.random() * cam.normal.length)];
+        if (cell) { cell.textContent = gridItems[Math.floor(Math.random() * GRID_SIZE)] || '·'; cell.style.background = 'rgba(255,255,255,.04)'; }
+      }, anomalyDuration));
+    }
+
+    // Alert handler
+    window._vigAlert = function() {
+      if (roundDone || alertPressed) return;
+      alertPressed = true;
+      roundDone = true;
+      clearVigTimers();
+      var btn = document.getElementById('vig-alert-btn');
+      if (anomalyVisible) {
+        detections++;
+        if (btn) { btn.style.background = '#f0fdf4'; btn.style.borderColor = '#16a34a'; btn.style.color = '#16a34a'; btn.textContent = '✅ Anomalía detectada correctamente'; }
+      } else {
+        falseAlarms++;
+        if (btn) { btn.style.background = '#fef2f2'; btn.style.borderColor = '#dc2626'; btn.style.color = '#dc2626'; btn.textContent = '❌ Falsa alarma — no había anomalía'; }
+      }
+      camIdx++;
+      _vigTimers.push(setTimeout(nextCamera, 1200));
     };
+
+    // End round (no alert pressed)
+    function endRound() {
+      if (roundDone) return;
+      roundDone = true;
+      clearVigTimers();
+      var btn = document.getElementById('vig-alert-btn');
+      if (cam.hasAnomaly && anomalyShown) {
+        missed++;
+        if (btn) { btn.style.background = '#fffbeb'; btn.style.borderColor = '#f59e0b'; btn.style.color = '#b45309'; btn.textContent = '⚠️ Anomalía no detectada — ' + cam.anomaly + ' en ' + cam.desc; }
+      } else {
+        if (btn) { btn.style.background = '#f0fdf4'; btn.style.borderColor = '#16a34a'; btn.style.color = '#16a34a'; btn.textContent = '✅ Correcto — no había anomalía'; }
+      }
+      camIdx++;
+      _vigTimers.push(setTimeout(nextCamera, 1200));
+    }
+
+    render();
+    // Start shuffle
+    _vigTimers.push(setTimeout(shuffleNormal, 800));
+    // Start clock update
+    var clockInt = setInterval(updateClock, 1000);
+    _vigTimers.push(setTimeout(function() { clearInterval(clockInt); }, roundDuration + 2000));
+    // Show anomaly at random time
+    if (cam.hasAnomaly) {
+      _vigTimers.push(setTimeout(showAnomaly, anomalyAppearAt));
+    }
+    // Auto-end round
+    _vigTimers.push(setTimeout(endRound, roundDuration));
+  }
+  showIntro();
+
+  // Add scanline animation
+  if (!document.getElementById('vig-style')) {
+    var style = document.createElement('style');
+    style.id = 'vig-style';
+    style.textContent = '@keyframes scanline{0%{top:0}100%{top:100%}}';
+    document.head.appendChild(style);
+  }
+}
+
+// ── GAME 6: Cadena de Mando (Delegation) ──────────────────────
+function gameCadena(gc, diff) {
+  diff = diff || 3;
+  var TEAM = [
+    { name:'Ana',   icon:'👩‍💼', skill:'Análisis',      load:0, maxLoad:[4,4,3,3,2][diff-1], tags:['datos','informes','análisis'] },
+    { name:'Carlos',icon:'👨‍🔧', skill:'Operaciones',   load:0, maxLoad:[4,4,3,3,2][diff-1], tags:['logística','terreno','equipos'] },
+    { name:'Lucía', icon:'👩‍💻', skill:'Tecnología',     load:0, maxLoad:[4,4,3,3,2][diff-1], tags:['sistemas','digital','software'] },
+    { name:'Pedro', icon:'👨‍🏫', skill:'Comunicación',   load:0, maxLoad:[4,4,3,3,2][diff-1], tags:['clientes','presentaciones','capacitación'] },
+  ];
+  var ALL_TASKS = [
+    { text:'Preparar informe de ventas del trimestre', best:'Ana', accept:['Ana'], tags:['datos','informes'] },
+    { text:'Reparar falla en el sistema de inventario', best:'Lucía', accept:['Lucía'], tags:['sistemas'] },
+    { text:'Capacitar al equipo nuevo sobre protocolos', best:'Pedro', accept:['Pedro'], tags:['capacitación'] },
+    { text:'Coordinar la entrega de materiales a bodega', best:'Carlos', accept:['Carlos'], tags:['logística'] },
+    { text:'Crear dashboard de métricas en Excel', best:'Ana', accept:['Ana','Lucía'], tags:['datos','digital'] },
+    { text:'Atender reclamo presencial de un cliente VIP', best:'Pedro', accept:['Pedro'], tags:['clientes'] },
+    { text:'Supervisar instalación de equipos en terreno', best:'Carlos', accept:['Carlos'], tags:['terreno','equipos'] },
+    { text:'Migrar base de datos a nuevo servidor', best:'Lucía', accept:['Lucía'], tags:['sistemas','software'] },
+    { text:'Redactar comunicado para proveedores', best:'Pedro', accept:['Pedro','Ana'], tags:['clientes','informes'] },
+    { text:'Auditar stock físico versus sistema', best:'Carlos', accept:['Carlos','Ana'], tags:['logística','análisis'] },
+  ];
+  var TASKS = ALL_TASKS.slice(0, [6, 7, 8, 9, 10][diff-1]);
+  var taskIdx = 0, score = 0, overloads = 0;
+  var teamMaxLoad = TEAM[0].maxLoad;
+
+  function showIntro() {
+    gc.innerHTML = '<div style="text-align:center;max-width:400px">'
+      + '<div style="font-size:48px;margin-bottom:16px">🔗</div>'
+      + '<div style="font-size:16px;font-weight:700;margin-bottom:8px">Cadena de Mando</div>'
+      + '<div style="font-size:13px;color:var(--ink3);line-height:1.7;margin-bottom:6px">Eres supervisor de un equipo de 4 personas. Asigna cada tarea al miembro más adecuado según sus habilidades.</div>'
+      + '<div style="font-size:12px;color:var(--ink4);line-height:1.6;margin-bottom:16px">'
+      + '• Cada persona tiene una <strong>especialidad</strong> y carga máxima de <strong>' + teamMaxLoad + ' tareas</strong><br>'
+      + '• Asignar al mejor = 10 pts · Aceptable = 5 pts · Incorrecto = 0 pts<br>'
+      + '• Sobrecargar a alguien <strong>penaliza −8 pts</strong></div>'
+      + '<button onclick="this.parentElement.parentElement._start()" class="btn btn-accent" style="padding:12px 32px">Comenzar →</button></div>';
+    gc._start = nextTask;
+  }
+
+  function renderTeamBar() {
+    return '<div style="display:flex;gap:6px;margin-bottom:16px">' + TEAM.map(function(m) {
+      var loadPct = (m.load / m.maxLoad) * 100;
+      var col = m.load >= m.maxLoad ? '#dc2626' : m.load >= 2 ? '#f59e0b' : '#16a34a';
+      return '<div style="flex:1;background:var(--surface2);border-radius:10px;padding:10px 8px;text-align:center;border:1px solid ' + (m.load>=m.maxLoad?'#fecaca':'var(--border)') + '">'
+        + '<div style="font-size:20px">' + m.icon + '</div>'
+        + '<div style="font-size:11px;font-weight:700;color:var(--ink);margin:3px 0 1px">' + m.name + '</div>'
+        + '<div style="font-size:9px;color:var(--ink4);margin-bottom:5px">' + m.skill + '</div>'
+        + '<div style="height:4px;background:#e2e8f0;border-radius:2px;overflow:hidden"><div style="height:100%;width:' + loadPct + '%;background:' + col + ';border-radius:2px;transition:width .3s"></div></div>'
+        + '<div style="font-size:9px;color:' + col + ';font-weight:700;margin-top:3px">' + m.load + '/' + m.maxLoad + '</div>'
+        + '</div>';
+    }).join('') + '</div>';
+  }
+
+  function nextTask() {
+    if (taskIdx >= TASKS.length) {
+      var maxScore = TASKS.length * 10;
+      var pct = Math.max(0, Math.round(((score - overloads * 8) / maxScore) * 100));
+      gameComplete('game_cadena', pct);
+      return;
+    }
+    var task = TASKS[taskIdx];
+    gc.innerHTML = '<div style="width:100%;max-width:440px">'
+      + '<div style="display:flex;justify-content:space-between;margin-bottom:10px;font-size:12px;color:var(--ink3)">'
+      + '<span>Tarea ' + (taskIdx+1) + '/' + TASKS.length + '</span>'
+      + '<span>Puntaje: <strong style="color:var(--accent)">' + score + '</strong></span></div>'
+      + renderTeamBar()
+      + '<div style="background:var(--surface2);border-radius:12px;padding:16px 18px;margin-bottom:14px;border:1px solid var(--border)">'
+      + '<div style="font-size:11px;font-weight:600;color:var(--ink4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">📋 Nueva tarea</div>'
+      + '<div style="font-size:14px;font-weight:600;color:var(--ink);line-height:1.5">' + task.text + '</div></div>'
+      + '<div style="font-size:12px;font-weight:600;color:var(--ink3);margin-bottom:8px">¿A quién se la asignas?</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px" id="cadena-opts"></div></div>';
+
+    var optsEl = document.getElementById('cadena-opts');
+    TEAM.forEach(function(m) {
+      var btn = document.createElement('button');
+      var isFull = m.load >= m.maxLoad;
+      btn.innerHTML = '<span style="font-size:22px">' + m.icon + '</span>'
+        + '<div><div style="font-size:13px;font-weight:700">' + m.name + '</div>'
+        + '<div style="font-size:10px;color:' + (isFull?'#dc2626':'var(--ink4)') + '">' + m.skill + ' · ' + m.load + '/' + m.maxLoad + '</div></div>';
+      btn.style.cssText = 'display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:10px;border:1.5px solid ' + (isFull?'#fecaca':'var(--border)') + ';background:' + (isFull?'#fef2f2':'var(--surface)') + ';cursor:pointer;text-align:left;transition:all .12s;font-family:inherit';
+      btn.onclick = function() {
+        var isBest = m.name === task.best;
+        var isAccept = task.accept.indexOf(m.name) !== -1;
+        if (isBest) score += 10;
+        else if (isAccept) score += 5;
+        if (m.load >= m.maxLoad) overloads++;
+        m.load++;
+        // Feedback
+        optsEl.querySelectorAll('button').forEach(function(b){ b.disabled = true; b.style.opacity = '.4'; });
+        btn.style.opacity = '1';
+        if (isBest) { btn.style.borderColor = '#16a34a'; btn.style.background = '#f0fdf4'; }
+        else if (isAccept) { btn.style.borderColor = '#f59e0b'; btn.style.background = '#fffbeb'; }
+        else { btn.style.borderColor = '#dc2626'; btn.style.background = '#fef2f2'; }
+        taskIdx++;
+        setTimeout(nextTask, 600);
+      };
+      optsEl.appendChild(btn);
+    });
+  }
+  showIntro();
+}
+
+// ── GAME 7: Memoria Operativa (Working Memory) ──────────────
+function gameMemoria(gc, diff) {
+  diff = diff || 3;
+  var maxLevel = [5, 6, 7, 8, 8][diff-1];
+  var level = 0, score = 0;
+  var COLORS_POOL = ['🔴','🔵','🟢','🟡','🟣','🟠','⚪','🟤'];
+  var WORDS_POOL  = ['Luna','Sol','Río','Mar','Rojo','Clave','Norte','Sur','Alfa','Eco'];
+  // Difficulty params
+  var baseShowTime = [5000, 4500, 4000, 3500, 3000][diff-1];
+  var showTimeShrink = [150, 180, 200, 250, 300][diff-1];
+  // Items per level thresholds (scaled by diff)
+  var itemThresholds = diff <= 2 ? [1,1,2,2,2,3,3,3] : diff <= 3 ? [1,1,2,2,3,3,3,4] : [1,2,2,3,3,4,4,4];
+
+  function showIntro() {
+    gc.innerHTML = '<div style="text-align:center;max-width:400px">'
+      + '<div style="font-size:48px;margin-bottom:16px">⏱</div>'
+      + '<div style="font-size:16px;font-weight:700;margin-bottom:8px">Memoria Operativa</div>'
+      + '<div style="font-size:13px;color:var(--ink3);line-height:1.7;margin-bottom:6px">Se te dará información a recordar. Luego resolverás un cálculo distractor. Después deberás recordar la información original.</div>'
+      + '<div style="font-size:12px;color:var(--ink4);line-height:1.6;margin-bottom:16px">'
+      + '• Cada nivel agrega <strong>más cosas</strong> a recordar<br>'
+      + '• Los distractores se vuelven más difíciles<br>'
+      + '• ' + maxLevel + ' niveles progresivos</div>'
+      + '<button onclick="this.parentElement.parentElement._start()" class="btn btn-accent" style="padding:12px 32px">Comenzar →</button></div>';
+    gc._start = nextLevel;
+  }
+
+  function pickRandom(arr, n) {
+    var copy = arr.slice();
+    var result = [];
+    for (var i = 0; i < n && copy.length; i++) {
+      var idx = Math.floor(Math.random() * copy.length);
+      result.push(copy.splice(idx, 1)[0]);
+    }
+    return result;
+  }
+
+  function nextLevel() {
+    if (level >= maxLevel) {
+      gameComplete('game_memoria', Math.round(score / maxLevel * 100));
+      return;
+    }
+    level++;
+
+    var numItems = itemThresholds[level-1] || 2;
+    var items = [];
+    if (level <= Math.ceil(maxLevel * 0.35)) {
+      items = pickRandom(COLORS_POOL, numItems);
+    } else if (level <= Math.ceil(maxLevel * 0.7)) {
+      items = pickRandom(WORDS_POOL, numItems);
+    } else {
+      var nc = Math.ceil(numItems / 2);
+      items = pickRandom(COLORS_POOL, nc).concat(pickRandom(WORDS_POOL, numItems - nc));
+    }
+
+    // Phase 1: Show items to remember
+    var showTime = Math.max(1500, baseShowTime - level * showTimeShrink);
+    gc.innerHTML = '<div style="text-align:center;width:100%;max-width:400px">'
+      + '<div style="display:flex;justify-content:space-between;margin-bottom:16px;font-size:12px;color:var(--ink3)"><span>Nivel ' + level + '/' + maxLevel + '</span><span>Puntaje: ' + score + '</span></div>'
+      + '<div style="font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px">📝 Memoriza</div>'
+      + '<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:16px">'
+      + items.map(function(it) {
+          var isEmoji = it.length <= 2;
+          return '<div style="padding:14px 20px;border-radius:12px;background:var(--accent-l);border:2px solid var(--accent-m);font-size:' + (isEmoji ? '32' : '18') + 'px;font-weight:700;color:var(--accent);min-width:60px;text-align:center">' + it + '</div>';
+        }).join('')
+      + '</div>'
+      + '<div style="height:4px;background:#f1f5f9;border-radius:100px;overflow:hidden;max-width:200px;margin:0 auto"><div id="mem-timer" style="height:100%;background:var(--accent);border-radius:100px;width:100%;transition:width ' + (showTime/1000) + 's linear"></div></div>'
+      + '<div style="font-size:11px;color:var(--ink4);margin-top:8px">Tienes ' + (showTime/1000).toFixed(1) + 's para memorizar</div>'
+      + '</div>';
+
+    requestAnimationFrame(function() {
+      var bar = document.getElementById('mem-timer');
+      if (bar) bar.style.width = '0%';
+    });
+
+    // Phase 2: Distractor (math — harder at higher diff)
+    setTimeout(function() {
+      var a = Math.floor(Math.random() * (15 + diff * 4)) + 5 + level * 2;
+      var b = Math.floor(Math.random() * (8 + diff * 2)) + 3 + level;
+      var op = (level + diff) <= 6 ? '+' : '-';
+      var correct = op === '+' ? a + b : a - b;
+      var opts = [correct];
+      while (opts.length < 4) {
+        var wrong = correct + Math.floor(Math.random() * 7) - 3;
+        if (wrong !== correct && opts.indexOf(wrong) === -1) opts.push(wrong);
+      }
+      opts.sort(function() { return Math.random() - 0.5; });
+
+      gc.innerHTML = '<div style="text-align:center;width:100%;max-width:400px">'
+        + '<div style="display:flex;justify-content:space-between;margin-bottom:16px;font-size:12px;color:var(--ink3)"><span>Nivel ' + level + '/' + maxLevel + '</span><span>Distractor</span></div>'
+        + '<div style="font-size:12px;font-weight:700;color:#f59e0b;text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px">⚡ Resuelve rápido</div>'
+        + '<div style="font-size:32px;font-weight:900;color:var(--ink);margin-bottom:16px">' + a + ' ' + op + ' ' + b + ' = ?</div>'
+        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:240px;margin:0 auto" id="mem-math"></div></div>';
+
+      var mathEl = document.getElementById('mem-math');
+      opts.forEach(function(o) {
+        var btn = document.createElement('button');
+        btn.textContent = o;
+        btn.style.cssText = 'padding:12px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);font-size:18px;font-weight:700;cursor:pointer;transition:all .12s;font-family:inherit';
+        btn.onclick = function() {
+          mathEl.querySelectorAll('button').forEach(function(b) { b.disabled = true; });
+          if (o === correct) { btn.style.background = '#f0fdf4'; btn.style.borderColor = '#16a34a'; }
+          else { btn.style.background = '#fef2f2'; btn.style.borderColor = '#dc2626'; }
+          // Phase 3: Recall
+          setTimeout(function() { showRecall(items); }, 500);
+        };
+        mathEl.appendChild(btn);
+      });
+    }, showTime + 300);
+  }
+
+  function showRecall(correctItems) {
+    // Build options: correct items + distractors
+    var allPool = COLORS_POOL.concat(WORDS_POOL);
+    var distractors = allPool.filter(function(x) { return correctItems.indexOf(x) === -1; });
+    var numOpts = Math.min(8, correctItems.length + 4);
+    var wrongOpts = pickRandom(distractors, numOpts - correctItems.length);
+    var options = correctItems.concat(wrongOpts);
+    options.sort(function() { return Math.random() - 0.5; });
+
+    var selected = [];
+
+    gc.innerHTML = '<div style="text-align:center;width:100%;max-width:420px">'
+      + '<div style="display:flex;justify-content:space-between;margin-bottom:16px;font-size:12px;color:var(--ink3)"><span>Nivel ' + level + '/' + maxLevel + '</span><span>Puntaje: ' + score + '</span></div>'
+      + '<div style="font-size:12px;font-weight:700;color:#16a34a;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">🧠 ¿Qué debías recordar?</div>'
+      + '<div style="font-size:11px;color:var(--ink4);margin-bottom:14px">Selecciona ' + correctItems.length + ' elemento' + (correctItems.length>1?'s':'') + '</div>'
+      + '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:18px" id="mem-recall"></div>'
+      + '<button id="mem-confirm" disabled style="padding:12px 28px;border-radius:10px;background:var(--accent);color:#fff;border:none;font-size:13px;font-weight:700;cursor:pointer;opacity:.4;font-family:inherit" onclick="window._memConfirm()">Confirmar selección</button>'
+      + '</div>';
+
+    var recallEl = document.getElementById('mem-recall');
+    options.forEach(function(opt) {
+      var btn = document.createElement('button');
+      var isEmoji = opt.length <= 2;
+      btn.textContent = opt;
+      btn.style.cssText = 'padding:10px 16px;border-radius:10px;border:2px solid var(--border);background:var(--surface);font-size:' + (isEmoji?'24':'15') + 'px;font-weight:700;cursor:pointer;transition:all .12s;min-width:50px';
+      btn.onclick = function() {
+        var idx = selected.indexOf(opt);
+        if (idx !== -1) {
+          selected.splice(idx, 1);
+          btn.style.borderColor = 'var(--border)'; btn.style.background = 'var(--surface)';
+        } else {
+          if (selected.length >= correctItems.length) return;
+          selected.push(opt);
+          btn.style.borderColor = 'var(--accent)'; btn.style.background = 'var(--accent-l)';
+        }
+        var confirmBtn = document.getElementById('mem-confirm');
+        if (confirmBtn) {
+          confirmBtn.disabled = selected.length !== correctItems.length;
+          confirmBtn.style.opacity = selected.length === correctItems.length ? '1' : '.4';
+        }
+      };
+      recallEl.appendChild(btn);
+    });
+
+    window._memConfirm = function() {
+      var correct = 0;
+      correctItems.forEach(function(ci) { if (selected.indexOf(ci) !== -1) correct++; });
+      var allRight = correct === correctItems.length && selected.length === correctItems.length;
+      if (allRight) score++;
+
+      // Feedback
+      recallEl.querySelectorAll('button').forEach(function(btn) {
+        btn.disabled = true;
+        var val = btn.textContent;
+        if (correctItems.indexOf(val) !== -1) {
+          btn.style.borderColor = '#16a34a'; btn.style.background = '#f0fdf4';
+        } else if (selected.indexOf(val) !== -1) {
+          btn.style.borderColor = '#dc2626'; btn.style.background = '#fef2f2';
+        } else {
+          btn.style.opacity = '.3';
+        }
+      });
+
+      var confirmBtn = document.getElementById('mem-confirm');
+      if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = allRight ? '✅ ¡Correcto!' : '❌ Incorrecto';
+        confirmBtn.style.background = allRight ? '#16a34a' : '#dc2626';
+      }
+
+      setTimeout(nextLevel, 900);
+    };
+  }
+  showIntro();
+}
+
+// ── GAME 8: La Expedición (Risk/Effort) ──────────────────────
+function gameExpedicion(gc, diff) {
+  diff = diff || 3;
+  var ZONES = [6, 7, 8, 9, 10][diff-1];
+  var crystals = 20;
+  var zone = 0;
+  var log = []; // analytics per zone
+  var effortSpeed = []; // track click speeds
+
+  // Route configs scaled by difficulty
+  var SAFE_GAIN  = [6, 5, 5, 4, 4][diff-1];
+  var MOD_GAIN   = [14, 13, 12, 11, 10][diff-1];
+  var MOD_LOSS   = [4, 5, 5, 6, 7][diff-1];
+  var MOD_PROB   = [0.75, 0.72, 0.70, 0.65, 0.60][diff-1];
+  var RISK_GAIN  = [28, 26, 25, 23, 22][diff-1];
+  var RISK_LOSS  = [12, 13, 15, 16, 18][diff-1];
+  var RISK_PROB  = [0.50, 0.48, 0.45, 0.42, 0.38][diff-1];
+
+  // Bet zones (relative positions in the game)
+  var betZones = [];
+  if (ZONES >= 8) betZones = [4, 7, ZONES];
+  else if (ZONES >= 6) betZones = [3, ZONES];
+  else betZones = [ZONES];
+
+  // Ranking zones
+  var rankZones = [];
+  if (ZONES >= 8) rankZones = [3, 6];
+  else if (ZONES >= 6) rankZones = [3];
+
+  function showIntro() {
+    gc.innerHTML = '<div style="text-align:center;max-width:420px">'
+      + '<div style="font-size:48px;margin-bottom:12px">🗺</div>'
+      + '<div style="font-size:17px;font-weight:800;margin-bottom:6px;color:var(--ink)">La Expedición</div>'
+      + '<div style="font-size:13px;color:var(--ink3);line-height:1.7;margin-bottom:14px">Eres un explorador recorriendo ' + ZONES + ' zonas. Recolecta la mayor cantidad de <strong style="color:#854d0e">cristales de energía</strong> posible.</div>'
+      + '<div style="background:#1d1d1f;border-radius:12px;padding:16px;margin-bottom:16px;text-align:left">'
+      + '<div style="display:flex;flex-direction:column;gap:8px;font-size:12px;color:#e2e8f0;line-height:1.5">'
+      + '<div>🟢 <strong>Ruta Segura:</strong> +' + SAFE_GAIN + ' cristales garantizados</div>'
+      + '<div>🟡 <strong>Ruta Moderada:</strong> ' + Math.round(MOD_PROB*100) + '% de ganar +' + MOD_GAIN + ', ' + Math.round((1-MOD_PROB)*100) + '% de perder −' + MOD_LOSS + '</div>'
+      + '<div>🔴 <strong>Ruta Arriesgada:</strong> ' + Math.round(RISK_PROB*100) + '% de ganar +' + RISK_GAIN + ', ' + Math.round((1-RISK_PROB)*100) + '% de perder −' + RISK_LOSS + '</div>'
+      + '</div></div>'
+      + '<div style="font-size:11px;color:var(--ink4);line-height:1.6;margin-bottom:16px">Antes de cada ruta deberás completar un <strong>micro-desafío de esfuerzo</strong>. Si no lo completas, irás por la ruta segura.<br>En algunas zonas podrás <strong>apostar</strong> parte de tus cristales.</div>'
+      + '<div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:16px;padding:10px;background:#854d0e15;border-radius:10px;border:1px solid #854d0e30">'
+      + '<span style="font-size:24px">💎</span><span style="font-size:20px;font-weight:900;color:#854d0e">' + crystals + '</span><span style="font-size:12px;color:#854d0e">cristales iniciales</span></div>'
+      + '<button onclick="this.parentElement.parentElement._start()" class="btn btn-accent" style="padding:12px 32px">Iniciar expedición →</button>'
+      + '</div>';
+    gc._start = nextZone;
+  }
+
+  function crystalBar() {
+    return '<div style="display:flex;align-items:center;gap:8px;padding:8px 14px;background:#854d0e10;border-radius:10px;border:1px solid #854d0e25;margin-bottom:14px">'
+      + '<span style="font-size:20px">💎</span><span style="font-size:22px;font-weight:900;color:#854d0e">' + crystals + '</span>'
+      + '<span style="font-size:11px;color:#854d0e80">cristales</span>'
+      + '<span style="flex:1"></span>'
+      + '<span style="font-size:11px;color:var(--ink4)">Zona ' + zone + '/' + ZONES + '</span></div>';
+  }
+
+  function nextZone() {
+    if (zone >= ZONES) { finishExpedition(); return; }
+    zone++;
+
+    // Check if this is a ranking zone (show before route choice)
+    if (rankZones.indexOf(zone) !== -1) {
+      showRanking(function() { showEffortChallenge(); });
+      return;
+    }
+
+    // Check if this is a bet zone
+    if (betZones.indexOf(zone) !== -1 && zone < ZONES) {
+      showBetRound(function() { showEffortChallenge(); });
+      return;
+    }
+
+    // Final zone bet
+    if (zone === ZONES && betZones.indexOf(zone) !== -1) {
+      showBetRound(function() { showEffortChallenge(); });
+      return;
+    }
+
+    showEffortChallenge();
+  }
+
+  function showRanking(callback) {
+    var fakeRank = Math.floor(Math.random() * 25) + 20; // 20-45%
+    gc.innerHTML = '<div style="text-align:center;width:100%;max-width:400px">'
+      + crystalBar()
+      + '<div style="background:linear-gradient(135deg,#1e1b4b,#312e81);border-radius:14px;padding:24px;margin-bottom:16px">'
+      + '<div style="font-size:10px;color:#a5b4fc;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">📊 Ranking de exploradores</div>'
+      + '<div style="font-size:40px;font-weight:900;color:#fff;margin-bottom:4px">Top ' + fakeRank + '%</div>'
+      + '<div style="font-size:12px;color:#a5b4fc">Estás superando al ' + (100-fakeRank) + '% de los participantes</div>'
+      + '</div>'
+      + '<div style="font-size:11px;color:var(--ink4);margin-bottom:14px">¿Mantendrás tu estrategia o arriesgarás más?</div>'
+      + '<button onclick="this.parentElement.parentElement._cb()" class="btn btn-primary" style="padding:10px 28px;font-size:13px">Continuar expedición →</button>'
+      + '</div>';
+    gc._cb = function() {
+      log.push({ zone:zone, event:'ranking_shown', fakeRank:fakeRank, crystals:crystals });
+      callback();
+    };
+  }
+
+  function showBetRound(callback) {
+    gc.innerHTML = '<div style="text-align:center;width:100%;max-width:400px">'
+      + crystalBar()
+      + '<div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:14px;padding:20px;margin-bottom:16px">'
+      + '<div style="font-size:24px;margin-bottom:8px">🎰</div>'
+      + '<div style="font-size:15px;font-weight:800;color:#92400e;margin-bottom:6px">Zona de Apuesta</div>'
+      + '<div style="font-size:12px;color:#a16207;line-height:1.6">Puedes apostar parte de tus cristales. <strong>50% de probabilidad</strong> de duplicar lo apostado o perderlo todo.</div>'
+      + '</div>'
+      + '<div style="font-size:12px;font-weight:600;color:var(--ink3);margin-bottom:10px">¿Cuánto apuestas?</div>'
+      + '<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px" id="exp-bet-opts"></div>'
+      + '</div>';
+
+    var betOpts = document.getElementById('exp-bet-opts');
+    var options = [
+      { label:'🟢 No apostar — continuar seguro', pct:0 },
+      { label:'🟡 Apostar 25% (' + Math.floor(crystals*0.25) + ' cristales)', pct:0.25 },
+      { label:'🟠 Apostar 50% (' + Math.floor(crystals*0.5) + ' cristales)', pct:0.5 },
+      { label:'🔴 Apostar 100% (' + crystals + ' cristales)', pct:1 },
+    ];
+    options.forEach(function(opt) {
+      var btn = document.createElement('button');
+      btn.innerHTML = opt.label;
+      btn.style.cssText = 'padding:12px 16px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);font-size:13px;font-weight:600;cursor:pointer;text-align:left;transition:all .12s;font-family:inherit;width:100%';
+      btn.onclick = function() {
+        betOpts.querySelectorAll('button').forEach(function(b){b.disabled=true;b.style.opacity='.4';});
+        btn.style.opacity='1';
+        var stake = Math.floor(crystals * opt.pct);
+        var won = Math.random() < 0.5;
+        var delta = won ? stake : -stake;
+        var prevCrystals = crystals;
+        crystals = Math.max(0, crystals + delta);
+
+        log.push({ zone:zone, event:'bet', pct:opt.pct, stake:stake, won:won, delta:delta, before:prevCrystals, after:crystals });
+
+        if (stake === 0) {
+          btn.style.borderColor='#16a34a'; btn.style.background='#f0fdf4';
+          setTimeout(callback, 500);
+        } else if (won) {
+          btn.style.borderColor='#16a34a'; btn.style.background='#f0fdf4';
+          btn.innerHTML = '✅ ¡Ganaste! +' + stake + ' cristales → 💎 ' + crystals;
+          setTimeout(callback, 1200);
+        } else {
+          btn.style.borderColor='#dc2626'; btn.style.background='#fef2f2';
+          btn.innerHTML = '❌ Perdiste −' + stake + ' cristales → 💎 ' + crystals;
+          setTimeout(callback, 1200);
+        }
+      };
+      betOpts.appendChild(btn);
+    });
+  }
+
+  function showEffortChallenge() {
+    // Micro-challenge: rapid clicks on a bar
+    var TARGET_CLICKS = [8, 10, 12, 14, 16][diff-1];
+    var TIME_LIMIT = [7000, 6000, 5500, 5000, 4500][diff-1];
+    var clicks = 0;
+    var effortDone = false;
+    var startT = Date.now();
+
+    gc.innerHTML = '<div style="text-align:center;width:100%;max-width:400px">'
+      + crystalBar()
+      + '<div style="font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">⚡ Micro-desafío de esfuerzo</div>'
+      + '<div style="font-size:13px;color:var(--ink3);margin-bottom:14px">Presiona el botón <strong>' + TARGET_CLICKS + ' veces</strong> en ' + (TIME_LIMIT/1000) + 's para desbloquear tu ruta</div>'
+      + '<div style="height:8px;background:#f1f5f9;border-radius:100px;overflow:hidden;margin-bottom:10px"><div id="exp-effort-bar" style="height:100%;background:var(--accent);border-radius:100px;width:0%;transition:width .1s"></div></div>'
+      + '<div style="font-size:11px;color:var(--ink4);margin-bottom:14px" id="exp-effort-count">0 / ' + TARGET_CLICKS + '</div>'
+      + '<button id="exp-effort-btn" style="width:100%;padding:20px;border-radius:14px;border:2.5px solid var(--accent);background:var(--accent-l);font-size:16px;font-weight:800;color:var(--accent);cursor:pointer;transition:transform .05s;font-family:inherit;user-select:none">⚡ TAP</button>'
+      + '<div style="height:4px;background:#f1f5f9;border-radius:100px;overflow:hidden;margin-top:12px"><div id="exp-time-bar" style="height:100%;background:#f59e0b;border-radius:100px;width:100%;transition:width ' + (TIME_LIMIT/1000) + 's linear"></div></div>'
+      + '</div>';
+
+    requestAnimationFrame(function() {
+      var tb = document.getElementById('exp-time-bar');
+      if (tb) tb.style.width = '0%';
+    });
+
+    var effortBtn = document.getElementById('exp-effort-btn');
+    effortBtn.onmousedown = function() { effortBtn.style.transform='scale(.95)'; };
+    effortBtn.onmouseup = function() { effortBtn.style.transform=''; };
+    effortBtn.onclick = function() {
+      if (effortDone) return;
+      clicks++;
+      var pct = Math.min(100, (clicks/TARGET_CLICKS)*100);
+      var bar = document.getElementById('exp-effort-bar');
+      if (bar) bar.style.width = pct + '%';
+      var cnt = document.getElementById('exp-effort-count');
+      if (cnt) cnt.textContent = clicks + ' / ' + TARGET_CLICKS;
+      if (clicks >= TARGET_CLICKS) {
+        effortDone = true;
+        var elapsed = Date.now() - startT;
+        effortSpeed.push(elapsed);
+        effortBtn.textContent = '✅ ¡Desbloqueado!';
+        effortBtn.style.borderColor = '#16a34a'; effortBtn.style.background = '#f0fdf4'; effortBtn.style.color = '#16a34a';
+        log.push({ zone:zone, event:'effort', completed:true, clicks:clicks, time:elapsed });
+        setTimeout(showRouteChoice, 600);
+      }
+    };
+
+    // Timeout
+    setTimeout(function() {
+      if (effortDone) return;
+      effortDone = true;
+      effortSpeed.push(TIME_LIMIT);
+      effortBtn.textContent = '⏱ Tiempo agotado — ruta segura';
+      effortBtn.style.borderColor = '#f59e0b'; effortBtn.style.background = '#fffbeb'; effortBtn.style.color = '#b45309';
+      effortBtn.disabled = true;
+      log.push({ zone:zone, event:'effort', completed:false, clicks:clicks, time:TIME_LIMIT });
+      // Force safe route
+      setTimeout(function() {
+        var prev = crystals;
+        crystals += SAFE_GAIN;
+        log.push({ zone:zone, event:'route', choice:'safe_forced', delta:SAFE_GAIN, before:prev, after:crystals });
+        showRouteResult('safe_forced', SAFE_GAIN, true);
+      }, 600);
+    }, TIME_LIMIT);
+  }
+
+  function showRouteChoice() {
+    gc.innerHTML = '<div style="width:100%;max-width:420px">'
+      + crystalBar()
+      + '<div style="font-size:12px;font-weight:600;color:var(--ink3);margin-bottom:12px">Elige tu ruta para esta zona:</div>'
+      + '<div style="display:flex;flex-direction:column;gap:8px" id="exp-routes"></div></div>';
+
+    var routesEl = document.getElementById('exp-routes');
+    var routes = [
+      { id:'safe',  emoji:'🟢', label:'Ruta Segura',     desc:'+' + SAFE_GAIN + ' garantizados',  color:'#16a34a', border:'#bbf7d0', bg:'#f0fdf4' },
+      { id:'mod',   emoji:'🟡', label:'Ruta Moderada',    desc:Math.round(MOD_PROB*100) + '% de +' + MOD_GAIN + ' / ' + Math.round((1-MOD_PROB)*100) + '% de −' + MOD_LOSS, color:'#b45309', border:'#fde68a', bg:'#fffbeb' },
+      { id:'risk',  emoji:'🔴', label:'Ruta Arriesgada',  desc:Math.round(RISK_PROB*100) + '% de +' + RISK_GAIN + ' / ' + Math.round((1-RISK_PROB)*100) + '% de −' + RISK_LOSS, color:'#dc2626', border:'#fecaca', bg:'#fef2f2' },
+    ];
+
+    routes.forEach(function(r) {
+      var btn = document.createElement('button');
+      btn.innerHTML = '<div style="display:flex;align-items:center;gap:12px">'
+        + '<span style="font-size:22px">' + r.emoji + '</span>'
+        + '<div style="text-align:left;flex:1"><div style="font-size:13px;font-weight:700;color:' + r.color + '">' + r.label + '</div>'
+        + '<div style="font-size:11px;color:var(--ink3)">' + r.desc + '</div></div>'
+        + '<span style="font-size:14px;color:var(--ink4)">→</span></div>';
+      btn.style.cssText = 'padding:14px 16px;border-radius:12px;border:1.5px solid ' + r.border + ';background:' + r.bg + ';cursor:pointer;transition:all .12s;font-family:inherit;width:100%';
+      btn.onclick = function() {
+        routesEl.querySelectorAll('button').forEach(function(b){b.disabled=true;b.style.opacity='.3';});
+        btn.style.opacity='1';
+        resolveRoute(r.id);
+      };
+      routesEl.appendChild(btn);
+    });
+  }
+
+  function resolveRoute(choice) {
+    var prev = crystals;
+    var delta = 0;
+    var won = true;
+
+    if (choice === 'safe') {
+      delta = SAFE_GAIN; won = true;
+    } else if (choice === 'mod') {
+      won = Math.random() < MOD_PROB;
+      delta = won ? MOD_GAIN : -MOD_LOSS;
+    } else {
+      won = Math.random() < RISK_PROB;
+      delta = won ? RISK_GAIN : -RISK_LOSS;
+    }
+
+    crystals = Math.max(0, crystals + delta);
+    log.push({ zone:zone, event:'route', choice:choice, won:won, delta:delta, before:prev, after:crystals });
+
+    setTimeout(function() { showRouteResult(choice, delta, won); }, 400);
+  }
+
+  function showRouteResult(choice, delta, won) {
+    var col = delta >= 0 ? '#16a34a' : '#dc2626';
+    var icon = delta >= 0 ? '✅' : '💥';
+    gc.innerHTML = '<div style="text-align:center;width:100%;max-width:400px">'
+      + crystalBar()
+      + '<div style="background:' + (delta>=0?'#f0fdf4':'#fef2f2') + ';border:1.5px solid ' + (delta>=0?'#bbf7d0':'#fecaca') + ';border-radius:14px;padding:20px;margin-bottom:14px">'
+      + '<div style="font-size:32px;margin-bottom:6px">' + icon + '</div>'
+      + '<div style="font-size:24px;font-weight:900;color:' + col + '">' + (delta>=0?'+':'') + delta + ' 💎</div>'
+      + '<div style="font-size:12px;color:var(--ink3);margin-top:4px">Total: <strong>' + crystals + '</strong> cristales</div>'
+      + '</div>'
+      + '<button onclick="this.parentElement.parentElement._next()" class="btn btn-primary" style="padding:10px 28px;font-size:13px">'
+      + (zone >= ZONES ? 'Ver resultado final →' : 'Siguiente zona →') + '</button>'
+      + '</div>';
+    gc._next = nextZone;
+  }
+
+  function finishExpedition() {
+    // Calculate profile scores
+    var routeChoices = log.filter(function(l){return l.event==='route';});
+    var bets = log.filter(function(l){return l.event==='bet';});
+    var efforts = log.filter(function(l){return l.event==='effort';});
+
+    var totalRoutes = routeChoices.length;
+    var safeCount = routeChoices.filter(function(l){return l.choice==='safe'||l.choice==='safe_forced';}).length;
+    var modCount = routeChoices.filter(function(l){return l.choice==='mod';}).length;
+    var riskCount = routeChoices.filter(function(l){return l.choice==='risk';}).length;
+
+    var riskPct = totalRoutes ? Math.round((riskCount + modCount * 0.5) / totalRoutes * 100) : 50;
+    var effortPct = efforts.length ? Math.round(efforts.filter(function(e){return e.completed;}).length / efforts.length * 100) : 50;
+
+    // Post-loss behavior
+    var postLossRisk = 0, postLossCount = 0;
+    for (var i = 1; i < routeChoices.length; i++) {
+      if (routeChoices[i-1].delta < 0) {
+        postLossCount++;
+        if (routeChoices[i].choice === 'risk') postLossRisk += 2;
+        else if (routeChoices[i].choice === 'mod') postLossRisk += 1;
+      }
+    }
+    var resilienceScore = postLossCount > 0 ? Math.round(50 + (1 - postLossRisk / (postLossCount * 2)) * 50) : 75;
+
+    // Bet behavior
+    var avgBet = bets.length ? bets.reduce(function(a,b){return a+b.pct;},0) / bets.length : 0;
+    var betScore = Math.round(100 - Math.abs(avgBet - 0.25) * 200); // 0.25 is "optimal moderate"
+
+    // Consistency (low variance = high consistency)
+    var choices = routeChoices.map(function(r){return r.choice==='safe'?0:r.choice==='mod'?1:2;});
+    var avgChoice = choices.reduce(function(a,b){return a+b;},0) / Math.max(1, choices.length);
+    var variance = choices.reduce(function(a,b){return a+Math.pow(b-avgChoice,2);},0) / Math.max(1, choices.length);
+    var consistencyScore = Math.round(Math.max(0, 100 - variance * 40));
+
+    // Composite: balanced = optimal
+    var pct = Math.round(
+      effortPct * 0.25 +
+      Math.max(0, 100 - Math.abs(riskPct - 45) * 2) * 0.25 + // ~45% risk is "calibrated"
+      resilienceScore * 0.25 +
+      consistencyScore * 0.25
+    );
+
+    // Determine profile
+    var profile = '';
+    var profileIcon = '';
+    if (safeCount >= totalRoutes * 0.7) { profile = 'Conservador Consistente'; profileIcon = '🛡'; }
+    else if (riskCount >= totalRoutes * 0.6) { profile = 'Buscador de Riesgo'; profileIcon = '🔥'; }
+    else if (variance > 0.8) { profile = 'Reactivo Emocional'; profileIcon = '🌊'; }
+    else if (effortPct >= 80 && resilienceScore >= 60) { profile = 'Persistente bajo Presión'; profileIcon = '💪'; }
+    else { profile = 'Calculador Estratégico'; profileIcon = '🧠'; }
+
+    gc.innerHTML = '<div style="text-align:center;width:100%;max-width:420px;animation:sup .3s ease">'
+      + '<div style="font-size:40px;margin-bottom:8px">🗺</div>'
+      + '<div style="font-size:18px;font-weight:800;color:var(--ink);margin-bottom:14px">Expedición finalizada</div>'
+      + '<div style="display:flex;gap:12px;margin-bottom:18px">'
+      + '<div style="flex:1;background:#854d0e10;border-radius:12px;padding:14px;border:1px solid #854d0e25"><div style="font-size:28px;font-weight:900;color:#854d0e">💎 ' + crystals + '</div><div style="font-size:10px;color:#854d0e80;margin-top:2px">Cristales finales</div></div>'
+      + '<div style="flex:1;background:var(--accent-l);border-radius:12px;padding:14px;border:1px solid var(--accent-m)"><div style="font-size:28px;font-weight:900;color:var(--accent)">' + profileIcon + '</div><div style="font-size:10px;color:var(--accent);margin-top:2px">' + profile + '</div></div>'
+      + '</div>'
+      + '<div style="background:var(--surface2);border-radius:12px;padding:14px;margin-bottom:18px;text-align:left">'
+      + '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink4);margin-bottom:8px">Desglose</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px">'
+      + '<div>🟢 Rutas seguras: <strong>' + safeCount + '</strong></div>'
+      + '<div>🟡 Rutas moderadas: <strong>' + modCount + '</strong></div>'
+      + '<div>🔴 Rutas arriesgadas: <strong>' + riskCount + '</strong></div>'
+      + '<div>⚡ Esfuerzo completado: <strong>' + effortPct + '%</strong></div>'
+      + '<div>🎰 Apuesta promedio: <strong>' + Math.round(avgBet*100) + '%</strong></div>'
+      + '<div>🧠 Consistencia: <strong>' + consistencyScore + '%</strong></div>'
+      + '</div></div>'
+      + '</div>';
+
+    gameComplete('game_expedicion', pct);
+  }
+  showIntro();
+}
+
+// ── GAME 9: Radar Social (Emotional Intelligence) ─────────────
+function gameRadar(gc, diff) {
+  diff = diff || 3;
+  var ROUNDS_MAX = [6,7,8,9,10][diff-1];
+  var EMOTION_TIME = [12000,10000,8000,7000,6000][diff-1];
+  var trust = 50, efficiency = 50;
+  var round = 0, emotionHits = 0, log = [];
+  var responseStyles = { empathic:0, directive:0, balanced:0 };
+  var perCharResponses = {};
+
+  // SVG Avatar generator
+  function svgFace(skin, hair, eyeShape, emotion) {
+    var W=80, H=80, cx=40, cy=40;
+    var SKINS = {warm:'#e8b88a',cool:'#f0c8a0',dark:'#c68c5c',light:'#fad5b5'};
+    var HAIRS = {dark:'#2d1b0e',brown:'#5c3317',red:'#8b3a1a',black:'#1a1a1a'};
+    var sc = SKINS[skin]||SKINS.warm, hc = HAIRS[hair]||HAIRS.dark;
+    // Emotion params
+    var EM = {
+      neutral:  {brow:0, mouthW:12,mouthCurve:0, eyeH:5,pupilY:0},
+      happy:    {brow:-1,mouthW:14,mouthCurve:-4,eyeH:4,pupilY:0},
+      frustrated:{brow:3,mouthW:10,mouthCurve:3, eyeH:5,pupilY:1},
+      anxious:  {brow:2, mouthW:8, mouthCurve:1, eyeH:6,pupilY:-1},
+      angry:    {brow:4, mouthW:12,mouthCurve:4, eyeH:4,pupilY:1},
+      sad:      {brow:2, mouthW:10,mouthCurve:4, eyeH:5,pupilY:2},
+      sarcastic:{brow:-1,mouthW:14,mouthCurve:-2,eyeH:3,pupilY:-1},
+      overwhelmed:{brow:3,mouthW:6,mouthCurve:0,eyeH:7,pupilY:0},
+    };
+    var e = EM[emotion]||EM.neutral;
+    var eyeR = eyeShape==='round'?5:4;
+    var svg = '<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" style="width:64px;height:64px">'
+      // Head
+      +'<circle cx="'+cx+'" cy="'+cy+'" r="30" fill="'+sc+'" stroke="#00000015" stroke-width="1"/>'
+      // Hair
+      +'<ellipse cx="'+cx+'" cy="'+(cy-18)+'" rx="28" ry="16" fill="'+hc+'"/>'
+      // Left eye
+      +'<ellipse cx="'+(cx-10)+'" cy="'+(cy-2)+'" rx="'+eyeR+'" ry="'+e.eyeH+'" fill="white" stroke="#00000020" stroke-width=".5"/>'
+      +'<circle cx="'+(cx-10)+'" cy="'+(cy-2+e.pupilY)+'" r="2.5" fill="#1a1a1a"/>'
+      // Right eye
+      +'<ellipse cx="'+(cx+10)+'" cy="'+(cy-2)+'" rx="'+eyeR+'" ry="'+e.eyeH+'" fill="white" stroke="#00000020" stroke-width=".5"/>'
+      +'<circle cx="'+(cx+10)+'" cy="'+(cy-2+e.pupilY)+'" r="2.5" fill="#1a1a1a"/>'
+      // Left brow
+      +'<line x1="'+(cx-15)+'" y1="'+(cy-10-e.brow)+'" x2="'+(cx-5)+'" y2="'+(cy-10+e.brow*0.3)+'" stroke="#1a1a1a" stroke-width="1.5" stroke-linecap="round"/>'
+      // Right brow
+      +'<line x1="'+(cx+5)+'" y1="'+(cy-10+e.brow*0.3)+'" x2="'+(cx+15)+'" y2="'+(cy-10-e.brow)+'" stroke="#1a1a1a" stroke-width="1.5" stroke-linecap="round"/>'
+      // Mouth
+      +'<path d="M'+(cx-e.mouthW/2)+','+(cy+12)+' Q'+cx+','+(cy+12+e.mouthCurve)+' '+(cx+e.mouthW/2)+','+(cy+12)+'" stroke="#1a1a1a" stroke-width="1.5" fill="none" stroke-linecap="round"/>'
+      +'</svg>';
+    return svg;
+  }
+
+  var CHARS = {
+    sofia:  { name:'Sofía',  role:'Analista',      skin:'cool', hair:'brown',eyeShape:'round', status:'🟢', style:'indirecta' },
+    martin: { name:'Martín', role:'Operaciones',    skin:'dark', hair:'black',eyeShape:'narrow',status:'🔴', style:'directo' },
+    camila: { name:'Camila', role:'Desarrolladora', skin:'light',hair:'red',  eyeShape:'round', status:'🟡', style:'evitativa' },
+    diego:  { name:'Diego',  role:'Comunicaciones', skin:'warm', hair:'dark', eyeShape:'narrow',status:'🟢', style:'ambiguo' },
+  };
+
+  var SCENARIOS = [
+    { char:'sofia',  msg:'El informe está "interesante"... supongo que así lo quieren 🙂', realEmotion:'frustrated', fakeOptions:['Conforme','Entusiasmada','Frustrada','Indiferente'], correctIdx:2,
+      responses:[
+        {type:'empathic', text:'Noto algo en tu mensaje. ¿Hay algo del informe que te preocupa?', dT:8,dE:-2},
+        {type:'directive',text:'Si hay errores, necesito que me los señales directamente.', dT:-4,dE:7},
+        {type:'balanced', text:'Gracias Sofía. Si tienes sugerencias, estoy abierto a revisarlo.', dT:3,dE:3}]},
+    { char:'martin', msg:'OTRA VEZ cambiaron los plazos sin avisar!!! Esto no puede seguir así.', realEmotion:'angry', fakeOptions:['Estresado','Enojado','Decepcionado','Preocupado'], correctIdx:1,
+      responses:[
+        {type:'empathic', text:'Entiendo tu frustración, Martín. Tienes razón en que debimos avisarte.', dT:9,dE:-3},
+        {type:'directive',text:'Necesito que te enfoques en lo que podemos controlar. ¿Cuál es el nuevo plan?', dT:-5,dE:8},
+        {type:'balanced', text:'Tienes razón, no debió pasar. Veamos juntos cómo reorganizar los tiempos.', dT:4,dE:4}]},
+    { char:'camila', msg:'No te preocupes, yo lo resuelvo 👍 Todo bien', realEmotion:'overwhelmed', fakeOptions:['Confiada','Motivada','Agobiada','Tranquila'], correctIdx:2,
+      responses:[
+        {type:'empathic', text:'Camila, no quiero que cargues con todo. ¿Cómo puedo ayudarte?', dT:9,dE:-2},
+        {type:'directive',text:'Necesito que me digas la verdad sobre tu carga real. ¿Llegas con los plazos?', dT:-3,dE:8},
+        {type:'balanced', text:'Gracias Camila. Revisa tu carga y si necesitas apoyo, avísame sin problema.', dT:4,dE:3}]},
+    { char:'diego',  msg:'Sí, claro, como tú digas jefe. Yo siempre estoy disponible para lo que necesites.', realEmotion:'sarcastic', fakeOptions:['Comprometido','Sarcástico','Servicial','Neutral'], correctIdx:1,
+      responses:[
+        {type:'empathic', text:'Diego, valoro tu disposición. ¿Hay algo que te esté molestando del proyecto?', dT:7,dE:-1},
+        {type:'directive',text:'Necesito compromiso real, no cortesía. ¿Puedo contar contigo para el entregable?', dT:-5,dE:7},
+        {type:'balanced', text:'Gracias Diego. Dime con honestidad si la carga es manejable para ti.', dT:3,dE:4}]},
+    { char:'sofia',  msg:'Ya envié mi parte. No revisé la de los demás porque supuse que cada uno sabe lo suyo.', realEmotion:'frustrated', fakeOptions:['Independiente','Frustrada','Eficiente','Desinteresada'], correctIdx:1,
+      responses:[
+        {type:'empathic', text:'Entiendo que confías en el equipo. ¿Sientes que no te están respondiendo igual?', dT:8,dE:-2},
+        {type:'directive',text:'Necesito que revises la integración completa, no solo tu parte. Es parte del rol.', dT:-4,dE:8},
+        {type:'balanced', text:'Bien por tu parte. Para el próximo entregable, coordinemos una revisión cruzada.', dT:3,dE:4}]},
+    { char:'martin', msg:'Ya, da igual, hago lo que digan. Total nadie pregunta antes de decidir.', realEmotion:'sad', fakeOptions:['Resignado','Enojado','Triste','Indiferente'], correctIdx:2,
+      responses:[
+        {type:'empathic', text:'Martín, tu opinión importa. Lamento que sientas que no se te consultó.', dT:9,dE:-3},
+        {type:'directive',text:'Necesito que participes activamente. Si no estás de acuerdo, dilo a tiempo.', dT:-4,dE:7},
+        {type:'balanced', text:'Entiendo. A partir de ahora quiero incluirte en las decisiones que te afectan.', dT:5,dE:3}]},
+    { char:'camila', msg:'Perdón por la demora... es que quería asegurarme de que todo estuviera perfecto antes de mandarlo', realEmotion:'anxious', fakeOptions:['Perfeccionista','Ansiosa','Responsable','Insegura'], correctIdx:1,
+      responses:[
+        {type:'empathic', text:'No te preocupes por la demora. Tu trabajo siempre es cuidadoso y se nota.', dT:8,dE:-4},
+        {type:'directive',text:'Prefiero que envíes a tiempo con un 80% y luego ajustamos, que tarde con 100%.', dT:-3,dE:9},
+        {type:'balanced', text:'Valoro tu dedicación. Para los próximos envíos, avísame si necesitas más tiempo.', dT:4,dE:3}]},
+    { char:'diego',  msg:'Yo creo que deberíamos hacer lo que más le guste al cliente, ¿no? Al final ellos mandan.', realEmotion:'neutral', fakeOptions:['Complaciente','Estratégico','Neutral','Evitativo'], correctIdx:2,
+      responses:[
+        {type:'empathic', text:'Buen punto, Diego. ¿Tú qué opinas personalmente sobre la propuesta?', dT:7,dE:0},
+        {type:'directive',text:'El cliente es importante, pero nosotros definimos la estrategia técnica. ¿Cuál es tu recomendación real?', dT:-2,dE:8},
+        {type:'balanced', text:'Sí, hay que considerar al cliente, pero también nuestro criterio. Propón algo.', dT:3,dE:4}]},
+    { char:'sofia',  msg:'Hice el análisis que pediste. Adjunto. Si necesitas que lo cambie, avísame nomás.', realEmotion:'happy', fakeOptions:['Orgullosa','Indiferente','Satisfecha','Obligada'], correctIdx:2,
+      responses:[
+        {type:'empathic', text:'¡Excelente trabajo, Sofía! Se nota el esfuerzo. Gracias.', dT:8,dE:0},
+        {type:'directive',text:'Recibido. Lo reviso y te confirmo si hay ajustes pendientes.', dT:-2,dE:5},
+        {type:'balanced', text:'Gracias Sofía, lo reviso con calma. Buen trabajo.', dT:4,dE:3}]},
+    { char:'martin', msg:'Oye, necesito hablar contigo sobre algo del proyecto. ¿Tienes 5 minutos?', realEmotion:'anxious', fakeOptions:['Enojado','Ansioso','Normal','Urgido'], correctIdx:1,
+      responses:[
+        {type:'empathic', text:'Claro Martín, dime. Estoy disponible ahora mismo para ti.', dT:8,dE:-1},
+        {type:'directive',text:'Tengo 5 minutos entre reuniones. ¿Es urgente o puede esperar a las 3?', dT:-3,dE:7},
+        {type:'balanced', text:'Por supuesto. ¿Prefieres por chat o una llamada rápida?', dT:4,dE:3}]},
+  ];
+
+  function showIntro() {
+    var charPreviews = Object.values(CHARS).map(function(c) {
+      return '<div style="display:flex;align-items:center;gap:8px">'
+        + svgFace(c.skin,c.hair,c.eyeShape,'neutral')
+        + '<div><div style="font-size:12px;font-weight:700">' + c.name + '</div><div style="font-size:10px;color:var(--ink4)">' + c.role + ' · ' + c.style + '</div></div></div>';
+    }).join('');
+
+    gc.innerHTML = '<div style="text-align:center;max-width:440px">'
+      + '<div style="font-size:40px;margin-bottom:10px">🎭</div>'
+      + '<div style="font-size:17px;font-weight:800;margin-bottom:6px">Radar Social</div>'
+      + '<div style="font-size:13px;color:var(--ink3);line-height:1.7;margin-bottom:14px">Eres líder de equipo. Lee los mensajes de tus compañeros, identifica cómo se sienten realmente, y elige la mejor respuesta.</div>'
+      + '<div style="background:#1d1d1f;border-radius:12px;padding:14px;margin-bottom:14px;text-align:left">'
+      + '<div style="font-size:10px;color:#666;text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">Tu equipo</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' + charPreviews + '</div></div>'
+      + '<div style="display:flex;gap:8px;margin-bottom:16px">'
+      + '<div style="flex:1;background:#eff6ff;border-radius:8px;padding:8px;text-align:center;border:1px solid #bfdbfe"><div style="font-size:16px">🤝</div><div style="font-size:10px;font-weight:700;color:#2563eb">Confianza: 50</div></div>'
+      + '<div style="flex:1;background:#fffbeb;border-radius:8px;padding:8px;text-align:center;border:1px solid #fde68a"><div style="font-size:16px">⚡</div><div style="font-size:10px;font-weight:700;color:#b45309">Eficiencia: 50</div></div></div>'
+      + '<button onclick="this.parentElement.parentElement._start()" class="btn btn-accent" style="padding:12px 32px">Comenzar →</button></div>';
+    gc._start = nextRound;
+  }
+
+  function statBars() {
+    var tCol = trust >= 40 ? '#2563eb' : trust >= 25 ? '#b45309' : '#dc2626';
+    var eCol = efficiency >= 40 ? '#b45309' : efficiency >= 25 ? '#b45309' : '#dc2626';
+    return '<div style="display:flex;gap:8px;margin-bottom:14px">'
+      + '<div style="flex:1"><div style="display:flex;justify-content:space-between;font-size:10px;font-weight:700;margin-bottom:3px"><span style="color:#2563eb">🤝 Confianza</span><span style="color:' + tCol + '">' + trust + '</span></div><div style="height:5px;background:#e2e8f0;border-radius:100px;overflow:hidden"><div style="height:100%;width:' + trust + '%;background:' + tCol + ';border-radius:100px;transition:width .4s"></div></div></div>'
+      + '<div style="flex:1"><div style="display:flex;justify-content:space-between;font-size:10px;font-weight:700;margin-bottom:3px"><span style="color:#b45309">⚡ Eficiencia</span><span style="color:' + eCol + '">' + efficiency + '</span></div><div style="height:5px;background:#e2e8f0;border-radius:100px;overflow:hidden"><div style="height:100%;width:' + efficiency + '%;background:' + eCol + ';border-radius:100px;transition:width .4s"></div></div></div></div>';
+  }
+
+  function nextRound() {
+    if (round >= ROUNDS_MAX || trust < 15 || efficiency < 15) { finishRadar(); return; }
+    var sc = SCENARIOS[round % SCENARIOS.length];
+    var ch = CHARS[sc.char];
+    round++;
+    if (!perCharResponses[sc.char]) perCharResponses[sc.char] = [];
+
+    // Phase A: Identify emotion
+    var answered = false;
+    gc.innerHTML = '<div style="width:100%;max-width:440px">'
+      + '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink4);margin-bottom:8px"><span>Ronda ' + round + '/' + ROUNDS_MAX + '</span><span>Aciertos: ' + emotionHits + '</span></div>'
+      + statBars()
+      + '<div style="background:var(--surface2);border-radius:14px;padding:16px;margin-bottom:14px;border:1px solid var(--border)">'
+      + '<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">'
+      + '<div style="position:relative">' + svgFace(ch.skin,ch.hair,ch.eyeShape,sc.realEmotion) + '<span style="position:absolute;bottom:-2px;right:-2px;font-size:10px">' + ch.status + '</span></div>'
+      + '<div><div style="font-size:13px;font-weight:700;color:var(--ink)">' + ch.name + '</div><div style="font-size:10px;color:var(--ink4)">' + ch.role + '</div></div></div>'
+      + '<div style="background:#fff;border-radius:10px;padding:12px 14px;font-size:13px;color:var(--ink);line-height:1.6;border:1px solid var(--border);position:relative">'
+      + '<div style="position:absolute;top:-6px;left:16px;width:12px;height:12px;background:#fff;border-left:1px solid var(--border);border-top:1px solid var(--border);transform:rotate(45deg)"></div>'
+      + sc.msg + '</div></div>'
+      + '<div style="font-size:12px;font-weight:700;color:var(--ink3);margin-bottom:8px">¿Qué emoción real detectas?</div>'
+      + '<div style="height:4px;background:#f1f5f9;border-radius:100px;overflow:hidden;margin-bottom:10px"><div id="radar-timer" style="height:100%;background:var(--accent);border-radius:100px;width:100%;transition:width ' + (EMOTION_TIME/1000) + 's linear"></div></div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px" id="radar-emo-opts"></div></div>';
+
+    requestAnimationFrame(function() { var b=document.getElementById('radar-timer'); if(b) b.style.width='0%'; });
+
+    var optsEl = document.getElementById('radar-emo-opts');
+    sc.fakeOptions.forEach(function(opt, i) {
+      var btn = document.createElement('button');
+      btn.textContent = opt;
+      btn.style.cssText = 'padding:10px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface);font-size:12px;font-weight:600;cursor:pointer;transition:all .12s;font-family:inherit';
+      btn.onclick = function() {
+        if (answered) return;
+        answered = true;
+        clearTimeout(emoTimer);
+        var correct = i === sc.correctIdx;
+        if (correct) { emotionHits++; trust = Math.min(100, trust + 5); btn.style.background='#f0fdf4'; btn.style.borderColor='#16a34a'; btn.style.color='#16a34a'; }
+        else { trust = Math.max(0, trust - 3); btn.style.background='#fef2f2'; btn.style.borderColor='#dc2626'; btn.style.color='#dc2626';
+          optsEl.querySelectorAll('button')[sc.correctIdx].style.background='#f0fdf4'; optsEl.querySelectorAll('button')[sc.correctIdx].style.borderColor='#16a34a'; }
+        optsEl.querySelectorAll('button').forEach(function(b){b.disabled=true;});
+        log.push({round:round, char:sc.char, emotionCorrect:correct, realEmotion:sc.realEmotion});
+        setTimeout(function(){ showResponsePhase(sc, ch); }, 700);
+      };
+      optsEl.appendChild(btn);
+    });
+
+    var emoTimer = setTimeout(function() {
+      if (answered) return;
+      answered = true;
+      trust = Math.max(0, trust - 3);
+      log.push({round:round, char:sc.char, emotionCorrect:false, realEmotion:sc.realEmotion, timeout:true});
+      optsEl.querySelectorAll('button').forEach(function(b){b.disabled=true;});
+      optsEl.querySelectorAll('button')[sc.correctIdx].style.background='#fef9c3'; optsEl.querySelectorAll('button')[sc.correctIdx].style.borderColor='#f59e0b';
+      setTimeout(function(){ showResponsePhase(sc, ch); }, 700);
+    }, EMOTION_TIME);
+  }
+
+  function showResponsePhase(sc, ch) {
+    gc.innerHTML = '<div style="width:100%;max-width:440px">'
+      + '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink4);margin-bottom:8px"><span>Ronda ' + round + '/' + ROUNDS_MAX + '</span><span>Responde</span></div>'
+      + statBars()
+      + '<div style="background:var(--surface2);border-radius:12px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px;border:1px solid var(--border)">'
+      + svgFace(ch.skin,ch.hair,ch.eyeShape,sc.realEmotion)
+      + '<div style="flex:1;font-size:12px;color:var(--ink);line-height:1.5"><strong>' + ch.name + ':</strong> ' + sc.msg + '</div></div>'
+      + '<div style="font-size:12px;font-weight:700;color:var(--ink3);margin-bottom:8px">¿Cómo respondes?</div>'
+      + '<div style="display:flex;flex-direction:column;gap:6px" id="radar-resp-opts"></div></div>';
+
+    var respEl = document.getElementById('radar-resp-opts');
+    var STYLE_ICONS = {empathic:'🤝',directive:'⚡',balanced:'⚖️'};
+    var STYLE_COLORS = {empathic:'#2563eb',directive:'#b45309',balanced:'#6b7280'};
+    sc.responses.forEach(function(r) {
+      var btn = document.createElement('button');
+      btn.innerHTML = '<div style="display:flex;align-items:flex-start;gap:10px"><span style="font-size:16px;flex-shrink:0">' + STYLE_ICONS[r.type] + '</span><span style="text-align:left;font-size:12px;line-height:1.5;color:var(--ink)">' + r.text + '</span></div>';
+      btn.style.cssText = 'padding:12px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .12s;font-family:inherit;width:100%';
+      btn.onclick = function() {
+        respEl.querySelectorAll('button').forEach(function(b){b.disabled=true;b.style.opacity='.3';});
+        btn.style.opacity='1';
+        btn.style.borderColor = STYLE_COLORS[r.type]; btn.style.background = STYLE_COLORS[r.type]+'10';
+        responseStyles[r.type]++;
+        perCharResponses[sc.char].push(r.type);
+        trust = Math.max(0, Math.min(100, trust + r.dT));
+        efficiency = Math.max(0, Math.min(100, efficiency + r.dE));
+        log.push({round:round, char:sc.char, response:r.type, dT:r.dT, dE:r.dE, trust:trust, efficiency:efficiency});
+        setTimeout(nextRound, 600);
+      };
+      respEl.appendChild(btn);
+    });
+  }
+
+  function finishRadar() {
+    var emoPct = round > 0 ? Math.round(emotionHits / round * 100) : 0;
+    var balancePct = Math.round(Math.min(trust, efficiency) / Math.max(1, Math.max(trust, efficiency)) * 100);
+    // Adaptability: did they vary responses per character?
+    var adaptScore = 0, charCount = 0;
+    Object.values(perCharResponses).forEach(function(arr) {
+      if (arr.length >= 2) { charCount++; var uniq = arr.filter(function(v,i,a){return a.indexOf(v)===i;}); if (uniq.length >= 2) adaptScore++; }
+    });
+    var adaptPct = charCount > 0 ? Math.round(adaptScore / charCount * 100) : 50;
+
+    var pct = Math.round(emoPct * 0.35 + balancePct * 0.30 + adaptPct * 0.20 + Math.min(100, trust + efficiency) * 0.15 / 2);
+
+    // Profile
+    var profile = '', profIcon = '';
+    var totalR = responseStyles.empathic + responseStyles.directive + responseStyles.balanced;
+    if (totalR > 0) {
+      var empR = responseStyles.empathic / totalR, dirR = responseStyles.directive / totalR;
+      if (empR >= 0.6) { profile='Empático Relacional'; profIcon='🤝'; }
+      else if (dirR >= 0.6) { profile='Orientado a Resultados'; profIcon='⚡'; }
+      else if (adaptPct >= 60 && emoPct >= 50) { profile='Líder Adaptativo'; profIcon='🧠'; }
+      else if (emoPct < 30) { profile='Baja Lectura Emocional'; profIcon='⚠️'; }
+      else { profile='Equilibrado'; profIcon='⚖️'; }
+    } else { profile='Sin datos'; profIcon='—'; }
+
+    gc.innerHTML = '<div style="text-align:center;width:100%;max-width:440px;animation:sup .3s ease">'
+      + '<div style="font-size:36px;margin-bottom:8px">🎭</div>'
+      + '<div style="font-size:17px;font-weight:800;margin-bottom:14px">Radar Social completado</div>'
+      + '<div style="display:flex;gap:10px;margin-bottom:16px">'
+      + '<div style="flex:1;background:#eff6ff;border-radius:10px;padding:12px;border:1px solid #bfdbfe"><div style="font-size:22px;font-weight:900;color:#2563eb">🤝 ' + trust + '</div><div style="font-size:10px;color:#2563eb">Confianza</div></div>'
+      + '<div style="flex:1;background:#fffbeb;border-radius:10px;padding:12px;border:1px solid #fde68a"><div style="font-size:22px;font-weight:900;color:#b45309">⚡ ' + efficiency + '</div><div style="font-size:10px;color:#b45309">Eficiencia</div></div>'
+      + '<div style="flex:1;background:#faf5ff;border-radius:10px;padding:12px;border:1px solid #e9d5ff"><div style="font-size:22px;font-weight:900;color:#7c3aed">' + profIcon + '</div><div style="font-size:10px;color:#7c3aed">' + profile + '</div></div></div>'
+      + '<div style="background:var(--surface2);border-radius:10px;padding:12px;margin-bottom:14px;text-align:left">'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px">'
+      + '<div>🎯 Lectura emocional: <strong>' + emoPct + '%</strong></div>'
+      + '<div>⚖️ Balance T/E: <strong>' + balancePct + '%</strong></div>'
+      + '<div>🤝 Empáticas: <strong>' + responseStyles.empathic + '</strong></div>'
+      + '<div>⚡ Directivas: <strong>' + responseStyles.directive + '</strong></div>'
+      + '<div>⚖️ Equilibradas: <strong>' + responseStyles.balanced + '</strong></div>'
+      + '<div>🔄 Adaptabilidad: <strong>' + adaptPct + '%</strong></div>'
+      + '</div></div></div>';
+
+    gameComplete('game_radar', pct);
   }
   showIntro();
 }
@@ -3831,6 +5167,38 @@ async function finishTests() {
   stopTestTimer();
   const scores = calcScores(S.answers, S.selectedTests, S.candidate.perfil);
   S.candidate.tests = S.selectedTests; S.candidate.scores = scores; S.candidate.estado = 'completed';
+
+  // ── Test mode: skip save, show results directly ──
+  if (S.candidate._testMode) {
+    var rpt = buildFitReport(S.candidate);
+    var fit = rpt ? rpt.globalFit : 0;
+    var fitCol = fit >= 70 ? '#16a34a' : fit >= 50 ? '#b45309' : '#dc2626';
+    var fitLbl = rpt ? fitLabel(fit) : { label:'—', color:'#94a3b8' };
+    var div = document.createElement('div');
+    div.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px';
+    var scoresHtml = '<div style="display:flex;flex-wrap:wrap;gap:6px;margin:16px 0">';
+    Object.keys(scores).forEach(function(k) {
+      var m = TESTS_META[k]; if (!m) return;
+      var pct = scores[k].pct !== undefined ? scores[k].pct : '—';
+      var c2 = pct >= 70 ? '#16a34a' : pct >= 50 ? '#b45309' : '#dc2626';
+      scoresHtml += '<div style="padding:6px 10px;border-radius:8px;background:' + c2 + '10;border:1px solid ' + c2 + '30;font-size:11px"><span style="font-weight:700;color:' + c2 + '">' + pct + '%</span> <span style="color:var(--ink3)">' + m.icon + ' ' + m.name + '</span></div>';
+    });
+    scoresHtml += '</div>';
+    div.innerHTML = '<div style="background:#fff;border-radius:16px;padding:32px;max-width:460px;width:100%;text-align:center;font-family:inherit;box-shadow:0 20px 60px rgba(0,0,0,.2)">'
+      + '<div style="font-size:40px;margin-bottom:8px">🧪</div>'
+      + '<div style="font-size:20px;font-weight:800;color:var(--ink);margin-bottom:4px">Prueba finalizada</div>'
+      + '<div style="font-size:13px;color:var(--ink3);margin-bottom:16px">Candidato ficticio — datos no guardados</div>'
+      + '<div style="font-size:48px;font-weight:900;color:' + fitCol + ';margin-bottom:4px">' + fit + '%</div>'
+      + '<div style="display:inline-flex;padding:4px 14px;border-radius:100px;font-size:12px;font-weight:700;background:' + (fitLbl.bg||'#f1f5f9') + ';color:' + fitCol + '">' + fitLbl.label + '</div>'
+      + scoresHtml
+      + '<div style="display:flex;gap:8px;margin-top:16px">'
+      + '<button onclick="this.closest(\'div[style*=fixed]\').remove();showView(\'landing\')" style="flex:1;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Volver al inicio</button>'
+      + '<button onclick="this.closest(\'div[style*=fixed]\').remove();startTestMode()" style="padding:12px 16px;background:var(--surface2);color:var(--ink2);border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Otra prueba</button>'
+      + '</div></div>';
+    document.body.appendChild(div);
+    return;
+  }
+
   const btnFin = document.getElementById('btn-next-test');
   if (btnFin) { btnFin.disabled = true; btnFin.textContent = 'Guardando…'; }
 
@@ -4049,6 +5417,10 @@ const PERFIL_IDEAL = {
   if (!PERFIL_IDEAL[pf].game_bandeja)    PERFIL_IDEAL[pf].game_bandeja    = { pct:{ min:60, max:100, peso:3, label:'Priorización Gamificada',   req:'Gestión de tareas y sentido de urgencia.' }};
   if (!PERFIL_IDEAL[pf].game_impulsos)   PERFIL_IDEAL[pf].game_impulsos   = { pct:{ min:60, max:100, peso:3, label:'Control Impulsos Gamificado', req:'Inhibición de respuestas incorrectas.' }};
   if (!PERFIL_IDEAL[pf].game_vigilancia) PERFIL_IDEAL[pf].game_vigilancia = { pct:{ min:55, max:100, peso:3, label:'Vigilancia Gamificada',     req:'Detección de anomalías en tiempo real.' }};
+  if (!PERFIL_IDEAL[pf].game_cadena)     PERFIL_IDEAL[pf].game_cadena     = { pct:{ min:55, max:100, peso:3, label:'Delegación Gamificada',    req:'Asignación correcta de tareas según capacidades del equipo.' }};
+  if (!PERFIL_IDEAL[pf].game_memoria)    PERFIL_IDEAL[pf].game_memoria    = { pct:{ min:55, max:100, peso:3, label:'Memoria Operativa Gamificada', req:'Retención de instrucciones bajo distracción.' }};
+  if (!PERFIL_IDEAL[pf].game_expedicion) PERFIL_IDEAL[pf].game_expedicion = { pct:{ min:55, max:100, peso:3, label:'Riesgo/Esfuerzo Gamificado',  req:'Toma de decisiones calibrada bajo incertidumbre y presión.' }};
+  if (!PERFIL_IDEAL[pf].game_radar)      PERFIL_IDEAL[pf].game_radar      = { pct:{ min:55, max:100, peso:3, label:'Radar Social Gamificado',     req:'Reconocimiento emocional y adaptabilidad interpersonal.' }};
 });
 // ── Ensure minLv is set on all cfg entries ──────────────────
 (function initMinLv() {
@@ -4246,7 +5618,11 @@ function buildFitReport(c) {
     game_secuencias: { icon:'🧠', title:'Secuencias (Lógica Gamificada)',       desc:'Razonamiento de patrones numéricos bajo presión.' },
     game_bandeja:    { icon:'📥', title:'Bandeja de Entrada (Priorización)',    desc:'Clasificación correcta de tareas según urgencia.' },
     game_impulsos:   { icon:'🔥', title:'Control de Impulsos (Go/No-Go)',      desc:'Inhibición de respuestas incorrectas bajo velocidad.' },
-    game_vigilancia: { icon:'🛡', title:'Ronda de Vigilancia (Detección)',     desc:'Detección de anomalías en escenas de seguridad.' },
+    game_vigilancia: { icon:'🛡', title:'Monitoreo en Tiempo Real',          desc:'Detección de anomalías en stream de cámaras en vivo.' },
+    game_cadena:     { icon:'🔗', title:'Cadena de Mando (Delegación)',      desc:'Asignación correcta de tareas según capacidades y carga del equipo.' },
+    game_memoria:    { icon:'⏱', title:'Memoria Operativa',                 desc:'Retención de instrucciones múltiples bajo distracción.' },
+    game_expedicion: { icon:'🗺', title:'La Expedición (Riesgo/Esfuerzo)', desc:'Toma de decisiones bajo incertidumbre, tolerancia al riesgo y persistencia.' },
+    game_radar:      { icon:'🎭', title:'Radar Social (Emociones)',        desc:'Reconocimiento emocional y adaptabilidad interpersonal en contexto laboral.' },
   };
   Object.keys(GAME_REPORT_META).forEach(function(gid) {
     if (s[gid] && ideal[gid] && ideal[gid].pct) {
@@ -5758,7 +7134,7 @@ function renderWikiTab() {
     '🧬 Tests de Personalidad': ['barratt','pai','disc','ice'],
     '💡 Tests Situacionales': ['situacional','vigilancia'],
     '⚠ Riesgo Laboral': ['cwb','ausentismo','frustracion'],
-    '🎮 Juegos Gamificados': ['game_detector','game_secuencias','game_bandeja','game_impulsos','game_vigilancia'],
+    '🎮 Juegos Gamificados': ['game_detector','game_secuencias','game_bandeja','game_impulsos','game_vigilancia','game_cadena','game_memoria','game_expedicion','game_radar'],
   };
   var WIKI_GROUP_DESC = {
     '🧠 Tests Cognitivos': 'Miden capacidades intelectuales, velocidad de procesamiento y comprensión procedimental.',
@@ -5897,39 +7273,67 @@ function renderWikiTab() {
       reference: 'Diseñado a partir de modelos de competencias de ejecución de Lombardo & Eichinger (2004), el Achievement Motivation Inventory de Schuler et al. (2004) y la teoría de orientación al logro de McClelland (1961).'
     },
     game_detector: {
-      icon:'🎯', name:'Detector — Atención y Concentración', category:'Juego Gamificado', items:'20 rondas', time:'3 min', format:'Juego interactivo',
+      icon:'🎯', name:'Detector — Atención y Concentración', category:'Juego Gamificado', items:'10 rondas', time:'3 min', format:'Juego interactivo',
       description:'Mini-juego de detección visual. Aparece una grilla de símbolos y el candidato debe encontrar el estímulo objetivo lo más rápido posible. Mide atención selectiva, velocidad de procesamiento y precisión bajo presión de tiempo.',
       dimensions:[{key:'pct',name:'Atención Gamificada',desc:'Combina velocidad de respuesta y precisión (aciertos vs. errores). Mide la capacidad real de detección, no la autopercepción.'}],
       scoring:'Puntaje = (aciertos / total) × 100, penalizado por errores de comisión. Normalizado a 0-100.',
       reference:'Basado en paradigmas de búsqueda visual de Treisman & Gelade (1980) y tareas de cancelación tipo d2.'
     },
     game_secuencias: {
-      icon:'🧠', name:'Secuencias — Razonamiento Lógico', category:'Juego Gamificado', items:'10 niveles', time:'3 min', format:'Juego interactivo',
+      icon:'🧠', name:'Secuencias — Razonamiento Lógico', category:'Juego Gamificado', items:'6-10 niveles', time:'3 min', format:'Juego interactivo',
       description:'Juego de completar patrones numéricos y de color con dificultad progresiva. Cada nivel correcto desbloquea uno más difícil. Mide razonamiento fluido y memoria de trabajo.',
       dimensions:[{key:'pct',name:'Lógica Gamificada',desc:'Nivel máximo alcanzado ponderado por velocidad. Mide razonamiento de patrones bajo presión.'}],
       scoring:'Puntaje basado en el nivel máximo alcanzado × velocidad. Normalizado a 0-100.',
       reference:'Basado en matrices progresivas de Raven (1938) y modelos de inteligencia fluida de Cattell (1963).'
     },
     game_bandeja: {
-      icon:'📥', name:'Bandeja de Entrada — Priorización', category:'Juego Gamificado', items:'15 tareas', time:'3 min', format:'Juego interactivo',
+      icon:'📥', name:'Bandeja de Entrada — Priorización', category:'Juego Gamificado', items:'10 tareas', time:'3 min', format:'Juego interactivo',
       description:'Simulación de tareas entrantes con distintos niveles de urgencia e importancia. El candidato debe clasificarlas correctamente bajo presión de tiempo. Mide gestión de prioridades y sentido de urgencia.',
       dimensions:[{key:'pct',name:'Priorización Gamificada',desc:'Proporción de tareas correctamente clasificadas según urgencia/importancia. Penaliza errores de priorización.'}],
       scoring:'Puntaje = clasificaciones correctas / total × 100. Normalizado a 0-100.',
       reference:'Basado en la Matriz de Eisenhower y modelos de in-basket assessment de Frederiksen (1962).'
     },
     game_impulsos: {
-      icon:'🔥', name:'Control de Impulsos — Go/No-Go', category:'Juego Gamificado', items:'30 estímulos', time:'2 min', format:'Juego interactivo',
+      icon:'🔥', name:'Control de Impulsos — Go/No-Go', category:'Juego Gamificado', items:'10 estímulos', time:'2 min', format:'Juego interactivo',
       description:'Aparecen estímulos rápidos en pantalla. El candidato debe presionar solo cuando aparece el estímulo correcto (Go) e inhibir la respuesta ante distractores (No-Go). Mide control inhibitorio real.',
       dimensions:[{key:'pct',name:'Control Impulsos Gamificado',desc:'Combina tasa de aciertos Go, errores de comisión (presionar en No-Go) y tiempo de reacción. Mide impulsividad conductual real.'}],
       scoring:'Puntaje = aciertos Go − (errores comisión × 2). Normalizado a 0-100.',
       reference:'Paradigma Go/No-Go de Donders (1869), adaptado por Logan & Cowan (1984).'
     },
     game_vigilancia: {
-      icon:'🛡', name:'Ronda de Vigilancia — Detección de Anomalías', category:'Juego Gamificado', items:'12 escenas', time:'3 min', format:'Juego interactivo',
-      description:'Se presentan escenas visuales de un entorno laboral. El candidato debe detectar anomalías o situaciones sospechosas antes de que desaparezcan. Mide vigilancia sostenida y detección de amenazas.',
-      dimensions:[{key:'pct',name:'Vigilancia Gamificada',desc:'Proporción de anomalías detectadas correctamente, penalizada por falsas alarmas. Mide atención sostenida en contexto de seguridad.'}],
-      scoring:'Puntaje = detecciones correctas − falsas alarmas. Normalizado a 0-100.',
-      reference:'Basado en la teoría de detección de señales de Green & Swets (1966) y paradigmas de vigilancia de Mackworth (1948).'
+      icon:'🛡', name:'Monitoreo en Tiempo Real — Vigilancia', category:'Juego Gamificado', items:'10 cámaras', time:'3 min', format:'Juego interactivo',
+      description:'Simulación de monitoreo de cámaras de seguridad en vivo. Cada cámara muestra actividad normal que cambia constantemente. En algunas cámaras aparece brevemente una anomalía que el candidato debe detectar presionando ALERTA antes de que desaparezca. Si no hay anomalía, debe esperar sin presionar. Mide vigilancia sostenida, tiempo de reacción y control de falsas alarmas.',
+      dimensions:[{key:'pct',name:'Vigilancia Gamificada',desc:'Proporción de anomalías detectadas en tiempo real, penalizada por falsas alarmas. Mide la capacidad de mantener la atención ante estímulos cambiantes y reaccionar solo cuando es necesario.'}],
+      scoring:'Puntaje = (detecciones / total anomalías) × 100 − (falsas alarmas × 10). Normalizado a 0-100. Las anomalías aparecen por tiempo limitado (2.8s→1.2s según dificultad).',
+      reference:'Basado en la teoría de detección de señales de Green & Swets (1966), paradigmas de vigilancia sostenida de Mackworth (1948) y tareas de monitoreo continuo de Parasuraman (1979).'
+    },
+    game_cadena: {
+      icon:'🔗', name:'Cadena de Mando — Delegación y Coordinación', category:'Juego Gamificado', items:'10 tareas', time:'4 min', format:'Juego interactivo',
+      description:'Simulación de gestión de equipo. El candidato es supervisor de 4 personas con distintas habilidades y niveles de carga. Llegan tareas con requisitos específicos y hay que asignar cada una al miembro correcto sin sobrecargar a nadie. Mide capacidad de delegación, lectura de capacidades y gestión de recursos humanos.',
+      dimensions:[{key:'pct',name:'Delegación Gamificada',desc:'Proporción de tareas asignadas correctamente al miembro más adecuado, penalizada por sobrecarga de equipo y asignaciones incorrectas. Mide la capacidad de leer capacidades individuales y distribuir trabajo eficientemente.'}],
+      scoring:'Puntaje = asignaciones óptimas × 10 + asignaciones aceptables × 5 − sobrecarga × 8. Normalizado a 0-100.',
+      reference:'Basado en modelos de delegación efectiva de Yukl (2013), teoría de liderazgo situacional de Hersey & Blanchard (1969) y paradigmas de in-basket assessment de Frederiksen (1962).'
+    },
+    game_memoria: {
+      icon:'⏱', name:'Memoria Operativa — Retención bajo Distracción', category:'Juego Gamificado', items:'5-8 niveles', time:'3 min', format:'Juego interactivo',
+      description:'Juego progresivo de memoria de trabajo. Se presentan instrucciones a recordar (colores, números, palabras), luego tareas distractoras (cálculos), y finalmente se pregunta qué debía recordar. Cada nivel agrega más instrucciones simultáneas y más interferencia. Mide memoria operativa real bajo condiciones de procesamiento dual.',
+      dimensions:[{key:'pct',name:'Memoria Operativa Gamificada',desc:'Proporción de instrucciones correctamente recordadas tras la interferencia. Mide la capacidad de retener información relevante mientras se procesa otra tarea simultáneamente.'}],
+      scoring:'Puntaje = respuestas correctas por nivel, ponderadas por dificultad. Normalizado a 0-100.',
+      reference:'Basado en el modelo de memoria de trabajo de Baddeley & Hitch (1974), paradigmas de span complejo de Daneman & Carpenter (1980) y tareas de interferencia de Brown-Peterson (1959).'
+    },
+    game_expedicion: {
+      icon:'🗺', name:'La Expedición — Riesgo, Esfuerzo y Decisión', category:'Juego Gamificado', items:'10 zonas', time:'4 min', format:'Juego interactivo',
+      description:'Simulación de expedición donde el candidato recorre 10 zonas acumulando cristales de energía. En cada zona elige entre rutas de distinto nivel de riesgo (segura, moderada, arriesgada). Incluye micro-desafíos de esfuerzo y rondas de apuesta "doble o nada". Genera un perfil de estilo decisional completo.',
+      dimensions:[{key:'pct',name:'Perfil de Riesgo/Esfuerzo',desc:'Indicador compuesto que combina: tolerancia al riesgo (proporción de rutas arriesgadas), consistencia decisional (varianza del patrón), sensibilidad a la pérdida (cambio de comportamiento post-pérdida), apetito de apuesta, persistencia en micro-desafíos y resiliencia. El puntaje óptimo varía según el cargo: roles de seguridad favorecen perfiles conservadores; roles de liderazgo favorecen perfiles calculadores.'}],
+      scoring:'Se genera un perfil de estilo decisional (Conservador, Calculador, Buscador de Riesgo, Reactivo Emocional, Persistente bajo Presión). El puntaje 0-100 refleja la calibración entre riesgo y resultado: ni demasiado conservador ni demasiado impulsivo, ajustado al perfil del cargo.',
+      reference:'Basado en la Balloon Analogue Risk Task (BART) de Lejuez et al. (2002), teoría prospectiva de Kahneman & Tversky (1979), modelos de effort-based decision making de Westbrook et al. (2013) y paradigmas de Iowa Gambling Task de Bechara et al. (1994).'
+    },
+    game_radar: {
+      icon:'🎭', name:'Radar Social — Emociones y Adaptabilidad', category:'Juego Gamificado', items:'10 rondas', time:'4 min', format:'Juego interactivo',
+      description:'Simulación de chat corporativo donde el candidato coordina un equipo de 4 personas con personalidades distintas. Debe identificar la emoción real detrás de mensajes ambiguos y elegir la respuesta más adaptativa. Incluye avatares SVG con expresiones faciales dinámicas. Mide empatía cognitiva, resolución de conflictos, asertividad calibrada y lectura de contexto social.',
+      dimensions:[{key:'pct',name:'Radar Social Gamificado',desc:'Combina tasa de acierto en reconocimiento emocional, adaptación del estilo de respuesta según personaje, y balance entre indicadores de Confianza y Eficiencia. Mide inteligencia social aplicada.'}],
+      scoring:'Puntaje compuesto: 35% acierto emocional + 30% balance Confianza/Eficiencia + 20% adaptabilidad (variedad de respuestas por personaje) + 15% velocidad de lectura emocional. Normalizado a 0-100.',
+      reference:'Basado en el modelo de Inteligencia Emocional de Salovey & Mayer (1990), MSCEIT de Mayer et al. (2002), Interpersonal Reactivity Index de Davis (1983) y paradigmas de reconocimiento emocional de Ekman (1992).'
     },
   };
 
@@ -6088,7 +7492,11 @@ var BATTERY_TEST_DIMENSIONS = {
   game_secuencias:{ icon:'🧠', title:'Secuencias (Lógica)',              keys:['pct'] },
   game_bandeja:   { icon:'📥', title:'Bandeja de Entrada (Priorización)',keys:['pct'] },
   game_impulsos:  { icon:'🔥', title:'Control de Impulsos (Go/No-Go)',   keys:['pct'] },
-  game_vigilancia:{ icon:'🛡', title:'Ronda de Vigilancia (Detección)',  keys:['pct'] },
+  game_vigilancia:{ icon:'🛡', title:'Monitoreo en Tiempo Real',          keys:['pct'] },
+  game_cadena:    { icon:'🔗', title:'Cadena de Mando (Delegación)',      keys:['pct'] },
+  game_memoria:   { icon:'⏱', title:'Memoria Operativa',                 keys:['pct'] },
+  game_expedicion:{ icon:'🗺', title:'La Expedición (Riesgo/Esfuerzo)',  keys:['pct'] },
+  game_radar:     { icon:'🎭', title:'Radar Social (Emociones)',         keys:['pct'] },
 };
 
 function renderBateriaTab() {
@@ -6106,7 +7514,7 @@ function renderBateriaTab() {
     '🧬 Tests de Personalidad': ['barratt','pai','disc','ice'],
     '💡 Tests Situacionales': ['situacional','vigilancia'],
     '⚠ Riesgo Laboral': ['cwb','ausentismo','frustracion'],
-    '🎮 Juegos Gamificados': ['game_detector','game_secuencias','game_bandeja','game_impulsos','game_vigilancia'],
+    '🎮 Juegos Gamificados': ['game_detector','game_secuencias','game_bandeja','game_impulsos','game_vigilancia','game_cadena','game_memoria','game_expedicion','game_radar'],
   };
 
   var out = '';
@@ -6270,6 +7678,10 @@ function saveParams() {
     game_bandeja:   ['pct'],
     game_impulsos:  ['pct'],
     game_vigilancia:['pct'],
+    game_cadena:    ['pct'],
+    game_memoria:   ['pct'],
+    game_expedicion:['pct'],
+    game_radar:     ['pct'],
   };
 
   let changed = 0;
