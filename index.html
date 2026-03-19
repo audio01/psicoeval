@@ -6987,7 +6987,15 @@ function renderParams() {
   try {
     var perfil = _paramPerfil;
     var ideal = PERFIL_IDEAL[perfil];
-    if (!ideal) { document.getElementById('params-content').innerHTML = '<p>Perfil no encontrado.</p>'; return; }
+    if (!ideal) {
+      PERFIL_IDEAL[perfil] = {};
+      var allTests = ['barratt','pai','dc0','comprension','situacional','vigilancia','disc','atencion','cwb','ausentismo','frustracion','ice','game_detector','game_secuencias','game_bandeja','game_impulsos','game_vigilancia','game_cadena','game_memoria','game_expedicion','game_radar'];
+      allTests.forEach(function(tid) {
+        var src = PERFIL_IDEAL['jefatura'] && PERFIL_IDEAL['jefatura'][tid];
+        if (src) PERFIL_IDEAL[perfil][tid] = JSON.parse(JSON.stringify(src));
+      });
+      ideal = PERFIL_IDEAL[perfil];
+    }
 
     var SECTION_META = {
       barratt:     { icon:'🧩', title:'Control Impulsivo (BIS-15)',  keys:['AI','IM','NP'] },
@@ -7503,7 +7511,17 @@ function renderBateriaTab() {
   var perfil = _paramPerfil;
   var active = PERFIL_TESTS[perfil] || PERFIL_TESTS_DEFAULT[perfil] || [];
   var ideal = PERFIL_IDEAL[perfil];
-  if (!ideal) { document.getElementById('bateria-content').innerHTML = '<p>Perfil no encontrado.</p>'; return; }
+  // Auto-create for custom cargos that don't have it yet
+  if (!ideal) {
+    PERFIL_IDEAL[perfil] = {};
+    // Copy shared test defaults from jefatura
+    var allGameAndShared = ['barratt','pai','dc0','comprension','situacional','vigilancia','disc','atencion','cwb','ausentismo','frustracion','ice','game_detector','game_secuencias','game_bandeja','game_impulsos','game_vigilancia','game_cadena','game_memoria','game_expedicion','game_radar'];
+    allGameAndShared.forEach(function(tid) {
+      var src = PERFIL_IDEAL['jefatura'] && PERFIL_IDEAL['jefatura'][tid];
+      if (src) PERFIL_IDEAL[perfil][tid] = JSON.parse(JSON.stringify(src));
+    });
+    ideal = PERFIL_IDEAL[perfil];
+  }
 
   var LEVEL_NAMES  = ['','Muy Bajo','Bajo','Medio','Alto','Muy Alto'];
   var LEVEL_COLORS = ['','#94a3b8','#64748b','#f59e0b','#3b82f6','#10b981'];
