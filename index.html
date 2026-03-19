@@ -1242,6 +1242,7 @@ input,select,textarea{font-family:inherit;outline:none}
       <button class="nav-btn active" id="nav-dashboard" onclick="adminTab('dashboard',this)"><span>📊</span><span>Dashboard</span></button>
       <button class="nav-btn" id="nav-candidates" onclick="adminTab('candidates',this)"><span>👥</span><span>Candidatos</span></button>
       <button class="nav-btn" id="nav-params" onclick="adminTab('params',this)"><span>⚙</span><span>Baterías</span></button>
+      <button class="nav-btn" id="nav-cargos" onclick="adminTab('cargos',this)"><span>🏢</span><span>Cargos</span></button>
       <button class="nav-btn" id="nav-users" onclick="adminTab('users',this)"><span>👤</span><span>Usuarios</span></button>
       <div style="flex:1"></div>
       <div id="role-badge" style="font-size:10px;font-weight:700;text-align:center;padding:3px 8px;border-radius:100px;background:#f1f5f9;margin:0 8px 4px"></div>
@@ -1250,54 +1251,18 @@ input,select,textarea{font-family:inherit;outline:none}
     <main style="padding:28px 36px;overflow-y:auto;background:var(--bg);height:100vh">
       <!-- Dashboard -->
       <div id="tab-dashboard">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
           <div>
-            <h2 style="font-size:26px;font-weight:800;margin-bottom:4px">Dashboard</h2>
-            <p style="font-size:13px;color:var(--ink3)">Resumen por perfil de cargo</p>
+            <h2 style="font-size:22px;font-weight:800;margin-bottom:2px">Resumen</h2>
+            <p style="font-size:13px;color:var(--ink3)" id="dash-subtitle">Vista general de evaluaciones</p>
           </div>
-          <div style="display:flex;gap:8px">
-            <button class="btn btn-outline btn-sm" onclick="renderDashboard()">↻ Actualizar</button>
-            <button class="btn btn-sm" onclick="seedTestData()" id="btn-seed" style="background:var(--blue);color:#fff">⚡ Datos de prueba</button>
-          </div>
-        </div>
-        <!-- Profile filter tabs -->
-        <div style="display:flex;gap:6px;margin-bottom:22px;flex-wrap:wrap" id="dash-perfil-tabs">
-          <button id="dptab-all"           onclick="setDashPerfil('all',this)"           style="padding:8px 18px;border-radius:100px;border:1.5px solid var(--accent);background:var(--accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s">Todos</button>
-          <button id="dptab-jefatura"      onclick="setDashPerfil('jefatura',this)"      style="padding:8px 18px;border-radius:100px;border:1.5px solid var(--border2);background:var(--surface);color:var(--ink2);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s">👔 Jefatura</button>
-          <button id="dptab-administrativo" onclick="setDashPerfil('administrativo',this)" style="padding:8px 18px;border-radius:100px;border:1.5px solid var(--border2);background:var(--surface);color:var(--ink2);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s">💼 Administrativo</button>
-          <button id="dptab-guardia"       onclick="setDashPerfil('guardia',this)"
-          style="padding:8px 18px;border-radius:100px;border:1.5px solid var(--border2);background:var(--surface);color:var(--ink2);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s">🛡 Guardia</button>
-          <button id="dptab-supervisor" onclick="setDashPerfil('supervisor',this)" style="padding:8px 18px;border-radius:100px;border:1.5px solid var(--border2);background:var(--surface);color:var(--ink2);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s">⚙️ Supervisor</button>
-        </div>
-        <!-- KPI row -->
-        <div class="stat-grid" id="stat-grid"></div>
-        <!-- Row 2: Fit distribution + Gaps frecuentes -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px">
-          <div class="card cp" id="fit-dist-card">
-            <div class="res-section-title">📊 Distribución de ajuste al cargo</div>
-            <div id="fit-dist-content"></div>
-          </div>
-          <div class="card cp" id="gaps-card">
-            <div class="res-section-title">⚠️ Brechas más frecuentes</div>
-            <div id="gaps-content"></div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="btn btn-ghost btn-sm" onclick="renderDashboard()" style="font-size:12px">↻</button>
+            <button class="btn btn-sm" onclick="seedTestData()" id="btn-seed" style="background:var(--accent);color:#fff;font-size:12px">⚡ Demo</button>
           </div>
         </div>
-        <!-- Row 3: Estado + Perfil -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px">
-          <div class="card cp" id="estado-dist-card">
-            <div class="res-section-title">🗂 Estado de evaluaciones</div>
-            <div id="estado-dist-bars"></div>
-          </div>
-          <div class="card cp" id="perfil-dist-card">
-            <div class="res-section-title">👥 Candidatos por perfil</div>
-            <div id="perfil-dist-bars"></div>
-          </div>
-        </div>
-        <!-- Row 4: Ranking -->
-        <div class="card cp" id="ranking-card">
-          <div class="res-section-title">🏅 Ranking por ajuste al cargo</div>
-          <div id="ranking-table"></div>
-        </div>
+        <!-- All content rendered dynamically -->
+        <div id="dash-content"></div>
       </div>
       <!-- Candidates -->
       <div id="tab-candidates" style="display:none">
@@ -1321,13 +1286,8 @@ input,select,textarea{font-family:inherit;outline:none}
 
         <!-- ── Subtab: Tabla ── -->
         <div id="cand-sub-tabla">
-        <!-- Cargo tabs -->
-        <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:16px">
-          <button id="ctab-all" onclick="setCandTab('all',this)" style="padding:9px 18px;border:none;background:none;font-size:13px;font-weight:700;color:var(--accent);border-bottom:2px solid var(--accent);margin-bottom:-2px;cursor:pointer">Todos</button>
-          <button id="ctab-jefatura" onclick="setCandTab('jefatura',this)" style="padding:9px 18px;border:none;background:none;font-size:13px;font-weight:500;color:var(--ink3);border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer">👔 Jefatura</button>
-          <button id="ctab-administrativo" onclick="setCandTab('administrativo',this)" style="padding:9px 18px;border:none;background:none;font-size:13px;font-weight:500;color:var(--ink3);border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer">💼 Administrativo</button>
-          <button id="ctab-guardia" onclick="setCandTab('guardia',this)" style="padding:9px 18px;border:none;background:none;font-size:13px;font-weight:500;color:var(--ink3);border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer">🛡 Guardia</button>
-          <button id="ctab-supervisor" onclick="setCandTab('supervisor',this)" style="padding:9px 18px;border:none;background:none;font-size:13px;font-weight:500;color:var(--ink3);border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer">⚙️ Supervisor</button>
+        <!-- Cargo tabs (rendered dynamically) -->
+        <div id="cand-cargo-tabs" style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:16px">
         </div>
         <!-- Search + filter -->
         <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap">
@@ -1397,18 +1357,24 @@ input,select,textarea{font-family:inherit;outline:none}
           <button class="params-subtab" id="subtab-wiki" onclick="switchParamsSubtab('wiki')" style="padding:10px 22px;font-size:13px;font-weight:700;background:none;border:none;border-bottom:2.5px solid transparent;color:var(--ink3);cursor:pointer;margin-bottom:-2px;transition:all .15s">📖 Wiki de Tests</button>
         </div>
 
-        <!-- Profile tabs (only for Batería) -->
-        <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap" id="params-tabs">
-          <button class="param-tab-btn active" onclick="switchParamTab('jefatura',this)" style="padding:7px 16px;border-radius:7px;border:1.5px solid #111;background:#111;color:#fff;font-size:13px;font-weight:600;cursor:pointer">Jefatura</button>
-          <button class="param-tab-btn" onclick="switchParamTab('administrativo',this)" style="padding:7px 16px;border-radius:7px;border:1.5px solid var(--border);background:#fff;color:#555;font-size:13px;font-weight:600;cursor:pointer">Administrativo</button>
-          <button class="param-tab-btn" onclick="switchParamTab('guardia',this)" style="padding:7px 16px;border-radius:7px;border:1.5px solid var(--border);background:#fff;color:#555;font-size:13px;font-weight:600;cursor:pointer">Guardia</button>
-          <button class="param-tab-btn" onclick="switchParamTab('supervisor',this)" style="padding:7px 16px;border-radius:7px;border:1.5px solid var(--border);background:#fff;color:#555;font-size:13px;font-weight:600;cursor:pointer">Supervisor</button>
-        </div>
+        <!-- Profile tabs (only for Batería) - rendered dynamically -->
+        <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap" id="params-tabs"></div>
 
         <!-- Content areas -->
         <div id="params-content" style="display:none"></div>
         <div id="bateria-content"></div>
         <div id="wiki-content" style="display:none"></div>
+      </div></div>
+
+      <!-- Cargos -->
+      <div id="tab-cargos" style="display:none;padding-bottom:40px"><div style="max-width:820px;margin:0 auto">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+          <div>
+            <div style="font-size:20px;font-weight:700;margin-bottom:2px">Cargos</div>
+            <div style="font-size:13px;color:var(--ink3)">Activa o desactiva los cargos disponibles en la plataforma</div>
+          </div>
+        </div>
+        <div id="cargos-content"></div>
       </div></div>
     </main>
   </div>
@@ -1486,6 +1452,8 @@ const TESTS_META = {
   cwb:          { name:'Conductas Contraproducentes (CWB-18)', icon:'⚠', color:'#dc2626'        },
   ausentismo:   { name:'Riesgo de Ausentismo (ABS-10)',        icon:'📅', color:'#9333ea'        },
   frustracion:  { name:'Tolerancia a la Frustración (TF-12)',  icon:'🔥', color:'#ea580c'        },
+  proactividad: { name:'Proactividad Laboral (EPL-12)',        icon:'🚀', color:'#0891b2'        },
+  ice:          { name:'Competencias de Ejecución (ICE-20)',   icon:'⚡', color:'#4338ca'        },
 };
 
 // Default batteries — can be overridden via Baterías
@@ -1497,7 +1465,7 @@ const PERFIL_TESTS_DEFAULT = {
 };
 
 // All available tests per cargo (max possible)
-const ALL_TESTS_AVAILABLE = ['barratt','dc0','pai','situacional','vigilancia','comprension','disc','integridad','atencion','cwb','ausentismo','frustracion'];
+const ALL_TESTS_AVAILABLE = ['barratt','dc0','pai','situacional','vigilancia','comprension','disc','integridad','atencion','cwb','ausentismo','frustracion','proactividad','ice'];
 
 // Active batteries (loaded from localStorage, falls back to default)
 var PERFIL_TESTS = Object.assign({}, PERFIL_TESTS_DEFAULT);
@@ -1526,6 +1494,137 @@ const PERFIL_META = {
   guardia:       { label:'Guardia de Seguridad',icon:'🛡', color:'var(--ink2)',  desc:'Evaluación para roles de seguridad. Incluye personalidad, ajuste psicológico, juicio situacional y aptitud de vigilancia.' },
   supervisor:    { label:'Supervisor de Seguridad', icon:'⚙️', color:'var(--amber)', desc:'Evaluación para supervisores de turno u operaciones. Incluye control impulsivo, aptitud cognitiva, ajuste psicológico, juicio situacional y comprensión de procedimientos.' },
 };
+
+// ═══════════════════════════════════════════════════════════
+//  CARGOS ACTIVOS / INACTIVOS
+// ═══════════════════════════════════════════════════════════
+var CARGOS_ACTIVE = { jefatura:true, administrativo:true, guardia:true, supervisor:true };
+
+function loadCargosConfig() {
+  try {
+    var saved = localStorage.getItem('psicoeval_cargos');
+    if (saved) {
+      var parsed = JSON.parse(saved);
+      Object.keys(parsed).forEach(function(k) {
+        if (CARGOS_ACTIVE[k] !== undefined) CARGOS_ACTIVE[k] = !!parsed[k];
+      });
+    }
+  } catch(e) {}
+}
+function saveCargosConfig() {
+  try { localStorage.setItem('psicoeval_cargos', JSON.stringify(CARGOS_ACTIVE)); } catch(e) {}
+}
+loadCargosConfig();
+
+function getActiveCargos() {
+  return Object.keys(CARGOS_ACTIVE).filter(function(k){ return CARGOS_ACTIVE[k]; });
+}
+
+function toggleCargo(key) {
+  var activeCargos = getActiveCargos();
+  // Prevent deactivating last cargo
+  if (CARGOS_ACTIVE[key] && activeCargos.length <= 1) {
+    toast('Debe haber al menos un cargo activo', 'er');
+    return;
+  }
+  CARGOS_ACTIVE[key] = !CARGOS_ACTIVE[key];
+  saveCargosConfig();
+  renderCargosTab();
+  // Update registration form visibility
+  applyCargoVisibility();
+  toast((CARGOS_ACTIVE[key] ? '✓ ' : '✗ ') + PERFIL_META[key].label + (CARGOS_ACTIVE[key] ? ' activado' : ' desactivado'), 'ok');
+}
+
+function renderCargosTab() {
+  var el = document.getElementById('cargos-content');
+  if (!el) return;
+  var ALL = ['jefatura','administrativo','guardia','supervisor'];
+  var activeCount = getActiveCargos().length;
+
+  var h = '';
+  h += '<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 16px;margin-bottom:20px;display:flex;align-items:flex-start;gap:10px">';
+  h += '<span style="font-size:18px">💡</span>';
+  h += '<div style="font-size:12px;color:#1e40af;line-height:1.6">';
+  h += '<strong>' + activeCount + ' de ' + ALL.length + ' cargos activos.</strong> Los cargos desactivados no aparecerán en el formulario de evaluación, el dashboard ni en baterías.';
+  h += '</div></div>';
+
+  ALL.forEach(function(key) {
+    var pm = PERFIL_META[key];
+    var isOn = CARGOS_ACTIVE[key];
+    var tests = PERFIL_TESTS[key] || [];
+    var testNames = tests.map(function(t){ var m = TESTS_META[t]; return m ? m.icon + ' ' + m.name : t; });
+
+    h += '<div style="background:#fff;border-radius:14px;border:1px solid ' + (isOn ? '#e2e8f0' : '#f1f5f9') + ';margin-bottom:12px;overflow:hidden;transition:all .2s;' + (isOn ? '' : 'opacity:.55') + '">';
+
+    // Header row
+    h += '<div style="display:flex;align-items:center;gap:16px;padding:20px 22px">';
+    h += '<div style="font-size:32px;line-height:1">' + pm.icon + '</div>';
+    h += '<div style="flex:1;min-width:0">';
+    h += '<div style="font-size:16px;font-weight:700;color:var(--ink)">' + pm.label + '</div>';
+    h += '<div style="font-size:12px;color:var(--ink3);line-height:1.5;margin-top:2px">' + pm.desc + '</div>';
+    h += '</div>';
+
+    // Toggle switch
+    h += '<div style="flex-shrink:0;display:flex;align-items:center;gap:10px">';
+    h += '<span style="font-size:11px;font-weight:700;color:' + (isOn ? '#16a34a' : '#94a3b8') + '">' + (isOn ? 'Activo' : 'Inactivo') + '</span>';
+    h += '<div onclick="toggleCargo(\'' + key + '\')" style="width:44px;height:24px;border-radius:12px;background:' + (isOn ? '#16a34a' : '#d1d5db') + ';cursor:pointer;position:relative;transition:background .2s;flex-shrink:0">';
+    h += '<div style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;' + (isOn ? 'left:22px' : 'left:2px') + ';transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.15)"></div>';
+    h += '</div></div>';
+    h += '</div>';
+
+    // Info row
+    if (isOn) {
+      h += '<div style="border-top:1px solid #f1f5f9;padding:14px 22px;display:flex;gap:16px;flex-wrap:wrap">';
+      h += '<div style="font-size:11px;color:var(--ink3)"><strong style="color:var(--ink2)">' + tests.length + '</strong> tests asignados</div>';
+      h += '<div style="display:flex;gap:4px;flex-wrap:wrap">';
+      tests.forEach(function(t) {
+        var m = TESTS_META[t];
+        if (m) h += '<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:100px;background:var(--surface3);color:var(--ink3)">' + m.icon + ' ' + m.name + '</span>';
+      });
+      h += '</div></div>';
+    }
+
+    h += '</div>';
+  });
+
+  el.innerHTML = h;
+}
+
+// Apply cargo visibility to registration form
+function applyCargoVisibility() {
+  ['jefatura','administrativo','guardia','supervisor'].forEach(function(key) {
+    var lbl = document.getElementById('cargo-' + key + '-lbl');
+    if (lbl) lbl.style.display = CARGOS_ACTIVE[key] ? 'flex' : 'none';
+  });
+  // Also update candidate tab filters
+  renderCandidateCargoTabs();
+}
+
+// Render battery profile tabs dynamically (only active cargos)
+function renderParamsTabs() {
+  var container = document.getElementById('params-tabs');
+  if (!container) return;
+  var active = getActiveCargos();
+  if (active.indexOf(_paramPerfil) === -1 && active.length > 0) _paramPerfil = active[0];
+  container.innerHTML = active.map(function(pf, i) {
+    var pm = PERFIL_META[pf];
+    var isActive = pf === _paramPerfil;
+    return '<button class="param-tab-btn' + (isActive?' active':'') + '" onclick="switchParamTab(\'' + pf + '\',this)" style="padding:7px 16px;border-radius:7px;border:1.5px solid ' + (isActive?'var(--accent)':'var(--border)') + ';background:' + (isActive?'var(--accent)':'#fff') + ';color:' + (isActive?'#fff':'#555') + ';font-size:13px;font-weight:600;cursor:pointer">' + pm.label + '</button>';
+  }).join('');
+}
+
+// Render candidate tab cargo filters dynamically
+function renderCandidateCargoTabs() {
+  var container = document.getElementById('cand-cargo-tabs');
+  if (!container) return;
+  var active = getActiveCargos();
+  var h = '<button id="ctab-all" onclick="setCandTab(\'all\',this)" style="padding:9px 18px;border:none;background:none;font-size:13px;font-weight:700;color:var(--accent);border-bottom:2px solid var(--accent);margin-bottom:-2px;cursor:pointer">Todos</button>';
+  active.forEach(function(pf) {
+    var pm = PERFIL_META[pf];
+    h += '<button id="ctab-' + pf + '" onclick="setCandTab(\'' + pf + '\',this)" style="padding:9px 18px;border:none;background:none;font-size:13px;font-weight:500;color:var(--ink3);border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer">' + pm.icon + ' ' + pm.label + '</button>';
+  });
+  container.innerHTML = h;
+}
 
 // ═══════════════════════════════════════════════════════════
 // ═══════════════════════════════════════════════════════════
@@ -2876,7 +2975,7 @@ function submitRegister() {
   const TEST_TIME_MINUTES = {
     barratt:5, dc0:20, pai:12, situacional:12, vigilancia:12,
     comprension:10, disc:8, integridad:6, atencion:8,
-    cwb:8, ausentismo:5, frustracion:6
+    cwb:8, ausentismo:5, frustracion:6, proactividad:5, ice:8
   };
   var totalMin = tests.reduce(function(a,t){ return a + (TEST_TIME_MINUTES[t]||8); }, 0);
   // Add 5-minute buffer for transitions
@@ -3351,6 +3450,16 @@ const PERFIL_IDEAL = {
     PE: { min:60, max:100, peso:3, label:'Persistencia',          req:'Capacidad de mantener el esfuerzo ante obstáculos y demoras.' },
     CI: { min:65, max:100, peso:4, label:'Control de Ira',        req:'Regulación de la irritabilidad y reacciones agresivas ante la frustración.' },
     AC: { min:55, max:100, peso:3, label:'Adaptación al Cambio',  req:'Flexibilidad ante cambios inesperados en las condiciones de trabajo.' },
+  };
+  if (!PERFIL_IDEAL[pf].proactividad) PERFIL_IDEAL[pf].proactividad = {
+    pct: { min:60, max:100, peso:3, label:'Proactividad Laboral', req:'Iniciativa personal, autogestión y búsqueda activa de mejoras en el entorno laboral.' }
+  };
+  if (!PERFIL_IDEAL[pf].ice) PERFIL_IDEAL[pf].ice = {
+    IN: { min:60, max:100, peso:3, label:'Iniciativa',                req:'Actúa sin esperar instrucciones, anticipa necesidades y genera soluciones.' },
+    CO: { min:65, max:100, peso:4, label:'Compromiso',                req:'Lealtad con la tarea, el equipo y la organización; cumple lo que promete.' },
+    SU: { min:60, max:100, peso:3, label:'Sentido de Urgencia',       req:'Prioriza con criterio, actúa con velocidad y no posterga decisiones.' },
+    GE: { min:60, max:100, peso:3, label:'Gestión',                   req:'Organiza recursos, planifica su trabajo y coordina acciones para cumplir objetivos.' },
+    CR: { min:65, max:100, peso:4, label:'Compromiso con Resultados', req:'Orientación al logro, persiste hasta cerrar y mide su propio desempeño.' },
   };
 });
 // ── Ensure minLv is set on all cfg entries ──────────────────
@@ -5050,7 +5159,7 @@ function switchParamsSubtab(tab) {
 function renderWikiTab() {
   var WIKI_GROUPS = {
     '🧠 Tests Cognitivos': ['dc0','comprension','atencion'],
-    '🧬 Tests de Personalidad': ['barratt','pai','disc','integridad'],
+    '🧬 Tests de Personalidad': ['barratt','pai','disc','integridad','proactividad','ice'],
     '💡 Tests Situacionales': ['situacional','vigilancia'],
     '⚠ Riesgo Laboral': ['cwb','ausentismo','frustracion'],
   };
@@ -5184,6 +5293,28 @@ function renderWikiTab() {
       ],
       scoring: 'Las respuestas Likert se promedian por dimensión y normalizan a 0-100. Clasificación en 5 niveles estándar. El puntaje global se obtiene como promedio ponderado de las tres dimensiones.',
       reference: 'Basado en constructos de frustration tolerance (Harrington, 2005) y modelos de regulación emocional de Gross (1998).'
+    },
+    proactividad: {
+      icon: '🚀', name: 'Escala de Proactividad Laboral (EPL-12)', category: 'Personalidad', items: 12, time: '4-6 min', format: 'Likert 1-5',
+      description: 'Evalúa la disposición del candidato a anticiparse a los problemas, actuar por iniciativa propia, buscar soluciones sin esperar instrucciones y proponer mejoras en su entorno de trabajo. La proactividad laboral es un predictor robusto de desempeño superior, especialmente en roles que requieren autonomía.',
+      dimensions: [
+        { key:'pct', name:'Proactividad Laboral Global', desc:'Indicador integrado que combina tres facetas: Iniciativa Personal (actuar anticipadamente sin esperar indicaciones), Autogestión Proactiva (planificar, buscar recursos y resolver antes de escalar) y Búsqueda de Oportunidades (identificar mejoras y proponer cambios). Puntuaciones altas predicen empleados autónomos, resolutivos y orientados a la mejora continua; bajas sugieren dependencia de instrucciones y pasividad ante problemas.' },
+      ],
+      scoring: 'Las respuestas Likert se promedian y normalizan a 0-100. Incluye ítems inversos de control para detectar aquiescencia. Clasificación: Muy Bajo (reactivo, espera instrucciones), Bajo, Medio, Alto, Muy Alto (altamente proactivo y autónomo).',
+      reference: 'Basado en la Proactive Personality Scale de Bateman & Crant (1993) y el modelo de comportamiento proactivo de Parker, Bindl & Strauss (2010).'
+    },
+    ice: {
+      icon: '⚡', name: 'Inventario de Competencias de Ejecución (ICE-20)', category: 'Personalidad', items: 20, time: '6-8 min', format: 'Likert 1-5',
+      description: 'Evalúa cinco competencias clave vinculadas a la capacidad de ejecución efectiva en el trabajo. Mide la disposición del candidato a actuar con iniciativa, cumplir compromisos, operar con sentido de urgencia, gestionar recursos y orientarse consistentemente hacia los resultados.',
+      dimensions: [
+        { key:'IN', name:'Iniciativa', desc:'Tendencia a actuar sin esperar instrucciones, anticiparse a necesidades y generar soluciones antes de que los problemas escalen. Puntuaciones altas indican un perfil proactivo y resolutivo; bajas sugieren dependencia de la dirección externa para actuar.' },
+        { key:'CO', name:'Compromiso', desc:'Lealtad con la tarea, el equipo y la organización. Implica cumplir lo prometido, asumir responsabilidad por los resultados y mantener la dedicación incluso en condiciones adversas. Puntuaciones altas predicen confiabilidad y consistencia.' },
+        { key:'SU', name:'Sentido de Urgencia', desc:'Capacidad de priorizar con criterio, actuar con velocidad apropiada y no postergar decisiones ni tareas importantes. No implica apresuramiento, sino la habilidad de distinguir lo urgente de lo que puede esperar y actuar en consecuencia.' },
+        { key:'GE', name:'Gestión', desc:'Habilidad para organizar recursos (tiempo, personas, información), planificar el trabajo propio y coordinar acciones necesarias para cumplir objetivos. Incluye la capacidad de estructurar tareas, delegar cuando corresponde y mantener el control del avance.' },
+        { key:'CR', name:'Compromiso con Resultados', desc:'Orientación al logro medible. Implica establecer metas claras, persistir hasta cerrar los objetivos, medir el propio desempeño y no conformarse con el esfuerzo si no se alcanzan los resultados esperados. Puntuaciones altas predicen alto rendimiento sostenido.' },
+      ],
+      scoring: 'Cada dimensión se calcula como promedio de sus 4 ítems (escala 1-5), normalizado a 0-100. El puntaje global es el promedio ponderado de las 5 dimensiones. Clasificación por dimensión y global: Muy Bajo (0-19), Bajo (20-39), Medio (40-59), Alto (60-79), Muy Alto (80-100). Incluye 4 ítems inversos distribuidos entre dimensiones para control de aquiescencia.',
+      reference: 'Diseñado a partir de modelos de competencias de ejecución de Lombardo & Eichinger (2004), el Achievement Motivation Inventory de Schuler et al. (2004) y la teoría de orientación al logro de McClelland (1961).'
     },
   };
 
@@ -5337,6 +5468,8 @@ var BATTERY_TEST_DIMENSIONS = {
   cwb:         { icon:'⚠', title:'Conductas Contraproducentes (CWB-18)', keys:['AR','DI','NG'] },
   ausentismo:  { icon:'📅', title:'Riesgo de Ausentismo (ABS-10)',      keys:['pct'] },
   frustracion: { icon:'🔥', title:'Tolerancia a la Frustración (TF-12)', keys:['PE','CI','AC'] },
+  proactividad:{ icon:'🚀', title:'Proactividad Laboral (EPL-12)',       keys:['pct'] },
+  ice:         { icon:'⚡', title:'Competencias de Ejecución (ICE-20)',  keys:['IN','CO','SU','GE','CR'] },
 };
 
 function renderBateriaTab() {
@@ -5351,7 +5484,7 @@ function renderBateriaTab() {
 
   var TEST_GROUPS = {
     '🧠 Tests Cognitivos': ['dc0','comprension','atencion'],
-    '🧬 Tests de Personalidad': ['barratt','pai','disc','integridad'],
+    '🧬 Tests de Personalidad': ['barratt','pai','disc','integridad','proactividad','ice'],
     '💡 Tests Situacionales': ['situacional','vigilancia'],
     '⚠ Riesgo Laboral': ['cwb','ausentismo','frustracion'],
   };
@@ -5512,6 +5645,8 @@ function saveParams() {
     cwb:         ['AR','DI','NG'],
     ausentismo:  ['pct'],
     frustracion: ['PE','CI','AC'],
+    proactividad:['pct'],
+    ice:         ['IN','CO','SU','GE','CR'],
   };
 
   let changed = 0;
@@ -5580,7 +5715,7 @@ function persistParams() {
       snapshot[pf] = {};
       const ideal = PERFIL_IDEAL[pf];
       if (!ideal) return;
-      ['barratt','pai','dc0','situacional','vigilancia','comprension','disc','integridad','atencion','cwb','ausentismo','frustracion'].forEach(function(secId) {
+      ['barratt','pai','dc0','situacional','vigilancia','comprension','disc','integridad','atencion','cwb','ausentismo','frustracion','proactividad','ice'].forEach(function(secId) {
         var sec = ideal[secId];
         if (!sec) return;
         snapshot[pf][secId] = {};
@@ -6256,7 +6391,7 @@ function setCandSubTab(sub, btn) {
     if (el) el.style.display = s === sub ? 'block' : 'none';
   });
   // Load data
-  if (sub === 'tabla')    renderCandidatesTable();
+  if (sub === 'tabla')    { renderCandidateCargoTabs(); renderCandidatesTable(); }
   else if (sub === 'informes') renderReports();
   else if (sub === 'raw')      renderRaw();
 }
@@ -6272,14 +6407,15 @@ function refreshCandView() {
 function adminTab(id, btn) {
   S.currentAdminTab = id;
   saveSession();
-  ['dashboard','candidates','params','users'].forEach(t => {
+  ['dashboard','candidates','params','users','cargos'].forEach(t => {
     const el = document.getElementById('tab-' + t); if(el) el.style.display = t === id ? 'block' : 'none';
     const nb = document.getElementById('nav-' + t); if(nb) nb.classList.toggle('active', t === id);
   });
   if (id === 'candidates') { setCandSubTab('tabla', document.getElementById('subtab-tabla')); }
   else if (id === 'dashboard') renderDashboard();
-  else if (id === 'params') { if (_paramsSubtab === 'wiki') renderWikiTab(); else renderBateriaTab(); }
+  else if (id === 'params') { renderParamsTabs(); if (_paramsSubtab === 'wiki') renderWikiTab(); else renderBateriaTab(); }
   else if (id === 'users') renderUsersTab();
+  else if (id === 'cargos') renderCargosTab();
 }
 
 function renderAdmin() { renderDashboard(); }
@@ -6298,31 +6434,28 @@ let _dashPerfil = 'all';
 
 function setDashPerfil(perfil, btn) {
   _dashPerfil = perfil;
-  document.querySelectorAll('#dash-perfil-tabs button').forEach(b => {
+  document.querySelectorAll('.dash-perfil-btn').forEach(b => {
     const active = b === btn;
-    b.style.background = active ? 'var(--accent)' : 'var(--surface)';
-    b.style.color      = active ? '#fff'           : 'var(--ink2)';
-    b.style.borderColor = active ? 'var(--accent)' : 'var(--border2)';
+    b.style.background  = active ? 'var(--accent)' : 'transparent';
+    b.style.color       = active ? '#fff' : 'var(--ink3)';
+    b.style.borderColor = active ? 'var(--accent)' : 'var(--border)';
   });
   renderDashboard();
 }
 
 async function renderDashboard() {
-  document.getElementById('stat-grid').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--ink3);font-size:13px">Cargando…</div>';
+  const container = document.getElementById('dash-content');
+  if (!container) return;
+  container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--ink3);font-size:13px">Cargando…</div>';
+
   const allCands = await getDB();
   const perfil   = _dashPerfil;
-
-  // Filter by selected profile
   const cands    = perfil === 'all' ? allCands : allCands.filter(c => c.perfil === perfil);
   const total    = cands.length;
   const completed = cands.filter(c => c.estado === 'completed');
   const inProg   = cands.filter(c => c.estado === 'in_progress').length;
   const pending  = cands.filter(c => c.estado === 'pending').length;
   const nComp    = completed.length;
-
-  // Profile label for context
-  const PLABEL = { all:'Todos los perfiles', jefatura:'Jefatura', administrativo:'Administrativo', guardia:'Guardia de Seguridad', supervisor:'Supervisor de Seguridad' };
-  const PICON  = { all:'', jefatura:'👔 ', administrativo:'💼 ', guardia:'🛡 ', supervisor:'⚙️ ' };
 
   const reports = completed
     .filter(c => c.scores)
@@ -6331,247 +6464,204 @@ async function renderDashboard() {
 
   const fits   = reports.map(x => x.r.globalFit);
   const avgFit = fits.length ? Math.round(fits.reduce((a,b)=>a+b,0)/fits.length) : 0;
-  const aptos  = fits.filter(f => f >= 70).length;
-  const tasa   = total ? Math.round(nComp/total*100) : 0;
+  const aptos  = fits.filter(f => fitToLevel5(f) === 5).length;
+  const conObs = fits.filter(f => { var lv=fitToLevel5(f); return lv>=3&&lv<5; }).length;
+  const noApto = fits.filter(f => fitToLevel5(f) < 3).length;
 
-  function kpiStatus(val, goodThr, warnThr) {
-    if (val >= goodThr) return { color:'#16a34a', bg:'#f0fdf4', border:'#bbf7d0', icon:'↑' };
-    if (val >= warnThr) return { color:'#b45309', bg:'#fff7ed', border:'#fed7aa', icon:'→' };
-    return { color:'#e11d48', bg:'#fff1f3', border:'#fecdd3', icon:'↓' };
-  }
-  const kTasa  = kpiStatus(tasa,   70, 40);
-  const kFit   = kpiStatus(avgFit, 70, 50);
-  const kAptos = fits.length ? kpiStatus(Math.round(aptos/fits.length*100), 60, 30)
-               : { color:'var(--ink3)', bg:'var(--surface2)', border:'var(--border)', icon:'—' };
+  const PLABEL = { all:'Todos', jefatura:'Jefatura', administrativo:'Administrativo', guardia:'Guardia', supervisor:'Supervisor' };
+  const PICON  = { all:'📊', jefatura:'👔', administrativo:'💼', guardia:'🛡', supervisor:'⚙️' };
 
-  // Context badge shown in each KPI
-  const ctxBadge = perfil !== 'all'
-    ? `<div style="font-size:10px;color:var(--ink3);margin-top:2px">${PICON[perfil]}${PLABEL[perfil]}</div>`
-    : '';
+  // Subtitle
+  const subEl = document.getElementById('dash-subtitle');
+  if (subEl) subEl.textContent = perfil === 'all' ? 'Vista general de evaluaciones' : PICON[perfil] + ' ' + PLABEL[perfil];
 
-  const kpis = [
-    { label:'Total candidatos', val:total,
-      sub:`${inProg} en progreso · ${pending} pendientes`,
-      color:'var(--ink)', bg:'var(--surface)', border:'var(--border)', icon:'👥', prog:null },
-    { label:'Completados', val:nComp,
-      sub:`${tasa}% tasa de completitud`,
-      color:kTasa.color, bg:kTasa.bg, border:kTasa.border,
-      icon:kTasa.icon==='↑'?'✅':kTasa.icon==='→'?'⏳':'⚠️', prog:tasa, progLabel:tasa+'%' },
-    { label:'Ajuste promedio', val:avgFit+'%',
-      sub:fits.length?`sobre ${fits.length} evaluado${fits.length!==1?'s':''}`:'Sin evaluados aún',
-      color:kFit.color, bg:kFit.bg, border:kFit.border,
-      icon:kFit.icon==='↑'?'🟢':kFit.icon==='→'?'🟡':'🔴', prog:avgFit,
-      progLabel:avgFit>=70?'Bueno':avgFit>=50?'Regular':'Bajo' },
-    { label:'Candidatos aptos', val:aptos,
-      sub:fits.length?`${Math.round(aptos/fits.length*100)}% del pool evaluado`:'Ajuste ≥ 70%',
-      color:kAptos.color, bg:kAptos.bg, border:kAptos.border,
-      icon:kAptos.icon==='↑'?'🏆':kAptos.icon==='→'?'📋':'❌',
-      prog:fits.length?Math.round(aptos/fits.length*100):0,
-      progLabel:fits.length?Math.round(aptos/fits.length*100)+'%':'—' },
-  ];
+  var h = '';
 
-  document.getElementById('stat-grid').innerHTML = kpis.map(k => `
-    <div style="padding:20px;background:${k.bg};border:1.5px solid ${k.border};border-radius:14px;display:flex;flex-direction:column;gap:6px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
-        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--ink3)">${k.label}</div>
-        <span style="font-size:18px">${k.icon}</span>
-      </div>
-      <div style="font-size:30px;font-weight:900;color:${k.color};letter-spacing:-.03em;line-height:1">${k.val}</div>
-      ${k.prog !== null ? `
-        <div style="height:5px;background:rgba(0,0,0,.08);border-radius:100px;overflow:hidden">
-          <div style="height:100%;width:${Math.min(100,k.prog)}%;background:${k.color};border-radius:100px"></div>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <span style="font-size:11px;color:var(--ink3)">${k.sub}</span>
-          <span style="font-size:11px;font-weight:700;color:${k.color}">${k.progLabel}</span>
-        </div>` : `<div style="font-size:12px;color:var(--ink3)">${k.sub}</div>`}
-    </div>`).join('');
+  // ── Profile filter pills ──
+  h += '<div style="display:flex;gap:6px;margin-bottom:24px;flex-wrap:wrap">';
+  var activeCargos = getActiveCargos();
+  var dashProfiles = ['all'].concat(activeCargos);
+  dashProfiles.forEach(function(pf) {
+    var active = pf === perfil;
+    h += '<button class="dash-perfil-btn" onclick="setDashPerfil(\'' + pf + '\',this)" style="padding:6px 16px;border-radius:100px;border:1.5px solid ' + (active?'var(--accent)':'var(--border)') + ';background:' + (active?'var(--accent)':'transparent') + ';color:' + (active?'#fff':'var(--ink3)') + ';font-size:12px;font-weight:600;cursor:pointer;transition:all .15s">' + PICON[pf] + ' ' + PLABEL[pf] + '</button>';
+  });
+  h += '</div>';
 
-  // ── Fit distribution ──────────────────────────────────────────────────────
-  const RANGES = [
-    { label:'Apto',                  min:90, max:100, color:'#16a34a' },
-    { label:'Apto con Observaciones',min:55, max:89,  color:'#b45309' },
-    { label:'No Apto',               min:0,  max:54,  color:'#e11d48' },
-  ];
-  const fitDistEl = document.getElementById('fit-dist-content');
-  // Update card title to reflect filter
-  const fitCard = document.getElementById('fit-dist-card');
-  if (fitCard) fitCard.querySelector('.res-section-title').textContent =
-    '📊 Distribución de ajuste' + (perfil !== 'all' ? ' — ' + PLABEL[perfil] : '');
+  // ── 3 Big Metrics ──
+  var fitColor = avgFit >= 70 ? '#16a34a' : avgFit >= 50 ? '#b45309' : '#dc2626';
+  var compPct  = total ? Math.round(nComp/total*100) : 0;
 
-  if (!fits.length) {
-    fitDistEl.innerHTML = '<div style="color:var(--ink3);font-size:13px;padding:12px 0">Sin evaluados en este perfil.</div>';
+  h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:28px">';
+
+  // Metric 1: Candidatos
+  h += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px 20px">';
+  h += '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);margin-bottom:10px">Candidatos</div>';
+  h += '<div style="font-size:36px;font-weight:900;color:var(--ink);letter-spacing:-.03em;line-height:1">' + total + '</div>';
+  h += '<div style="display:flex;gap:12px;margin-top:10px">';
+  h += '<span style="font-size:11px;color:#16a34a;font-weight:600">' + nComp + ' completados</span>';
+  h += '<span style="font-size:11px;color:var(--ink4)">' + inProg + ' en curso</span>';
+  h += '<span style="font-size:11px;color:var(--ink4)">' + pending + ' pendientes</span>';
+  h += '</div></div>';
+
+  // Metric 2: Ajuste promedio
+  h += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px 20px">';
+  h += '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);margin-bottom:10px">Ajuste promedio</div>';
+  h += '<div style="font-size:36px;font-weight:900;color:' + fitColor + ';letter-spacing:-.03em;line-height:1">' + (fits.length ? avgFit + '%' : '—') + '</div>';
+  h += '<div style="margin-top:10px;height:4px;background:var(--surface3);border-radius:100px;overflow:hidden">';
+  h += '<div style="height:100%;width:' + avgFit + '%;background:' + fitColor + ';border-radius:100px;transition:width .6s"></div>';
+  h += '</div>';
+  h += '<div style="font-size:11px;color:var(--ink4);margin-top:6px">' + (fits.length ? 'sobre ' + fits.length + ' evaluado' + (fits.length!==1?'s':'') : 'Sin evaluaciones completadas') + '</div>';
+  h += '</div>';
+
+  // Metric 3: Distribución aptitud
+  h += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px 20px">';
+  h += '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);margin-bottom:10px">Aptitud</div>';
+  if (fits.length) {
+    h += '<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:10px">';
+    h += '<span style="font-size:36px;font-weight:900;color:#16a34a;line-height:1">' + aptos + '</span>';
+    h += '<span style="font-size:13px;font-weight:600;color:var(--ink3)">aptos</span>';
+    h += '</div>';
+    h += '<div style="display:flex;gap:4px;height:8px;border-radius:100px;overflow:hidden">';
+    var totalFits = fits.length || 1;
+    if (aptos)  h += '<div style="flex:' + aptos + ';background:#16a34a;border-radius:100px 0 0 100px" title="Apto: ' + aptos + '"></div>';
+    if (conObs) h += '<div style="flex:' + conObs + ';background:#f59e0b" title="Con observaciones: ' + conObs + '"></div>';
+    if (noApto) h += '<div style="flex:' + noApto + ';background:#dc2626;border-radius:0 100px 100px 0" title="No apto: ' + noApto + '"></div>';
+    h += '</div>';
+    h += '<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:10px;font-weight:600">';
+    h += '<span style="color:#16a34a">' + aptos + ' aptos</span>';
+    h += '<span style="color:#f59e0b">' + conObs + ' obs.</span>';
+    h += '<span style="color:#dc2626">' + noApto + ' no aptos</span>';
+    h += '</div>';
   } else {
-    const maxCount = Math.max(...RANGES.map(r => fits.filter(f=>f>=r.min&&f<=r.max).length), 1);
-    fitDistEl.innerHTML = '<div style="display:flex;flex-direction:column;gap:10px">'
-      + RANGES.map(r => {
-          const count = fits.filter(f => f>=r.min && f<=r.max).length;
-          const pct   = Math.round(count/fits.length*100);
-          const barW  = Math.round(count/maxCount*100);
-          return `<div>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-              <div style="display:flex;align-items:center;gap:8px">
-                <div style="width:10px;height:10px;border-radius:50%;background:${r.color};flex-shrink:0"></div>
-                <span style="font-size:13px;font-weight:600;color:var(--ink)">${r.label}</span>
-                <span style="font-size:11px;color:var(--ink3)">${r.min}–${r.max}%</span>
-              </div>
-              <div style="display:flex;align-items:center;gap:8px">
-                <span style="font-size:14px;font-weight:800;color:${r.color}">${count}</span>
-                <span style="font-size:11px;color:var(--ink3);min-width:30px;text-align:right">${pct}%</span>
-              </div>
-            </div>
-            <div style="height:8px;background:var(--surface2);border-radius:100px;overflow:hidden">
-              <div style="height:100%;width:${barW}%;background:${r.color};border-radius:100px"></div>
-            </div>
-          </div>`;
-        }).join('')
-      + `<div style="margin-top:8px;padding-top:10px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:12px;color:var(--ink3)">
-          <span>${fits.length} evaluado${fits.length!==1?'s':''}</span>
-          <span>Promedio: <strong style="color:${kFit.color}">${avgFit}%</strong></span>
-        </div>`
-      + '</div>';
+    h += '<div style="font-size:36px;font-weight:900;color:var(--ink4);line-height:1">—</div>';
+    h += '<div style="font-size:11px;color:var(--ink4);margin-top:10px">Sin datos aún</div>';
   }
+  h += '</div>';
+  h += '</div>'; // end metrics grid
 
-  // ── Brechas más frecuentes ────────────────────────────────────────────────
-  const DIM_SECTION = {
-    AI:'Control Impulsivo', IM:'Control Impulsivo', NP:'Control Impulsivo',
-    EE:'Aj. Psicológico',   AS:'Aj. Psicológico',   ON:'Aj. Psicológico',
-    ME:'Aj. Psicológico',   IL:'Aj. Psicológico',   ML:'Aj. Psicológico',
-    V:'Apt. Cognitiva', N:'Apt. Cognitiva', L:'Apt. Cognitiva',
-    comp:'Comprensión', vig:'Vigilancia', sit:'Situacional'
-  };
-  const DIM_NAMES_G = {
-    AI:'Control Atencional', IM:'Control Motor', NP:'Planificación',
-    EE:'Est. Emocional', AS:'Adapt. Social', ON:'Orient. Normativa',
-    ME:'Manejo Estrés', IL:'Integridad', ML:'Motivación',
-    V:'Verbal', N:'Numérico', L:'Lógico',
-    comp:'Comprensión Instrucciones', vig:'Apt. Vigilancia', sit:'Juicio Situacional'
-  };
-  const gapCounts = {};
-  reports.forEach(({ r }) => {
-    r.sections.forEach(sec => {
-      sec.dims.forEach(d => {
-        const k = d.key;
-        if (!gapCounts[k]) gapCounts[k] = { label:DIM_NAMES_G[k]||d.label, section:DIM_SECTION[k]||sec.title, count:0, total:0 };
-        gapCounts[k].total++;
-        if (scoreToLevel5(d.score) < (d.minLv||1)) gapCounts[k].count++;
-      });
-    });
+  // ── Candidates list ──
+  // Sort: completed first (by fit desc), then in_progress, then pending
+  var sorted = [...cands].sort(function(a, b) {
+    var order = { completed:0, in_progress:1, pending:2 };
+    var oa = order[a.estado] !== undefined ? order[a.estado] : 3;
+    var ob = order[b.estado] !== undefined ? order[b.estado] : 3;
+    if (oa !== ob) return oa - ob;
+    // Within completed, sort by fit descending
+    if (a.estado === 'completed' && b.estado === 'completed') {
+      var ra = reports.find(x => x.c.id === a.id);
+      var rb = reports.find(x => x.c.id === b.id);
+      return ((rb ? rb.r.globalFit : 0) - (ra ? ra.r.globalFit : 0));
+    }
+    return 0;
   });
 
-  const gapsEl = document.getElementById('gaps-content');
-  const gapsCard = document.getElementById('gaps-card');
-  if (gapsCard) gapsCard.querySelector('.res-section-title').textContent =
-    '⚠️ Brechas más frecuentes' + (perfil !== 'all' ? ' — ' + PLABEL[perfil] : '');
-
-  const sortedGaps = Object.entries(gapCounts)
-    .filter(([,v]) => v.total > 0)
-    .sort((a,b) => (b[1].count/b[1].total) - (a[1].count/a[1].total))
-    .slice(0, 6);
-
-  if (!sortedGaps.length || !reports.length) {
-    gapsEl.innerHTML = '<div style="color:var(--ink3);font-size:13px;padding:12px 0">Sin datos suficientes en este perfil.</div>';
+  if (!sorted.length) {
+    h += '<div style="text-align:center;padding:48px 20px;color:var(--ink4);font-size:13px">No hay candidatos' + (perfil !== 'all' ? ' en este perfil' : '') + '. Usa el enlace de evaluación para añadir candidatos.</div>';
   } else {
-    gapsEl.innerHTML = '<div style="display:flex;flex-direction:column;gap:8px">'
-      + sortedGaps.map(([key, v]) => {
-          const pct    = Math.round(v.count/v.total*100);
-          const gColor = pct>=60?'#e11d48':pct>=35?'#b45309':'#8e8e93';
-          const gBg    = pct>=60?'#fff1f3':pct>=35?'#fff7ed':'var(--surface2)';
-          const dot    = pct>=60?'🔴':pct>=35?'🟡':'🟢';
-          return `<div style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:${gBg};border-radius:10px;border:1px solid ${gColor}25">
-            <span style="font-size:15px;flex-shrink:0">${dot}</span>
-            <div style="flex:1;min-width:0">
-              <div style="font-size:12px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${v.label}</div>
-              <div style="font-size:10px;color:var(--ink3)">${v.section}</div>
-            </div>
-            <div style="text-align:right;flex-shrink:0">
-              <div style="font-size:15px;font-weight:900;color:${gColor}">${pct}%</div>
-              <div style="font-size:10px;color:var(--ink3)">${v.count}/${v.total}</div>
-            </div>
-          </div>`;
-        }).join('')
-      + '<div style="margin-top:4px;font-size:11px;color:var(--ink3)">% de candidatos sin alcanzar el mínimo requerido.</div>'
-      + '</div>';
-  }
+    h += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);margin-bottom:12px">Candidatos recientes</div>';
+    h += '<div style="display:flex;flex-direction:column;gap:1px;background:var(--border);border-radius:12px;overflow:hidden">';
 
-  // ── Estado ────────────────────────────────────────────────────────────────
-  document.getElementById('estado-dist-bars').innerHTML =
-    `<div class="bar-chart">${distBars({'Completados':nComp,'En progreso':inProg,'Pendientes':pending},
-    {'Completados':'#16a34a','En progreso':'#2563eb','Pendientes':'#94a3b8'})}</div>`;
+    sorted.slice(0, 15).forEach(function(c) {
+      var rep = reports.find(x => x.c.id === c.id);
+      var fit = rep ? rep.r.globalFit : null;
+      var fitCol = fit !== null ? (fit>=70?'#16a34a':fit>=50?'#b45309':'#dc2626') : 'var(--ink4)';
+      var fitLbl = fit !== null ? (function(lv){return lv===5?'Apto':lv>=3?'Obs.':'No apto'})(fitToLevel5(fit)) : '';
+      var fitBg  = fit !== null ? (fit>=70?'#f0fdf4':fit>=50?'#fffbeb':'#fef2f2') : '';
+      var statCol = { completed:'#16a34a', in_progress:'#2563eb', pending:'#94a3b8' };
+      var statLbl = { completed:'Completado', in_progress:'En curso', pending:'Pendiente' };
+      var statIcon = { completed:'●', in_progress:'◐', pending:'○' };
 
-  // ── Por perfil (only show when "all" is selected) ──────────────────────────
-  const perfilCard = document.getElementById('perfil-dist-card');
-  if (perfil === 'all') {
-    if (perfilCard) perfilCard.style.display = 'block';
-    const perfilCount = {};
-    allCands.forEach(c => { const p=c.perfil||'N/A'; perfilCount[p]=(perfilCount[p]||0)+1; });
-    document.getElementById('perfil-dist-bars').innerHTML =
-      `<div class="bar-chart">${distBars(perfilCount,{jefatura:'#6366f1',administrativo:'#2563eb',guardia:'#10b981'})}</div>`;
-  } else {
-    // When filtered: show estado breakdown by sub-state with context
-    if (perfilCard) {
-      perfilCard.style.display = 'block';
-      perfilCard.querySelector('.res-section-title').textContent = '📋 Estado — ' + PLABEL[perfil];
+      h += '<div style="display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--surface);cursor:pointer;transition:background .1s" onmouseover="this.style.background=\'var(--surface2)\'" onmouseout="this.style.background=\'var(--surface)\'" onclick="viewCandReport(\'' + c.id + '\')">';
+
+      // Avatar
+      var init = ((c.nombre||'')[0] || '') + ((c.apellido||'')[0] || '');
+      h += '<div style="width:36px;height:36px;border-radius:50%;background:var(--accent-l);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">' + init.toUpperCase() + '</div>';
+
+      // Name + meta
+      h += '<div style="flex:1;min-width:0">';
+      h += '<div style="font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + c.nombre + ' ' + c.apellido + '</div>';
+      h += '<div style="font-size:11px;color:var(--ink4);display:flex;gap:8px;align-items:center;margin-top:1px">';
+      h += '<span>' + (c.cargo || PLABEL[c.perfil] || '—') + '</span>';
+      if (perfil === 'all' && c.perfil) h += '<span style="color:var(--ink4)">· ' + (PLABEL[c.perfil]||'') + '</span>';
+      h += '</div></div>';
+
+      // Status
+      h += '<div style="display:flex;align-items:center;gap:5px;flex-shrink:0">';
+      h += '<span style="color:' + (statCol[c.estado]||'#94a3b8') + ';font-size:10px">' + (statIcon[c.estado]||'○') + '</span>';
+      h += '<span style="font-size:11px;color:' + (statCol[c.estado]||'#94a3b8') + ';font-weight:500">' + (statLbl[c.estado]||'—') + '</span>';
+      h += '</div>';
+
+      // Fit score
+      if (fit !== null) {
+        h += '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0;min-width:90px;justify-content:flex-end">';
+        h += '<div style="width:40px;height:4px;background:var(--surface3);border-radius:100px;overflow:hidden"><div style="height:100%;width:' + fit + '%;background:' + fitCol + ';border-radius:100px"></div></div>';
+        h += '<span style="font-size:13px;font-weight:800;color:' + fitCol + ';min-width:32px;text-align:right">' + fit + '%</span>';
+        h += '</div>';
+      } else {
+        h += '<div style="min-width:90px;text-align:right;font-size:11px;color:var(--ink4);flex-shrink:0">—</div>';
+      }
+
+      // Arrow
+      h += '<span style="color:var(--ink4);font-size:14px;flex-shrink:0">›</span>';
+      h += '</div>';
+    });
+
+    h += '</div>'; // end list
+
+    if (sorted.length > 15) {
+      h += '<div style="text-align:center;padding:14px;font-size:12px;color:var(--ink3)">Mostrando 15 de ' + sorted.length + ' — <a onclick="adminTab(\'candidates\',document.getElementById(\'nav-candidates\'))" style="color:var(--accent);cursor:pointer;font-weight:600">ver todos →</a></div>';
     }
-    // Show aptos vs no aptos vs en progreso for this profile
-    const aptosN   = fits.filter(f=>fitToLevel5(f)===5).length;
-    const conObs   = fits.filter(f=>{var lv=fitToLevel5(f);return lv>=3&&lv<5;}).length;
-    const noApto   = fits.filter(f=>fitToLevel5(f)<3).length;
-    const breakdown = { 'Apto':aptosN, 'Apto con Observaciones':conObs, 'No Apto':noApto, 'En progreso':inProg, 'Pendientes':pending };
-    document.getElementById('perfil-dist-bars').innerHTML =
-      `<div class="bar-chart">${distBars(breakdown,{'Apto':'#16a34a','Apto con Observaciones':'#b45309','No Apto':'#e11d48','En progreso':'#2563eb','Pendientes':'#94a3b8'})}</div>`;
   }
 
-  // ── Ranking ───────────────────────────────────────────────────────────────
-  const rankCard = document.getElementById('ranking-card');
-  if (rankCard) rankCard.querySelector('.res-section-title').textContent =
-    '🏅 Ranking' + (perfil !== 'all' ? ' — ' + PLABEL[perfil] : ' general');
+  // ── Top brechas (compact, only if data) ──
+  if (reports.length) {
+    var DIM_NAMES_G = {
+      AI:'Control Atencional', IM:'Control Motor', NP:'Planificación',
+      EE:'Est. Emocional', AS:'Adapt. Social', ON:'Orient. Normativa',
+      ME:'Manejo Estrés', IL:'Integridad', ML:'Motivación',
+      V:'Verbal', N:'Numérico', L:'Lógico',
+      comp:'Comprensión', vig:'Vigilancia', sit:'Situacional',
+      D:'Dominancia', I:'Influencia', S:'Estabilidad', C:'Cumplimiento',
+      pct:'Global', AR:'Abuso Recursos', DI:'Desv. Interpersonal', NG:'Negligencia',
+      PE:'Persistencia', CI:'Control Ira', AC:'Adapt. Cambio'
+    };
+    var gapCounts = {};
+    reports.forEach(function(x) {
+      x.r.sections.forEach(function(sec) {
+        sec.dims.forEach(function(d) {
+          var k = d.key;
+          if (!gapCounts[k]) gapCounts[k] = { label:DIM_NAMES_G[k]||d.label, count:0, total:0 };
+          gapCounts[k].total++;
+          if (scoreToLevel5(d.score) < (d.minLv||1)) gapCounts[k].count++;
+        });
+      });
+    });
 
-  const ranked = [...reports].sort((a,b)=>b.r.globalFit-a.r.globalFit).slice(0,10);
-  if (!ranked.length) {
-    document.getElementById('ranking-table').innerHTML =
-      '<div style="color:var(--ink3);font-size:13px;padding:12px 0">No hay candidatos completados en este perfil.</div>';
-  } else {
-    document.getElementById('ranking-table').innerHTML =
-      '<table style="width:100%;border-collapse:collapse;font-size:13px">'
-      +'<thead><tr style="border-bottom:2px solid var(--border)">'
-      +'<th style="text-align:left;padding:8px 6px;color:var(--ink3);font-weight:600;font-size:11px">#</th>'
-      +'<th style="text-align:left;padding:8px 6px;color:var(--ink3);font-weight:600;font-size:11px">Candidato</th>'
-      +(perfil==='all'?'<th style="text-align:left;padding:8px 6px;color:var(--ink3);font-weight:600;font-size:11px">Perfil</th>':'')
-      +'<th style="text-align:center;padding:8px 6px;color:var(--ink3);font-weight:600;font-size:11px">Ajuste</th>'
-      +'<th style="text-align:center;padding:8px 6px;color:var(--ink3);font-weight:600;font-size:11px">Estado</th>'
-      +'<th style="padding:8px 6px"></th>'
-      +'</tr></thead><tbody>'
-      + ranked.map(({c,r},i) => {
-          const fit=r.globalFit;
-          const col=fit>=85?'#16a34a':fit>=70?'#2563eb':fit>=50?'#b45309':'#e11d48';
-          const bg =fit>=85?'#f0fdf4':fit>=70?'#eff6ff':fit>=50?'#fff7ed':'#fff1f3';
-          const lbl=(function(lv){return lv===5?'Apto':lv>=3?'Apto con Observaciones':'No Apto';})(fitToLevel5(fit));
-          const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
-          const brechasN = r.brechas ? r.brechas.length : 0;
-          return `<tr style="border-bottom:1px solid var(--surface2)">
-            <td style="padding:10px 6px;font-weight:700;color:var(--ink3)">${medal||'<span style="color:var(--ink4)">'+(i+1)+'</span>'}</td>
-            <td style="padding:10px 6px">
-              <strong style="color:var(--ink)">${c.nombre} ${c.apellido}</strong><br>
-              <span style="font-size:11px;color:var(--ink3)">${c.cargo||'—'} · ${brechasN} brecha${brechasN!==1?'s':''}</span>
-            </td>
-            ${perfil==='all'?`<td style="padding:10px 6px;color:var(--ink2);font-size:12px;text-transform:capitalize">${c.perfil||'—'}</td>`:''}
-            <td style="padding:10px 6px;text-align:center">
-              <div style="display:inline-flex;align-items:center;gap:7px">
-                <div style="width:52px;height:6px;background:var(--surface2);border-radius:100px;overflow:hidden">
-                  <div style="height:100%;width:${fit}%;background:${col};border-radius:100px"></div>
-                </div>
-                <span style="font-size:13px;font-weight:800;color:${col}">${fit}%</span>
-              </div>
-            </td>
-            <td style="padding:10px 6px;text-align:center">
-              <span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:100px;background:${bg};color:${col}">${lbl}</span>
-            </td>
-            <td style="padding:10px 6px"><a onclick="viewCandReport('${c.id}')" style="color:var(--accent);font-size:12px;font-weight:600;cursor:pointer">Ver →</a></td>
-          </tr>`;
-        }).join('')
-      +'</tbody></table>';
+    var topGaps = Object.entries(gapCounts)
+      .filter(function(e){ return e[1].count > 0; })
+      .sort(function(a,b){ return (b[1].count/b[1].total) - (a[1].count/a[1].total); })
+      .slice(0, 4);
+
+    if (topGaps.length) {
+      h += '<div style="margin-top:24px">';
+      h += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);margin-bottom:10px">Brechas frecuentes</div>';
+      h += '<div style="display:flex;gap:10px;flex-wrap:wrap">';
+      topGaps.forEach(function(entry) {
+        var v = entry[1];
+        var pct = Math.round(v.count / v.total * 100);
+        var col = pct >= 60 ? '#dc2626' : pct >= 35 ? '#b45309' : '#64748b';
+        var bg  = pct >= 60 ? '#fef2f2' : pct >= 35 ? '#fffbeb' : 'var(--surface2)';
+        h += '<div style="flex:1;min-width:140px;padding:12px 14px;background:' + bg + ';border-radius:10px;border:1px solid ' + col + '20">';
+        h += '<div style="font-size:18px;font-weight:900;color:' + col + ';margin-bottom:2px">' + pct + '%</div>';
+        h += '<div style="font-size:11px;font-weight:600;color:var(--ink)">' + v.label + '</div>';
+        h += '<div style="font-size:10px;color:var(--ink4)">' + v.count + ' de ' + v.total + ' bajo mínimo</div>';
+        h += '</div>';
+      });
+      h += '</div></div>';
+    }
   }
+
+  container.innerHTML = h;
 }
 
 
@@ -7090,9 +7180,11 @@ function restoreSession() {
 // ═══════════════════════════════════════════════════════════
 function applyRoleRestrictions() {
   const isViewer = S.role === 'viewer';
-  // Hide params tab for viewers
+  // Hide params and cargos tabs for viewers
   const navParams = document.getElementById('nav-params');
   if (navParams) navParams.style.display = isViewer ? 'none' : '';
+  const navCargos = document.getElementById('nav-cargos');
+  if (navCargos) navCargos.style.display = isViewer ? 'none' : '';
   // Update logout label with email
   const logoutBtn = document.getElementById('logout-btn');
   if (logoutBtn && S.userEmail) {
@@ -7104,6 +7196,8 @@ function applyRoleRestrictions() {
     roleBadge.textContent = isViewer ? 'Solo lectura' : 'Administrador';
     roleBadge.style.color = isViewer ? '#f59e0b' : '#10b981';
   }
+  // Apply cargo visibility
+  applyCargoVisibility();
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -7111,6 +7205,7 @@ function applyRoleRestrictions() {
 // ═══════════════════════════════════════════════════════════
 restoreParams();
 restoreSession();
+applyCargoVisibility();
 </script>
 </body>
 </html>
