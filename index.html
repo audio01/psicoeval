@@ -116,6 +116,7 @@ input,select,textarea{font-family:inherit;outline:none}
 .field input::placeholder{color:var(--ink4)}
 .field .err{font-size:11px;color:var(--rose)}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@keyframes spin { to { transform: rotate(360deg); } }
 /* ── Commune autocomplete ── */
 #comuna-suggestions{position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid var(--accent);border-top:none;border-radius:0 0 10px 10px;max-height:200px;overflow-y:auto;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,.1)}
 #comuna-suggestions div{padding:10px 14px;font-size:13px;color:var(--ink);cursor:pointer;border-bottom:1px solid var(--border)}
@@ -1064,6 +1065,8 @@ input,select,textarea{font-family:inherit;outline:none}
                 <option value="renuncia">Renuncia voluntaria</option>
                 <option value="despido">Desvinculación</option>
                 <option value="mutual">Acuerdo mutuo</option>
+                <option value="traslado">Traslado de instalación</option>
+                <option value="retiro_ffaa">Retiro FF.AA. / Carabineros</option>
                 <option value="actual">Es mi trabajo actual</option>
               </select>
             </div>
@@ -1097,6 +1100,8 @@ input,select,textarea{font-family:inherit;outline:none}
                 <option value="renuncia">Renuncia voluntaria</option>
                 <option value="despido">Desvinculación</option>
                 <option value="mutual">Acuerdo mutuo</option>
+                <option value="traslado">Traslado de instalación</option>
+                <option value="retiro_ffaa">Retiro FF.AA. / Carabineros</option>
               </select>
             </div>
           </div>
@@ -1131,7 +1136,28 @@ input,select,textarea{font-family:inherit;outline:none}
     <div id="sel-profile-banner" style="border-radius:12px;padding:18px 22px;margin-bottom:28px;border:1.5px solid"></div>
     <div id="sel-tests-list" style="display:flex;flex-direction:column;gap:12px;margin-bottom:12px"></div>
     <div id="sel-total-time" style="font-size:12px;color:var(--ink3);margin-bottom:20px;text-align:right"></div>
-    <button class="btn btn-primary btn-lg" style="width:100%" onclick="startTests()">Comenzar evaluación →</button>
+
+    <!-- Disclaimer de condiciones -->
+    <div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:14px;padding:18px 20px;margin-bottom:16px">
+      <div style="font-size:13px;font-weight:700;color:#92400e;margin-bottom:10px">⚠️ Condiciones de la evaluación</div>
+      <ul style="font-size:13px;color:#78350f;line-height:1.8;padding-left:18px;margin:0">
+        <li>Tienes <strong>40 minutos</strong> para completar todas las pruebas. El tiempo comienza al presionar "Comenzar".</li>
+        <li>Si abandonas esta pestaña o cambias de aplicación, <strong>el tiempo contará el doble</strong> hasta que regreses.</li>
+        <li>Al agotarse el tiempo, tus respuestas se enviarán automáticamente.</li>
+        <li>Responde con honestidad. No uses asistencia externa durante la evaluación.</li>
+      </ul>
+    </div>
+
+    <!-- Checkbox de aceptación -->
+    <label style="display:flex;align-items:flex-start;gap:12px;padding:14px 16px;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;cursor:pointer;margin-bottom:16px;transition:border-color .15s" id="disclaimer-lbl">
+      <input type="checkbox" id="disclaimer-check" onchange="onDisclaimerChange()"
+        style="width:18px;height:18px;margin-top:1px;flex-shrink:0;accent-color:var(--accent);cursor:pointer">
+      <span style="font-size:13px;color:var(--ink);line-height:1.6">
+        Entiendo y acepto las condiciones indicadas. Me comprometo a responder de forma autónoma y honesta durante el tiempo asignado.
+      </span>
+    </label>
+
+    <button class="btn btn-primary btn-lg" style="width:100%;opacity:.4;pointer-events:none" id="btn-start-tests" onclick="startTests()">Comenzar evaluación →</button>
   </div>
 </div>
 
@@ -1146,6 +1172,9 @@ input,select,textarea{font-family:inherit;outline:none}
       <div class="prog-bar">
         <div id="test-global-bar" style="height:100%;background:var(--accent);border-radius:3px;width:0%;transition:width .4s"></div>
       </div>
+    </div>
+    <div id="test-timer" style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--ink2);background:var(--surface2);padding:5px 12px;border-radius:100px;border:1px solid var(--border)">
+      <span>⏱</span><span id="test-timer-display">40:00</span>
     </div>
   </header>
   <div class="test-view-body" id="test-body">
@@ -2618,7 +2647,7 @@ function submitRegister() {
   // Labels
   const EDU_LABELS = { basica:'Educación Básica', media_incompleta:'Media incompleta', media:'4º Medio completo', tecnica:'Técnico Superior', universitaria:'Universitaria', postgrado:'Postgrado', ejercito_retiro:'Retirado/a Ejército (carrera completa)', ejercito_baja:'Retirado/a Ejército (antes de completar)', carabineros_retiro:'Retirado/a Carabineros (carrera completa)', carabineros_baja:'Retirado/a Carabineros (antes de completar)', armada_retiro:'Retirado/a Armada (carrera completa)', armada_baja:'Retirado/a Armada (antes de completar)' };
   const DUR_LABELS = { menos_6m:'< 6 meses', '6m_1a':'6m–1 año', '1_2a':'1–2 años', '2_5a':'2–5 años', mas_5a:'> 5 años' };
-  const SALIDA_LABELS = { termino_contrato:'Término contrato', renuncia:'Renuncia', despido:'Desvinculación', mutual:'Acuerdo mutuo', actual:'Trabajo actual' };
+  const SALIDA_LABELS = { termino_contrato:'Término contrato', renuncia:'Renuncia', despido:'Desvinculación', mutual:'Acuerdo mutuo', traslado:'Traslado de instalación', retiro_ffaa:'Retiro FF.AA. / Carabineros', retiro_ffaa:'Retiro FF.AA. / Carabineros', actual:'Trabajo actual' };
   const RUBRO_LABELS = { seguridad:'Seguridad', comercio:'Comercio', administracion:'Administración', salud:'Salud', construccion:'Construcción', logistica:'Logística', educacion:'Educación', tecnologia:'Tecnología', otro:'Otro' };
 
   // Build experiencia structure
@@ -2668,6 +2697,22 @@ function submitRegister() {
 // ═══════════════════════════════════════════════════════════
 //  TEST ENGINE
 // ═══════════════════════════════════════════════════════════
+function onDisclaimerChange() {
+  var cb  = document.getElementById('disclaimer-check');
+  var btn = document.getElementById('btn-start-tests');
+  var lbl = document.getElementById('disclaimer-lbl');
+  if (!cb || !btn) return;
+  if (cb.checked) {
+    btn.style.opacity = '1';
+    btn.style.pointerEvents = 'auto';
+    if (lbl) { lbl.style.borderColor = 'var(--accent)'; lbl.style.background = 'var(--accent-l)'; }
+  } else {
+    btn.style.opacity = '.4';
+    btn.style.pointerEvents = 'none';
+    if (lbl) { lbl.style.borderColor = 'var(--border)'; lbl.style.background = 'var(--surface)'; }
+  }
+}
+
 function startTests() {
   S.selectedTests = S.candidate.tests;
   S.allQs = buildQuestions(S.candidate.perfil);
@@ -2676,6 +2721,101 @@ function startTests() {
   S.blockIdx = 0;
   renderTestBlock();
   showView('test');
+  startTestTimer();
+}
+
+// ── Timer & tab detection ─────────────────────────────────────────
+var _timerSeconds = 40 * 60; // 40 minutes
+var _timerInterval = null;
+var _tabHidden = false;
+
+function startTestTimer() {
+  _timerSeconds = 40 * 60;
+  updateTimerDisplay();
+  if (_timerInterval) clearInterval(_timerInterval);
+  _timerInterval = setInterval(function() {
+    // Deduct 1s normally, 2s if tab is hidden (double speed)
+    _timerSeconds -= _tabHidden ? 2 : 1;
+    if (_timerSeconds <= 0) {
+      _timerSeconds = 0;
+      updateTimerDisplay();
+      clearInterval(_timerInterval);
+      _timerInterval = null;
+      timeExpired();
+      return;
+    }
+    updateTimerDisplay();
+    // Warn at 5 minutes
+    if (_timerSeconds === 300) {
+      showTimerWarning('⏱ Quedan 5 minutos. Responde las preguntas que puedas.');
+    }
+    // Warn at 1 minute
+    if (_timerSeconds === 60) {
+      showTimerWarning('⚠️ Último minuto. Las respuestas se enviarán automáticamente.');
+    }
+  }, 1000);
+
+  // Tab visibility detection
+  document.addEventListener('visibilitychange', onVisibilityChange);
+}
+
+function stopTestTimer() {
+  if (_timerInterval) { clearInterval(_timerInterval); _timerInterval = null; }
+  document.removeEventListener('visibilitychange', onVisibilityChange);
+}
+
+function onVisibilityChange() {
+  _tabHidden = document.hidden;
+  var timerEl = document.getElementById('test-timer');
+  if (!timerEl) return;
+  if (_tabHidden) {
+    timerEl.style.background = '#fef2f2';
+    timerEl.style.borderColor = '#fecaca';
+    timerEl.style.color = '#dc2626';
+    showTimerWarning('⚠️ Detectamos que saliste de la evaluación. El tiempo avanza el doble.');
+  } else {
+    timerEl.style.background = 'var(--surface2)';
+    timerEl.style.borderColor = 'var(--border)';
+    updateTimerDisplay(); // restore color
+  }
+}
+
+function updateTimerDisplay() {
+  var el = document.getElementById('test-timer-display');
+  var timerEl = document.getElementById('test-timer');
+  if (!el) return;
+  var m = Math.floor(_timerSeconds / 60);
+  var s = _timerSeconds % 60;
+  el.textContent = m + ':' + (s < 10 ? '0' : '') + s;
+  // Color: green > 10min, amber 5-10min, red < 5min
+  if (!_tabHidden) {
+    var col = _timerSeconds > 600 ? 'var(--ink2)' : _timerSeconds > 300 ? '#b45309' : '#dc2626';
+    if (timerEl) timerEl.style.color = col;
+  }
+}
+
+function showTimerWarning(msg) {
+  var existing = document.getElementById('timer-warning-toast');
+  if (existing) existing.remove();
+  var div = document.createElement('div');
+  div.id = 'timer-warning-toast';
+  div.style.cssText = 'position:fixed;top:72px;left:50%;transform:translateX(-50%);background:#1d1d1f;color:#fff;padding:10px 20px;border-radius:100px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.2);transition:opacity .3s';
+  div.textContent = msg;
+  document.body.appendChild(div);
+  setTimeout(function() { if (div.parentNode) { div.style.opacity='0'; setTimeout(function(){ div.remove(); }, 300); } }, 4000);
+}
+
+function timeExpired() {
+  stopTestTimer();
+  var div = document.createElement('div');
+  div.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px';
+  div.innerHTML = '<div style="background:#fff;border-radius:16px;padding:32px;max-width:380px;width:100%;text-align:center;font-family:inherit">'
+    + '<div style="font-size:40px;margin-bottom:12px">⏱</div>'
+    + '<div style="font-size:20px;font-weight:800;color:#0f172a;margin-bottom:8px">Tiempo agotado</div>'
+    + '<div style="font-size:14px;color:#64748b;margin-bottom:24px;line-height:1.6">El tiempo de evaluación ha finalizado. Tus respuestas serán enviadas ahora.</div>'
+    + '<button onclick="this.closest(\'div[style*=fixed]\').remove();finishTests()" style="background:#6366f1;border:none;color:#fff;padding:12px 28px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;width:100%">Enviar respuestas →</button>'
+    + '</div>';
+  document.body.appendChild(div);
 }
 
 function renderTestBlock() {
@@ -2794,6 +2934,7 @@ function nextTest() {
 }
 
 async function finishTests() {
+  stopTestTimer();
   const scores = calcScores(S.answers, S.selectedTests, S.candidate.perfil);
   S.candidate.tests = S.selectedTests; S.candidate.scores = scores; S.candidate.estado = 'completed';
   const btnFin = document.getElementById('btn-next-test');
@@ -3504,12 +3645,12 @@ function switchReportTab(tabId, el) {
   var cont = el.closest('.rpt-modal');
   cont.querySelectorAll('.rpt-tab-btn').forEach(function(b){
     b.style.borderBottom = '2px solid transparent';
-    b.style.color = '#999';
+    b.style.color = '#64748b';
     b.style.fontWeight = '500';
   });
   cont.querySelectorAll('.rpt-tab-panel').forEach(function(p){ p.style.display='none'; });
-  el.style.borderBottom = '2px solid #111';
-  el.style.color = '#111';
+  el.style.borderBottom = '2px solid #6366f1';
+  el.style.color = '#6366f1';
   el.style.fontWeight = '700';
   var panel = cont.querySelector('#rpt-panel-'+tabId);
   if (panel) panel.style.display = 'block';
@@ -3627,6 +3768,7 @@ function buildReportHtml(c, withClose) {
   if (s.situacional && rpt.sections.find(function(x){return x.id==='situacional';})) tabs.push({ id:'situacional', label:'Juicio Situacional', icon:'💡' });
   if (s.vigilancia  && rpt.sections.find(function(x){return x.id==='vigilancia';}))  tabs.push({ id:'vigilancia',  label:'Vigilancia', icon:'🛡' });
   if (s.comprension && rpt.sections.find(function(x){return x.id==='comprension';})) tabs.push({ id:'comprension', label:'Comprensión', icon:'📖' });
+  tabs.push({ id:'ia', label:'Análisis IA', icon:'🤖' });
 
   html += '<div style="background:#fff;border-bottom:2px solid #f1f5f9;padding:0 28px;display:flex;gap:0;overflow-x:auto;flex-shrink:0">';
   tabs.forEach(function(t, i) {
@@ -4190,13 +4332,135 @@ function buildReportHtml(c, withClose) {
     html += '</div>';
   }
 
-  // Disclaimer
+  // ════════════════════════════════════════════
+  // TAB: ANÁLISIS IA
+  // ════════════════════════════════════════════
+  var iaUID = 'ia-' + (c.id || Math.random().toString(36).slice(2));
+  html += '<div class="rpt-tab-panel" id="rpt-panel-ia" style="display:none;flex-direction:column;gap:16px">';
+  html += '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:24px">';
+  // Header
+  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:12px">';
+  html += '<div>';
+  html += '<div style="font-size:17px;font-weight:800;color:#0f172a;margin-bottom:2px">🤖 Análisis de Integración de Perfil</div>';
+  html += '<div style="font-size:12px;color:#94a3b8">Generado por IA · Psicólogo Organizacional experto en selección</div>';
+  html += '</div>';
+  html += '<button id="btn-gen-ia-' + iaUID + '" onclick="generateIAAnalysis(\'' + iaUID + '\')" '
+    + 'style="background:#6366f1;border:none;color:#fff;font-size:13px;font-weight:700;padding:10px 20px;border-radius:10px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:8px">'
+    + '✨ Generar análisis</button>';
+  html += '</div>';
+  html += '<div style="height:1px;background:#f1f5f9;margin-bottom:16px"></div>';
+  html += '<div id="ia-output-' + iaUID + '" style="font-size:13px;line-height:1.8;color:#1e293b">';
+  html += '<div style="text-align:center;padding:40px 20px;color:#94a3b8">';
+  html += '<div style="font-size:32px;margin-bottom:10px">🧠</div>';
+  html += '<div style="font-size:14px;font-weight:600;color:#64748b;margin-bottom:4px">Análisis pendiente</div>';
+  html += '<div style="font-size:12px">Presiona "Generar análisis" para obtener el informe integrado de IA</div>';
+  html += '</div>';
+  html += '</div>';
+  html += '</div>';
+
+  // Store candidate data for API call
+  html += '<script type="application/json" id="ia-data-' + iaUID + '">'
+    + JSON.stringify({
+        nombre: c.nombre + ' ' + c.apellido,
+        perfil: pm.label,
+        veredicto: veredicto,
+        gLv: gLv,
+        gFit: gFit,
+        educacion: c.educacion_label || '',
+        edad: c.edad || '',
+        secciones: rpt ? rpt.sections.map(function(sec) {
+          return {
+            titulo: sec.title,
+            nivel: fitToLevel5(sec.secFit),
+            label: fitLabel(sec.secFit).label,
+            dims: sec.dims ? sec.dims.map(function(d) {
+              return { label: d.label, nivel: scoreToLevel5(d.score), fit: Math.round(d.fit) };
+            }) : []
+          };
+        }) : [],
+        fortalezas: rpt ? rpt.fortalezas.slice(0,3).map(function(f){ return f.label; }) : [],
+        brechas: rpt ? rpt.brechas.slice(0,3).map(function(b){ return b.label; }) : [],
+      })
+    + '</script>';
+
+  html += '</div>'; // end rpt-panel-ia
+
+  // ── Disclaimer ───────────────────────────────────────────────────────
   html += '<div style="font-size:11px;color:#bbb;padding:8px 0;line-height:1.6">⚠ Informe de uso interno RRHH. No reemplaza el juicio de un psicólogo habilitado. Basado en BIS-15 (Spinella, 2007), PAI y DC-0. Instrumentos de uso libre para investigación y selección.</div>';
 
   html += '</div>'; // end panels wrap
   html += '</div>'; // end rpt-modal
   return html;
 }
+async function generateIAAnalysis(uid) {
+  const btn = document.getElementById('btn-gen-ia-' + uid);
+  const out = document.getElementById('ia-output-' + uid);
+  const dataEl = document.getElementById('ia-data-' + uid);
+  if (!out || !dataEl) return;
+
+  var data;
+  try { data = JSON.parse(dataEl.textContent); } catch(e) { out.innerHTML = '<div style="color:#e11d48">Error al leer datos del informe.</div>'; return; }
+
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span style="display:inline-block;animation:spin 1s linear infinite">⟳</span> Analizando…'; }
+  out.innerHTML = '<div style="text-align:center;padding:32px;color:#94a3b8"><div style="font-size:28px;margin-bottom:8px;display:inline-block;animation:spin 1.5s linear infinite">⟳</div><div style="margin-top:8px;font-size:13px">Analizando perfil…</div></div>';
+
+  // Build prompt
+  var secText = data.secciones.map(function(s) {
+    var dims = s.dims.map(function(d){ return d.label + ' (Nivel ' + d.nivel + '/5, Ajuste ' + d.fit + '%)'; }).join(', ');
+    return '• ' + s.titulo + ': Nivel ' + s.nivel + '/5 — ' + s.label + (dims ? '\n  Dimensiones: ' + dims : '');
+  }).join('\n');
+
+  var prompt = 'Actúa como un Psicólogo Organizacional experto en selección de personal en el rubro de seguridad privada en Chile.\n\n'
+    + 'DATOS DEL CANDIDATO:\n'
+    + '• Nombre: ' + data.nombre + '\n'
+    + '• Cargo postulado: ' + data.perfil + '\n'
+    + '• Edad: ' + (data.edad || 'No informada') + ' años\n'
+    + '• Educación: ' + (data.educacion || 'No informada') + '\n'
+    + '• Veredicto global: ' + data.veredicto + ' (Nivel ' + data.gLv + '/5, Ajuste ' + data.gFit + '%)\n\n'
+    + 'RESULTADOS POR TEST:\n' + secText + '\n\n'
+    + 'FORTALEZAS DESTACADAS: ' + (data.fortalezas.join(', ') || 'Ninguna') + '\n'
+    + 'BRECHAS IDENTIFICADAS: ' + (data.brechas.join(', ') || 'Ninguna') + '\n\n'
+    + 'INSTRUCCIONES:\n'
+    + 'Redacta un Análisis de Integración de Perfil con exactamente 3 secciones bien diferenciadas. Usa lenguaje técnico pero comprensible para RRHH. Sé específico con los datos, no genérico.\n\n'
+    + '**1. ANÁLISIS DE LA BRECHA**\n'
+    + 'Describe la distancia entre el perfil obtenido y el perfil ideal del cargo. Menciona dimensiones específicas por nombre y nivel. Explica qué implica esa brecha en el contexto operativo del cargo.\n\n'
+    + '**2. PRONÓSTICO DE DESEMPEÑO**\n'
+    + 'Basado en los resultados, proyecta el probable desempeño del candidato en los primeros 90 días. Identifica qué aspectos del rol podrían ser problemáticos y cuáles manejará bien. Sé honesto, no halagador.\n\n'
+    + '**3. GUÍA DE ENTREVISTA**\n'
+    + 'Genera exactamente 2 preguntas de incidentes críticos (método STAR) diseñadas específicamente para este candidato, enfocadas en validar sus áreas de brecha bajo presión. Incluye qué debes observar en la respuesta.\n\n'
+    + 'Responde SOLO con el análisis, sin introducción ni conclusión adicional. Usa las marcas **1.**, **2.**, **3.** para separar secciones.';
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const json = await resp.json();
+    const text = (json.content || []).map(function(b){ return b.text || ''; }).join('');
+    if (!text) throw new Error('Respuesta vacía');
+
+    // Render markdown-like formatting
+    var rendered = text
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      .replace(/\n\n/g, '</p><p style="margin-bottom:14px">')
+      .replace(/\n/g, '<br>');
+
+    out.innerHTML = '<div style="background:#f8fafc;border-radius:10px;padding:18px 20px;border-left:3px solid #6366f1">'
+      + '<p style="margin-bottom:14px">' + rendered + '</p>'
+      + '</div>'
+      + '<div style="font-size:10px;color:#94a3b8;margin-top:12px;text-align:right">⚠ Generado con IA · Complementar con juicio profesional del evaluador</div>';
+    if (btn) { btn.innerHTML = '✨ Regenerar'; btn.disabled = false; }
+  } catch(e) {
+    out.innerHTML = '<div style="background:#fef2f2;border-radius:10px;padding:16px;color:#dc2626;font-size:13px">Error al generar análisis: ' + (e.message || 'Sin respuesta') + '</div>';
+    if (btn) { btn.innerHTML = '✨ Reintentar'; btn.disabled = false; }
+  }
+}
+
 let currentReportId = null;
 async function viewCandReport(id) {
   currentReportId = id;
