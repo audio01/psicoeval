@@ -4359,8 +4359,8 @@ function buildReportHtml(c, withClose) {
   html += '</div>';
 
   // Store candidate data for API call
-  html += '<script type="application/json" id="ia-data-' + iaUID + '">'
-    + JSON.stringify({
+  html += '<div id="ia-data-' + iaUID + '" style="display:none" aria-hidden="true">'
+    + encodeURIComponent(JSON.stringify({
         nombre: c.nombre + ' ' + c.apellido,
         perfil: pm.label,
         veredicto: veredicto,
@@ -4380,8 +4380,8 @@ function buildReportHtml(c, withClose) {
         }) : [],
         fortalezas: rpt ? rpt.fortalezas.slice(0,3).map(function(f){ return f.label; }) : [],
         brechas: rpt ? rpt.brechas.slice(0,3).map(function(b){ return b.label; }) : [],
-      })
-    + '</script>';
+      }))
+    + '</div>';
 
   html += '</div>'; // end rpt-panel-ia
 
@@ -4399,7 +4399,7 @@ async function generateIAAnalysis(uid) {
   if (!out || !dataEl) return;
 
   var data;
-  try { data = JSON.parse(dataEl.textContent); } catch(e) { out.innerHTML = '<div style="color:#e11d48">Error al leer datos del informe.</div>'; return; }
+  try { data = JSON.parse(decodeURIComponent(dataEl.textContent)); } catch(e) { out.innerHTML = '<div style="color:#e11d48">Error al leer datos del informe.</div>'; return; }
 
   if (btn) { btn.disabled = true; btn.innerHTML = '<span style="display:inline-block;animation:spin 1s linear infinite">⟳</span> Analizando…'; }
   out.innerHTML = '<div style="text-align:center;padding:32px;color:#94a3b8"><div style="font-size:28px;margin-bottom:8px;display:inline-block;animation:spin 1.5s linear infinite">⟳</div><div style="margin-top:8px;font-size:13px">Analizando perfil…</div></div>';
