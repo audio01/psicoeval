@@ -9253,63 +9253,117 @@ function applyRoleRestrictions() {
 //  INIT
 // ═══════════════════════════════════════════════════════════
 
-// ── URL Config Sharing ──
-// Encodes active cargos + batteries + custom cargos into URL for candidates
+// ── URL Config Sharing (Compact) ──
+// Uses short aliases and compact format to keep URLs short
+var _TEST_ALIAS = {barratt:'B',dc0:'D',pai:'P',situacional:'S',vigilancia:'V',comprension:'C',disc:'I',atencion:'A',cwb:'W',ausentismo:'U',frustracion:'F',ice:'E',game_detector:'g1',game_secuencias:'g2',game_bandeja:'g3',game_impulsos:'g4',game_vigilancia:'g5',game_cadena:'g6',game_memoria:'g7',game_expedicion:'g8',game_radar:'g9'};
+var _ALIAS_TEST = {};
+Object.keys(_TEST_ALIAS).forEach(function(k){ _ALIAS_TEST[_TEST_ALIAS[k]] = k; });
+
 function generateCandidateLink() {
-  var cfg = {
-    ca: CARGOS_ACTIVE,
-    pt: PERFIL_TESTS,
-    cc: CUSTOM_CARGOS,
-    pi: {}
-  };
-  // Only include PERFIL_IDEAL for active cargos to keep URL smaller
-  getActiveCargos().forEach(function(k) {
-    if (PERFIL_IDEAL[k]) cfg.pi[k] = PERFIL_IDEAL[k];
-  });
   try {
-    var json = JSON.stringify(cfg);
-    var encoded = btoa(unescape(encodeURIComponent(json)));
+    var parts = [];
+    // a = active cargos
+    var ac = getActiveCargos();
+    parts.push('a=' + ac.join(','));
+    // b = batteries per cargo (short aliases)
+    var bParts = [];
+    ac.forEach(function(k) {
+      var tests = PERFIL_TESTS[k] || [];
+      if (tests.length) {
+        var short = tests.map(function(t){ return _TEST_ALIAS[t] || t; }).join('.');
+        bParts.push(k + '~' + short);
+      }
+    });
+    if (bParts.length) parts.push('b=' + bParts.join('|'));
+    // c = custom cargos (minimal)
+    var cc = CUSTOM_CARGOS.filter(function(c){ return ac.indexOf(c.key) !== -1; });
+    if (cc.length) {
+      parts.push('c=' + cc.map(function(c){ return c.key + '~' + c.label + '~' + c.icon + '~' + (c.desc||'').substring(0,60); }).join('|'));
+    }
+    // d = game difficulties (only non-default, i.e. != 3)
+    var dParts = [];
+    ac.forEach(function(k) {
+      var ideal = PERFIL_IDEAL[k]; if (!ideal) return;
+      var gDiffs = [];
+      ['game_detector','game_secuencias','game_bandeja','game_impulsos','game_vigilancia','game_cadena','game_memoria','game_expedicion','game_radar'].forEach(function(gid) {
+        if (ideal[gid] && ideal[gid].pct) {
+          var lv = ideal[gid].pct.minLv || scoreToLevel5(ideal[gid].pct.min) || 3;
+          if (lv !== 3) gDiffs.push((_TEST_ALIAS[gid]||gid) + '.' + lv);
+        }
+      });
+      if (gDiffs.length) dParts.push(k + '~' + gDiffs.join('.'));
+    });
+    if (dParts.length) parts.push('d=' + dParts.join('|'));
+
+    var compact = parts.join('&');
+    var encoded = btoa(unescape(encodeURIComponent(compact)));
     var base = window.location.href.split('?')[0].split('#')[0];
-    return base + '?cfg=' + encoded;
+    return base + '?c=' + encoded;
   } catch(e) { console.error('Error generating link:', e); return ''; }
 }
 
 function applyCandidateConfig() {
   try {
     var params = new URLSearchParams(window.location.search);
-    var cfgStr = params.get('cfg');
+    var cfgStr = params.get('c');
     if (!cfgStr) return false;
-    var json = decodeURIComponent(escape(atob(cfgStr)));
-    var cfg = JSON.parse(json);
-    // Apply active cargos
-    if (cfg.ca) {
-      Object.keys(cfg.ca).forEach(function(k) {
-        CARGOS_ACTIVE[k] = !!cfg.ca[k];
+    var compact = decodeURIComponent(escape(atob(cfgStr)));
+    var pairs = {};
+    compact.split('&').forEach(function(p) {
+      var eq = p.indexOf('=');
+      if (eq > 0) pairs[p.substring(0,eq)] = p.substring(eq+1);
+    });
+
+    // a = active cargos
+    if (pairs.a) {
+      var activeCargos = pairs.a.split(',');
+      // Deactivate all builtins first
+      Object.keys(CARGOS_ACTIVE).forEach(function(k){ CARGOS_ACTIVE[k] = false; });
+      activeCargos.forEach(function(k){ CARGOS_ACTIVE[k] = true; });
+    }
+
+    // c = custom cargos (before batteries so they exist)
+    if (pairs.c) {
+      pairs.c.split('|').forEach(function(entry) {
+        var p = entry.split('~');
+        if (p.length >= 3) {
+          var cc = { key:p[0], label:p[1], icon:p[2], desc:p[3]||'' };
+          if (!CUSTOM_CARGOS.some(function(x){ return x.key === cc.key; })) {
+            CUSTOM_CARGOS.push(cc);
+          }
+          registerCustomCargo(cc, true);
+          CARGOS_ACTIVE[cc.key] = true;
+        }
       });
     }
-    // Register custom cargos
-    if (cfg.cc && cfg.cc.length) {
-      CUSTOM_CARGOS = cfg.cc;
-      CUSTOM_CARGOS.forEach(function(c) {
-        registerCustomCargo(c, true);
-      });
-      // Re-apply active states after registration
-      if (cfg.ca) {
-        Object.keys(cfg.ca).forEach(function(k) {
-          if (CARGOS_ACTIVE[k] !== undefined) CARGOS_ACTIVE[k] = !!cfg.ca[k];
-        });
-      }
-    }
-    // Apply batteries
-    if (cfg.pt) {
-      Object.keys(cfg.pt).forEach(function(k) {
-        PERFIL_TESTS[k] = cfg.pt[k];
+
+    // b = batteries
+    if (pairs.b) {
+      pairs.b.split('|').forEach(function(entry) {
+        var parts = entry.split('~');
+        if (parts.length === 2) {
+          var cargo = parts[0];
+          var tests = parts[1].split('.').map(function(alias){ return _ALIAS_TEST[alias] || alias; });
+          PERFIL_TESTS[cargo] = tests;
+        }
       });
     }
-    // Apply PERFIL_IDEAL
-    if (cfg.pi) {
-      Object.keys(cfg.pi).forEach(function(k) {
-        PERFIL_IDEAL[k] = cfg.pi[k];
+
+    // d = game difficulties
+    if (pairs.d) {
+      pairs.d.split('|').forEach(function(entry) {
+        var parts = entry.split('~');
+        if (parts.length === 2) {
+          var cargo = parts[0];
+          if (!PERFIL_IDEAL[cargo]) PERFIL_IDEAL[cargo] = {};
+          var tokens = parts[1].split('.');
+          for (var i = 0; i < tokens.length - 1; i += 2) {
+            var gid = _ALIAS_TEST[tokens[i]] || tokens[i];
+            var lv = parseInt(tokens[i+1]) || 3;
+            if (!PERFIL_IDEAL[cargo][gid]) PERFIL_IDEAL[cargo][gid] = { pct:{ min:55, max:100, peso:3 }};
+            PERFIL_IDEAL[cargo][gid].pct.minLv = lv;
+          }
+        }
       });
     }
     return true;
