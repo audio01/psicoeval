@@ -1311,10 +1311,11 @@ input,select,textarea{font-family:inherit;outline:none}
       <div class="logo" style="font-size:17px;font-weight:700;letter-spacing:-.02em">PsicoEval</div>
       <button class="nav-btn active" id="nav-dashboard" onclick="adminTab('dashboard',this)"><span>📊</span><span>Dashboard</span></button>
       <button class="nav-btn" id="nav-candidates" onclick="adminTab('candidates',this)"><span>👥</span><span>Candidatos</span></button>
-      <button class="nav-btn" id="nav-params" onclick="adminTab('params',this)"><span>⚙</span><span>Baterías</span></button>
       <button class="nav-btn" id="nav-cargos" onclick="adminTab('cargos',this)"><span>🏢</span><span>Cargos</span></button>
-      <button class="nav-btn" id="nav-users" onclick="adminTab('users',this)"><span>👤</span><span>Usuarios</span></button>
+      <button class="nav-btn" id="nav-params" onclick="adminTab('params',this)" style="display:none"></button>
       <div style="flex:1"></div>
+      <button class="nav-btn" id="nav-wiki" onclick="adminTab('wiki',this)"><span>📖</span><span>Wiki de Tests</span></button>
+      <button class="nav-btn" id="nav-users" onclick="adminTab('users',this)"><span>👤</span><span>Usuarios</span></button>
       <div id="role-badge" style="font-size:10px;font-weight:700;text-align:center;padding:3px 8px;border-radius:100px;background:#f1f5f9;margin:0 8px 4px"></div>
       <button class="nav-btn" onclick="showShareModal()" style="color:#16a34a;margin-top:8px"><span>🔗</span><span>Compartir evaluación</span></button>
       <button id="logout-btn" class="nav-btn" onclick="adminLogout()" style="color:var(--ink3)"><span>⎋</span><span>Cerrar sesión</span></button>
@@ -1417,30 +1418,23 @@ input,select,textarea{font-family:inherit;outline:none}
 
       <!-- Baterías -->
       <div id="tab-params" style="display:none;padding-bottom:40px"><div style="max-width:860px;margin:0 auto">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
-          <div>
-            <div style="font-size:20px;font-weight:700;margin-bottom:2px">Baterías</div>
-            <div style="font-size:13px;color:var(--ink3)">Configura los tests activos por cargo y consulta la documentación de cada instrumento</div>
-          </div>
-          <div style="display:flex;gap:8px">
-          <button onclick="resetParams()" style="padding:8px 18px;border-radius:7px;background:#fff;color:#64748b;font-size:13px;font-weight:600;border:1.5px solid #e2e8f0;cursor:pointer">Restaurar valores</button>
-          <button onclick="saveParams()" style="padding:8px 18px;border-radius:10px;background:var(--accent);color:#fff;font-size:13px;font-weight:600;border:none;cursor:pointer">Guardar cambios</button>
+        <div style="margin-bottom:20px">
+          <button onclick="adminTab('cargos',document.getElementById('nav-cargos'))" class="btn btn-ghost btn-sm" style="margin-bottom:8px;color:var(--ink3);padding:4px 0;font-size:12px">← Volver a Cargos</button>
+          <div style="font-size:20px;font-weight:700;margin-bottom:2px" id="bateria-cargo-title">Baterías</div>
+          <div style="font-size:13px;color:var(--ink3)" id="bateria-cargo-desc">Configura los tests activos</div>
         </div>
-        </div>
-
-        <!-- Sub-tabs: Batería / Wiki -->
-        <div style="display:flex;gap:0;margin-bottom:18px;border-bottom:2px solid var(--border)">
-          <button class="params-subtab active" id="subtab-bateria" onclick="switchParamsSubtab('bateria')" style="padding:10px 22px;font-size:13px;font-weight:700;background:none;border:none;border-bottom:2.5px solid var(--accent);color:var(--accent);cursor:pointer;margin-bottom:-2px;transition:all .15s">🧪 Batería</button>
-          <button class="params-subtab" id="subtab-wiki" onclick="switchParamsSubtab('wiki')" style="padding:10px 22px;font-size:13px;font-weight:700;background:none;border:none;border-bottom:2.5px solid transparent;color:var(--ink3);cursor:pointer;margin-bottom:-2px;transition:all .15s">📖 Wiki de Tests</button>
-        </div>
-
-        <!-- Profile tabs (only for Batería) - rendered dynamically -->
-        <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap" id="params-tabs"></div>
-
-        <!-- Content areas -->
+        <div style="display:none" id="params-tabs"></div>
         <div id="params-content" style="display:none"></div>
         <div id="bateria-content"></div>
-        <div id="wiki-content" style="display:none"></div>
+      </div></div>
+
+      <!-- Wiki de Tests -->
+      <div id="tab-wiki" style="display:none;padding-bottom:40px"><div style="max-width:860px;margin:0 auto">
+        <div style="margin-bottom:20px">
+          <div style="font-size:20px;font-weight:700;margin-bottom:2px">📖 Wiki de Tests</div>
+          <div style="font-size:13px;color:var(--ink3)">Documentación de todos los instrumentos de evaluación disponibles</div>
+        </div>
+        <div id="wiki-content"></div>
       </div></div>
 
       <!-- Cargos -->
@@ -1515,7 +1509,7 @@ input,select,textarea{font-family:inherit;outline:none}
 <div id="add-cargo-modal" class="overlay" style="display:none">
   <div class="modal" style="max-width:480px;width:100%">
     <h3 style="margin-bottom:4px">Crear cargo personalizado</h3>
-    <p class="sub" style="margin-bottom:20px">El cargo aparecerá en el formulario de evaluación y podrás configurar su batería de tests desde la pestaña Baterías.</p>
+    <p class="sub" style="margin-bottom:20px">El cargo aparecerá en el formulario de evaluación. Después de crearlo, podrás configurar su batería haciendo clic en él.</p>
     <div style="display:flex;flex-direction:column;gap:14px">
       <div>
         <label style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:5px">Icono</label>
@@ -1778,7 +1772,7 @@ function renderCargosTab() {
   h += '<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 16px;margin-bottom:20px;display:flex;align-items:flex-start;gap:10px">';
   h += '<span style="font-size:18px">💡</span>';
   h += '<div style="font-size:12px;color:#1e40af;line-height:1.6">';
-  h += '<strong>' + activeCount + ' de ' + ALL.length + ' cargos activos.</strong> Los cargos desactivados no aparecerán en el formulario de evaluación, el dashboard ni en baterías. Puedes crear cargos personalizados con el botón de abajo.';
+  h += '<strong>' + activeCount + ' de ' + ALL.length + ' cargos activos.</strong> Haz clic en un cargo para configurar su batería de tests. Los cargos desactivados no aparecerán en el formulario de evaluación.';
   h += '</div></div>';
 
   ALL.forEach(function(key) {
@@ -1790,8 +1784,8 @@ function renderCargosTab() {
 
     h += '<div style="background:#fff;border-radius:14px;border:1px solid ' + (isOn ? '#e2e8f0' : '#f1f5f9') + ';margin-bottom:12px;overflow:hidden;transition:all .2s;' + (isOn ? '' : 'opacity:.55') + '">';
 
-    // Header row
-    h += '<div style="display:flex;align-items:center;gap:16px;padding:20px 22px">';
+    // Header row - clickable to open battery
+    h += '<div style="display:flex;align-items:center;gap:16px;padding:20px 22px;cursor:' + (isOn ? 'pointer' : 'default') + '" ' + (isOn ? 'onclick="openCargoBattery(\'' + key + '\')"' : '') + '>';
     h += '<div style="font-size:32px;line-height:1">' + pm.icon + '</div>';
     h += '<div style="flex:1;min-width:0">';
     h += '<div style="display:flex;align-items:center;gap:8px">';
@@ -1801,10 +1795,11 @@ function renderCargosTab() {
     h += '<div style="font-size:12px;color:var(--ink3);line-height:1.5;margin-top:2px">' + pm.desc + '</div>';
     h += '</div>';
 
-    // Actions: toggle + delete for custom
-    h += '<div style="flex-shrink:0;display:flex;align-items:center;gap:10px">';
+    // Actions: edit, delete, toggle (stop propagation for these)
+    h += '<div style="flex-shrink:0;display:flex;align-items:center;gap:8px" onclick="event.stopPropagation()">';
     if (isCustom) {
-      h += '<button onclick="deleteCargo(\'' + key + '\')" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:18px;padding:4px;border-radius:6px;opacity:.5;transition:opacity .15s" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.5" title="Eliminar cargo">×</button>';
+      h += '<button onclick="editCargo(\'' + key + '\')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:14px;padding:4px 6px;border-radius:6px;opacity:.6;transition:opacity .15s" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.6" title="Editar cargo">✏️</button>';
+      h += '<button onclick="deleteCargo(\'' + key + '\')" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:14px;padding:4px 6px;border-radius:6px;opacity:.4;transition:opacity .15s" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.4" title="Eliminar cargo">🗑</button>';
     }
     h += '<span style="font-size:11px;font-weight:700;color:' + (isOn ? '#16a34a' : '#94a3b8') + '">' + (isOn ? 'Activo' : 'Inactivo') + '</span>';
     h += '<div onclick="toggleCargo(\'' + key + '\')" style="width:44px;height:24px;border-radius:12px;background:' + (isOn ? '#16a34a' : '#d1d5db') + ';cursor:pointer;position:relative;transition:background .2s;flex-shrink:0">';
@@ -1812,20 +1807,27 @@ function renderCargosTab() {
     h += '</div></div>';
     h += '</div>';
 
-    // Info row
+    // Info row with test chips + "Configurar batería" hint
     if (isOn) {
       var TM = { barratt:5, dc0:20, pai:12, situacional:12, vigilancia:12, comprension:10, disc:8, atencion:8, cwb:8, ausentismo:5, frustracion:6, ice:8, game_detector:3, game_secuencias:3, game_impulsos:2, game_vigilancia:3, game_memoria:3 };
       var totalMin = tests.reduce(function(a,t){ return a + (TM[t]||8); }, 0) + 5;
-      h += '<div style="border-top:1px solid #f1f5f9;padding:14px 22px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">';
+      h += '<div onclick="openCargoBattery(\'' + key + '\')" style="border-top:1px solid #f1f5f9;padding:14px 22px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;cursor:pointer;transition:background .15s" onmouseover="this.style.background=\'#f8fafc\'" onmouseout="this.style.background=\'transparent\'">';
       h += '<div style="font-size:11px;color:var(--ink3)"><strong style="color:var(--ink2)">' + tests.length + '</strong> tests asignados</div>';
       h += '<div style="font-size:11px;color:var(--ink3)">⏱ <strong style="color:var(--ink2)">' + totalMin + ' min</strong> estimados</div>';
       h += '<div style="flex:1"></div>';
-      h += '<div style="display:flex;gap:4px;flex-wrap:wrap">';
-      tests.forEach(function(t) {
-        var m = TESTS_META[t];
-        if (m) h += '<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:100px;background:var(--surface3);color:var(--ink3)">' + m.icon + ' ' + m.name + '</span>';
-      });
-      h += '</div></div>';
+      if (tests.length === 0) {
+        h += '<span style="font-size:11px;font-weight:600;color:var(--accent)">⚙ Configurar batería →</span>';
+      } else {
+        h += '<div style="display:flex;gap:4px;flex-wrap:wrap">';
+        tests.slice(0, 6).forEach(function(t) {
+          var m = TESTS_META[t];
+          if (m) h += '<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:100px;background:var(--surface3);color:var(--ink3)">' + m.icon + '</span>';
+        });
+        if (tests.length > 6) h += '<span style="font-size:10px;color:var(--ink4)">+' + (tests.length - 6) + '</span>';
+        h += '</div>';
+        h += '<span style="font-size:11px;color:var(--accent);font-weight:600;margin-left:8px">→</span>';
+      }
+      h += '</div>';
     }
 
     h += '</div>';
@@ -1838,6 +1840,93 @@ function renderCargosTab() {
   h += '</button>';
 
   el.innerHTML = h;
+}
+
+// ── Open Battery for a specific cargo ──
+function openCargoBattery(key) {
+  var pm = PERFIL_META[key];
+  if (!pm) return;
+  _paramPerfil = key;
+  // Update header with cargo context
+  var titleEl = document.getElementById('bateria-cargo-title');
+  var descEl = document.getElementById('bateria-cargo-desc');
+  if (titleEl) titleEl.innerHTML = pm.icon + ' ' + pm.label + ' <span style="font-size:14px;font-weight:400;color:var(--ink3)">— Batería de Tests</span>';
+  if (descEl) descEl.textContent = pm.desc;
+  // Switch to params tab
+  adminTab('params', document.getElementById('nav-params'));
+  // Ensure bateria subtab is active
+  switchParamsSubtab('bateria');
+}
+
+// ── Edit Cargo Modal ──
+function editCargo(key) {
+  var pm = PERFIL_META[key];
+  if (!pm) return;
+  var cc = CUSTOM_CARGOS.find(function(c) { return c.key === key; });
+  if (!cc) return;
+
+  var modal = document.getElementById('edit-cargo-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'edit-cargo-modal';
+    modal.className = 'overlay';
+    modal.onclick = function(e) { if (e.target === modal) modal.style.display = 'none'; };
+    modal.innerHTML = '<div class="modal" style="max-width:420px" onclick="event.stopPropagation()" id="edit-cargo-body"></div>';
+    document.body.appendChild(modal);
+  }
+
+  var ICONS = ['👔','💼','🛡','⚙️','🏗','🔧','📦','🚛','💊','🍳','📞','🖥','🧑‍🏫','🧑‍⚕️','🧑‍🔬','🧑‍🚒','🏪','📐','🎯','🚀'];
+  var iconsHtml = ICONS.map(function(ic) {
+    return '<button type="button" onclick="pickEditCargoIcon(this)" data-icon="' + ic + '" style="font-size:22px;padding:6px;border-radius:8px;border:2px solid ' + (ic === cc.icon ? 'var(--accent)' : 'transparent') + ';background:' + (ic === cc.icon ? 'var(--accent-l)' : 'transparent') + ';cursor:pointer;transition:all .1s">' + ic + '</button>';
+  }).join('');
+
+  document.getElementById('edit-cargo-body').innerHTML =
+    '<h3 style="font-size:18px;font-weight:700;margin-bottom:16px">✏️ Editar cargo</h3>'
+    + '<div style="display:flex;flex-direction:column;gap:14px">'
+    + '<div class="field"><label>Nombre del cargo</label><input id="ec-name" value="' + cc.label + '" placeholder="Ej: Analista de Datos"></div>'
+    + '<div class="field"><label>Descripción breve</label><input id="ec-desc" value="' + (cc.desc||'') + '" placeholder="Evaluación para…"></div>'
+    + '<div><label style="font-size:12px;font-weight:600;color:var(--ink3);display:block;margin-bottom:6px">Ícono</label>'
+    + '<div style="display:flex;flex-wrap:wrap;gap:4px" id="ec-icons">' + iconsHtml + '</div>'
+    + '<input type="hidden" id="ec-icon" value="' + cc.icon + '">'
+    + '</div>'
+    + '<div id="ec-error" style="display:none;font-size:12px;color:#dc2626;padding:8px 12px;background:#fef2f2;border-radius:8px"></div>'
+    + '<div style="display:flex;gap:8px;margin-top:4px">'
+    + '<button onclick="document.getElementById(\'edit-cargo-modal\').style.display=\'none\'" class="btn btn-outline" style="flex:1">Cancelar</button>'
+    + '<button onclick="saveEditCargo(\'' + key + '\')" class="btn btn-primary" style="flex:1">Guardar cambios</button>'
+    + '</div></div>';
+  modal.style.display = 'flex';
+}
+
+function pickEditCargoIcon(btn) {
+  document.getElementById('ec-icon').value = btn.dataset.icon;
+  document.querySelectorAll('#ec-icons button').forEach(function(b) {
+    b.style.borderColor = 'transparent'; b.style.background = 'transparent';
+  });
+  btn.style.borderColor = 'var(--accent)'; btn.style.background = 'var(--accent-l)';
+}
+
+function saveEditCargo(key) {
+  var name = document.getElementById('ec-name').value.trim();
+  var desc = document.getElementById('ec-desc').value.trim();
+  var icon = document.getElementById('ec-icon').value;
+  var errEl = document.getElementById('ec-error');
+
+  if (!name || name.length < 2) { errEl.textContent = 'El nombre debe tener al menos 2 caracteres.'; errEl.style.display = 'block'; return; }
+
+  // Update CUSTOM_CARGOS
+  var cc = CUSTOM_CARGOS.find(function(c) { return c.key === key; });
+  if (cc) { cc.label = name; cc.desc = desc; cc.icon = icon; }
+
+  // Update PERFIL_META
+  PERFIL_META[key].label = name;
+  PERFIL_META[key].desc = desc;
+  PERFIL_META[key].icon = icon;
+
+  saveCargosConfig();
+  document.getElementById('edit-cargo-modal').style.display = 'none';
+  renderCargosTab();
+  applyCargoVisibility();
+  toast('Cargo actualizado', 'ok');
 }
 
 // ── Add Cargo Modal ──
@@ -1900,7 +1989,9 @@ function addCargo() {
   document.getElementById('add-cargo-modal').style.display = 'none';
   renderCargosTab();
   applyCargoVisibility();
-  toast('✓ Cargo "' + name + '" creado correctamente', 'ok');
+  toast('✓ Cargo "' + name + '" creado — configura su batería', 'ok');
+  // Auto-open battery config for the new cargo
+  setTimeout(function() { openCargoBattery(key); }, 300);
 }
 
 function deleteCargo(key) {
@@ -5434,7 +5525,6 @@ function buildReportHtml(c, withClose) {
   if (s.comprension && rpt.sections.find(function(x){return x.id==='comprension';})) tabs.push({ id:'comprension', label:'Comprensión', icon:'📖' });
   if (s.disc      && rpt.sections.find(function(x){return x.id==='disc';}))       tabs.push({ id:'disc',      label:'DISC',        icon:'🎭' });
   if (s.atencion   && rpt.sections.find(function(x){return x.id==='atencion';}))   tabs.push({ id:'atencion',  label:'Atención',     icon:'🎯' });
-  tabs.push({ id:'ia', label:'Análisis IA', icon:'🤖' });
 
   html += '<div style="background:#fff;border-bottom:2px solid #f1f5f9;padding:0 28px;display:flex;gap:0;overflow-x:auto;flex-shrink:0">';
   tabs.forEach(function(t, i) {
@@ -6062,133 +6152,12 @@ function buildReportHtml(c, withClose) {
     html += '</div>';
   });
 
-  // ════════════════════════════════════════════
-  // TAB: ANÁLISIS IA
-  // ════════════════════════════════════════════
-  var iaUID = 'ia-' + (c.id || Math.random().toString(36).slice(2));
-  html += '<div class="rpt-tab-panel" id="rpt-panel-ia" style="display:none;flex-direction:column;gap:16px">';
-  html += '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:24px">';
-  // Header
-  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:12px">';
-  html += '<div>';
-  html += '<div style="font-size:17px;font-weight:800;color:#0f172a;margin-bottom:2px">🤖 Análisis de Integración de Perfil</div>';
-  html += '<div style="font-size:12px;color:#94a3b8">Generado por IA · Psicólogo Organizacional experto en selección</div>';
-  html += '</div>';
-  html += '<button id="btn-gen-ia-' + iaUID + '" onclick="generateIAAnalysis(\'' + iaUID + '\')" '
-    + 'style="background:#6366f1;border:none;color:#fff;font-size:13px;font-weight:700;padding:10px 20px;border-radius:10px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:8px">'
-    + '✨ Generar análisis</button>';
-  html += '</div>';
-  html += '<div style="height:1px;background:#f1f5f9;margin-bottom:16px"></div>';
-  html += '<div id="ia-output-' + iaUID + '" style="font-size:13px;line-height:1.8;color:#1e293b">';
-  html += '<div style="text-align:center;padding:40px 20px;color:#94a3b8">';
-  html += '<div style="font-size:32px;margin-bottom:10px">🧠</div>';
-  html += '<div style="font-size:14px;font-weight:600;color:#64748b;margin-bottom:4px">Análisis pendiente</div>';
-  html += '<div style="font-size:12px">Presiona "Generar análisis" para obtener el informe integrado de IA</div>';
-  html += '</div>';
-  html += '</div>';
-  html += '</div>';
-
-  // Store candidate data for API call
-  html += '<div id="ia-data-' + iaUID + '" style="display:none" aria-hidden="true">'
-    + encodeURIComponent(JSON.stringify({
-        nombre: c.nombre + ' ' + c.apellido,
-        perfil: pm.label,
-        veredicto: veredicto,
-        gLv: gLv,
-        gFit: gFit,
-        educacion: c.educacion_label || '',
-        edad: c.edad || '',
-        secciones: rpt ? rpt.sections.map(function(sec) {
-          return {
-            titulo: sec.title,
-            nivel: fitToLevel5(sec.secFit),
-            label: fitLabel(sec.secFit).label,
-            dims: sec.dims ? sec.dims.map(function(d) {
-              return { label: d.label, nivel: scoreToLevel5(d.score), fit: Math.round(d.fit) };
-            }) : []
-          };
-        }) : [],
-        fortalezas: rpt ? rpt.fortalezas.slice(0,3).map(function(f){ return f.label; }) : [],
-        brechas: rpt ? rpt.brechas.slice(0,3).map(function(b){ return b.label; }) : [],
-      }))
-    + '</div>';
-
-  html += '</div>'; // end rpt-panel-ia
-
   // ── Disclaimer ───────────────────────────────────────────────────────
   html += '<div style="font-size:11px;color:#bbb;padding:8px 0;line-height:1.6">⚠ Informe de uso interno RRHH. No reemplaza el juicio de un psicólogo habilitado. Basado en BIS-15 (Spinella, 2007), PAI y DC-0. Instrumentos de uso libre para investigación y selección.</div>';
 
   html += '</div>'; // end panels wrap
   html += '</div>'; // end rpt-modal
   return html;
-}
-async function generateIAAnalysis(uid) {
-  const btn = document.getElementById('btn-gen-ia-' + uid);
-  const out = document.getElementById('ia-output-' + uid);
-  const dataEl = document.getElementById('ia-data-' + uid);
-  if (!out || !dataEl) return;
-
-  var data;
-  try { data = JSON.parse(decodeURIComponent(dataEl.textContent)); } catch(e) { out.innerHTML = '<div style="color:#e11d48">Error al leer datos del informe.</div>'; return; }
-
-  if (btn) { btn.disabled = true; btn.innerHTML = '<span style="display:inline-block;animation:spin 1s linear infinite">⟳</span> Analizando…'; }
-  out.innerHTML = '<div style="text-align:center;padding:32px;color:#94a3b8"><div style="font-size:28px;margin-bottom:8px;display:inline-block;animation:spin 1.5s linear infinite">⟳</div><div style="margin-top:8px;font-size:13px">Analizando perfil…</div></div>';
-
-  // Build prompt
-  var secText = data.secciones.map(function(s) {
-    var dims = s.dims.map(function(d){ return d.label + ' (Nivel ' + d.nivel + '/5, Ajuste ' + d.fit + '%)'; }).join(', ');
-    return '• ' + s.titulo + ': Nivel ' + s.nivel + '/5 — ' + s.label + (dims ? '\n  Dimensiones: ' + dims : '');
-  }).join('\n');
-
-  var prompt = 'Actúa como un Psicólogo Organizacional experto en selección de personal en el rubro de seguridad privada en Chile.\n\n'
-    + 'DATOS DEL CANDIDATO:\n'
-    + '• Nombre: ' + data.nombre + '\n'
-    + '• Cargo postulado: ' + data.perfil + '\n'
-    + '• Edad: ' + (data.edad || 'No informada') + ' años\n'
-    + '• Educación: ' + (data.educacion || 'No informada') + '\n'
-    + '• Veredicto global: ' + data.veredicto + ' (Nivel ' + data.gLv + '/5, Ajuste ' + data.gFit + '%)\n\n'
-    + 'RESULTADOS POR TEST:\n' + secText + '\n\n'
-    + 'FORTALEZAS DESTACADAS: ' + (data.fortalezas.join(', ') || 'Ninguna') + '\n'
-    + 'BRECHAS IDENTIFICADAS: ' + (data.brechas.join(', ') || 'Ninguna') + '\n\n'
-    + 'INSTRUCCIONES:\n'
-    + 'Redacta un Análisis de Integración de Perfil con exactamente 3 secciones bien diferenciadas. Usa lenguaje técnico pero comprensible para RRHH. Sé específico con los datos, no genérico.\n\n'
-    + '**1. ANÁLISIS DE LA BRECHA**\n'
-    + 'Describe la distancia entre el perfil obtenido y el perfil ideal del cargo. Menciona dimensiones específicas por nombre y nivel. Explica qué implica esa brecha en el contexto operativo del cargo.\n\n'
-    + '**2. PRONÓSTICO DE DESEMPEÑO**\n'
-    + 'Basado en los resultados, proyecta el probable desempeño del candidato en los primeros 90 días. Identifica qué aspectos del rol podrían ser problemáticos y cuáles manejará bien. Sé honesto, no halagador.\n\n'
-    + '**3. GUÍA DE ENTREVISTA**\n'
-    + 'Genera exactamente 2 preguntas de incidentes críticos (método STAR) diseñadas específicamente para este candidato, enfocadas en validar sus áreas de brecha bajo presión. Incluye qué debes observar en la respuesta.\n\n'
-    + 'Responde SOLO con el análisis, sin introducción ni conclusión adicional. Usa las marcas **1.**, **2.**, **3.** para separar secciones.';
-
-  try {
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
-    const json = await resp.json();
-    const text = (json.content || []).map(function(b){ return b.text || ''; }).join('');
-    if (!text) throw new Error('Respuesta vacía');
-
-    // Render markdown-like formatting
-    var rendered = text
-      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-      .replace(/\n\n/g, '</p><p style="margin-bottom:14px">')
-      .replace(/\n/g, '<br>');
-
-    out.innerHTML = '<div style="background:#f8fafc;border-radius:10px;padding:18px 20px;border-left:3px solid #6366f1">'
-      + '<p style="margin-bottom:14px">' + rendered + '</p>'
-      + '</div>'
-      + '<div style="font-size:10px;color:#94a3b8;margin-top:12px;text-align:right">⚠ Generado con IA · Complementar con juicio profesional del evaluador</div>';
-    if (btn) { btn.innerHTML = '✨ Regenerar'; btn.disabled = false; }
-  } catch(e) {
-    out.innerHTML = '<div style="background:#fef2f2;border-radius:10px;padding:16px;color:#dc2626;font-size:13px">Error al generar análisis: ' + (e.message || 'Sin respuesta') + '</div>';
-    if (btn) { btn.innerHTML = '✨ Reintentar'; btn.disabled = false; }
-  }
 }
 
 let currentReportId = null;
@@ -6409,30 +6378,12 @@ function toggleBatteryTest(cb) {
     PERFIL_TESTS[perfil] = PERFIL_TESTS[perfil].filter(function(t){ return t !== tid; });
   }
   saveBatteryConfig();
-  // Re-render the full battery tab to show/hide parameter sections
   renderBateriaTab();
-  toast('Batería actualizada para ' + perfil, 'ok');
 }
 
-// ── Sub-tab switching (Batería / Wiki) ──
+// ── Sub-tab switching (legacy — now separate tabs) ──
 var _paramsSubtab = 'bateria';
-function switchParamsSubtab(tab) {
-  _paramsSubtab = tab;
-  document.querySelectorAll('.params-subtab').forEach(function(b) {
-    var isActive = b.id === 'subtab-' + tab;
-    b.style.borderBottomColor = isActive ? 'var(--accent)' : 'transparent';
-    b.style.color = isActive ? 'var(--accent)' : 'var(--ink3)';
-  });
-  // Show/hide profile tabs (only for batería)
-  var profileTabs = document.getElementById('params-tabs');
-  if (profileTabs) profileTabs.style.display = (tab === 'bateria') ? '' : 'none';
-  // Toggle content areas
-  document.getElementById('params-content').style.display = 'none';
-  document.getElementById('bateria-content').style.display = (tab === 'bateria') ? '' : 'none';
-  document.getElementById('wiki-content').style.display = (tab === 'wiki') ? '' : 'none';
-  if (tab === 'bateria') renderBateriaTab();
-  if (tab === 'wiki') renderWikiTab();
-}
+function switchParamsSubtab(tab) { _paramsSubtab = tab; }
 
 // ── Wiki de Tests ──
 function renderWikiTab() {
@@ -6928,6 +6879,8 @@ function pickLevel(fid, lv) {
   if (lblEl) { lblEl.textContent = LEVEL_NAMES[lv]; lblEl.style.color = col; lblEl.style.background = LEVEL_BG[lv]; }
   var fillEl = document.getElementById('fill_' + fid);
   if (fillEl) { fillEl.style.width = ((lv-1)/4*100) + '%'; fillEl.style.background = col; }
+  // Auto-save
+  saveParams();
 }
 
 
@@ -7009,9 +6962,6 @@ function saveParams() {
 
   if (changed > 0) {
     persistParams();
-    toast('✓ Cambios guardados — aplicados al informe', 'ok');
-  } else {
-    toast('Sin cambios detectados', 'ok');
   }
 }
 
@@ -7718,15 +7668,16 @@ function refreshCandView() {
 function adminTab(id, btn) {
   S.currentAdminTab = id;
   saveSession();
-  ['dashboard','candidates','params','users','cargos'].forEach(t => {
+  ['dashboard','candidates','params','users','cargos','wiki'].forEach(t => {
     const el = document.getElementById('tab-' + t); if(el) el.style.display = t === id ? 'block' : 'none';
     const nb = document.getElementById('nav-' + t); if(nb) nb.classList.toggle('active', t === id);
   });
   if (id === 'candidates') { setCandSubTab('tabla', document.getElementById('subtab-tabla')); }
   else if (id === 'dashboard') renderDashboard();
-  else if (id === 'params') { renderParamsTabs(); if (_paramsSubtab === 'wiki') renderWikiTab(); else renderBateriaTab(); }
+  else if (id === 'params') { renderParamsTabs(); renderBateriaTab(); }
   else if (id === 'users') renderUsersTab();
   else if (id === 'cargos') renderCargosTab();
+  else if (id === 'wiki') renderWikiTab();
 }
 
 function renderAdmin() { renderDashboard(); }
@@ -8494,7 +8445,7 @@ function applyRoleRestrictions() {
   const isViewer = S.role === 'viewer';
   // Hide params and cargos tabs for viewers
   const navParams = document.getElementById('nav-params');
-  if (navParams) navParams.style.display = isViewer ? 'none' : '';
+  if (navParams) navParams.style.display = 'none'; // Always hidden - accessed via Cargos
   const navCargos = document.getElementById('nav-cargos');
   if (navCargos) navCargos.style.display = isViewer ? 'none' : '';
   // Update logout label with email
@@ -8694,8 +8645,8 @@ function toggleMobileSidebar() {
     + '<div style="display:flex;flex-direction:column;gap:2px">'
     + '<button class="nav-btn" onclick="mobileNav(\'dashboard\')"><span>📊</span><span>Dashboard</span></button>'
     + '<button class="nav-btn" onclick="mobileNav(\'candidates\')"><span>👥</span><span>Candidatos</span></button>'
-    + '<button class="nav-btn" onclick="mobileNav(\'params\')"><span>⚙</span><span>Baterías</span></button>'
     + '<button class="nav-btn" onclick="mobileNav(\'cargos\')"><span>🏢</span><span>Cargos</span></button>'
+    + '<button class="nav-btn" onclick="mobileNav(\'wiki\')"><span>📖</span><span>Wiki de Tests</span></button>'
     + '<button class="nav-btn" onclick="mobileNav(\'users\')"><span>👤</span><span>Usuarios</span></button>'
     + '</div>'
     + '<div style="flex:1"></div>'
