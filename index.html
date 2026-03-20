@@ -7246,12 +7246,35 @@ function applyTemplate(tpl, perfil) {
 
 
 function pickLevel(fid, lv) {
-  // Update hidden input immediately
-  var hidEl = document.getElementById('hid_' + fid + '_min');
-  if (hidEl) hidEl.value = lv;
-  // Save to PERFIL_IDEAL
-  saveParams();
-  // Re-render to update zone bars, chips, badges
+  // Parse fid: "b_PERFIL_TID_KEY"
+  var parts = fid.split('_');
+  // parts[0] = 'b', parts[1] = perfil, rest = tid_key
+  // But perfil and tid can contain underscores (e.g. c_my_cargo, game_detector)
+  // So we use the known prefix 'b_' + _paramPerfil + '_' then parse the rest
+  var perfil = _paramPerfil;
+  var remainder = fid.substring(('b_' + perfil + '_').length); // e.g. "dc0_V" or "game_detector_pct"
+  
+  // Find which test this belongs to by checking BATTERY_TEST_DIMENSIONS keys
+  var tid = null, dimKey = null;
+  var btd = BATTERY_TEST_DIMENSIONS;
+  Object.keys(btd).forEach(function(t) {
+    if (remainder.indexOf(t + '_') === 0) {
+      if (!tid || t.length > tid.length) { tid = t; } // longest match
+    }
+  });
+  if (tid) dimKey = remainder.substring(tid.length + 1);
+  
+  if (tid && dimKey && PERFIL_IDEAL[perfil] && PERFIL_IDEAL[perfil][tid]) {
+    var secData = PERFIL_IDEAL[perfil][tid];
+    var cfg = dimKey === '_self' ? secData : secData[dimKey];
+    if (cfg && cfg.min !== undefined) {
+      cfg.minLv = lv;
+      cfg.min = (lv - 1) * 20;
+      cfg.max = 100;
+    }
+  }
+  
+  persistParams();
   renderBateriaTab();
 }
 
