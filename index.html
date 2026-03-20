@@ -9366,6 +9366,10 @@ function applyCandidateConfig() {
         }
       });
     }
+    // Persist to localStorage so config survives reloads
+    saveCargosConfig();
+    saveBatteryConfig();
+    persistParams();
     return true;
   } catch(e) { console.warn('Error loading URL config:', e); return false; }
 }
@@ -9407,7 +9411,7 @@ function copyShareLink() {
 // Apply URL config if present (priority over localStorage)
 var _urlConfigApplied = applyCandidateConfig();
 
-restoreParams();
+if (!_urlConfigApplied) restoreParams();
 restoreSession();
 applyCargoVisibility();
 </script>
