@@ -342,12 +342,104 @@ input,select,textarea{font-family:inherit;outline:none}
 ::-webkit-scrollbar-thumb:hover{background:var(--ink4)}
 
 /* ── Responsive ── */
+/* ── Viewport meta (ensure proper scaling) ── */
 @media(max-width:700px){
   .form-row,.test-grid,.res-grid,.stat-grid,.l-features,.disc-grid{grid-template-columns:1fr!important}
   .admin-layout{grid-template-columns:1fr}
   .sidebar{display:none}
-  .app-header,.l-nav,.l-hero,.res-body,.results-header{padding-left:20px!important;padding-right:20px!important}
+  .app-header,.l-nav,.l-hero,.res-body,.results-header{padding-left:16px!important;padding-right:16px!important}
+
+  /* Landing */
+  .l-hero{padding:40px 16px!important}
+  .l-hero h1{font-size:26px!important}
+  .l-hero .sub{font-size:14px!important}
+  .l-nav{padding:12px 16px!important}
+
+  /* Admin header */
+  .app-header{padding:10px 16px!important}
+
+  /* Show mobile menu button */
+  #mobile-menu-btn{display:flex!important}
+
+  /* Stats */
+  .stat-grid{grid-template-columns:1fr 1fr!important;gap:8px!important}
+  .stat-card{padding:14px!important}
+  .stat-val{font-size:24px!important}
+  .stat-label{font-size:10px!important}
+
+  /* Tables */
+  .tbl{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;font-size:12px}
+  .tbl th,.tbl td{padding:10px 10px!important;font-size:12px!important;white-space:nowrap}
+
+  /* Cards */
+  .cp{padding:16px!important}
+  .card{border-radius:12px!important}
+
+  /* Modal */
+  .modal{padding:20px!important;margin:10px!important;max-height:90vh;overflow-y:auto}
+  .overlay{padding:10px!important}
+
+  /* Forms */
+  .field input,.field select{font-size:16px!important;padding:12px 14px!important} /* prevent iOS zoom */
+  .btn-lg{padding:14px 20px!important;font-size:14px!important}
+
+  /* Toast */
+  #toasts{bottom:16px!important;right:12px!important;left:12px!important}
+  .toast{max-width:100%!important;font-size:12px!important}
+
+  /* Registration steps */
+  .cargo-options-container label{padding:12px 14px!important}
+
+  /* Batería tabs */
+  #params-tabs{flex-wrap:wrap!important;gap:6px!important}
+  #params-tabs button{font-size:12px!important;padding:6px 12px!important}
+
+  /* Game container */
+  #game-container{padding:16px!important;min-height:280px!important}
+
+  /* Bar labels */
+  .bar-label{min-width:80px!important;font-size:11px!important}
+  .radar-label{min-width:90px!important;font-size:11px!important}
+
+  /* DISC grid */
+  .disc-grid{grid-template-columns:repeat(2,1fr)!important}
+
+  /* Test bottom bar */
+  .test-bottom-bar{padding:10px 12px!important}
+  .test-bottom-bar button{font-size:12px!important;padding:8px 12px!important}
+
+  /* Report sections */
+  .res-grid{gap:10px!important}
 }
+
+/* Extra small phones */
+@media(max-width:380px){
+  .stat-grid{grid-template-columns:1fr!important}
+  .q-scale-btns button{min-height:38px!important;font-size:13px!important}
+  .q-choice-opt{padding:10px!important}
+  .field label{font-size:11px!important}
+  .modal{padding:16px!important}
+  #game-container{padding:12px!important}
+}
+
+/* Mobile hamburger menu */
+#mobile-menu-btn{
+  display:none;align-items:center;justify-content:center;
+  width:36px;height:36px;border-radius:8px;border:1.5px solid var(--border);
+  background:var(--surface);cursor:pointer;font-size:18px;
+}
+#mobile-sidebar{
+  display:none;position:fixed;inset:0;z-index:999;
+}
+#mobile-sidebar.open{display:flex}
+#mobile-sidebar .mob-overlay{position:absolute;inset:0;background:rgba(0,0,0,.3);backdrop-filter:blur(4px)}
+#mobile-sidebar .mob-panel{
+  position:relative;width:260px;height:100%;background:#fff;
+  box-shadow:4px 0 24px rgba(0,0,0,.1);padding:20px 14px;
+  display:flex;flex-direction:column;overflow-y:auto;z-index:1;
+  animation:slideIn .2s ease;
+}
+@keyframes slideIn{from{transform:translateX(-100%)}to{transform:translateX(0)}}
 
 @media print{
   #toasts,#print-actions{display:none!important}
@@ -1227,7 +1319,13 @@ input,select,textarea{font-family:inherit;outline:none}
       <button class="nav-btn" onclick="showShareModal()" style="color:#16a34a;margin-top:8px"><span>🔗</span><span>Compartir evaluación</span></button>
       <button id="logout-btn" class="nav-btn" onclick="adminLogout()" style="color:var(--ink3)"><span>⎋</span><span>Cerrar sesión</span></button>
     </aside>
-    <main style="padding:28px 36px;overflow-y:auto;background:var(--bg);height:100vh">
+    <main id="admin-main" style="padding:28px 36px;overflow-y:auto;background:var(--bg);height:100vh">
+      <!-- Mobile top bar -->
+      <div id="mobile-admin-bar" style="display:none;align-items:center;justify-content:space-between;margin:-28px -36px 20px;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50">
+        <button id="mobile-menu-btn" onclick="toggleMobileSidebar()" style="display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;font-size:18px">☰</button>
+        <div style="font-size:15px;font-weight:700;letter-spacing:-.02em">PsicoEval</div>
+        <div style="width:36px"></div>
+      </div>
       <!-- Dashboard -->
       <div id="tab-dashboard">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
@@ -1494,13 +1592,9 @@ const TESTS_META = {
   ice:          { name:'Competencias de Ejecución (ICE-20)',   icon:'⚡', color:'#4338ca'        },
   game_detector:   { name:'Detector (Atención)',              icon:'🎯', color:'#e11d48', game:true },
   game_secuencias: { name:'Secuencias (Lógica)',              icon:'🧠', color:'#7c3aed', game:true },
-  game_bandeja:    { name:'Bandeja de Entrada (Priorización)',icon:'📥', color:'#0891b2', game:true },
   game_impulsos:   { name:'Control de Impulsos (Go/No-Go)',   icon:'🔥', color:'#ea580c', game:true },
   game_vigilancia: { name:'Monitoreo en Tiempo Real',          icon:'🛡', color:'#16a34a', game:true },
-  game_cadena:     { name:'Cadena de Mando (Delegación)',      icon:'🔗', color:'#7c3aed', game:true },
   game_memoria:    { name:'Memoria Operativa',                 icon:'⏱', color:'#0369a1', game:true },
-  game_expedicion: { name:'La Expedición (Riesgo/Esfuerzo)',   icon:'🗺', color:'#854d0e', game:true },
-  game_radar:      { name:'Radar Social (Emociones)',          icon:'🎭', color:'#be185d', game:true },
 };
 
 // Default batteries — can be overridden via Baterías
@@ -1512,7 +1606,7 @@ const PERFIL_TESTS_DEFAULT = {
 };
 
 // All available tests per cargo (max possible)
-const ALL_TESTS_AVAILABLE = ['barratt','dc0','pai','situacional','vigilancia','comprension','disc','atencion','cwb','ausentismo','frustracion','ice','game_detector','game_secuencias','game_bandeja','game_impulsos','game_vigilancia','game_cadena','game_memoria','game_expedicion','game_radar'];
+const ALL_TESTS_AVAILABLE = ['barratt','dc0','pai','situacional','vigilancia','comprension','disc','atencion','cwb','ausentismo','frustracion','ice','game_detector','game_secuencias','game_impulsos','game_vigilancia','game_memoria'];
 
 // Active batteries (loaded from localStorage, falls back to default)
 var PERFIL_TESTS = Object.assign({}, PERFIL_TESTS_DEFAULT);
@@ -1636,7 +1730,7 @@ function registerCustomCargo(c, skipSave) {
     };
   }
   // Ensure shared tests exist for this profile
-  ['disc','atencion','cwb','ausentismo','frustracion','ice','game_detector','game_secuencias','game_bandeja','game_impulsos','game_vigilancia','game_cadena','game_memoria','game_expedicion','game_radar'].forEach(function(tid) {
+  ['disc','atencion','cwb','ausentismo','frustracion','ice','game_detector','game_secuencias','game_impulsos','game_vigilancia','game_memoria'].forEach(function(tid) {
     if (!PERFIL_IDEAL[key][tid]) {
       // Copy from jefatura defaults
       var src = PERFIL_IDEAL['jefatura'][tid];
@@ -1720,7 +1814,7 @@ function renderCargosTab() {
 
     // Info row
     if (isOn) {
-      var TM = { barratt:5, dc0:20, pai:12, situacional:12, vigilancia:12, comprension:10, disc:8, atencion:8, cwb:8, ausentismo:5, frustracion:6, ice:8, game_detector:3, game_secuencias:3, game_bandeja:3, game_impulsos:2, game_vigilancia:3, game_cadena:4, game_memoria:3, game_expedicion:4, game_radar:4 };
+      var TM = { barratt:5, dc0:20, pai:12, situacional:12, vigilancia:12, comprension:10, disc:8, atencion:8, cwb:8, ausentismo:5, frustracion:6, ice:8, game_detector:3, game_secuencias:3, game_impulsos:2, game_vigilancia:3, game_memoria:3 };
       var totalMin = tests.reduce(function(a,t){ return a + (TM[t]||8); }, 0) + 5;
       h += '<div style="border-top:1px solid #f1f5f9;padding:14px 22px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">';
       h += '<div style="font-size:11px;color:var(--ink3)"><strong style="color:var(--ink2)">' + tests.length + '</strong> tests asignados</div>';
@@ -2640,7 +2734,7 @@ function calcScores(answers, selectedTests, perfil) {
   }
 
   // ── Game scores ──
-  ['game_detector','game_secuencias','game_bandeja','game_impulsos','game_vigilancia','game_cadena','game_memoria','game_expedicion','game_radar'].forEach(function(gid) {
+  ['game_detector','game_secuencias','game_impulsos','game_vigilancia','game_memoria'].forEach(function(gid) {
     if (selectedTests.includes(gid) && answers['__game_' + gid] !== undefined) {
       scores[gid] = { pct: answers['__game_' + gid] };
     }
@@ -2679,13 +2773,13 @@ function gotoAdminLogin() { showView('adminlogin'); }
 //  TEST MODE (temporary - for testing)
 // ═══════════════════════════════════════════════════════════
 function startTestMode() {
-  var TM_MINS = { barratt:5, dc0:20, pai:12, situacional:12, vigilancia:12, comprension:10, disc:8, atencion:8, cwb:8, ausentismo:5, frustracion:6, ice:8, game_detector:3, game_secuencias:3, game_bandeja:3, game_impulsos:2, game_vigilancia:3, game_cadena:4, game_memoria:3, game_expedicion:4, game_radar:4 };
+  var TM_MINS = { barratt:5, dc0:20, pai:12, situacional:12, vigilancia:12, comprension:10, disc:8, atencion:8, cwb:8, ausentismo:5, frustracion:6, ice:8, game_detector:3, game_secuencias:3, game_impulsos:2, game_vigilancia:3, game_memoria:3 };
   var GROUPS = {
     '🧠 Cognitivos':        ['dc0','comprension','atencion'],
     '🧬 Personalidad':      ['barratt','pai','disc','ice'],
     '💡 Situacionales':     ['situacional','vigilancia'],
     '⚠ Riesgo Laboral':    ['cwb','ausentismo','frustracion'],
-    '🎮 Juegos Gamificados':['game_detector','game_secuencias','game_bandeja','game_impulsos','game_vigilancia','game_cadena','game_memoria','game_expedicion','game_radar'],
+    '🎮 Juegos Gamificados':['game_detector','game_secuencias','game_impulsos','game_vigilancia','game_memoria'],
   };
 
   var h = '<div style="text-align:center;margin-bottom:16px"><span style="font-size:28px">🧪</span></div>';
@@ -2783,7 +2877,7 @@ function launchTestMode(perfil) {
   var tests = PERFIL_TESTS[perfil] || [];
   if (!tests.length) { toast('Este cargo no tiene tests asignados', 'er'); return; }
 
-  var TM_MINS = { barratt:5, dc0:20, pai:12, situacional:12, vigilancia:12, comprension:10, disc:8, atencion:8, cwb:8, ausentismo:5, frustracion:6, ice:8, game_detector:3, game_secuencias:3, game_bandeja:3, game_impulsos:2, game_vigilancia:3, game_cadena:4, game_memoria:3, game_expedicion:4, game_radar:4 };
+  var TM_MINS = { barratt:5, dc0:20, pai:12, situacional:12, vigilancia:12, comprension:10, disc:8, atencion:8, cwb:8, ausentismo:5, frustracion:6, ice:8, game_detector:3, game_secuencias:3, game_impulsos:2, game_vigilancia:3, game_memoria:3 };
 
   S.candidate = {
     id: 'test_' + Date.now(),
@@ -3383,7 +3477,7 @@ function submitRegister() {
     barratt:5, dc0:20, pai:12, situacional:12, vigilancia:12,
     comprension:10, disc:8, atencion:8,
     cwb:8, ausentismo:5, frustracion:6, ice:8,
-    game_detector:3, game_secuencias:3, game_bandeja:3, game_impulsos:2, game_vigilancia:3, game_cadena:4, game_memoria:3, game_expedicion:4, game_radar:4
+    game_detector:3, game_secuencias:3, game_impulsos:2, game_vigilancia:3, game_memoria:3
   };
   var totalMin = tests.reduce(function(a,t){ return a + (TEST_TIME_MINUTES[t]||8); }, 0);
   // Add 5-minute buffer for transitions
@@ -3699,13 +3793,9 @@ function startGame(testId) {
   }
   if (testId === 'game_detector')   return gameDetector(gc, diff);
   if (testId === 'game_secuencias') return gameSecuencias(gc, diff);
-  if (testId === 'game_bandeja')    return gameBandeja(gc, diff);
   if (testId === 'game_impulsos')   return gameImpulsos(gc, diff);
   if (testId === 'game_vigilancia') return gameVigilancia(gc, diff);
-  if (testId === 'game_cadena')     return gameCadena(gc, diff);
   if (testId === 'game_memoria')    return gameMemoria(gc, diff);
-  if (testId === 'game_expedicion') return gameExpedicion(gc, diff);
-  if (testId === 'game_radar')      return gameRadar(gc, diff);
 }
 
 // ── GAME 1: Detector (Attention) ──────────────────────────────
@@ -3897,68 +3987,6 @@ function gameSecuencias(gc, diff) {
         else { btn.style.background = '#fef2f2'; btn.style.borderColor = '#dc2626'; btn.style.color = '#dc2626'; }
         optsEl.querySelectorAll('button').forEach(function(b) { b.disabled = true; });
         setTimeout(nextLevel, 600);
-      };
-      optsEl.appendChild(btn);
-    });
-  }
-  showIntro();
-}
-
-// ── GAME 3: Bandeja de Entrada (Prioritization) ──────────────
-function gameBandeja(gc, diff) {
-  diff = diff || 3;
-  var ALL_TASKS = [
-    { text:'El director necesita el informe para la reunión en 30 min', urg:'urgente' },
-    { text:'Organizar la carpeta de archivos del mes pasado', urg:'bajo' },
-    { text:'Un cliente reclama por un error en su factura', urg:'urgente' },
-    { text:'Reservar sala para reunión de la próxima semana', urg:'normal' },
-    { text:'Responder email del proveedor sobre entrega retrasada', urg:'urgente' },
-    { text:'Comprar café para la oficina', urg:'bajo' },
-    { text:'Preparar la nómina de hoy antes de las 12:00', urg:'urgente' },
-    { text:'Coordinar capacitación del equipo nuevo', urg:'normal' },
-    { text:'Un empleado reporta una fuga de agua en baño', urg:'urgente' },
-    { text:'Enviar reporte semanal de asistencia', urg:'normal' },
-  ];
-  // At diff 4-5, add ambiguous tasks
-  if (diff >= 4) {
-    ALL_TASKS.push({ text:'Un compañero pide ayuda con su presentación de mañana', urg:'normal' });
-    ALL_TASKS.push({ text:'Revisar si el contrato del proveedor tiene cláusula de penalización', urg:'urgente' });
-  }
-  var TASKS = ALL_TASKS.slice(0, [6, 7, 8, 9, 10][diff-1]);
-  var idx = 0, correct = 0, total = TASKS.length;
-  var COLORS = { urgente:'#dc2626', normal:'#b45309', bajo:'#64748b' };
-  var LABELS = { urgente:'🔴 Urgente', normal:'🟡 Normal', bajo:'🟢 Puede esperar' };
-
-  function showIntro() {
-    gc.innerHTML = '<div style="text-align:center;max-width:360px">'
-      + '<div style="font-size:48px;margin-bottom:16px">📥</div>'
-      + '<div style="font-size:16px;font-weight:700;margin-bottom:8px">Clasifica las tareas</div>'
-      + '<div style="font-size:13px;color:var(--ink3);line-height:1.6;margin-bottom:12px">Aparecerán tareas en tu bandeja. Clasifica cada una según su urgencia: <strong style="color:#dc2626">Urgente</strong>, <strong style="color:#b45309">Normal</strong> o <strong style="color:#64748b">Puede esperar</strong>.</div>'
-      + '<button onclick="this.parentElement.parentElement._start()" class="btn btn-accent" style="padding:12px 32px">Comenzar →</button></div>';
-    gc._start = nextTask;
-  }
-
-  function nextTask() {
-    if (idx >= total) { gameComplete('game_bandeja', Math.round(correct / total * 100)); return; }
-    var task = TASKS[idx];
-    gc.innerHTML = '<div style="width:100%;max-width:420px">'
-      + '<div style="display:flex;justify-content:space-between;margin-bottom:16px;font-size:12px;color:var(--ink3)"><span>Tarea ' + (idx+1) + '/' + total + '</span><span>Correctas: <strong style="color:#16a34a">' + correct + '</strong></span></div>'
-      + '<div style="background:var(--surface2);border-radius:12px;padding:20px;margin-bottom:18px;border:1px solid var(--border)">'
-      + '<div style="font-size:14px;font-weight:600;color:var(--ink);line-height:1.6">📩 ' + task.text + '</div></div>'
-      + '<div style="font-size:12px;font-weight:600;color:var(--ink3);margin-bottom:10px">¿Qué prioridad le asignas?</div>'
-      + '<div style="display:flex;flex-direction:column;gap:8px" id="band-opts"></div></div>';
-    var optsEl = document.getElementById('band-opts');
-    ['urgente','normal','bajo'].forEach(function(u) {
-      var btn = document.createElement('button');
-      btn.innerHTML = LABELS[u];
-      btn.style.cssText = 'padding:14px 18px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);font-size:13px;font-weight:600;cursor:pointer;text-align:left;transition:all .12s';
-      btn.onclick = function() {
-        var isCorrect = u === task.urg;
-        if (isCorrect) { correct++; btn.style.background = '#f0fdf4'; btn.style.borderColor = '#16a34a'; }
-        else { btn.style.background = '#fef2f2'; btn.style.borderColor = '#dc2626'; }
-        optsEl.querySelectorAll('button').forEach(function(b) { b.disabled = true; if (b !== btn) b.style.opacity = '.4'; });
-        idx++;
-        setTimeout(nextTask, 500);
       };
       optsEl.appendChild(btn);
     });
@@ -4234,107 +4262,6 @@ function gameVigilancia(gc, diff) {
   }
 }
 
-// ── GAME 6: Cadena de Mando (Delegation) ──────────────────────
-function gameCadena(gc, diff) {
-  diff = diff || 3;
-  var TEAM = [
-    { name:'Ana',   icon:'👩‍💼', skill:'Análisis',      load:0, maxLoad:[4,4,3,3,2][diff-1], tags:['datos','informes','análisis'] },
-    { name:'Carlos',icon:'👨‍🔧', skill:'Operaciones',   load:0, maxLoad:[4,4,3,3,2][diff-1], tags:['logística','terreno','equipos'] },
-    { name:'Lucía', icon:'👩‍💻', skill:'Tecnología',     load:0, maxLoad:[4,4,3,3,2][diff-1], tags:['sistemas','digital','software'] },
-    { name:'Pedro', icon:'👨‍🏫', skill:'Comunicación',   load:0, maxLoad:[4,4,3,3,2][diff-1], tags:['clientes','presentaciones','capacitación'] },
-  ];
-  var ALL_TASKS = [
-    { text:'Preparar informe de ventas del trimestre', best:'Ana', accept:['Ana'], tags:['datos','informes'] },
-    { text:'Reparar falla en el sistema de inventario', best:'Lucía', accept:['Lucía'], tags:['sistemas'] },
-    { text:'Capacitar al equipo nuevo sobre protocolos', best:'Pedro', accept:['Pedro'], tags:['capacitación'] },
-    { text:'Coordinar la entrega de materiales a bodega', best:'Carlos', accept:['Carlos'], tags:['logística'] },
-    { text:'Crear dashboard de métricas en Excel', best:'Ana', accept:['Ana','Lucía'], tags:['datos','digital'] },
-    { text:'Atender reclamo presencial de un cliente VIP', best:'Pedro', accept:['Pedro'], tags:['clientes'] },
-    { text:'Supervisar instalación de equipos en terreno', best:'Carlos', accept:['Carlos'], tags:['terreno','equipos'] },
-    { text:'Migrar base de datos a nuevo servidor', best:'Lucía', accept:['Lucía'], tags:['sistemas','software'] },
-    { text:'Redactar comunicado para proveedores', best:'Pedro', accept:['Pedro','Ana'], tags:['clientes','informes'] },
-    { text:'Auditar stock físico versus sistema', best:'Carlos', accept:['Carlos','Ana'], tags:['logística','análisis'] },
-  ];
-  var TASKS = ALL_TASKS.slice(0, [6, 7, 8, 9, 10][diff-1]);
-  var taskIdx = 0, score = 0, overloads = 0;
-  var teamMaxLoad = TEAM[0].maxLoad;
-
-  function showIntro() {
-    gc.innerHTML = '<div style="text-align:center;max-width:400px">'
-      + '<div style="font-size:48px;margin-bottom:16px">🔗</div>'
-      + '<div style="font-size:16px;font-weight:700;margin-bottom:8px">Cadena de Mando</div>'
-      + '<div style="font-size:13px;color:var(--ink3);line-height:1.7;margin-bottom:6px">Eres supervisor de un equipo de 4 personas. Asigna cada tarea al miembro más adecuado según sus habilidades.</div>'
-      + '<div style="font-size:12px;color:var(--ink4);line-height:1.6;margin-bottom:16px">'
-      + '• Cada persona tiene una <strong>especialidad</strong> y carga máxima de <strong>' + teamMaxLoad + ' tareas</strong><br>'
-      + '• Asignar al mejor = 10 pts · Aceptable = 5 pts · Incorrecto = 0 pts<br>'
-      + '• Sobrecargar a alguien <strong>penaliza −8 pts</strong></div>'
-      + '<button onclick="this.parentElement.parentElement._start()" class="btn btn-accent" style="padding:12px 32px">Comenzar →</button></div>';
-    gc._start = nextTask;
-  }
-
-  function renderTeamBar() {
-    return '<div style="display:flex;gap:6px;margin-bottom:16px">' + TEAM.map(function(m) {
-      var loadPct = (m.load / m.maxLoad) * 100;
-      var col = m.load >= m.maxLoad ? '#dc2626' : m.load >= 2 ? '#f59e0b' : '#16a34a';
-      return '<div style="flex:1;background:var(--surface2);border-radius:10px;padding:10px 8px;text-align:center;border:1px solid ' + (m.load>=m.maxLoad?'#fecaca':'var(--border)') + '">'
-        + '<div style="font-size:20px">' + m.icon + '</div>'
-        + '<div style="font-size:11px;font-weight:700;color:var(--ink);margin:3px 0 1px">' + m.name + '</div>'
-        + '<div style="font-size:9px;color:var(--ink4);margin-bottom:5px">' + m.skill + '</div>'
-        + '<div style="height:4px;background:#e2e8f0;border-radius:2px;overflow:hidden"><div style="height:100%;width:' + loadPct + '%;background:' + col + ';border-radius:2px;transition:width .3s"></div></div>'
-        + '<div style="font-size:9px;color:' + col + ';font-weight:700;margin-top:3px">' + m.load + '/' + m.maxLoad + '</div>'
-        + '</div>';
-    }).join('') + '</div>';
-  }
-
-  function nextTask() {
-    if (taskIdx >= TASKS.length) {
-      var maxScore = TASKS.length * 10;
-      var pct = Math.max(0, Math.round(((score - overloads * 8) / maxScore) * 100));
-      gameComplete('game_cadena', pct);
-      return;
-    }
-    var task = TASKS[taskIdx];
-    gc.innerHTML = '<div style="width:100%;max-width:440px">'
-      + '<div style="display:flex;justify-content:space-between;margin-bottom:10px;font-size:12px;color:var(--ink3)">'
-      + '<span>Tarea ' + (taskIdx+1) + '/' + TASKS.length + '</span>'
-      + '<span>Puntaje: <strong style="color:var(--accent)">' + score + '</strong></span></div>'
-      + renderTeamBar()
-      + '<div style="background:var(--surface2);border-radius:12px;padding:16px 18px;margin-bottom:14px;border:1px solid var(--border)">'
-      + '<div style="font-size:11px;font-weight:600;color:var(--ink4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">📋 Nueva tarea</div>'
-      + '<div style="font-size:14px;font-weight:600;color:var(--ink);line-height:1.5">' + task.text + '</div></div>'
-      + '<div style="font-size:12px;font-weight:600;color:var(--ink3);margin-bottom:8px">¿A quién se la asignas?</div>'
-      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px" id="cadena-opts"></div></div>';
-
-    var optsEl = document.getElementById('cadena-opts');
-    TEAM.forEach(function(m) {
-      var btn = document.createElement('button');
-      var isFull = m.load >= m.maxLoad;
-      btn.innerHTML = '<span style="font-size:22px">' + m.icon + '</span>'
-        + '<div><div style="font-size:13px;font-weight:700">' + m.name + '</div>'
-        + '<div style="font-size:10px;color:' + (isFull?'#dc2626':'var(--ink4)') + '">' + m.skill + ' · ' + m.load + '/' + m.maxLoad + '</div></div>';
-      btn.style.cssText = 'display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:10px;border:1.5px solid ' + (isFull?'#fecaca':'var(--border)') + ';background:' + (isFull?'#fef2f2':'var(--surface)') + ';cursor:pointer;text-align:left;transition:all .12s;font-family:inherit';
-      btn.onclick = function() {
-        var isBest = m.name === task.best;
-        var isAccept = task.accept.indexOf(m.name) !== -1;
-        if (isBest) score += 10;
-        else if (isAccept) score += 5;
-        if (m.load >= m.maxLoad) overloads++;
-        m.load++;
-        // Feedback
-        optsEl.querySelectorAll('button').forEach(function(b){ b.disabled = true; b.style.opacity = '.4'; });
-        btn.style.opacity = '1';
-        if (isBest) { btn.style.borderColor = '#16a34a'; btn.style.background = '#f0fdf4'; }
-        else if (isAccept) { btn.style.borderColor = '#f59e0b'; btn.style.background = '#fffbeb'; }
-        else { btn.style.borderColor = '#dc2626'; btn.style.background = '#fef2f2'; }
-        taskIdx++;
-        setTimeout(nextTask, 600);
-      };
-      optsEl.appendChild(btn);
-    });
-  }
-  showIntro();
-}
-
 // ── GAME 7: Memoria Operativa (Working Memory) ──────────────
 function gameMemoria(gc, diff) {
   diff = diff || 3;
@@ -4517,636 +4444,6 @@ function gameMemoria(gc, diff) {
 
       setTimeout(nextLevel, 900);
     };
-  }
-  showIntro();
-}
-
-// ── GAME 8: La Expedición (Risk/Effort) ──────────────────────
-function gameExpedicion(gc, diff) {
-  diff = diff || 3;
-  var ZONES = [6, 7, 8, 9, 10][diff-1];
-  var crystals = 20;
-  var zone = 0;
-  var log = []; // analytics per zone
-  var effortSpeed = []; // track click speeds
-
-  // Route configs scaled by difficulty
-  var SAFE_GAIN  = [6, 5, 5, 4, 4][diff-1];
-  var MOD_GAIN   = [14, 13, 12, 11, 10][diff-1];
-  var MOD_LOSS   = [4, 5, 5, 6, 7][diff-1];
-  var MOD_PROB   = [0.75, 0.72, 0.70, 0.65, 0.60][diff-1];
-  var RISK_GAIN  = [28, 26, 25, 23, 22][diff-1];
-  var RISK_LOSS  = [12, 13, 15, 16, 18][diff-1];
-  var RISK_PROB  = [0.50, 0.48, 0.45, 0.42, 0.38][diff-1];
-
-  // Bet zones (relative positions in the game)
-  var betZones = [];
-  if (ZONES >= 8) betZones = [4, 7, ZONES];
-  else if (ZONES >= 6) betZones = [3, ZONES];
-  else betZones = [ZONES];
-
-  // Ranking zones
-  var rankZones = [];
-  if (ZONES >= 8) rankZones = [3, 6];
-  else if (ZONES >= 6) rankZones = [3];
-
-  function showIntro() {
-    gc.innerHTML = '<div style="text-align:center;max-width:420px">'
-      + '<div style="font-size:48px;margin-bottom:12px">🗺</div>'
-      + '<div style="font-size:17px;font-weight:800;margin-bottom:6px;color:var(--ink)">La Expedición</div>'
-      + '<div style="font-size:13px;color:var(--ink3);line-height:1.7;margin-bottom:14px">Eres un explorador recorriendo ' + ZONES + ' zonas. Recolecta la mayor cantidad de <strong style="color:#854d0e">cristales de energía</strong> posible.</div>'
-      + '<div style="background:#1d1d1f;border-radius:12px;padding:16px;margin-bottom:16px;text-align:left">'
-      + '<div style="display:flex;flex-direction:column;gap:8px;font-size:12px;color:#e2e8f0;line-height:1.5">'
-      + '<div>🟢 <strong>Ruta Segura:</strong> +' + SAFE_GAIN + ' cristales garantizados</div>'
-      + '<div>🟡 <strong>Ruta Moderada:</strong> ' + Math.round(MOD_PROB*100) + '% de ganar +' + MOD_GAIN + ', ' + Math.round((1-MOD_PROB)*100) + '% de perder −' + MOD_LOSS + '</div>'
-      + '<div>🔴 <strong>Ruta Arriesgada:</strong> ' + Math.round(RISK_PROB*100) + '% de ganar +' + RISK_GAIN + ', ' + Math.round((1-RISK_PROB)*100) + '% de perder −' + RISK_LOSS + '</div>'
-      + '</div></div>'
-      + '<div style="font-size:11px;color:var(--ink4);line-height:1.6;margin-bottom:16px">Antes de cada ruta deberás completar un <strong>micro-desafío de esfuerzo</strong>. Si no lo completas, irás por la ruta segura.<br>En algunas zonas podrás <strong>apostar</strong> parte de tus cristales.</div>'
-      + '<div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:16px;padding:10px;background:#854d0e15;border-radius:10px;border:1px solid #854d0e30">'
-      + '<span style="font-size:24px">💎</span><span style="font-size:20px;font-weight:900;color:#854d0e">' + crystals + '</span><span style="font-size:12px;color:#854d0e">cristales iniciales</span></div>'
-      + '<button onclick="this.parentElement.parentElement._start()" class="btn btn-accent" style="padding:12px 32px">Iniciar expedición →</button>'
-      + '</div>';
-    gc._start = nextZone;
-  }
-
-  function crystalBar() {
-    return '<div style="display:flex;align-items:center;gap:8px;padding:8px 14px;background:#854d0e10;border-radius:10px;border:1px solid #854d0e25;margin-bottom:14px">'
-      + '<span style="font-size:20px">💎</span><span style="font-size:22px;font-weight:900;color:#854d0e">' + crystals + '</span>'
-      + '<span style="font-size:11px;color:#854d0e80">cristales</span>'
-      + '<span style="flex:1"></span>'
-      + '<span style="font-size:11px;color:var(--ink4)">Zona ' + zone + '/' + ZONES + '</span></div>';
-  }
-
-  function nextZone() {
-    if (zone >= ZONES) { finishExpedition(); return; }
-    zone++;
-
-    // Check if this is a ranking zone (show before route choice)
-    if (rankZones.indexOf(zone) !== -1) {
-      showRanking(function() { showEffortChallenge(); });
-      return;
-    }
-
-    // Check if this is a bet zone
-    if (betZones.indexOf(zone) !== -1 && zone < ZONES) {
-      showBetRound(function() { showEffortChallenge(); });
-      return;
-    }
-
-    // Final zone bet
-    if (zone === ZONES && betZones.indexOf(zone) !== -1) {
-      showBetRound(function() { showEffortChallenge(); });
-      return;
-    }
-
-    showEffortChallenge();
-  }
-
-  function showRanking(callback) {
-    var fakeRank = Math.floor(Math.random() * 25) + 20; // 20-45%
-    gc.innerHTML = '<div style="text-align:center;width:100%;max-width:400px">'
-      + crystalBar()
-      + '<div style="background:linear-gradient(135deg,#1e1b4b,#312e81);border-radius:14px;padding:24px;margin-bottom:16px">'
-      + '<div style="font-size:10px;color:#a5b4fc;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">📊 Ranking de exploradores</div>'
-      + '<div style="font-size:40px;font-weight:900;color:#fff;margin-bottom:4px">Top ' + fakeRank + '%</div>'
-      + '<div style="font-size:12px;color:#a5b4fc">Estás superando al ' + (100-fakeRank) + '% de los participantes</div>'
-      + '</div>'
-      + '<div style="font-size:11px;color:var(--ink4);margin-bottom:14px">¿Mantendrás tu estrategia o arriesgarás más?</div>'
-      + '<button onclick="this.parentElement.parentElement._cb()" class="btn btn-primary" style="padding:10px 28px;font-size:13px">Continuar expedición →</button>'
-      + '</div>';
-    gc._cb = function() {
-      log.push({ zone:zone, event:'ranking_shown', fakeRank:fakeRank, crystals:crystals });
-      callback();
-    };
-  }
-
-  function showBetRound(callback) {
-    gc.innerHTML = '<div style="text-align:center;width:100%;max-width:400px">'
-      + crystalBar()
-      + '<div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:14px;padding:20px;margin-bottom:16px">'
-      + '<div style="font-size:24px;margin-bottom:8px">🎰</div>'
-      + '<div style="font-size:15px;font-weight:800;color:#92400e;margin-bottom:6px">Zona de Apuesta</div>'
-      + '<div style="font-size:12px;color:#a16207;line-height:1.6">Puedes apostar parte de tus cristales. <strong>50% de probabilidad</strong> de duplicar lo apostado o perderlo todo.</div>'
-      + '</div>'
-      + '<div style="font-size:12px;font-weight:600;color:var(--ink3);margin-bottom:10px">¿Cuánto apuestas?</div>'
-      + '<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px" id="exp-bet-opts"></div>'
-      + '</div>';
-
-    var betOpts = document.getElementById('exp-bet-opts');
-    var options = [
-      { label:'🟢 No apostar — continuar seguro', pct:0 },
-      { label:'🟡 Apostar 25% (' + Math.floor(crystals*0.25) + ' cristales)', pct:0.25 },
-      { label:'🟠 Apostar 50% (' + Math.floor(crystals*0.5) + ' cristales)', pct:0.5 },
-      { label:'🔴 Apostar 100% (' + crystals + ' cristales)', pct:1 },
-    ];
-    options.forEach(function(opt) {
-      var btn = document.createElement('button');
-      btn.innerHTML = opt.label;
-      btn.style.cssText = 'padding:12px 16px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);font-size:13px;font-weight:600;cursor:pointer;text-align:left;transition:all .12s;font-family:inherit;width:100%';
-      btn.onclick = function() {
-        betOpts.querySelectorAll('button').forEach(function(b){b.disabled=true;b.style.opacity='.4';});
-        btn.style.opacity='1';
-        var stake = Math.floor(crystals * opt.pct);
-        var won = Math.random() < 0.5;
-        var delta = won ? stake : -stake;
-        var prevCrystals = crystals;
-        crystals = Math.max(0, crystals + delta);
-
-        log.push({ zone:zone, event:'bet', pct:opt.pct, stake:stake, won:won, delta:delta, before:prevCrystals, after:crystals });
-
-        if (stake === 0) {
-          btn.style.borderColor='#16a34a'; btn.style.background='#f0fdf4';
-          setTimeout(callback, 500);
-        } else if (won) {
-          btn.style.borderColor='#16a34a'; btn.style.background='#f0fdf4';
-          btn.innerHTML = '✅ ¡Ganaste! +' + stake + ' cristales → 💎 ' + crystals;
-          setTimeout(callback, 1200);
-        } else {
-          btn.style.borderColor='#dc2626'; btn.style.background='#fef2f2';
-          btn.innerHTML = '❌ Perdiste −' + stake + ' cristales → 💎 ' + crystals;
-          setTimeout(callback, 1200);
-        }
-      };
-      betOpts.appendChild(btn);
-    });
-  }
-
-  function showEffortChallenge() {
-    // Micro-challenge: rapid clicks on a bar
-    var TARGET_CLICKS = [8, 10, 12, 14, 16][diff-1];
-    var TIME_LIMIT = [7000, 6000, 5500, 5000, 4500][diff-1];
-    var clicks = 0;
-    var effortDone = false;
-    var startT = Date.now();
-
-    gc.innerHTML = '<div style="text-align:center;width:100%;max-width:400px">'
-      + crystalBar()
-      + '<div style="font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">⚡ Micro-desafío de esfuerzo</div>'
-      + '<div style="font-size:13px;color:var(--ink3);margin-bottom:14px">Presiona el botón <strong>' + TARGET_CLICKS + ' veces</strong> en ' + (TIME_LIMIT/1000) + 's para desbloquear tu ruta</div>'
-      + '<div style="height:8px;background:#f1f5f9;border-radius:100px;overflow:hidden;margin-bottom:10px"><div id="exp-effort-bar" style="height:100%;background:var(--accent);border-radius:100px;width:0%;transition:width .1s"></div></div>'
-      + '<div style="font-size:11px;color:var(--ink4);margin-bottom:14px" id="exp-effort-count">0 / ' + TARGET_CLICKS + '</div>'
-      + '<button id="exp-effort-btn" style="width:100%;padding:20px;border-radius:14px;border:2.5px solid var(--accent);background:var(--accent-l);font-size:16px;font-weight:800;color:var(--accent);cursor:pointer;transition:transform .05s;font-family:inherit;user-select:none">⚡ TAP</button>'
-      + '<div style="height:4px;background:#f1f5f9;border-radius:100px;overflow:hidden;margin-top:12px"><div id="exp-time-bar" style="height:100%;background:#f59e0b;border-radius:100px;width:100%;transition:width ' + (TIME_LIMIT/1000) + 's linear"></div></div>'
-      + '</div>';
-
-    requestAnimationFrame(function() {
-      var tb = document.getElementById('exp-time-bar');
-      if (tb) tb.style.width = '0%';
-    });
-
-    var effortBtn = document.getElementById('exp-effort-btn');
-    effortBtn.onmousedown = function() { effortBtn.style.transform='scale(.95)'; };
-    effortBtn.onmouseup = function() { effortBtn.style.transform=''; };
-    effortBtn.onclick = function() {
-      if (effortDone) return;
-      clicks++;
-      var pct = Math.min(100, (clicks/TARGET_CLICKS)*100);
-      var bar = document.getElementById('exp-effort-bar');
-      if (bar) bar.style.width = pct + '%';
-      var cnt = document.getElementById('exp-effort-count');
-      if (cnt) cnt.textContent = clicks + ' / ' + TARGET_CLICKS;
-      if (clicks >= TARGET_CLICKS) {
-        effortDone = true;
-        var elapsed = Date.now() - startT;
-        effortSpeed.push(elapsed);
-        effortBtn.textContent = '✅ ¡Desbloqueado!';
-        effortBtn.style.borderColor = '#16a34a'; effortBtn.style.background = '#f0fdf4'; effortBtn.style.color = '#16a34a';
-        log.push({ zone:zone, event:'effort', completed:true, clicks:clicks, time:elapsed });
-        setTimeout(showRouteChoice, 600);
-      }
-    };
-
-    // Timeout
-    setTimeout(function() {
-      if (effortDone) return;
-      effortDone = true;
-      effortSpeed.push(TIME_LIMIT);
-      effortBtn.textContent = '⏱ Tiempo agotado — ruta segura';
-      effortBtn.style.borderColor = '#f59e0b'; effortBtn.style.background = '#fffbeb'; effortBtn.style.color = '#b45309';
-      effortBtn.disabled = true;
-      log.push({ zone:zone, event:'effort', completed:false, clicks:clicks, time:TIME_LIMIT });
-      // Force safe route
-      setTimeout(function() {
-        var prev = crystals;
-        crystals += SAFE_GAIN;
-        log.push({ zone:zone, event:'route', choice:'safe_forced', delta:SAFE_GAIN, before:prev, after:crystals });
-        showRouteResult('safe_forced', SAFE_GAIN, true);
-      }, 600);
-    }, TIME_LIMIT);
-  }
-
-  function showRouteChoice() {
-    gc.innerHTML = '<div style="width:100%;max-width:420px">'
-      + crystalBar()
-      + '<div style="font-size:12px;font-weight:600;color:var(--ink3);margin-bottom:12px">Elige tu ruta para esta zona:</div>'
-      + '<div style="display:flex;flex-direction:column;gap:8px" id="exp-routes"></div></div>';
-
-    var routesEl = document.getElementById('exp-routes');
-    var routes = [
-      { id:'safe',  emoji:'🟢', label:'Ruta Segura',     desc:'+' + SAFE_GAIN + ' garantizados',  color:'#16a34a', border:'#bbf7d0', bg:'#f0fdf4' },
-      { id:'mod',   emoji:'🟡', label:'Ruta Moderada',    desc:Math.round(MOD_PROB*100) + '% de +' + MOD_GAIN + ' / ' + Math.round((1-MOD_PROB)*100) + '% de −' + MOD_LOSS, color:'#b45309', border:'#fde68a', bg:'#fffbeb' },
-      { id:'risk',  emoji:'🔴', label:'Ruta Arriesgada',  desc:Math.round(RISK_PROB*100) + '% de +' + RISK_GAIN + ' / ' + Math.round((1-RISK_PROB)*100) + '% de −' + RISK_LOSS, color:'#dc2626', border:'#fecaca', bg:'#fef2f2' },
-    ];
-
-    routes.forEach(function(r) {
-      var btn = document.createElement('button');
-      btn.innerHTML = '<div style="display:flex;align-items:center;gap:12px">'
-        + '<span style="font-size:22px">' + r.emoji + '</span>'
-        + '<div style="text-align:left;flex:1"><div style="font-size:13px;font-weight:700;color:' + r.color + '">' + r.label + '</div>'
-        + '<div style="font-size:11px;color:var(--ink3)">' + r.desc + '</div></div>'
-        + '<span style="font-size:14px;color:var(--ink4)">→</span></div>';
-      btn.style.cssText = 'padding:14px 16px;border-radius:12px;border:1.5px solid ' + r.border + ';background:' + r.bg + ';cursor:pointer;transition:all .12s;font-family:inherit;width:100%';
-      btn.onclick = function() {
-        routesEl.querySelectorAll('button').forEach(function(b){b.disabled=true;b.style.opacity='.3';});
-        btn.style.opacity='1';
-        resolveRoute(r.id);
-      };
-      routesEl.appendChild(btn);
-    });
-  }
-
-  function resolveRoute(choice) {
-    var prev = crystals;
-    var delta = 0;
-    var won = true;
-
-    if (choice === 'safe') {
-      delta = SAFE_GAIN; won = true;
-    } else if (choice === 'mod') {
-      won = Math.random() < MOD_PROB;
-      delta = won ? MOD_GAIN : -MOD_LOSS;
-    } else {
-      won = Math.random() < RISK_PROB;
-      delta = won ? RISK_GAIN : -RISK_LOSS;
-    }
-
-    crystals = Math.max(0, crystals + delta);
-    log.push({ zone:zone, event:'route', choice:choice, won:won, delta:delta, before:prev, after:crystals });
-
-    setTimeout(function() { showRouteResult(choice, delta, won); }, 400);
-  }
-
-  function showRouteResult(choice, delta, won) {
-    var col = delta >= 0 ? '#16a34a' : '#dc2626';
-    var icon = delta >= 0 ? '✅' : '💥';
-    gc.innerHTML = '<div style="text-align:center;width:100%;max-width:400px">'
-      + crystalBar()
-      + '<div style="background:' + (delta>=0?'#f0fdf4':'#fef2f2') + ';border:1.5px solid ' + (delta>=0?'#bbf7d0':'#fecaca') + ';border-radius:14px;padding:20px;margin-bottom:14px">'
-      + '<div style="font-size:32px;margin-bottom:6px">' + icon + '</div>'
-      + '<div style="font-size:24px;font-weight:900;color:' + col + '">' + (delta>=0?'+':'') + delta + ' 💎</div>'
-      + '<div style="font-size:12px;color:var(--ink3);margin-top:4px">Total: <strong>' + crystals + '</strong> cristales</div>'
-      + '</div>'
-      + '<button onclick="this.parentElement.parentElement._next()" class="btn btn-primary" style="padding:10px 28px;font-size:13px">'
-      + (zone >= ZONES ? 'Ver resultado final →' : 'Siguiente zona →') + '</button>'
-      + '</div>';
-    gc._next = nextZone;
-  }
-
-  function finishExpedition() {
-    // Calculate profile scores
-    var routeChoices = log.filter(function(l){return l.event==='route';});
-    var bets = log.filter(function(l){return l.event==='bet';});
-    var efforts = log.filter(function(l){return l.event==='effort';});
-
-    var totalRoutes = routeChoices.length;
-    var safeCount = routeChoices.filter(function(l){return l.choice==='safe'||l.choice==='safe_forced';}).length;
-    var modCount = routeChoices.filter(function(l){return l.choice==='mod';}).length;
-    var riskCount = routeChoices.filter(function(l){return l.choice==='risk';}).length;
-
-    var riskPct = totalRoutes ? Math.round((riskCount + modCount * 0.5) / totalRoutes * 100) : 50;
-    var effortPct = efforts.length ? Math.round(efforts.filter(function(e){return e.completed;}).length / efforts.length * 100) : 50;
-
-    // Post-loss behavior
-    var postLossRisk = 0, postLossCount = 0;
-    for (var i = 1; i < routeChoices.length; i++) {
-      if (routeChoices[i-1].delta < 0) {
-        postLossCount++;
-        if (routeChoices[i].choice === 'risk') postLossRisk += 2;
-        else if (routeChoices[i].choice === 'mod') postLossRisk += 1;
-      }
-    }
-    var resilienceScore = postLossCount > 0 ? Math.round(50 + (1 - postLossRisk / (postLossCount * 2)) * 50) : 75;
-
-    // Bet behavior
-    var avgBet = bets.length ? bets.reduce(function(a,b){return a+b.pct;},0) / bets.length : 0;
-    var betScore = Math.round(100 - Math.abs(avgBet - 0.25) * 200); // 0.25 is "optimal moderate"
-
-    // Consistency (low variance = high consistency)
-    var choices = routeChoices.map(function(r){return r.choice==='safe'?0:r.choice==='mod'?1:2;});
-    var avgChoice = choices.reduce(function(a,b){return a+b;},0) / Math.max(1, choices.length);
-    var variance = choices.reduce(function(a,b){return a+Math.pow(b-avgChoice,2);},0) / Math.max(1, choices.length);
-    var consistencyScore = Math.round(Math.max(0, 100 - variance * 40));
-
-    // Composite: balanced = optimal
-    var pct = Math.round(
-      effortPct * 0.25 +
-      Math.max(0, 100 - Math.abs(riskPct - 45) * 2) * 0.25 + // ~45% risk is "calibrated"
-      resilienceScore * 0.25 +
-      consistencyScore * 0.25
-    );
-
-    // Determine profile
-    var profile = '';
-    var profileIcon = '';
-    if (safeCount >= totalRoutes * 0.7) { profile = 'Conservador Consistente'; profileIcon = '🛡'; }
-    else if (riskCount >= totalRoutes * 0.6) { profile = 'Buscador de Riesgo'; profileIcon = '🔥'; }
-    else if (variance > 0.8) { profile = 'Reactivo Emocional'; profileIcon = '🌊'; }
-    else if (effortPct >= 80 && resilienceScore >= 60) { profile = 'Persistente bajo Presión'; profileIcon = '💪'; }
-    else { profile = 'Calculador Estratégico'; profileIcon = '🧠'; }
-
-    gc.innerHTML = '<div style="text-align:center;width:100%;max-width:420px;animation:sup .3s ease">'
-      + '<div style="font-size:40px;margin-bottom:8px">🗺</div>'
-      + '<div style="font-size:18px;font-weight:800;color:var(--ink);margin-bottom:14px">Expedición finalizada</div>'
-      + '<div style="display:flex;gap:12px;margin-bottom:18px">'
-      + '<div style="flex:1;background:#854d0e10;border-radius:12px;padding:14px;border:1px solid #854d0e25"><div style="font-size:28px;font-weight:900;color:#854d0e">💎 ' + crystals + '</div><div style="font-size:10px;color:#854d0e80;margin-top:2px">Cristales finales</div></div>'
-      + '<div style="flex:1;background:var(--accent-l);border-radius:12px;padding:14px;border:1px solid var(--accent-m)"><div style="font-size:28px;font-weight:900;color:var(--accent)">' + profileIcon + '</div><div style="font-size:10px;color:var(--accent);margin-top:2px">' + profile + '</div></div>'
-      + '</div>'
-      + '<div style="background:var(--surface2);border-radius:12px;padding:14px;margin-bottom:18px;text-align:left">'
-      + '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink4);margin-bottom:8px">Desglose</div>'
-      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px">'
-      + '<div>🟢 Rutas seguras: <strong>' + safeCount + '</strong></div>'
-      + '<div>🟡 Rutas moderadas: <strong>' + modCount + '</strong></div>'
-      + '<div>🔴 Rutas arriesgadas: <strong>' + riskCount + '</strong></div>'
-      + '<div>⚡ Esfuerzo completado: <strong>' + effortPct + '%</strong></div>'
-      + '<div>🎰 Apuesta promedio: <strong>' + Math.round(avgBet*100) + '%</strong></div>'
-      + '<div>🧠 Consistencia: <strong>' + consistencyScore + '%</strong></div>'
-      + '</div></div>'
-      + '</div>';
-
-    gameComplete('game_expedicion', pct);
-  }
-  showIntro();
-}
-
-// ── GAME 9: Radar Social (Emotional Intelligence) ─────────────
-function gameRadar(gc, diff) {
-  diff = diff || 3;
-  var ROUNDS_MAX = [6,7,8,9,10][diff-1];
-  var EMOTION_TIME = [12000,10000,8000,7000,6000][diff-1];
-  var trust = 50, efficiency = 50;
-  var round = 0, emotionHits = 0, log = [];
-  var responseStyles = { empathic:0, directive:0, balanced:0 };
-  var perCharResponses = {};
-
-  // SVG Avatar generator
-  function svgFace(skin, hair, eyeShape, emotion) {
-    var W=80, H=80, cx=40, cy=40;
-    var SKINS = {warm:'#e8b88a',cool:'#f0c8a0',dark:'#c68c5c',light:'#fad5b5'};
-    var HAIRS = {dark:'#2d1b0e',brown:'#5c3317',red:'#8b3a1a',black:'#1a1a1a'};
-    var sc = SKINS[skin]||SKINS.warm, hc = HAIRS[hair]||HAIRS.dark;
-    // Emotion params
-    var EM = {
-      neutral:  {brow:0, mouthW:12,mouthCurve:0, eyeH:5,pupilY:0},
-      happy:    {brow:-1,mouthW:14,mouthCurve:-4,eyeH:4,pupilY:0},
-      frustrated:{brow:3,mouthW:10,mouthCurve:3, eyeH:5,pupilY:1},
-      anxious:  {brow:2, mouthW:8, mouthCurve:1, eyeH:6,pupilY:-1},
-      angry:    {brow:4, mouthW:12,mouthCurve:4, eyeH:4,pupilY:1},
-      sad:      {brow:2, mouthW:10,mouthCurve:4, eyeH:5,pupilY:2},
-      sarcastic:{brow:-1,mouthW:14,mouthCurve:-2,eyeH:3,pupilY:-1},
-      overwhelmed:{brow:3,mouthW:6,mouthCurve:0,eyeH:7,pupilY:0},
-    };
-    var e = EM[emotion]||EM.neutral;
-    var eyeR = eyeShape==='round'?5:4;
-    var svg = '<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" style="width:64px;height:64px">'
-      // Head
-      +'<circle cx="'+cx+'" cy="'+cy+'" r="30" fill="'+sc+'" stroke="#00000015" stroke-width="1"/>'
-      // Hair
-      +'<ellipse cx="'+cx+'" cy="'+(cy-18)+'" rx="28" ry="16" fill="'+hc+'"/>'
-      // Left eye
-      +'<ellipse cx="'+(cx-10)+'" cy="'+(cy-2)+'" rx="'+eyeR+'" ry="'+e.eyeH+'" fill="white" stroke="#00000020" stroke-width=".5"/>'
-      +'<circle cx="'+(cx-10)+'" cy="'+(cy-2+e.pupilY)+'" r="2.5" fill="#1a1a1a"/>'
-      // Right eye
-      +'<ellipse cx="'+(cx+10)+'" cy="'+(cy-2)+'" rx="'+eyeR+'" ry="'+e.eyeH+'" fill="white" stroke="#00000020" stroke-width=".5"/>'
-      +'<circle cx="'+(cx+10)+'" cy="'+(cy-2+e.pupilY)+'" r="2.5" fill="#1a1a1a"/>'
-      // Left brow
-      +'<line x1="'+(cx-15)+'" y1="'+(cy-10-e.brow)+'" x2="'+(cx-5)+'" y2="'+(cy-10+e.brow*0.3)+'" stroke="#1a1a1a" stroke-width="1.5" stroke-linecap="round"/>'
-      // Right brow
-      +'<line x1="'+(cx+5)+'" y1="'+(cy-10+e.brow*0.3)+'" x2="'+(cx+15)+'" y2="'+(cy-10-e.brow)+'" stroke="#1a1a1a" stroke-width="1.5" stroke-linecap="round"/>'
-      // Mouth
-      +'<path d="M'+(cx-e.mouthW/2)+','+(cy+12)+' Q'+cx+','+(cy+12+e.mouthCurve)+' '+(cx+e.mouthW/2)+','+(cy+12)+'" stroke="#1a1a1a" stroke-width="1.5" fill="none" stroke-linecap="round"/>'
-      +'</svg>';
-    return svg;
-  }
-
-  var CHARS = {
-    sofia:  { name:'Sofía',  role:'Analista',      skin:'cool', hair:'brown',eyeShape:'round', status:'🟢', style:'indirecta' },
-    martin: { name:'Martín', role:'Operaciones',    skin:'dark', hair:'black',eyeShape:'narrow',status:'🔴', style:'directo' },
-    camila: { name:'Camila', role:'Desarrolladora', skin:'light',hair:'red',  eyeShape:'round', status:'🟡', style:'evitativa' },
-    diego:  { name:'Diego',  role:'Comunicaciones', skin:'warm', hair:'dark', eyeShape:'narrow',status:'🟢', style:'ambiguo' },
-  };
-
-  var SCENARIOS = [
-    { char:'sofia',  msg:'El informe está "interesante"... supongo que así lo quieren 🙂', realEmotion:'frustrated', fakeOptions:['Conforme','Entusiasmada','Frustrada','Indiferente'], correctIdx:2,
-      responses:[
-        {type:'empathic', text:'Noto algo en tu mensaje. ¿Hay algo del informe que te preocupa?', dT:8,dE:-2},
-        {type:'directive',text:'Si hay errores, necesito que me los señales directamente.', dT:-4,dE:7},
-        {type:'balanced', text:'Gracias Sofía. Si tienes sugerencias, estoy abierto a revisarlo.', dT:3,dE:3}]},
-    { char:'martin', msg:'OTRA VEZ cambiaron los plazos sin avisar!!! Esto no puede seguir así.', realEmotion:'angry', fakeOptions:['Estresado','Enojado','Decepcionado','Preocupado'], correctIdx:1,
-      responses:[
-        {type:'empathic', text:'Entiendo tu frustración, Martín. Tienes razón en que debimos avisarte.', dT:9,dE:-3},
-        {type:'directive',text:'Necesito que te enfoques en lo que podemos controlar. ¿Cuál es el nuevo plan?', dT:-5,dE:8},
-        {type:'balanced', text:'Tienes razón, no debió pasar. Veamos juntos cómo reorganizar los tiempos.', dT:4,dE:4}]},
-    { char:'camila', msg:'No te preocupes, yo lo resuelvo 👍 Todo bien', realEmotion:'overwhelmed', fakeOptions:['Confiada','Motivada','Agobiada','Tranquila'], correctIdx:2,
-      responses:[
-        {type:'empathic', text:'Camila, no quiero que cargues con todo. ¿Cómo puedo ayudarte?', dT:9,dE:-2},
-        {type:'directive',text:'Necesito que me digas la verdad sobre tu carga real. ¿Llegas con los plazos?', dT:-3,dE:8},
-        {type:'balanced', text:'Gracias Camila. Revisa tu carga y si necesitas apoyo, avísame sin problema.', dT:4,dE:3}]},
-    { char:'diego',  msg:'Sí, claro, como tú digas jefe. Yo siempre estoy disponible para lo que necesites.', realEmotion:'sarcastic', fakeOptions:['Comprometido','Sarcástico','Servicial','Neutral'], correctIdx:1,
-      responses:[
-        {type:'empathic', text:'Diego, valoro tu disposición. ¿Hay algo que te esté molestando del proyecto?', dT:7,dE:-1},
-        {type:'directive',text:'Necesito compromiso real, no cortesía. ¿Puedo contar contigo para el entregable?', dT:-5,dE:7},
-        {type:'balanced', text:'Gracias Diego. Dime con honestidad si la carga es manejable para ti.', dT:3,dE:4}]},
-    { char:'sofia',  msg:'Ya envié mi parte. No revisé la de los demás porque supuse que cada uno sabe lo suyo.', realEmotion:'frustrated', fakeOptions:['Independiente','Frustrada','Eficiente','Desinteresada'], correctIdx:1,
-      responses:[
-        {type:'empathic', text:'Entiendo que confías en el equipo. ¿Sientes que no te están respondiendo igual?', dT:8,dE:-2},
-        {type:'directive',text:'Necesito que revises la integración completa, no solo tu parte. Es parte del rol.', dT:-4,dE:8},
-        {type:'balanced', text:'Bien por tu parte. Para el próximo entregable, coordinemos una revisión cruzada.', dT:3,dE:4}]},
-    { char:'martin', msg:'Ya, da igual, hago lo que digan. Total nadie pregunta antes de decidir.', realEmotion:'sad', fakeOptions:['Resignado','Enojado','Triste','Indiferente'], correctIdx:2,
-      responses:[
-        {type:'empathic', text:'Martín, tu opinión importa. Lamento que sientas que no se te consultó.', dT:9,dE:-3},
-        {type:'directive',text:'Necesito que participes activamente. Si no estás de acuerdo, dilo a tiempo.', dT:-4,dE:7},
-        {type:'balanced', text:'Entiendo. A partir de ahora quiero incluirte en las decisiones que te afectan.', dT:5,dE:3}]},
-    { char:'camila', msg:'Perdón por la demora... es que quería asegurarme de que todo estuviera perfecto antes de mandarlo', realEmotion:'anxious', fakeOptions:['Perfeccionista','Ansiosa','Responsable','Insegura'], correctIdx:1,
-      responses:[
-        {type:'empathic', text:'No te preocupes por la demora. Tu trabajo siempre es cuidadoso y se nota.', dT:8,dE:-4},
-        {type:'directive',text:'Prefiero que envíes a tiempo con un 80% y luego ajustamos, que tarde con 100%.', dT:-3,dE:9},
-        {type:'balanced', text:'Valoro tu dedicación. Para los próximos envíos, avísame si necesitas más tiempo.', dT:4,dE:3}]},
-    { char:'diego',  msg:'Yo creo que deberíamos hacer lo que más le guste al cliente, ¿no? Al final ellos mandan.', realEmotion:'neutral', fakeOptions:['Complaciente','Estratégico','Neutral','Evitativo'], correctIdx:2,
-      responses:[
-        {type:'empathic', text:'Buen punto, Diego. ¿Tú qué opinas personalmente sobre la propuesta?', dT:7,dE:0},
-        {type:'directive',text:'El cliente es importante, pero nosotros definimos la estrategia técnica. ¿Cuál es tu recomendación real?', dT:-2,dE:8},
-        {type:'balanced', text:'Sí, hay que considerar al cliente, pero también nuestro criterio. Propón algo.', dT:3,dE:4}]},
-    { char:'sofia',  msg:'Hice el análisis que pediste. Adjunto. Si necesitas que lo cambie, avísame nomás.', realEmotion:'happy', fakeOptions:['Orgullosa','Indiferente','Satisfecha','Obligada'], correctIdx:2,
-      responses:[
-        {type:'empathic', text:'¡Excelente trabajo, Sofía! Se nota el esfuerzo. Gracias.', dT:8,dE:0},
-        {type:'directive',text:'Recibido. Lo reviso y te confirmo si hay ajustes pendientes.', dT:-2,dE:5},
-        {type:'balanced', text:'Gracias Sofía, lo reviso con calma. Buen trabajo.', dT:4,dE:3}]},
-    { char:'martin', msg:'Oye, necesito hablar contigo sobre algo del proyecto. ¿Tienes 5 minutos?', realEmotion:'anxious', fakeOptions:['Enojado','Ansioso','Normal','Urgido'], correctIdx:1,
-      responses:[
-        {type:'empathic', text:'Claro Martín, dime. Estoy disponible ahora mismo para ti.', dT:8,dE:-1},
-        {type:'directive',text:'Tengo 5 minutos entre reuniones. ¿Es urgente o puede esperar a las 3?', dT:-3,dE:7},
-        {type:'balanced', text:'Por supuesto. ¿Prefieres por chat o una llamada rápida?', dT:4,dE:3}]},
-  ];
-
-  function showIntro() {
-    var charPreviews = Object.values(CHARS).map(function(c) {
-      return '<div style="display:flex;align-items:center;gap:8px">'
-        + svgFace(c.skin,c.hair,c.eyeShape,'neutral')
-        + '<div><div style="font-size:12px;font-weight:700">' + c.name + '</div><div style="font-size:10px;color:var(--ink4)">' + c.role + ' · ' + c.style + '</div></div></div>';
-    }).join('');
-
-    gc.innerHTML = '<div style="text-align:center;max-width:440px">'
-      + '<div style="font-size:40px;margin-bottom:10px">🎭</div>'
-      + '<div style="font-size:17px;font-weight:800;margin-bottom:6px">Radar Social</div>'
-      + '<div style="font-size:13px;color:var(--ink3);line-height:1.7;margin-bottom:14px">Eres líder de equipo. Lee los mensajes de tus compañeros, identifica cómo se sienten realmente, y elige la mejor respuesta.</div>'
-      + '<div style="background:#1d1d1f;border-radius:12px;padding:14px;margin-bottom:14px;text-align:left">'
-      + '<div style="font-size:10px;color:#666;text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">Tu equipo</div>'
-      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' + charPreviews + '</div></div>'
-      + '<div style="display:flex;gap:8px;margin-bottom:16px">'
-      + '<div style="flex:1;background:#eff6ff;border-radius:8px;padding:8px;text-align:center;border:1px solid #bfdbfe"><div style="font-size:16px">🤝</div><div style="font-size:10px;font-weight:700;color:#2563eb">Confianza: 50</div></div>'
-      + '<div style="flex:1;background:#fffbeb;border-radius:8px;padding:8px;text-align:center;border:1px solid #fde68a"><div style="font-size:16px">⚡</div><div style="font-size:10px;font-weight:700;color:#b45309">Eficiencia: 50</div></div></div>'
-      + '<button onclick="this.parentElement.parentElement._start()" class="btn btn-accent" style="padding:12px 32px">Comenzar →</button></div>';
-    gc._start = nextRound;
-  }
-
-  function statBars() {
-    var tCol = trust >= 40 ? '#2563eb' : trust >= 25 ? '#b45309' : '#dc2626';
-    var eCol = efficiency >= 40 ? '#b45309' : efficiency >= 25 ? '#b45309' : '#dc2626';
-    return '<div style="display:flex;gap:8px;margin-bottom:14px">'
-      + '<div style="flex:1"><div style="display:flex;justify-content:space-between;font-size:10px;font-weight:700;margin-bottom:3px"><span style="color:#2563eb">🤝 Confianza</span><span style="color:' + tCol + '">' + trust + '</span></div><div style="height:5px;background:#e2e8f0;border-radius:100px;overflow:hidden"><div style="height:100%;width:' + trust + '%;background:' + tCol + ';border-radius:100px;transition:width .4s"></div></div></div>'
-      + '<div style="flex:1"><div style="display:flex;justify-content:space-between;font-size:10px;font-weight:700;margin-bottom:3px"><span style="color:#b45309">⚡ Eficiencia</span><span style="color:' + eCol + '">' + efficiency + '</span></div><div style="height:5px;background:#e2e8f0;border-radius:100px;overflow:hidden"><div style="height:100%;width:' + efficiency + '%;background:' + eCol + ';border-radius:100px;transition:width .4s"></div></div></div></div>';
-  }
-
-  function nextRound() {
-    if (round >= ROUNDS_MAX || trust < 15 || efficiency < 15) { finishRadar(); return; }
-    var sc = SCENARIOS[round % SCENARIOS.length];
-    var ch = CHARS[sc.char];
-    round++;
-    if (!perCharResponses[sc.char]) perCharResponses[sc.char] = [];
-
-    // Phase A: Identify emotion
-    var answered = false;
-    gc.innerHTML = '<div style="width:100%;max-width:440px">'
-      + '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink4);margin-bottom:8px"><span>Ronda ' + round + '/' + ROUNDS_MAX + '</span><span>Aciertos: ' + emotionHits + '</span></div>'
-      + statBars()
-      + '<div style="background:var(--surface2);border-radius:14px;padding:16px;margin-bottom:14px;border:1px solid var(--border)">'
-      + '<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">'
-      + '<div style="position:relative">' + svgFace(ch.skin,ch.hair,ch.eyeShape,sc.realEmotion) + '<span style="position:absolute;bottom:-2px;right:-2px;font-size:10px">' + ch.status + '</span></div>'
-      + '<div><div style="font-size:13px;font-weight:700;color:var(--ink)">' + ch.name + '</div><div style="font-size:10px;color:var(--ink4)">' + ch.role + '</div></div></div>'
-      + '<div style="background:#fff;border-radius:10px;padding:12px 14px;font-size:13px;color:var(--ink);line-height:1.6;border:1px solid var(--border);position:relative">'
-      + '<div style="position:absolute;top:-6px;left:16px;width:12px;height:12px;background:#fff;border-left:1px solid var(--border);border-top:1px solid var(--border);transform:rotate(45deg)"></div>'
-      + sc.msg + '</div></div>'
-      + '<div style="font-size:12px;font-weight:700;color:var(--ink3);margin-bottom:8px">¿Qué emoción real detectas?</div>'
-      + '<div style="height:4px;background:#f1f5f9;border-radius:100px;overflow:hidden;margin-bottom:10px"><div id="radar-timer" style="height:100%;background:var(--accent);border-radius:100px;width:100%;transition:width ' + (EMOTION_TIME/1000) + 's linear"></div></div>'
-      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px" id="radar-emo-opts"></div></div>';
-
-    requestAnimationFrame(function() { var b=document.getElementById('radar-timer'); if(b) b.style.width='0%'; });
-
-    var optsEl = document.getElementById('radar-emo-opts');
-    sc.fakeOptions.forEach(function(opt, i) {
-      var btn = document.createElement('button');
-      btn.textContent = opt;
-      btn.style.cssText = 'padding:10px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface);font-size:12px;font-weight:600;cursor:pointer;transition:all .12s;font-family:inherit';
-      btn.onclick = function() {
-        if (answered) return;
-        answered = true;
-        clearTimeout(emoTimer);
-        var correct = i === sc.correctIdx;
-        if (correct) { emotionHits++; trust = Math.min(100, trust + 5); btn.style.background='#f0fdf4'; btn.style.borderColor='#16a34a'; btn.style.color='#16a34a'; }
-        else { trust = Math.max(0, trust - 3); btn.style.background='#fef2f2'; btn.style.borderColor='#dc2626'; btn.style.color='#dc2626';
-          optsEl.querySelectorAll('button')[sc.correctIdx].style.background='#f0fdf4'; optsEl.querySelectorAll('button')[sc.correctIdx].style.borderColor='#16a34a'; }
-        optsEl.querySelectorAll('button').forEach(function(b){b.disabled=true;});
-        log.push({round:round, char:sc.char, emotionCorrect:correct, realEmotion:sc.realEmotion});
-        setTimeout(function(){ showResponsePhase(sc, ch); }, 700);
-      };
-      optsEl.appendChild(btn);
-    });
-
-    var emoTimer = setTimeout(function() {
-      if (answered) return;
-      answered = true;
-      trust = Math.max(0, trust - 3);
-      log.push({round:round, char:sc.char, emotionCorrect:false, realEmotion:sc.realEmotion, timeout:true});
-      optsEl.querySelectorAll('button').forEach(function(b){b.disabled=true;});
-      optsEl.querySelectorAll('button')[sc.correctIdx].style.background='#fef9c3'; optsEl.querySelectorAll('button')[sc.correctIdx].style.borderColor='#f59e0b';
-      setTimeout(function(){ showResponsePhase(sc, ch); }, 700);
-    }, EMOTION_TIME);
-  }
-
-  function showResponsePhase(sc, ch) {
-    gc.innerHTML = '<div style="width:100%;max-width:440px">'
-      + '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink4);margin-bottom:8px"><span>Ronda ' + round + '/' + ROUNDS_MAX + '</span><span>Responde</span></div>'
-      + statBars()
-      + '<div style="background:var(--surface2);border-radius:12px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px;border:1px solid var(--border)">'
-      + svgFace(ch.skin,ch.hair,ch.eyeShape,sc.realEmotion)
-      + '<div style="flex:1;font-size:12px;color:var(--ink);line-height:1.5"><strong>' + ch.name + ':</strong> ' + sc.msg + '</div></div>'
-      + '<div style="font-size:12px;font-weight:700;color:var(--ink3);margin-bottom:8px">¿Cómo respondes?</div>'
-      + '<div style="display:flex;flex-direction:column;gap:6px" id="radar-resp-opts"></div></div>';
-
-    var respEl = document.getElementById('radar-resp-opts');
-    var STYLE_ICONS = {empathic:'🤝',directive:'⚡',balanced:'⚖️'};
-    var STYLE_COLORS = {empathic:'#2563eb',directive:'#b45309',balanced:'#6b7280'};
-    sc.responses.forEach(function(r) {
-      var btn = document.createElement('button');
-      btn.innerHTML = '<div style="display:flex;align-items:flex-start;gap:10px"><span style="font-size:16px;flex-shrink:0">' + STYLE_ICONS[r.type] + '</span><span style="text-align:left;font-size:12px;line-height:1.5;color:var(--ink)">' + r.text + '</span></div>';
-      btn.style.cssText = 'padding:12px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .12s;font-family:inherit;width:100%';
-      btn.onclick = function() {
-        respEl.querySelectorAll('button').forEach(function(b){b.disabled=true;b.style.opacity='.3';});
-        btn.style.opacity='1';
-        btn.style.borderColor = STYLE_COLORS[r.type]; btn.style.background = STYLE_COLORS[r.type]+'10';
-        responseStyles[r.type]++;
-        perCharResponses[sc.char].push(r.type);
-        trust = Math.max(0, Math.min(100, trust + r.dT));
-        efficiency = Math.max(0, Math.min(100, efficiency + r.dE));
-        log.push({round:round, char:sc.char, response:r.type, dT:r.dT, dE:r.dE, trust:trust, efficiency:efficiency});
-        setTimeout(nextRound, 600);
-      };
-      respEl.appendChild(btn);
-    });
-  }
-
-  function finishRadar() {
-    var emoPct = round > 0 ? Math.round(emotionHits / round * 100) : 0;
-    var balancePct = Math.round(Math.min(trust, efficiency) / Math.max(1, Math.max(trust, efficiency)) * 100);
-    // Adaptability: did they vary responses per character?
-    var adaptScore = 0, charCount = 0;
-    Object.values(perCharResponses).forEach(function(arr) {
-      if (arr.length >= 2) { charCount++; var uniq = arr.filter(function(v,i,a){return a.indexOf(v)===i;}); if (uniq.length >= 2) adaptScore++; }
-    });
-    var adaptPct = charCount > 0 ? Math.round(adaptScore / charCount * 100) : 50;
-
-    var pct = Math.round(emoPct * 0.35 + balancePct * 0.30 + adaptPct * 0.20 + Math.min(100, trust + efficiency) * 0.15 / 2);
-
-    // Profile
-    var profile = '', profIcon = '';
-    var totalR = responseStyles.empathic + responseStyles.directive + responseStyles.balanced;
-    if (totalR > 0) {
-      var empR = responseStyles.empathic / totalR, dirR = responseStyles.directive / totalR;
-      if (empR >= 0.6) { profile='Empático Relacional'; profIcon='🤝'; }
-      else if (dirR >= 0.6) { profile='Orientado a Resultados'; profIcon='⚡'; }
-      else if (adaptPct >= 60 && emoPct >= 50) { profile='Líder Adaptativo'; profIcon='🧠'; }
-      else if (emoPct < 30) { profile='Baja Lectura Emocional'; profIcon='⚠️'; }
-      else { profile='Equilibrado'; profIcon='⚖️'; }
-    } else { profile='Sin datos'; profIcon='—'; }
-
-    gc.innerHTML = '<div style="text-align:center;width:100%;max-width:440px;animation:sup .3s ease">'
-      + '<div style="font-size:36px;margin-bottom:8px">🎭</div>'
-      + '<div style="font-size:17px;font-weight:800;margin-bottom:14px">Radar Social completado</div>'
-      + '<div style="display:flex;gap:10px;margin-bottom:16px">'
-      + '<div style="flex:1;background:#eff6ff;border-radius:10px;padding:12px;border:1px solid #bfdbfe"><div style="font-size:22px;font-weight:900;color:#2563eb">🤝 ' + trust + '</div><div style="font-size:10px;color:#2563eb">Confianza</div></div>'
-      + '<div style="flex:1;background:#fffbeb;border-radius:10px;padding:12px;border:1px solid #fde68a"><div style="font-size:22px;font-weight:900;color:#b45309">⚡ ' + efficiency + '</div><div style="font-size:10px;color:#b45309">Eficiencia</div></div>'
-      + '<div style="flex:1;background:#faf5ff;border-radius:10px;padding:12px;border:1px solid #e9d5ff"><div style="font-size:22px;font-weight:900;color:#7c3aed">' + profIcon + '</div><div style="font-size:10px;color:#7c3aed">' + profile + '</div></div></div>'
-      + '<div style="background:var(--surface2);border-radius:10px;padding:12px;margin-bottom:14px;text-align:left">'
-      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px">'
-      + '<div>🎯 Lectura emocional: <strong>' + emoPct + '%</strong></div>'
-      + '<div>⚖️ Balance T/E: <strong>' + balancePct + '%</strong></div>'
-      + '<div>🤝 Empáticas: <strong>' + responseStyles.empathic + '</strong></div>'
-      + '<div>⚡ Directivas: <strong>' + responseStyles.directive + '</strong></div>'
-      + '<div>⚖️ Equilibradas: <strong>' + responseStyles.balanced + '</strong></div>'
-      + '<div>🔄 Adaptabilidad: <strong>' + adaptPct + '%</strong></div>'
-      + '</div></div></div>';
-
-    gameComplete('game_radar', pct);
   }
   showIntro();
 }
@@ -5414,13 +4711,9 @@ const PERFIL_IDEAL = {
   };
   if (!PERFIL_IDEAL[pf].game_detector)   PERFIL_IDEAL[pf].game_detector   = { pct:{ min:60, max:100, peso:3, label:'Atención Gamificada',     req:'Velocidad y precisión en detección de estímulos.' }};
   if (!PERFIL_IDEAL[pf].game_secuencias) PERFIL_IDEAL[pf].game_secuencias = { pct:{ min:55, max:100, peso:3, label:'Lógica Gamificada',        req:'Razonamiento de patrones bajo presión.' }};
-  if (!PERFIL_IDEAL[pf].game_bandeja)    PERFIL_IDEAL[pf].game_bandeja    = { pct:{ min:60, max:100, peso:3, label:'Priorización Gamificada',   req:'Gestión de tareas y sentido de urgencia.' }};
   if (!PERFIL_IDEAL[pf].game_impulsos)   PERFIL_IDEAL[pf].game_impulsos   = { pct:{ min:60, max:100, peso:3, label:'Control Impulsos Gamificado', req:'Inhibición de respuestas incorrectas.' }};
   if (!PERFIL_IDEAL[pf].game_vigilancia) PERFIL_IDEAL[pf].game_vigilancia = { pct:{ min:55, max:100, peso:3, label:'Vigilancia Gamificada',     req:'Detección de anomalías en tiempo real.' }};
-  if (!PERFIL_IDEAL[pf].game_cadena)     PERFIL_IDEAL[pf].game_cadena     = { pct:{ min:55, max:100, peso:3, label:'Delegación Gamificada',    req:'Asignación correcta de tareas según capacidades del equipo.' }};
   if (!PERFIL_IDEAL[pf].game_memoria)    PERFIL_IDEAL[pf].game_memoria    = { pct:{ min:55, max:100, peso:3, label:'Memoria Operativa Gamificada', req:'Retención de instrucciones bajo distracción.' }};
-  if (!PERFIL_IDEAL[pf].game_expedicion) PERFIL_IDEAL[pf].game_expedicion = { pct:{ min:55, max:100, peso:3, label:'Riesgo/Esfuerzo Gamificado',  req:'Toma de decisiones calibrada bajo incertidumbre y presión.' }};
-  if (!PERFIL_IDEAL[pf].game_radar)      PERFIL_IDEAL[pf].game_radar      = { pct:{ min:55, max:100, peso:3, label:'Radar Social Gamificado',     req:'Reconocimiento emocional y adaptabilidad interpersonal.' }};
 });
 // ── Ensure minLv is set on all cfg entries ──────────────────
 (function initMinLv() {
@@ -5476,7 +4769,17 @@ function fitLabel(fit) {
 function buildFitReport(c) {
   const s = c.scores;
   const perfil = c.perfil || 'administrativo';
-  const ideal = PERFIL_IDEAL[perfil];
+  var ideal = PERFIL_IDEAL[perfil];
+  if (!ideal) {
+    // Auto-create for custom cargos
+    PERFIL_IDEAL[perfil] = {};
+    var allT = ['barratt','pai','dc0','comprension','situacional','vigilancia','disc','atencion','cwb','ausentismo','frustracion','ice','game_detector','game_secuencias','game_impulsos','game_vigilancia','game_memoria'];
+    allT.forEach(function(tid) {
+      var src = PERFIL_IDEAL['jefatura'] && PERFIL_IDEAL['jefatura'][tid];
+      if (src) PERFIL_IDEAL[perfil][tid] = JSON.parse(JSON.stringify(src));
+    });
+    ideal = PERFIL_IDEAL[perfil];
+  }
   if (!ideal) return null;
 
   const sections = [];
@@ -5616,13 +4919,9 @@ function buildFitReport(c) {
   var GAME_REPORT_META = {
     game_detector:   { icon:'🎯', title:'Detector (Atención Gamificada)',       desc:'Velocidad y precisión en detección visual de estímulos.' },
     game_secuencias: { icon:'🧠', title:'Secuencias (Lógica Gamificada)',       desc:'Razonamiento de patrones numéricos bajo presión.' },
-    game_bandeja:    { icon:'📥', title:'Bandeja de Entrada (Priorización)',    desc:'Clasificación correcta de tareas según urgencia.' },
     game_impulsos:   { icon:'🔥', title:'Control de Impulsos (Go/No-Go)',      desc:'Inhibición de respuestas incorrectas bajo velocidad.' },
     game_vigilancia: { icon:'🛡', title:'Monitoreo en Tiempo Real',          desc:'Detección de anomalías en stream de cámaras en vivo.' },
-    game_cadena:     { icon:'🔗', title:'Cadena de Mando (Delegación)',      desc:'Asignación correcta de tareas según capacidades y carga del equipo.' },
     game_memoria:    { icon:'⏱', title:'Memoria Operativa',                 desc:'Retención de instrucciones múltiples bajo distracción.' },
-    game_expedicion: { icon:'🗺', title:'La Expedición (Riesgo/Esfuerzo)', desc:'Toma de decisiones bajo incertidumbre, tolerancia al riesgo y persistencia.' },
-    game_radar:      { icon:'🎭', title:'Radar Social (Emociones)',        desc:'Reconocimiento emocional y adaptabilidad interpersonal en contexto laboral.' },
   };
   Object.keys(GAME_REPORT_META).forEach(function(gid) {
     if (s[gid] && ideal[gid] && ideal[gid].pct) {
@@ -6043,7 +5342,7 @@ function buildReportHtml(c, withClose) {
   if (!c.rubro_label     && c.rubro)     c.rubro_label     = RUBRO_LABELS[c.rubro]     || c.rubro;
   if (!s) return '<div style="padding:40px;text-align:center;color:#999">Sin datos de evaluación.</div>';
   const perfil = c.perfil || 'administrativo';
-  const pm = PERFIL_META[perfil];
+  const pm = PERFIL_META[perfil] || { label: c.cargo || perfil, icon:'📋', color:'var(--accent)', desc:'' };
   const isLegacy = !s.barratt && !s.dc0 && !s.pai && (s.bigfive || s.disc || s.cognitivo);
 
   // ══════════════════════════════════════════════════════════════
@@ -6989,7 +6288,7 @@ function renderParams() {
     var ideal = PERFIL_IDEAL[perfil];
     if (!ideal) {
       PERFIL_IDEAL[perfil] = {};
-      var allTests = ['barratt','pai','dc0','comprension','situacional','vigilancia','disc','atencion','cwb','ausentismo','frustracion','ice','game_detector','game_secuencias','game_bandeja','game_impulsos','game_vigilancia','game_cadena','game_memoria','game_expedicion','game_radar'];
+      var allTests = ['barratt','pai','dc0','comprension','situacional','vigilancia','disc','atencion','cwb','ausentismo','frustracion','ice','game_detector','game_secuencias','game_impulsos','game_vigilancia','game_memoria'];
       allTests.forEach(function(tid) {
         var src = PERFIL_IDEAL['jefatura'] && PERFIL_IDEAL['jefatura'][tid];
         if (src) PERFIL_IDEAL[perfil][tid] = JSON.parse(JSON.stringify(src));
@@ -7142,7 +6441,7 @@ function renderWikiTab() {
     '🧬 Tests de Personalidad': ['barratt','pai','disc','ice'],
     '💡 Tests Situacionales': ['situacional','vigilancia'],
     '⚠ Riesgo Laboral': ['cwb','ausentismo','frustracion'],
-    '🎮 Juegos Gamificados': ['game_detector','game_secuencias','game_bandeja','game_impulsos','game_vigilancia','game_cadena','game_memoria','game_expedicion','game_radar'],
+    '🎮 Juegos Gamificados': ['game_detector','game_secuencias','game_impulsos','game_vigilancia','game_memoria'],
   };
   var WIKI_GROUP_DESC = {
     '🧠 Tests Cognitivos': 'Miden capacidades intelectuales, velocidad de procesamiento y comprensión procedimental.',
@@ -7294,13 +6593,6 @@ function renderWikiTab() {
       scoring:'Puntaje basado en el nivel máximo alcanzado × velocidad. Normalizado a 0-100.',
       reference:'Basado en matrices progresivas de Raven (1938) y modelos de inteligencia fluida de Cattell (1963).'
     },
-    game_bandeja: {
-      icon:'📥', name:'Bandeja de Entrada — Priorización', category:'Juego Gamificado', items:'10 tareas', time:'3 min', format:'Juego interactivo',
-      description:'Simulación de tareas entrantes con distintos niveles de urgencia e importancia. El candidato debe clasificarlas correctamente bajo presión de tiempo. Mide gestión de prioridades y sentido de urgencia.',
-      dimensions:[{key:'pct',name:'Priorización Gamificada',desc:'Proporción de tareas correctamente clasificadas según urgencia/importancia. Penaliza errores de priorización.'}],
-      scoring:'Puntaje = clasificaciones correctas / total × 100. Normalizado a 0-100.',
-      reference:'Basado en la Matriz de Eisenhower y modelos de in-basket assessment de Frederiksen (1962).'
-    },
     game_impulsos: {
       icon:'🔥', name:'Control de Impulsos — Go/No-Go', category:'Juego Gamificado', items:'10 estímulos', time:'2 min', format:'Juego interactivo',
       description:'Aparecen estímulos rápidos en pantalla. El candidato debe presionar solo cuando aparece el estímulo correcto (Go) e inhibir la respuesta ante distractores (No-Go). Mide control inhibitorio real.',
@@ -7315,33 +6607,12 @@ function renderWikiTab() {
       scoring:'Puntaje = (detecciones / total anomalías) × 100 − (falsas alarmas × 10). Normalizado a 0-100. Las anomalías aparecen por tiempo limitado (2.8s→1.2s según dificultad).',
       reference:'Basado en la teoría de detección de señales de Green & Swets (1966), paradigmas de vigilancia sostenida de Mackworth (1948) y tareas de monitoreo continuo de Parasuraman (1979).'
     },
-    game_cadena: {
-      icon:'🔗', name:'Cadena de Mando — Delegación y Coordinación', category:'Juego Gamificado', items:'10 tareas', time:'4 min', format:'Juego interactivo',
-      description:'Simulación de gestión de equipo. El candidato es supervisor de 4 personas con distintas habilidades y niveles de carga. Llegan tareas con requisitos específicos y hay que asignar cada una al miembro correcto sin sobrecargar a nadie. Mide capacidad de delegación, lectura de capacidades y gestión de recursos humanos.',
-      dimensions:[{key:'pct',name:'Delegación Gamificada',desc:'Proporción de tareas asignadas correctamente al miembro más adecuado, penalizada por sobrecarga de equipo y asignaciones incorrectas. Mide la capacidad de leer capacidades individuales y distribuir trabajo eficientemente.'}],
-      scoring:'Puntaje = asignaciones óptimas × 10 + asignaciones aceptables × 5 − sobrecarga × 8. Normalizado a 0-100.',
-      reference:'Basado en modelos de delegación efectiva de Yukl (2013), teoría de liderazgo situacional de Hersey & Blanchard (1969) y paradigmas de in-basket assessment de Frederiksen (1962).'
-    },
     game_memoria: {
       icon:'⏱', name:'Memoria Operativa — Retención bajo Distracción', category:'Juego Gamificado', items:'5-8 niveles', time:'3 min', format:'Juego interactivo',
       description:'Juego progresivo de memoria de trabajo. Se presentan instrucciones a recordar (colores, números, palabras), luego tareas distractoras (cálculos), y finalmente se pregunta qué debía recordar. Cada nivel agrega más instrucciones simultáneas y más interferencia. Mide memoria operativa real bajo condiciones de procesamiento dual.',
       dimensions:[{key:'pct',name:'Memoria Operativa Gamificada',desc:'Proporción de instrucciones correctamente recordadas tras la interferencia. Mide la capacidad de retener información relevante mientras se procesa otra tarea simultáneamente.'}],
       scoring:'Puntaje = respuestas correctas por nivel, ponderadas por dificultad. Normalizado a 0-100.',
       reference:'Basado en el modelo de memoria de trabajo de Baddeley & Hitch (1974), paradigmas de span complejo de Daneman & Carpenter (1980) y tareas de interferencia de Brown-Peterson (1959).'
-    },
-    game_expedicion: {
-      icon:'🗺', name:'La Expedición — Riesgo, Esfuerzo y Decisión', category:'Juego Gamificado', items:'10 zonas', time:'4 min', format:'Juego interactivo',
-      description:'Simulación de expedición donde el candidato recorre 10 zonas acumulando cristales de energía. En cada zona elige entre rutas de distinto nivel de riesgo (segura, moderada, arriesgada). Incluye micro-desafíos de esfuerzo y rondas de apuesta "doble o nada". Genera un perfil de estilo decisional completo.',
-      dimensions:[{key:'pct',name:'Perfil de Riesgo/Esfuerzo',desc:'Indicador compuesto que combina: tolerancia al riesgo (proporción de rutas arriesgadas), consistencia decisional (varianza del patrón), sensibilidad a la pérdida (cambio de comportamiento post-pérdida), apetito de apuesta, persistencia en micro-desafíos y resiliencia. El puntaje óptimo varía según el cargo: roles de seguridad favorecen perfiles conservadores; roles de liderazgo favorecen perfiles calculadores.'}],
-      scoring:'Se genera un perfil de estilo decisional (Conservador, Calculador, Buscador de Riesgo, Reactivo Emocional, Persistente bajo Presión). El puntaje 0-100 refleja la calibración entre riesgo y resultado: ni demasiado conservador ni demasiado impulsivo, ajustado al perfil del cargo.',
-      reference:'Basado en la Balloon Analogue Risk Task (BART) de Lejuez et al. (2002), teoría prospectiva de Kahneman & Tversky (1979), modelos de effort-based decision making de Westbrook et al. (2013) y paradigmas de Iowa Gambling Task de Bechara et al. (1994).'
-    },
-    game_radar: {
-      icon:'🎭', name:'Radar Social — Emociones y Adaptabilidad', category:'Juego Gamificado', items:'10 rondas', time:'4 min', format:'Juego interactivo',
-      description:'Simulación de chat corporativo donde el candidato coordina un equipo de 4 personas con personalidades distintas. Debe identificar la emoción real detrás de mensajes ambiguos y elegir la respuesta más adaptativa. Incluye avatares SVG con expresiones faciales dinámicas. Mide empatía cognitiva, resolución de conflictos, asertividad calibrada y lectura de contexto social.',
-      dimensions:[{key:'pct',name:'Radar Social Gamificado',desc:'Combina tasa de acierto en reconocimiento emocional, adaptación del estilo de respuesta según personaje, y balance entre indicadores de Confianza y Eficiencia. Mide inteligencia social aplicada.'}],
-      scoring:'Puntaje compuesto: 35% acierto emocional + 30% balance Confianza/Eficiencia + 20% adaptabilidad (variedad de respuestas por personaje) + 15% velocidad de lectura emocional. Normalizado a 0-100.',
-      reference:'Basado en el modelo de Inteligencia Emocional de Salovey & Mayer (1990), MSCEIT de Mayer et al. (2002), Interpersonal Reactivity Index de Davis (1983) y paradigmas de reconocimiento emocional de Ekman (1992).'
     },
   };
 
@@ -7498,13 +6769,9 @@ var BATTERY_TEST_DIMENSIONS = {
   ice:         { icon:'⚡', title:'Competencias de Ejecución (ICE-20)',  keys:['IN','CO','SU','GE','CR'] },
   game_detector:  { icon:'🎯', title:'Detector (Atención)',              keys:['pct'] },
   game_secuencias:{ icon:'🧠', title:'Secuencias (Lógica)',              keys:['pct'] },
-  game_bandeja:   { icon:'📥', title:'Bandeja de Entrada (Priorización)',keys:['pct'] },
   game_impulsos:  { icon:'🔥', title:'Control de Impulsos (Go/No-Go)',   keys:['pct'] },
   game_vigilancia:{ icon:'🛡', title:'Monitoreo en Tiempo Real',          keys:['pct'] },
-  game_cadena:    { icon:'🔗', title:'Cadena de Mando (Delegación)',      keys:['pct'] },
   game_memoria:   { icon:'⏱', title:'Memoria Operativa',                 keys:['pct'] },
-  game_expedicion:{ icon:'🗺', title:'La Expedición (Riesgo/Esfuerzo)',  keys:['pct'] },
-  game_radar:     { icon:'🎭', title:'Radar Social (Emociones)',         keys:['pct'] },
 };
 
 function renderBateriaTab() {
@@ -7515,7 +6782,7 @@ function renderBateriaTab() {
   if (!ideal) {
     PERFIL_IDEAL[perfil] = {};
     // Copy shared test defaults from jefatura
-    var allGameAndShared = ['barratt','pai','dc0','comprension','situacional','vigilancia','disc','atencion','cwb','ausentismo','frustracion','ice','game_detector','game_secuencias','game_bandeja','game_impulsos','game_vigilancia','game_cadena','game_memoria','game_expedicion','game_radar'];
+    var allGameAndShared = ['barratt','pai','dc0','comprension','situacional','vigilancia','disc','atencion','cwb','ausentismo','frustracion','ice','game_detector','game_secuencias','game_impulsos','game_vigilancia','game_memoria'];
     allGameAndShared.forEach(function(tid) {
       var src = PERFIL_IDEAL['jefatura'] && PERFIL_IDEAL['jefatura'][tid];
       if (src) PERFIL_IDEAL[perfil][tid] = JSON.parse(JSON.stringify(src));
@@ -7532,7 +6799,7 @@ function renderBateriaTab() {
     '🧬 Tests de Personalidad': ['barratt','pai','disc','ice'],
     '💡 Tests Situacionales': ['situacional','vigilancia'],
     '⚠ Riesgo Laboral': ['cwb','ausentismo','frustracion'],
-    '🎮 Juegos Gamificados': ['game_detector','game_secuencias','game_bandeja','game_impulsos','game_vigilancia','game_cadena','game_memoria','game_expedicion','game_radar'],
+    '🎮 Juegos Gamificados': ['game_detector','game_secuencias','game_impulsos','game_vigilancia','game_memoria'],
   };
 
   var out = '';
@@ -7693,13 +6960,9 @@ function saveParams() {
     ice:         ['IN','CO','SU','GE','CR'],
     game_detector:  ['pct'],
     game_secuencias:['pct'],
-    game_bandeja:   ['pct'],
     game_impulsos:  ['pct'],
     game_vigilancia:['pct'],
-    game_cadena:    ['pct'],
     game_memoria:   ['pct'],
-    game_expedicion:['pct'],
-    game_radar:     ['pct'],
   };
 
   let changed = 0;
@@ -9255,7 +8518,7 @@ function applyRoleRestrictions() {
 
 // ── URL Config Sharing (Compact) ──
 // Uses short aliases and compact format to keep URLs short
-var _TEST_ALIAS = {barratt:'B',dc0:'D',pai:'P',situacional:'S',vigilancia:'V',comprension:'C',disc:'I',atencion:'A',cwb:'W',ausentismo:'U',frustracion:'F',ice:'E',game_detector:'g1',game_secuencias:'g2',game_bandeja:'g3',game_impulsos:'g4',game_vigilancia:'g5',game_cadena:'g6',game_memoria:'g7',game_expedicion:'g8',game_radar:'g9'};
+var _TEST_ALIAS = {barratt:'B',dc0:'D',pai:'P',situacional:'S',vigilancia:'V',comprension:'C',disc:'I',atencion:'A',cwb:'W',ausentismo:'U',frustracion:'F',ice:'E',game_detector:'g1',game_secuencias:'g2',game_impulsos:'g4',game_vigilancia:'g5',game_memoria:'g7'};
 var _ALIAS_TEST = {};
 Object.keys(_TEST_ALIAS).forEach(function(k){ _ALIAS_TEST[_TEST_ALIAS[k]] = k; });
 
@@ -9285,7 +8548,7 @@ function generateCandidateLink() {
     ac.forEach(function(k) {
       var ideal = PERFIL_IDEAL[k]; if (!ideal) return;
       var gDiffs = [];
-      ['game_detector','game_secuencias','game_bandeja','game_impulsos','game_vigilancia','game_cadena','game_memoria','game_expedicion','game_radar'].forEach(function(gid) {
+      ['game_detector','game_secuencias','game_impulsos','game_vigilancia','game_memoria'].forEach(function(gid) {
         if (ideal[gid] && ideal[gid].pct) {
           var lv = ideal[gid].pct.minLv || scoreToLevel5(ideal[gid].pct.min) || 3;
           if (lv !== 3) gDiffs.push((_TEST_ALIAS[gid]||gid) + '.' + lv);
@@ -9414,6 +8677,54 @@ var _urlConfigApplied = applyCandidateConfig();
 if (!_urlConfigApplied) restoreParams();
 restoreSession();
 applyCargoVisibility();
+
+// ── Mobile responsive ──
+function toggleMobileSidebar() {
+  var ms = document.getElementById('mobile-sidebar-overlay');
+  if (!ms) {
+    ms = document.createElement('div');
+    ms.id = 'mobile-sidebar-overlay';
+    document.body.appendChild(ms);
+  }
+  var panel = '<div onclick="closeMobileSidebar()" style="position:absolute;inset:0;background:rgba(0,0,0,.3);backdrop-filter:blur(4px)"></div>'
+    + '<div style="position:relative;width:260px;height:100%;background:#fff;box-shadow:4px 0 24px rgba(0,0,0,.1);padding:20px 14px;display:flex;flex-direction:column;overflow-y:auto;z-index:1;animation:slideIn .2s ease">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">'
+    + '<div style="font-size:17px;font-weight:700">PsicoEval</div>'
+    + '<button onclick="closeMobileSidebar()" style="width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:16px">✕</button></div>'
+    + '<div style="display:flex;flex-direction:column;gap:2px">'
+    + '<button class="nav-btn" onclick="mobileNav(\'dashboard\')"><span>📊</span><span>Dashboard</span></button>'
+    + '<button class="nav-btn" onclick="mobileNav(\'candidates\')"><span>👥</span><span>Candidatos</span></button>'
+    + '<button class="nav-btn" onclick="mobileNav(\'params\')"><span>⚙</span><span>Baterías</span></button>'
+    + '<button class="nav-btn" onclick="mobileNav(\'cargos\')"><span>🏢</span><span>Cargos</span></button>'
+    + '<button class="nav-btn" onclick="mobileNav(\'users\')"><span>👤</span><span>Usuarios</span></button>'
+    + '</div>'
+    + '<div style="flex:1"></div>'
+    + '<div style="display:flex;flex-direction:column;gap:4px;margin-top:20px;border-top:1px solid var(--border);padding-top:12px">'
+    + '<button class="nav-btn" onclick="closeMobileSidebar();showShareModal()" style="color:#16a34a"><span>🔗</span><span>Compartir</span></button>'
+    + '<button class="nav-btn" onclick="closeMobileSidebar();adminLogout()" style="color:var(--ink3)"><span>⎋</span><span>Cerrar sesión</span></button>'
+    + '</div></div>';
+  ms.innerHTML = panel;
+  ms.style.cssText = 'display:flex;position:fixed;inset:0;z-index:999';
+}
+
+function closeMobileSidebar() {
+  var ms = document.getElementById('mobile-sidebar-overlay');
+  if (ms) ms.style.display = 'none';
+}
+
+function mobileNav(tab) {
+  closeMobileSidebar();
+  var navBtn = document.getElementById('nav-' + tab);
+  if (navBtn) adminTab(tab, navBtn);
+}
+
+// Show mobile bar when screen is small
+function checkMobileBar() {
+  var bar = document.getElementById('mobile-admin-bar');
+  if (bar) bar.style.display = window.innerWidth <= 700 ? 'flex' : 'none';
+}
+window.addEventListener('resize', checkMobileBar);
+checkMobileBar();
 </script>
 </body>
 </html>
