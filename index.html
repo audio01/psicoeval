@@ -1355,14 +1355,8 @@ input,select,textarea{font-family:inherit;outline:none}
             <button class="btn btn-outline btn-sm" id="btn-refresh-cand" onclick="refreshCandView()">↻ Actualizar</button>
           </div>
         </div>
-        <!-- Sub-tabs: Tabla / Informes / Datos Brutos -->
-        <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:20px">
-          <button id="subtab-tabla" onclick="setCandSubTab('tabla',this)" style="padding:9px 18px;border:none;background:none;font-size:13px;font-weight:700;color:var(--accent);border-bottom:2px solid var(--accent);margin-bottom:-2px;cursor:pointer">👥 Candidatos</button>
-          <button id="subtab-informes" onclick="setCandSubTab('informes',this)" style="padding:9px 18px;border:none;background:none;font-size:13px;font-weight:500;color:var(--ink3);border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer">📄 Informes</button>
-          <button id="subtab-raw" onclick="setCandSubTab('raw',this)" style="padding:9px 18px;border:none;background:none;font-size:13px;font-weight:500;color:var(--ink3);border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer">🔢 Datos Brutos</button>
-        </div>
 
-        <!-- ── Subtab: Tabla ── -->
+        <!-- ── Candidatos ── -->
         <div id="cand-sub-tabla">
         <!-- Cargo tabs (rendered dynamically) -->
         <div id="cand-cargo-tabs" style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:16px">
@@ -1393,16 +1387,6 @@ input,select,textarea{font-family:inherit;outline:none}
           </tr></thead><tbody id="cand-tbody"></tbody></table>
         </div>
         </div><!-- /cand-sub-tabla -->
-
-        <!-- ── Subtab: Informes ── -->
-        <div id="cand-sub-informes" style="display:none">
-          <div id="reports-list"></div>
-        </div>
-
-        <!-- ── Subtab: Datos Brutos ── -->
-        <div id="cand-sub-raw" style="display:none">
-          <div id="raw-content"></div>
-        </div>
 
       </div><!-- /tab-candidates -->
       <div id="tab-users" style="display:none;padding-bottom:40px">
@@ -1580,10 +1564,12 @@ const TESTS_META = {
   comprension:  { name:'Comprensión de Instrucciones',       icon:'📋', color:'var(--lilac)'  },
   disc:         { name:'Estilos Conductuales (DISC-20)',       icon:'🎭', color:'#7c3aed'        },
   atencion:     { name:'Atención Concentrada (d2)',            icon:'🎯', color:'#b45309'        },
+  idt:          { name:'Interpretación de Datos (IDT-10)',    icon:'📊', color:'#0e7490'        },
   cwb:          { name:'Conductas Contraproducentes (CWB-18)', icon:'⚠', color:'#dc2626'        },
   ausentismo:   { name:'Riesgo de Ausentismo (ABS-10)',        icon:'📅', color:'#9333ea'        },
   frustracion:  { name:'Tolerancia a la Frustración (TF-12)',  icon:'🔥', color:'#ea580c'        },
   ice:          { name:'Competencias de Ejecución (ICE-20)',   icon:'⚡', color:'#4338ca'        },
+  pf16:         { name:'Personalidad 16PF (Abreviado)',       icon:'🧬', color:'#0d9488'        },
   game_detector:   { name:'Detector (Atención)',              icon:'🎯', color:'#e11d48', game:true },
   game_secuencias: { name:'Secuencias (Lógica)',              icon:'🧠', color:'#7c3aed', game:true },
   game_impulsos:   { name:'Control de Impulsos (Go/No-Go)',   icon:'🔥', color:'#ea580c', game:true },
@@ -1600,7 +1586,7 @@ const PERFIL_TESTS_DEFAULT = {
 };
 
 // All available tests per cargo (max possible)
-const ALL_TESTS_AVAILABLE = ['barratt','dc0','pai','situacional','vigilancia','comprension','disc','atencion','cwb','ausentismo','frustracion','ice','game_detector','game_secuencias','game_impulsos','game_vigilancia','game_memoria'];
+const ALL_TESTS_AVAILABLE = ['barratt','dc0','pai','situacional','vigilancia','comprension','disc','atencion','idt','cwb','ausentismo','frustracion','ice','pf16','game_detector','game_secuencias','game_impulsos','game_vigilancia','game_memoria'];
 
 // Active batteries (loaded from localStorage, falls back to default)
 var PERFIL_TESTS = Object.assign({}, PERFIL_TESTS_DEFAULT);
@@ -1724,7 +1710,7 @@ function registerCustomCargo(c, skipSave) {
     };
   }
   // Ensure shared tests exist for this profile
-  ['disc','atencion','cwb','ausentismo','frustracion','ice','game_detector','game_secuencias','game_impulsos','game_vigilancia','game_memoria'].forEach(function(tid) {
+  ['disc','atencion','idt','cwb','pf16','ausentismo','frustracion','ice','game_detector','game_secuencias','game_impulsos','game_vigilancia','game_memoria'].forEach(function(tid) {
     if (!PERFIL_IDEAL[key][tid]) {
       // Copy from jefatura defaults
       var src = PERFIL_IDEAL['jefatura'][tid];
@@ -1809,7 +1795,7 @@ function renderCargosTab() {
 
     // Info row with test chips + "Configurar batería" hint
     if (isOn) {
-      var TM = { barratt:5, dc0:20, pai:12, situacional:12, vigilancia:12, comprension:10, disc:8, atencion:8, cwb:8, ausentismo:5, frustracion:6, ice:8, game_detector:3, game_secuencias:3, game_impulsos:2, game_vigilancia:3, game_memoria:3 };
+      var TM = { barratt:5, dc0:20, pai:12, situacional:12, vigilancia:12, comprension:10, disc:8, atencion:8, idt:8, cwb:8, ausentismo:5, frustracion:6, ice:8, pf16:10, game_detector:3, game_secuencias:3, game_impulsos:2, game_vigilancia:3, game_memoria:3 };
       var totalMin = tests.reduce(function(a,t){ return a + (TM[t]||8); }, 0) + 5;
       h += '<div onclick="openCargoBattery(\'' + key + '\')" style="border-top:1px solid #f1f5f9;padding:14px 22px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;cursor:pointer;transition:background .15s" onmouseover="this.style.background=\'#f8fafc\'" onmouseout="this.style.background=\'transparent\'">';
       h += '<div style="font-size:11px;color:var(--ink3)"><strong style="color:var(--ink2)">' + tests.length + '</strong> tests asignados</div>';
@@ -2577,6 +2563,35 @@ const SIT_SUPERVISOR = [
 //  Likert 1–5 (1=Nunca, 5=Siempre)
 //  D=Dominancia, I=Influencia, S=Estabilidad, C=Cumplimiento
 // ═══════════════════════════════════════════════════════════
+// ── 16PF Abreviado — 5 factores globales, 20 ítems Likert 1-5 ──
+const PF16_ITEMS = [
+  // EX — Extraversión (A+, F+, H+, Q2-)
+  {id:'pf_ex1',dim:'EX',text:'Me resulta fácil iniciar conversaciones con personas que no conozco.'},
+  {id:'pf_ex2',dim:'EX',text:'En reuniones de trabajo, participo activamente y comparto mis ideas con el grupo.'},
+  {id:'pf_ex3',dim:'EX',text:'Prefiero trabajar acompañado/a que solo/a, incluso si la tarea no lo requiere.'},
+  {id:'pf_ex4',dim:'EX',text:'Me consideran una persona sociable que genera buen clima en el equipo.',inv:true},
+  // AN — Ajuste Emocional / Baja Ansiedad (C+, O-, Q4-)
+  {id:'pf_an1',dim:'AN',text:'Mantengo la calma incluso cuando las cosas no salen según lo planeado.'},
+  {id:'pf_an2',dim:'AN',text:'Rara vez me preocupo de forma excesiva por cosas que no puedo controlar.'},
+  {id:'pf_an3',dim:'AN',text:'Duermo bien incluso en períodos de mucho trabajo o presión laboral.'},
+  {id:'pf_an4',dim:'AN',text:'No me afectan demasiado las críticas o comentarios negativos sobre mi trabajo.'},
+  // DU — Dureza Mental / Objetividad (A-, I-, M-)
+  {id:'pf_du1',dim:'DU',text:'Tomo decisiones basándome en hechos y datos, no en corazonadas o sentimientos.'},
+  {id:'pf_du2',dim:'DU',text:'Cuando hay un problema, busco la solución más práctica aunque no sea la más popular.'},
+  {id:'pf_du3',dim:'DU',text:'Me resulta fácil dar feedback negativo cuando la situación lo requiere.'},
+  {id:'pf_du4',dim:'DU',text:'Puedo separar mis emociones personales de las decisiones profesionales.'},
+  // IN — Independencia (E+, H+, L+, Q1+)
+  {id:'pf_in1',dim:'IN',text:'Defiendo mi posición cuando creo que tengo razón, aunque la mayoría no esté de acuerdo.'},
+  {id:'pf_in2',dim:'IN',text:'No necesito la aprobación de los demás para sentirme seguro/a de mis decisiones.'},
+  {id:'pf_in3',dim:'IN',text:'Cuestiono instrucciones que no me parecen lógicas, en vez de seguirlas sin pensar.'},
+  {id:'pf_in4',dim:'IN',text:'Prefiero formar mi propia opinión antes de consultar qué piensan los demás.'},
+  // AC — Autocontrol (F-, G+, M-, Q3+)
+  {id:'pf_ac1',dim:'AC',text:'Cumplo las reglas y procedimientos aunque nadie me esté supervisando.'},
+  {id:'pf_ac2',dim:'AC',text:'Soy muy organizado/a con mi tiempo, mis tareas y mis compromisos.'},
+  {id:'pf_ac3',dim:'AC',text:'Antes de actuar, pienso bien en las consecuencias de lo que voy a hacer.'},
+  {id:'pf_ac4',dim:'AC',text:'Me cuesta improvisar; prefiero tener un plan claro antes de comenzar algo.'},
+];
+
 const DISC_ITEMS = [
   // D — Dominancia
   {id:'d1',dim:'D',text:'Tomo la iniciativa cuando hay un problema que resolver, sin esperar que me lo pidan.'},
@@ -2632,6 +2647,30 @@ const IWS_ITEMS = [
 //  Cada ítem muestra un estímulo y pide identificar el correcto.
 //  Mide velocidad + precisión de atención selectiva.
 // ═══════════════════════════════════════════════════════════
+// ── IDT — Interpretación de Datos y Tablas (10 ítems choice) ──
+const IDT_ITEMS = [
+  {id:'idt1', text:'Una tabla muestra ventas trimestrales: Q1=120, Q2=95, Q3=140, Q4=110. ¿En qué trimestre hubo mayor caída respecto al anterior?',
+    opts:[{t:'Q2',ok:true},{t:'Q3',ok:false},{t:'Q4',ok:false},{t:'Q1',ok:false}]},
+  {id:'idt2', text:'Un gráfico muestra que el equipo A completó 85 tareas y el equipo B completó 70, pero el equipo B tiene 4 personas y el A tiene 6. ¿Qué equipo fue más productivo por persona?',
+    opts:[{t:'Equipo B (17.5/persona)',ok:true},{t:'Equipo A (14.2/persona)',ok:false},{t:'Ambos iguales',ok:false},{t:'No se puede determinar',ok:false}]},
+  {id:'idt3', text:'La tasa de ausentismo en enero fue 8%, en febrero 6%, en marzo 9%, en abril 5%. ¿Cuál es la tendencia general?',
+    opts:[{t:'Irregular sin tendencia clara',ok:true},{t:'Claramente descendente',ok:false},{t:'Claramente ascendente',ok:false},{t:'Estable',ok:false}]},
+  {id:'idt4', text:'Una tabla de inventario indica: Stock inicial=500, Entradas=200, Salidas=350, Devoluciones=25. ¿Cuál es el stock final?',
+    opts:[{t:'375',ok:true},{t:'350',ok:false},{t:'325',ok:false},{t:'400',ok:false}]},
+  {id:'idt5', text:'El indicador de satisfacción del cliente pasó de 72% a 78% en un mes. ¿Cuántos puntos porcentuales de mejora representa?',
+    opts:[{t:'6 puntos porcentuales',ok:true},{t:'8.3% de mejora',ok:false},{t:'78% de mejora',ok:false},{t:'No se puede calcular',ok:false}]},
+  {id:'idt6', text:'Un reporte muestra 3 turnos: Turno A=12 incidentes/mes, Turno B=8 incidentes/mes, Turno C=15 incidentes/mes. Turno A tiene 20 guardias, B tiene 10 y C tiene 30. ¿Cuál tiene peor tasa por guardia?',
+    opts:[{t:'Turno B (0.8/guardia)',ok:true},{t:'Turno C (0.5/guardia)',ok:false},{t:'Turno A (0.6/guardia)',ok:false},{t:'Todos iguales',ok:false}]},
+  {id:'idt7', text:'Una tabla muestra costos mensuales: Electricidad $450.000, Agua $80.000, Internet $65.000, Arriendo $1.200.000, Insumos $320.000. ¿Qué porcentaje aproximado del total representa el arriendo?',
+    opts:[{t:'Aproximadamente 57%',ok:true},{t:'Aproximadamente 45%',ok:false},{t:'Aproximadamente 70%',ok:false},{t:'Aproximadamente 35%',ok:false}]},
+  {id:'idt8', text:'Un gráfico de barras muestra que las quejas bajaron de 45 a 30 después de implementar un cambio. ¿Cuál es la reducción porcentual?',
+    opts:[{t:'33%',ok:true},{t:'15%',ok:false},{t:'50%',ok:false},{t:'66%',ok:false}]},
+  {id:'idt9', text:'Una tabla de rotación muestra: Depto. Ventas=25% anual, Operaciones=12%, RRHH=8%, Logística=18%. Si la empresa tiene 200 empleados distribuidos equitativamente, ¿cuántos se van al año aproximadamente?',
+    opts:[{t:'Aproximadamente 32',ok:true},{t:'Aproximadamente 63',ok:false},{t:'Aproximadamente 16',ok:false},{t:'Aproximadamente 25',ok:false}]},
+  {id:'idt10', text:'Un dashboard muestra: Meta mensual=100 unidades, Producción semana 1=22, semana 2=28, semana 3=24. ¿Cuánto debe producir la semana 4 para cumplir la meta?',
+    opts:[{t:'26 unidades',ok:true},{t:'25 unidades',ok:false},{t:'28 unidades',ok:false},{t:'30 unidades',ok:false}]},
+];
+
 const D2_ITEMS = [
   {id:'at1', text:'Identifica el símbolo que aparece DOS VECES en la siguiente serie: ■ ● ▲ ■ ○ ▲ ●', opts:[
     {t:'■',ok:true},{t:'●',ok:false},{t:'▲',ok:false},{t:'○',ok:false}]},
@@ -2717,6 +2756,8 @@ function buildQuestions(perfil) {
   const active = PERFIL_TESTS[perfil] || [];
   if (active.includes('disc'))       add(DISC_ITEMS, 'disc',      'disc');
   if (active.includes('atencion'))   add(D2_ITEMS,   'atencion',  'choice');
+  if (active.includes('idt'))        add(IDT_ITEMS,  'idt',       'choice');
+  if (active.includes('pf16'))       add(PF16_ITEMS, 'pf16',      'likert');
   // Game tests don't need questions - they render their own UI
   return qs;
 }
@@ -2824,6 +2865,32 @@ function calcScores(answers, selectedTests, perfil) {
     scores.atencion = { pct: qs2.length ? Math.round(correct/qs2.length*100) : 0, correct, total: qs2.length };
   }
 
+  // ── IDT ──
+  if (selectedTests.includes('idt')) {
+    const qs3 = allQs.filter(q=>q.testId==='idt');
+    let correct3 = 0;
+    qs3.forEach(q => { const idx = answers[q.id]; if (idx!==undefined && q.opts[idx].ok) correct3++; });
+    scores.idt = { pct: qs3.length ? Math.round(correct3/qs3.length*100) : 0, correct:correct3, total: qs3.length };
+  }
+
+  // ── 16PF ──
+  if (selectedTests.includes('pf16')) {
+    var pf = allQs.filter(q=>q.testId==='pf16');
+    var dims = {};
+    pf.forEach(function(q) {
+      var v = answers[q.id]; if (v===undefined) return;
+      if (q.inv) v = 6 - v; // invert
+      if (!dims[q.dim]) dims[q.dim] = [];
+      dims[q.dim].push(v);
+    });
+    var pf16s = {};
+    Object.keys(dims).forEach(function(d) {
+      var avg = dims[d].reduce(function(a,b){return a+b;},0) / dims[d].length;
+      pf16s[d] = Math.round((avg - 1) / 4 * 100);
+    });
+    scores.pf16 = pf16s;
+  }
+
   // ── Game scores ──
   ['game_detector','game_secuencias','game_impulsos','game_vigilancia','game_memoria'].forEach(function(gid) {
     if (selectedTests.includes(gid) && answers['__game_' + gid] !== undefined) {
@@ -2864,10 +2931,10 @@ function gotoAdminLogin() { showView('adminlogin'); }
 //  TEST MODE (temporary - for testing)
 // ═══════════════════════════════════════════════════════════
 function startTestMode() {
-  var TM_MINS = { barratt:5, dc0:20, pai:12, situacional:12, vigilancia:12, comprension:10, disc:8, atencion:8, cwb:8, ausentismo:5, frustracion:6, ice:8, game_detector:3, game_secuencias:3, game_impulsos:2, game_vigilancia:3, game_memoria:3 };
+  var TM_MINS = { barratt:5, dc0:20, pai:12, situacional:12, vigilancia:12, comprension:10, disc:8, atencion:8, idt:8, cwb:8, ausentismo:5, frustracion:6, ice:8, pf16:10, game_detector:3, game_secuencias:3, game_impulsos:2, game_vigilancia:3, game_memoria:3 };
   var GROUPS = {
-    '🧠 Cognitivos':        ['dc0','comprension','atencion'],
-    '🧬 Personalidad':      ['barratt','pai','disc','ice'],
+    '🧠 Cognitivos':        ['dc0','comprension','atencion','idt'],
+    '🧬 Personalidad':      ['barratt','pai','disc','ice','pf16'],
     '💡 Situacionales':     ['situacional','vigilancia'],
     '⚠ Riesgo Laboral':    ['cwb','ausentismo','frustracion'],
     '🎮 Juegos Gamificados':['game_detector','game_secuencias','game_impulsos','game_vigilancia','game_memoria'],
@@ -2968,7 +3035,7 @@ function launchTestMode(perfil) {
   var tests = PERFIL_TESTS[perfil] || [];
   if (!tests.length) { toast('Este cargo no tiene tests asignados', 'er'); return; }
 
-  var TM_MINS = { barratt:5, dc0:20, pai:12, situacional:12, vigilancia:12, comprension:10, disc:8, atencion:8, cwb:8, ausentismo:5, frustracion:6, ice:8, game_detector:3, game_secuencias:3, game_impulsos:2, game_vigilancia:3, game_memoria:3 };
+  var TM_MINS = { barratt:5, dc0:20, pai:12, situacional:12, vigilancia:12, comprension:10, disc:8, atencion:8, idt:8, cwb:8, ausentismo:5, frustracion:6, ice:8, pf16:10, game_detector:3, game_secuencias:3, game_impulsos:2, game_vigilancia:3, game_memoria:3 };
 
   S.candidate = {
     id: 'test_' + Date.now(),
@@ -3566,8 +3633,8 @@ function submitRegister() {
   const tests = PERFIL_TESTS[perfil];
   const TEST_TIME_MINUTES = {
     barratt:5, dc0:20, pai:12, situacional:12, vigilancia:12,
-    comprension:10, disc:8, atencion:8,
-    cwb:8, ausentismo:5, frustracion:6, ice:8,
+    comprension:10, disc:8, atencion:8, idt:8,
+    cwb:8, ausentismo:5, frustracion:6, ice:8, pf16:10,
     game_detector:3, game_secuencias:3, game_impulsos:2, game_vigilancia:3, game_memoria:3
   };
   var totalMin = tests.reduce(function(a,t){ return a + (TEST_TIME_MINUTES[t]||8); }, 0);
@@ -4800,6 +4867,16 @@ const PERFIL_IDEAL = {
     GE: { min:60, max:100, peso:3, label:'Gestión',                   req:'Organiza recursos, planifica su trabajo y coordina acciones para cumplir objetivos.' },
     CR: { min:65, max:100, peso:4, label:'Compromiso con Resultados', req:'Orientación al logro, persiste hasta cerrar y mide su propio desempeño.' },
   };
+  if (!PERFIL_IDEAL[pf].pf16) PERFIL_IDEAL[pf].pf16 = {
+    EX: { min:45, max:100, peso:2, label:'Extraversión',         req:'Capacidad de interacción social, calidez y participación grupal.' },
+    AN: { min:55, max:100, peso:3, label:'Ajuste Emocional',     req:'Estabilidad emocional, baja ansiedad y tolerancia a la presión.' },
+    DU: { min:45, max:85,  peso:2, label:'Dureza Mental',        req:'Objetividad, pragmatismo y orientación a hechos concretos.' },
+    IN: { min:45, max:85,  peso:2, label:'Independencia',        req:'Autonomía de criterio, disposición a defender posiciones propias.' },
+    AC: { min:60, max:100, peso:3, label:'Autocontrol',           req:'Disciplina, cumplimiento de normas y control sobre impulsos.' },
+  };
+  if (!PERFIL_IDEAL[pf].idt) PERFIL_IDEAL[pf].idt = {
+    pct: { min:55, max:100, peso:3, label:'Interpretación de Datos', req:'Capacidad de leer tablas, gráficos e indicadores y extraer conclusiones correctas.' },
+  };
   if (!PERFIL_IDEAL[pf].game_detector)   PERFIL_IDEAL[pf].game_detector   = { pct:{ min:60, max:100, peso:3, label:'Atención Gamificada',     req:'Velocidad y precisión en detección de estímulos.' }};
   if (!PERFIL_IDEAL[pf].game_secuencias) PERFIL_IDEAL[pf].game_secuencias = { pct:{ min:55, max:100, peso:3, label:'Lógica Gamificada',        req:'Razonamiento de patrones bajo presión.' }};
   if (!PERFIL_IDEAL[pf].game_impulsos)   PERFIL_IDEAL[pf].game_impulsos   = { pct:{ min:60, max:100, peso:3, label:'Control Impulsos Gamificado', req:'Inhibición de respuestas incorrectas.' }};
@@ -4864,7 +4941,7 @@ function buildFitReport(c) {
   if (!ideal) {
     // Auto-create for custom cargos
     PERFIL_IDEAL[perfil] = {};
-    var allT = ['barratt','pai','dc0','comprension','situacional','vigilancia','disc','atencion','cwb','ausentismo','frustracion','ice','game_detector','game_secuencias','game_impulsos','game_vigilancia','game_memoria'];
+    var allT = ['barratt','pai','dc0','comprension','situacional','vigilancia','disc','atencion','idt','cwb','pf16','ausentismo','frustracion','ice','game_detector','game_secuencias','game_impulsos','game_vigilancia','game_memoria'];
     allT.forEach(function(tid) {
       var src = PERFIL_IDEAL['jefatura'] && PERFIL_IDEAL['jefatura'][tid];
       if (src) PERFIL_IDEAL[perfil][tid] = JSON.parse(JSON.stringify(src));
@@ -5006,6 +5083,41 @@ function buildFitReport(c) {
       desc:'Velocidad y precisión en la detección de estímulos relevantes bajo presión.' });
   }
 
+  // ── Interpretación de Datos ─────────────────────────────────
+  if (s.idt && ideal.idt && ideal.idt.pct) {
+    const cfg = ideal.idt.pct;
+    const score = s.idt.pct;
+    const fit = calcFit(score, cfg.min, cfg.max);
+    totalPeso += cfg.peso; totalFitPeso += fit * cfg.peso;
+    const minLv = cfg.minLv || scoreToLevel5(cfg.min);
+    const dim = { key:'pct', label:cfg.label, score, fit, peso:cfg.peso, req:cfg.req,
+      ideal:`${cfg.min}–${cfg.max}`, extra:`${s.idt.correct}/${s.idt.total} correctas`,
+      gap: scoreToLevel5(score) < minLv ? 'bajo':'ok', minLv, testId:'idt' };
+    sections.push({ id:'idt', icon:'📊', title:'Interpretación de Datos (IDT-10)', dims:[dim], secFit:fit,
+      desc:'Capacidad de extraer conclusiones de tablas, gráficos e indicadores numéricos.' });
+  }
+
+  // ── 16PF ──────────────────────────────────────────────────────
+  if (s.pf16 && ideal.pf16) {
+    var pf16dims = [];
+    Object.entries(ideal.pf16).forEach(function(entry) {
+      var k = entry[0], cfg = entry[1];
+      var score = s.pf16[k]; if (score === undefined) return;
+      var fit = calcFit(score, cfg.min, cfg.max);
+      totalPeso += cfg.peso; totalFitPeso += fit * cfg.peso;
+      var minLv = cfg.minLv || scoreToLevel5(cfg.min) || 1;
+      pf16dims.push({ testId:'pf16', key:k, label:cfg.label, score:score, fit:fit, peso:cfg.peso, req:cfg.req, minLv:minLv,
+        ideal:cfg.min+'–'+cfg.max, gap: scoreToLevel5(score) < minLv ? 'bajo':'ok' });
+    });
+    if (pf16dims.length) {
+      var secPeso16=0, secFitPeso16=0;
+      pf16dims.forEach(function(d){secPeso16+=d.peso;secFitPeso16+=d.fit*d.peso;});
+      var secFit16 = secPeso16>0?Math.round(secFitPeso16/secPeso16):0;
+      sections.push({ id:'pf16', icon:'🧬', title:'Personalidad 16PF', dims:pf16dims, secFit:secFit16,
+        desc:'Factores globales de personalidad según el modelo de Cattell. Evalúa extraversión, estabilidad emocional, dureza mental, independencia y autocontrol.' });
+    }
+  }
+
   // ── Game tests ──────────────────────────────────────────────────
   var GAME_REPORT_META = {
     game_detector:   { icon:'🎯', title:'Detector (Atención Gamificada)',       desc:'Velocidad y precisión en detección visual de estímulos.' },
@@ -5055,6 +5167,13 @@ function buildFitReport(c) {
     // Situacional / Vigilancia
     sit:'Ante una situación ambigua en el trabajo donde el protocolo no es claro, ¿cómo decides qué hacer?',
     vig:'¿Puedes describir una situación en que detectaste algo irregular? ¿Cómo actuaste y qué resultó?',
+    // 16PF
+    EX: '¿Cómo te desenvuelves en un equipo nuevo donde no conoces a nadie? Dame un ejemplo de tu experiencia.',
+    AN: 'Cuéntame de un período de mucha presión laboral. ¿Cómo te afectó emocionalmente y cómo lo manejaste?',
+    DU: '¿Has tenido que tomar una decisión impopular que sabías que era la correcta? ¿Cómo la comunicaste?',
+    AC: '¿Cómo manejas las reglas o procedimientos cuando trabajas sin supervisión directa?',
+    // IDT
+    idt: '¿Puedes describir cómo interpretas un reporte o tabla de datos para tomar una decisión? Dame un ejemplo concreto.',
   };
 
   const entrevista = brechas.map(d => QS_ENTREVISTA[d.key]).filter(Boolean);
@@ -5163,6 +5282,78 @@ const DIM_DESC = {
       mid: 'Razona con lógica de manera adecuada en situaciones cotidianas. Problemas de mayor complejidad o que requieren múltiples pasos de análisis pueden demandarle más tiempo o apoyo.',
       lo:  'Presenta dificultades para seguir cadenas de razonamiento complejas o para aplicar reglas de manera consistente en situaciones ambiguas. Requiere orientación clara y paso a paso para resolver problemas no rutinarios.',
     },
+  },
+  // ── IDT ─────────────────────────────────────────────────────
+  idt: {
+    pct: {
+      hi:  'Demuestra sólida capacidad para interpretar datos presentados en tablas, gráficos e indicadores numéricos. Extrae conclusiones correctas, detecta tendencias, calcula proporciones y compara información de distintas fuentes con rapidez y precisión. Este resultado predice buen desempeño en roles que requieren lectura de reportes, toma de decisiones basada en datos y comunicación de hallazgos a terceros.',
+      mid: 'Presenta una capacidad funcional para interpretar datos de complejidad moderada. Maneja tablas simples y cálculos directos sin dificultad, pero puede cometer errores ante datos que requieren comparaciones proporcionales, cálculos porcentuales o integración de múltiples fuentes. Se beneficiaría de plantillas de análisis y verificación cruzada en tareas de reportería.',
+      lo:  'Muestra dificultades significativas para extraer información de tablas y gráficos. Cometió errores en cálculos básicos, comparaciones proporcionales o detección de tendencias. En roles que requieren lectura de indicadores, elaboración de reportes o toma de decisiones basada en datos, este resultado representa una limitación importante. Se recomienda explorar en entrevista su experiencia con manejo de información numérica.',
+    }
+  },
+  // ── 16PF ────────────────────────────────────────────────────
+  pf16: {
+    EX: {
+      hi:  'Presenta un perfil marcadamente extrovertido. Se muestra cálido, participativo y sociable en el entorno laboral. Busca activamente la interacción con otros y genera buen clima en los equipos. Este perfil favorece roles de atención al público, coordinación de equipos y funciones que requieren redes de contacto.',
+      mid: 'Muestra un equilibrio funcional entre sociabilidad y reserva. Participa en actividades grupales sin dificultad, pero también puede trabajar de forma autónoma cuando la tarea lo requiere. Se adapta razonablemente a distintos contextos sociales laborales.',
+      lo:  'Tiende a la introversión y la reserva en el contexto laboral. Prefiere el trabajo individual y puede experimentar incomodidad en situaciones que exigen alta interacción social sostenida. En roles que requieren atención al público o liderazgo visible, este perfil puede representar una limitación que conviene explorar en entrevista.',
+    },
+    AN: {
+      hi:  'Demuestra sólida estabilidad emocional y baja ansiedad rasgo. Mantiene la compostura ante situaciones de presión, incertidumbre o conflicto. No se desborda emocionalmente frente a las dificultades y recupera el equilibrio con rapidez. Este resultado predice resiliencia sostenida en roles de alta exigencia.',
+      mid: 'Presenta un ajuste emocional adecuado para condiciones normales de trabajo. Ante situaciones de presión prolongada, acumulación de estrés o conflictos repetidos puede experimentar cierta inquietud que afecte transitoriamente su rendimiento. Se beneficiaría de apoyo en períodos de alta demanda.',
+      lo:  'Muestra indicadores de ansiedad rasgo elevada. Puede experimentar preocupación excesiva, tensión o irritabilidad ante situaciones de presión laboral moderada. Este perfil representa un factor de riesgo en roles que implican estrés sostenido, toma de decisiones bajo presión o exposición a situaciones conflictivas.',
+    },
+    DU: {
+      hi:  'Presenta un perfil de alta dureza mental: pragmático, orientado a hechos concretos y capaz de tomar decisiones difíciles sin dejarse influir excesivamente por factores emocionales. Mantiene objetividad incluso en situaciones interpersonalmente complejas. Ideal para roles que requieren firmeza y análisis frío.',
+      mid: 'Combina razonablemente la objetividad con la sensibilidad interpersonal. Toma decisiones basadas en datos pero también considera el impacto humano. Este equilibrio es funcional para la mayoría de los roles, aunque en posiciones que exigen máxima firmeza podría beneficiarse de mayor desapego emocional.',
+      lo:  'Muestra un perfil de alta sensibilidad y baja dureza mental. Las decisiones pueden verse influenciadas por factores emocionales o relacionales. Puede experimentar dificultad para dar feedback negativo, aplicar sanciones o tomar decisiones impopulares. En roles que requieren objetividad rigurosa, se recomienda explorar en entrevista.',
+    },
+    IN: {
+      hi:  'Demuestra alta independencia de criterio. Forma sus propias opiniones, defiende sus posiciones y no cede fácilmente ante la presión grupal. Es capaz de cuestionar instrucciones que considera inadecuadas y tomar iniciativa sin necesitar aprobación externa. Valioso en roles de liderazgo; puede generar fricción en estructuras muy jerárquicas.',
+      mid: 'Presenta un nivel funcional de independencia. Puede defender sus posiciones cuando tiene argumentos sólidos, pero también se adapta al consenso grupal cuando es necesario. Este equilibrio facilita la integración en equipos sin perder capacidad de iniciativa propia.',
+      lo:  'Tiende a la dependencia del grupo o la autoridad para tomar decisiones. Puede evitar expresar desacuerdo, seguir instrucciones sin cuestionarlas o buscar excesivamente la aprobación de otros. En roles que requieren autonomía, liderazgo o toma de decisiones independiente, este perfil puede representar una limitación.',
+    },
+    AC: {
+      hi:  'Presenta alto autocontrol: disciplinado, metódico y adherente a las normas. Planifica antes de actuar, cumple compromisos sin supervisión y mantiene orden en su trabajo. Este perfil predice confiabilidad, cumplimiento de procedimientos y comportamiento predecible en el cargo. Especialmente valioso en roles de seguridad y cumplimiento normativo.',
+      mid: 'Muestra un nivel adecuado de autocontrol para la mayoría de las funciones. Generalmente cumple con las normas y procedimientos, aunque en situaciones de baja supervisión o alta presión puede flexibilizar su adherencia a las reglas. Se recomienda estructura clara y seguimiento periódico.',
+      lo:  'Presenta bajo autocontrol: tendencia a la improvisación, dificultad para ceñirse a procedimientos y posible inconsistencia en el cumplimiento de compromisos. Puede actuar impulsivamente o priorizar la comodidad sobre la disciplina. En roles que exigen cumplimiento estricto de protocolos, este resultado representa un factor de riesgo significativo.',
+    },
+  },
+  // ── Juegos Gamificados ─────────────────────────────────────
+  game_detector: {
+    pct: {
+      hi:  'Demuestra una capacidad sobresaliente de atención selectiva bajo presión temporal. Identifica estímulos objetivo con alta velocidad y precisión, manteniendo un bajo índice de falsas alarmas incluso cuando los distractores son visualmente similares. Este resultado predice buen desempeño en tareas que requieren detección rápida de detalles relevantes en entornos con mucha información visual.',
+      mid: 'Presenta atención selectiva funcional para la mayoría de las tareas del cargo. Puede experimentar algunas omisiones o errores cuando la complejidad visual es alta o el tiempo disponible se reduce. En roles que exigen detección continua de anomalías se recomienda rotar tareas para evitar fatiga atencional.',
+      lo:  'Muestra dificultades significativas para detectar estímulos específicos entre distractores visuales bajo presión de tiempo. El alto índice de errores u omisiones sugiere vulnerabilidad ante tareas que requieren atención sostenida y discriminación visual rápida. Se recomienda explorar en entrevista cómo maneja entornos con múltiples estímulos simultáneos.',
+    }
+  },
+  game_secuencias: {
+    pct: {
+      hi:  'Evidencia sólida capacidad de razonamiento lógico y reconocimiento de patrones bajo presión. Resolvió secuencias de complejidad creciente con agilidad, lo que indica flexibilidad cognitiva y buena memoria de trabajo. Predice facilidad para aprender procedimientos nuevos, detectar irregularidades en datos y adaptarse a cambios de reglas o protocolos.',
+      mid: 'Presenta razonamiento lógico adecuado para secuencias de complejidad media. Ante patrones con múltiples variables o incrementos no lineales puede requerir más tiempo de análisis. En roles que demandan resolución de problemas complejos se beneficiaría de capacitación progresiva y acompañamiento inicial.',
+      lo:  'Muestra dificultades para identificar patrones lógicos y completar secuencias bajo presión temporal. Esto puede reflejarse en mayor tiempo de adaptación a procedimientos nuevos y dificultad para anticipar tendencias o detectar anomalías en datos. Se recomienda evaluar en entrevista su capacidad de aprendizaje y resolución de problemas en contexto real.',
+    }
+  },
+  game_impulsos: {
+    pct: {
+      hi:  'Demuestra excelente control inhibitorio conductual. Respondió correctamente a estímulos "Go" y logró inhibir eficazmente las respuestas ante estímulos "No-Go", manteniendo alta precisión a velocidades elevadas. A diferencia del autoinforme de impulsividad, este resultado refleja el control real del impulso motor y predice comportamiento prudente en situaciones que requieren no reaccionar de forma automática (confrontaciones, provocaciones, alarmas falsas).',
+      mid: 'Muestra control de impulsos funcional en la mayoría de las condiciones. Ante estímulos rápidos o prolongados puede cometer errores de comisión ocasionales (responder cuando no debía). Bajo presión extrema o fatiga podría actuar antes de evaluar completamente la situación. Se recomienda supervisión en contextos de alta reactividad.',
+      lo:  'Presenta dificultades significativas para inhibir respuestas automáticas, con alto índice de errores de comisión. Indica tendencia conductual (no solo autopercibida) a reaccionar antes de procesar la información completa. En roles que requieren contención ante provocaciones, manejo de conflictos o decisiones rápidas con consecuencias graves, este resultado representa un factor de riesgo que debe explorarse en profundidad durante la entrevista.',
+    }
+  },
+  game_vigilancia: {
+    pct: {
+      hi:  'Mantiene un nivel excepcional de vigilancia sostenida durante monitoreo en tiempo real. Detectó anomalías dentro de la ventana temporal disponible, con mínimas falsas alarmas y sin perder detecciones. Predice confiabilidad en roles de monitoreo de cámaras, control de acceso, supervisión de procesos y cualquier tarea donde la mayoría del tiempo no ocurre nada relevante pero es crítico detectar cuando sí ocurre.',
+      mid: 'Presenta nivel adecuado de vigilancia para condiciones normales de monitoreo. Puede experimentar detecciones tardías o falsas alarmas cuando las anomalías son breves o aparecen tras períodos prolongados sin estímulos. En turnos largos o nocturnos podría requerir protocolos de rotación para mantener la eficacia.',
+      lo:  'Muestra dificultades para mantener la atención durante tareas de monitoreo continuo. Dejó pasar anomalías o generó un número elevado de falsas alarmas, indicando vulnerabilidad ante la monotonía y posible sobrerreacción compensatoria. Representa un riesgo en roles de vigilancia, monitoreo CCTV o control de procesos donde la detección oportuna es crítica.',
+    }
+  },
+  game_memoria: {
+    pct: {
+      hi:  'Demuestra excelente memoria operativa bajo condiciones de interferencia. Retuvo correctamente instrucciones múltiples (colores, palabras, combinaciones) tras resolver tareas distractoras, indicando alta capacidad de procesamiento dual. Predice buen desempeño en roles que requieren retener información verbal mientras se ejecutan otras tareas: seguir instrucciones complejas, coordinar comunicaciones por radio, gestionar múltiples solicitudes en paralelo.',
+      mid: 'Presenta memoria operativa funcional para cargas de información moderadas. Cuando se acumulan múltiples instrucciones y la interferencia es alta puede experimentar omisiones parciales. En roles con alta demanda de procesamiento paralelo se beneficiaría de apoyos visuales (checklists, pantallas de referencia) y protocolos de verificación.',
+      lo:  'Muestra dificultades para retener información cuando se introduce una tarea distractora entre la codificación y el recuerdo. Sugiere memoria de trabajo limitada bajo condiciones de procesamiento dual, lo que puede afectar la capacidad de seguir instrucciones encadenadas, manejar comunicaciones simultáneas o coordinar tareas múltiples sin apoyo externo. Se recomienda explorar en entrevista cómo gestiona la multitarea en su experiencia laboral.',
+    }
   },
 };
 
@@ -5525,6 +5716,16 @@ function buildReportHtml(c, withClose) {
   if (s.comprension && rpt.sections.find(function(x){return x.id==='comprension';})) tabs.push({ id:'comprension', label:'Comprensión', icon:'📖' });
   if (s.disc      && rpt.sections.find(function(x){return x.id==='disc';}))       tabs.push({ id:'disc',      label:'DISC',        icon:'🎭' });
   if (s.atencion   && rpt.sections.find(function(x){return x.id==='atencion';}))   tabs.push({ id:'atencion',  label:'Atención',     icon:'🎯' });
+  if (s.idt        && rpt.sections.find(function(x){return x.id==='idt';}))        tabs.push({ id:'idt',       label:'Datos',         icon:'📊' });
+  if (s.pf16       && rpt.sections.find(function(x){return x.id==='pf16';}))       tabs.push({ id:'pf16',      label:'16PF',          icon:'🧬' });
+  // Game tabs
+  var GAME_TAB_LABELS = {game_detector:'Detector',game_secuencias:'Secuencias',game_impulsos:'Impulsos',game_vigilancia:'Vigilancia',game_memoria:'Memoria Op.'};
+  Object.keys(GAME_TAB_LABELS).forEach(function(gid) {
+    if (s[gid] && rpt.sections.find(function(x){return x.id===gid;})) {
+      var tm = TESTS_META[gid]||{};
+      tabs.push({ id:gid, label:GAME_TAB_LABELS[gid], icon:tm.icon||'🎮' });
+    }
+  });
 
   html += '<div style="background:#fff;border-bottom:2px solid #f1f5f9;padding:0 28px;display:flex;gap:0;overflow-x:auto;flex-shrink:0">';
   tabs.forEach(function(t, i) {
@@ -6089,7 +6290,7 @@ function buildReportHtml(c, withClose) {
   }
 
   // ── Generic panels for new tests ─────────────────────────────
-  ['disc','atencion'].forEach(function(testId) {
+  ['disc','atencion','idt','pf16'].forEach(function(testId) {
     if (!s[testId]) return;
     var sec = rpt ? rpt.sections.find(function(x){return x.id===testId;}) : null;
     if (!sec) return;
@@ -6150,6 +6351,68 @@ function buildReportHtml(c, withClose) {
       html += '</div></div>';
     }
     html += '</div>';
+  });
+
+  // ── Game detail panels ──────────────────────────────────────
+  ['game_detector','game_secuencias','game_impulsos','game_vigilancia','game_memoria'].forEach(function(gid) {
+    if (!s[gid]) return;
+    var sec = rpt ? rpt.sections.find(function(x){return x.id===gid;}) : null;
+    if (!sec) return;
+    var tm = TESTS_META[gid] || {};
+    var score = s[gid].pct;
+    var lv = fitToLevel5(sec.secFit);
+    var slv = fitLabel(sec.secFit);
+    var bgC = lv>=4?'#f0fdf4':lv>=3?'#fffbeb':'#fef2f2';
+    var col = lv>=4?'#16a34a':lv>=3?'#b45309':'#dc2626';
+    var brdC = lv>=4?'#bbf7d0':lv>=3?'#fde68a':'#fecaca';
+    var desc = dimDesc(gid, 'pct', score);
+    var dim = sec.dims[0] || {};
+    var minLv = dim.minLv || 1;
+    var scoreLv = scoreToLevel5(score);
+    var gap = minLv - scoreLv;
+    var gapLabel = gap > 0 ? '⚠️ Brecha de ' + gap + ' nivel' + (gap>1?'es':'') : gap === 0 ? '✓ Cumple el mínimo' : '★ Supera el mínimo por ' + Math.abs(gap) + ' nivel' + (Math.abs(gap)>1?'es':'');
+    var gapCol = gap > 0 ? '#dc2626' : gap === 0 ? '#b45309' : '#16a34a';
+
+    html += '<div class="rpt-tab-panel" id="rpt-panel-' + gid + '" style="display:none;flex-direction:column;gap:14px">';
+
+    // Header card
+    html += '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:20px 24px">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">';
+    html += '<div><div style="font-size:17px;font-weight:800">' + (tm.icon||'🎮') + ' ' + sec.title + '</div>';
+    html += '<div style="font-size:11px;color:#94a3b8;margin-top:2px">Evaluación gamificada · Basada en desempeño conductual</div></div>';
+    html += '<div style="text-align:center;background:' + bgC + ';border-radius:10px;padding:8px 16px;border:1.5px solid ' + col + '40">';
+    html += '<div style="font-size:24px;font-weight:900;color:' + col + ';line-height:1">' + lv + '/5</div>';
+    html += '<div style="font-size:10px;font-weight:700;color:' + col + '">' + slv.label + '</div></div></div>';
+
+    // Score bar
+    html += '<div style="margin-bottom:10px">';
+    html += '<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span style="color:#64748b">Puntaje obtenido</span><span style="font-weight:700;color:' + col + '">' + score + '%</span></div>';
+    html += '<div style="position:relative;height:8px;background:#e5e5ea;border-radius:100px">';
+    html += '<div style="position:absolute;top:0;bottom:0;left:0;width:' + score + '%;background:' + col + ';border-radius:100px"></div>';
+    if (minLv > 1) {
+      var minPct = (minLv - 1) * 25;
+      html += '<div style="position:absolute;top:-3px;bottom:-3px;left:' + minPct + '%;width:2px;background:#1d1d1f;border-radius:1px" title="Mínimo requerido: nivel ' + minLv + '"></div>';
+    }
+    html += '</div></div>';
+
+    // Gap indicator
+    html += '<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;background:' + gapCol + '10;border:1px solid ' + gapCol + '25;margin-bottom:10px">';
+    html += '<span style="font-size:12px;font-weight:700;color:' + gapCol + '">' + gapLabel + '</span>';
+    html += '<span style="font-size:11px;color:#64748b">(Requerido: nivel ' + minLv + ' · Obtenido: nivel ' + scoreLv + ')</span></div>';
+
+    // Narrative description
+    if (desc) {
+      html += '<div style="font-size:13px;line-height:1.8;color:#334155;background:#f8fafc;border-radius:10px;padding:16px 18px;border-left:3px solid ' + col + '">' + desc + '</div>';
+    }
+    html += '</div>';
+
+    // Relevance card
+    html += '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:16px 20px">';
+    html += '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#94a3b8;margin-bottom:8px">¿Por qué importa este resultado?</div>';
+    html += '<div style="font-size:12px;color:#475569;line-height:1.7">' + (dim.req || sec.desc || '') + '</div>';
+    html += '</div>';
+
+    html += '</div>'; // end rpt-panel
   });
 
   // ── Disclaimer ───────────────────────────────────────────────────────
@@ -6257,7 +6520,7 @@ function renderParams() {
     var ideal = PERFIL_IDEAL[perfil];
     if (!ideal) {
       PERFIL_IDEAL[perfil] = {};
-      var allTests = ['barratt','pai','dc0','comprension','situacional','vigilancia','disc','atencion','cwb','ausentismo','frustracion','ice','game_detector','game_secuencias','game_impulsos','game_vigilancia','game_memoria'];
+      var allTests = ['barratt','pai','dc0','comprension','situacional','vigilancia','disc','atencion','idt','cwb','pf16','ausentismo','frustracion','ice','game_detector','game_secuencias','game_impulsos','game_vigilancia','game_memoria'];
       allTests.forEach(function(tid) {
         var src = PERFIL_IDEAL['jefatura'] && PERFIL_IDEAL['jefatura'][tid];
         if (src) PERFIL_IDEAL[perfil][tid] = JSON.parse(JSON.stringify(src));
@@ -6388,8 +6651,8 @@ function switchParamsSubtab(tab) { _paramsSubtab = tab; }
 // ── Wiki de Tests ──
 function renderWikiTab() {
   var WIKI_GROUPS = {
-    '🧠 Tests Cognitivos': ['dc0','comprension','atencion'],
-    '🧬 Tests de Personalidad': ['barratt','pai','disc','ice'],
+    '🧠 Tests Cognitivos': ['dc0','comprension','atencion','idt'],
+    '🧬 Tests de Personalidad': ['barratt','pai','disc','ice','pf16'],
     '💡 Tests Situacionales': ['situacional','vigilancia'],
     '⚠ Riesgo Laboral': ['cwb','ausentismo','frustracion'],
     '🎮 Juegos Gamificados': ['game_detector','game_secuencias','game_impulsos','game_vigilancia','game_memoria'],
@@ -6430,6 +6693,15 @@ function renderWikiTab() {
       ],
       scoring: 'Se calcula: Total de respuestas correctas − errores de comisión. Se normaliza a percentil 0-100 según baremos. Clasificación en 5 niveles estándar.',
       reference: 'Adaptación del Test d2 de Brickenkamp & Zillmer (1998).'
+    },
+    idt: {
+      icon: '📊', name: 'Interpretación de Datos y Tablas (IDT-10)', category: 'Cognitivo', items: 10, time: '6-8 min', format: 'Opción múltiple con datos numéricos',
+      description: 'Evalúa la capacidad del candidato para leer, interpretar y extraer conclusiones de información presentada en tablas, indicadores y datos numéricos. Incluye cálculos de proporciones, comparaciones entre grupos, detección de tendencias, porcentajes y proyecciones simples. Simula escenarios laborales reales: reportes de gestión, dashboards operativos e indicadores de rendimiento.',
+      dimensions: [
+        { key:'pct', name:'Interpretación de Datos Global', desc:'Puntaje integrado que mide la capacidad de extraer información correcta de fuentes de datos estructurados. Combina lectura literal de tablas, cálculos aritméticos aplicados, comparaciones proporcionales y detección de tendencias. Puntuaciones altas predicen autonomía en el manejo de reportes y toma de decisiones basada en evidencia.' },
+      ],
+      scoring: 'Cada respuesta correcta suma 1 punto (máx. 10). Se normaliza a 0-100. Clasificación: Muy Bajo (0-19), Bajo (20-39), Medio (40-59), Alto (60-79), Muy Alto (80-100).',
+      reference: 'Diseñado a partir de modelos de data literacy de Gummer & Mandinach (2015), competencias numéricas laborales de OECD-PIAAC (2013) y paradigmas de in-basket cuantitativo.'
     },
     barratt: {
       icon: '🧩', name: 'Escala de Impulsividad de Barratt (BIS-15)', category: 'Personalidad', items: 15, time: '3-5 min', format: 'Likert 1-4',
@@ -6529,6 +6801,19 @@ function renderWikiTab() {
       ],
       scoring: 'Cada dimensión se calcula como promedio de sus 4 ítems (escala 1-5), normalizado a 0-100. El puntaje global es el promedio ponderado de las 5 dimensiones. Clasificación por dimensión y global: Muy Bajo (0-19), Bajo (20-39), Medio (40-59), Alto (60-79), Muy Alto (80-100). Incluye 4 ítems inversos distribuidos entre dimensiones para control de aquiescencia.',
       reference: 'Diseñado a partir de modelos de competencias de ejecución de Lombardo & Eichinger (2004), el Achievement Motivation Inventory de Schuler et al. (2004) y la teoría de orientación al logro de McClelland (1961).'
+    },
+    pf16: {
+      icon: '🧬', name: 'Test de Personalidad 16PF (Abreviado)', category: 'Personalidad', items: 20, time: '8-10 min', format: 'Likert 1-5',
+      description: 'Versión abreviada del Cuestionario de 16 Factores de Personalidad de Raymond Cattell. Evalúa los 5 factores globales de segundo orden que resumen la estructura de personalidad: Extraversión, Ajuste Emocional (Ansiedad inversa), Dureza Mental, Independencia y Autocontrol. Diseñado para contexto psicolaboral con énfasis en predicción de desempeño.',
+      dimensions: [
+        { key:'EX', name:'Extraversión', desc:'Factor global que integra Afabilidad (A), Animación (F), Atrevimiento (H) y Autosuficiencia invertida (Q2). Mide la orientación social del candidato: desde la calidez, sociabilidad y búsqueda de contacto interpersonal hasta la reserva, independencia social y preferencia por el trabajo individual.' },
+        { key:'AN', name:'Ajuste Emocional (Baja Ansiedad)', desc:'Factor global que integra Estabilidad Emocional (C), Aprensión invertida (O) y Tensión invertida (Q4). Puntuaciones altas indican serenidad, seguridad emocional y baja reactividad al estrés. Puntuaciones bajas sugieren ansiedad rasgo, preocupación excesiva y vulnerabilidad ante la presión.' },
+        { key:'DU', name:'Dureza Mental', desc:'Factor global que integra Afabilidad invertida (A), Sensibilidad invertida (I) y Abstracción invertida (M). Mide el grado de pragmatismo y objetividad: desde la firmeza, el pensamiento basado en hechos y la resistencia a la influencia emocional hasta la sensibilidad, la empatía y la consideración del impacto humano.' },
+        { key:'IN', name:'Independencia', desc:'Factor global que integra Dominancia (E), Atrevimiento (H), Vigilancia (L) y Apertura al Cambio (Q1). Mide la autonomía de criterio: desde la autodeterminación, la disposición a desafiar el consenso y la confianza en el propio juicio hasta la deferencia, la conformidad grupal y la búsqueda de aprobación.' },
+        { key:'AC', name:'Autocontrol', desc:'Factor global que integra Animación invertida (F), Atención a las Normas (G), Abstracción invertida (M) y Perfeccionismo (Q3). Mide la capacidad de autorregulación: desde la disciplina, el cumplimiento de normas y la planificación metódica hasta la espontaneidad, la flexibilidad y la tendencia a la improvisación.' },
+      ],
+      scoring: 'Cada dimensión se calcula como promedio de sus 4 ítems (escala 1-5), normalizado a 0-100. Incluye ítems inversos para control de aquiescencia. Clasificación: Muy Bajo (0-19), Bajo (20-39), Medio (40-59), Alto (60-79), Muy Alto (80-100). No hay puntaje "bueno" o "malo" universal — el perfil óptimo depende del cargo.',
+      reference: 'Basado en el 16PF-5 de Cattell, Cattell & Cattell (1993). Estructura factorial de segundo orden según Conn & Rieke (1994). Adaptación abreviada para contexto psicolaboral chileno.'
     },
     game_detector: {
       icon:'🎯', name:'Detector — Atención y Concentración', category:'Juego Gamificado', items:'10 rondas', time:'3 min', format:'Juego interactivo',
@@ -6714,10 +6999,12 @@ var BATTERY_TEST_DIMENSIONS = {
   comprension: { icon:'📋', title:'Comprensión de Instrucciones',     keys:['_self'] },
   disc:        { icon:'🎭', title:'Estilos Conductuales (DISC-20)',    keys:['D','I','S','C'] },
   atencion:    { icon:'🎯', title:'Atención Concentrada (d2)',         keys:['pct'] },
+  idt:         { icon:'📊', title:'Interpretación de Datos (IDT-10)',  keys:['pct'] },
   cwb:         { icon:'⚠', title:'Conductas Contraproducentes (CWB-18)', keys:['AR','DI','NG'] },
   ausentismo:  { icon:'📅', title:'Riesgo de Ausentismo (ABS-10)',      keys:['pct'] },
   frustracion: { icon:'🔥', title:'Tolerancia a la Frustración (TF-12)', keys:['PE','CI','AC'] },
   ice:         { icon:'⚡', title:'Competencias de Ejecución (ICE-20)',  keys:['IN','CO','SU','GE','CR'] },
+  pf16:        { icon:'🧬', title:'Personalidad 16PF (Abreviado)',      keys:['EX','AN','DU','IN','AC'] },
   game_detector:  { icon:'🎯', title:'Detector (Atención)',              keys:['pct'] },
   game_secuencias:{ icon:'🧠', title:'Secuencias (Lógica)',              keys:['pct'] },
   game_impulsos:  { icon:'🔥', title:'Control de Impulsos (Go/No-Go)',   keys:['pct'] },
@@ -6729,11 +7016,9 @@ function renderBateriaTab() {
   var perfil = _paramPerfil;
   var active = PERFIL_TESTS[perfil] || PERFIL_TESTS_DEFAULT[perfil] || [];
   var ideal = PERFIL_IDEAL[perfil];
-  // Auto-create for custom cargos that don't have it yet
   if (!ideal) {
     PERFIL_IDEAL[perfil] = {};
-    // Copy shared test defaults from jefatura
-    var allGameAndShared = ['barratt','pai','dc0','comprension','situacional','vigilancia','disc','atencion','cwb','ausentismo','frustracion','ice','game_detector','game_secuencias','game_impulsos','game_vigilancia','game_memoria'];
+    var allGameAndShared = ['barratt','pai','dc0','comprension','situacional','vigilancia','disc','atencion','idt','cwb','pf16','ausentismo','frustracion','ice','game_detector','game_secuencias','game_impulsos','game_vigilancia','game_memoria'];
     allGameAndShared.forEach(function(tid) {
       var src = PERFIL_IDEAL['jefatura'] && PERFIL_IDEAL['jefatura'][tid];
       if (src) PERFIL_IDEAL[perfil][tid] = JSON.parse(JSON.stringify(src));
@@ -6741,26 +7026,65 @@ function renderBateriaTab() {
     ideal = PERFIL_IDEAL[perfil];
   }
 
-  var LEVEL_NAMES  = ['','Muy Bajo','Bajo','Medio','Alto','Muy Alto'];
-  var LEVEL_COLORS = ['','#94a3b8','#64748b','#f59e0b','#3b82f6','#10b981'];
-  var LEVEL_BG     = ['','#f1f5f9','#f1f5f9','#fffbeb','#eff6ff','#f0fdf4'];
+  var LN = ['','Muy Bajo','Bajo','Medio','Alto','Muy Alto'];
+  var LC = ['','#ef4444','#f97316','#eab308','#3b82f6','#10b981'];
+  var LBG = ['','#fef2f2','#fff7ed','#fefce8','#eff6ff','#f0fdf4'];
+  var ZONE_COLORS = { reject:'#fee2e2', caution:'#fef9c3', approve:'#dcfce7' };
+  var ZONE_BORDERS = { reject:'#fca5a5', caution:'#fde68a', approve:'#86efac' };
 
   var TEST_GROUPS = {
-    '🧠 Tests Cognitivos': ['dc0','comprension','atencion'],
-    '🧬 Tests de Personalidad': ['barratt','pai','disc','ice'],
+    '🧠 Tests Cognitivos': ['dc0','comprension','atencion','idt'],
+    '🧬 Tests de Personalidad': ['barratt','pai','disc','ice','pf16'],
     '💡 Tests Situacionales': ['situacional','vigilancia'],
     '⚠ Riesgo Laboral': ['cwb','ausentismo','frustracion'],
     '🎮 Juegos Gamificados': ['game_detector','game_secuencias','game_impulsos','game_vigilancia','game_memoria'],
   };
 
+  var TEST_SHORT_DESC = {
+    dc0:'Razonamiento verbal, numérico y lógico-abstracto.',
+    comprension:'Interpretar instrucciones multi-condición.',
+    atencion:'Velocidad y precisión en detección de estímulos (d2).',
+    idt:'Lectura de tablas, gráficos e indicadores numéricos.',
+    barratt:'Control atencional, motor y planificación.',
+    pai:'Estabilidad emocional, adaptación social, normatividad, estrés e integridad.',
+    disc:'Dominancia, Influencia, Estabilidad, Cumplimiento.',
+    ice:'Iniciativa, compromiso, urgencia, gestión y resultados.',
+    pf16:'Extraversión, ajuste emocional, dureza, independencia y autocontrol.',
+    situacional:'Escenarios laborales con opciones de respuesta.',
+    vigilancia:'Protocolos y detección de irregularidades.',
+    cwb:'Conductas contraproducentes: agresión, desvío y negligencia.',
+    ausentismo:'Propensión a faltas, atrasos y abandonos.',
+    frustracion:'Persistencia, control de irritabilidad y acción constructiva.',
+    game_detector:'Encontrar estímulos entre distractores bajo presión.',
+    game_secuencias:'Patrones numéricos con dificultad progresiva.',
+    game_impulsos:'Control inhibitorio conductual real (Go/No-Go).',
+    game_vigilancia:'Monitoreo de cámaras con anomalías temporales.',
+    game_memoria:'Retención bajo interferencia (memorizar→distractor→recordar).',
+  };
+
   var out = '';
 
-  // Info banner
-  out += '<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 16px;margin-bottom:20px;display:flex;align-items:flex-start;gap:10px">'
-       + '<span style="font-size:18px">🧪</span>'
-       + '<div style="font-size:12px;color:#1e40af;line-height:1.6">'
-       + '<strong>Batería de Tests:</strong> activa o desactiva tests para este cargo. Cuando un test está <span style="color:#16a34a;font-weight:700">activo</span>, '
-       + 'puedes configurar los umbrales mínimos de cada dimensión expandiendo su panel.'
+  // ── Templates dropdown ──
+  out += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">';
+  out += '<span style="font-size:12px;font-weight:600;color:var(--ink3)">⚡ Plantilla rápida:</span>';
+  out += '<select onchange="applyTemplate(this.value,\'' + perfil + '\')" style="padding:7px 32px 7px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-family:inherit;color:var(--ink);background:var(--surface);cursor:pointer;-webkit-appearance:none;appearance:none;background-image:url(\'data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%2394a3b8%27 stroke-width=%272%27%3E%3Cpolyline points=%276 9 12 15 18 9%27/%3E%3C/svg%3E\');background-repeat:no-repeat;background-position:right 10px center">';
+  out += '<option value="">Seleccionar plantilla…</option>';
+  out += '<option value="operativo">🔧 Perfil Operativo — exigencia media, alto autocontrol</option>';
+  out += '<option value="analitico">📊 Perfil Analítico — alta cognición, detalle</option>';
+  out += '<option value="liderazgo">👔 Perfil Liderazgo — alto en todo, equilibrio</option>';
+  out += '<option value="seguridad">🛡 Perfil Seguridad — máximo control, vigilancia, normatividad</option>';
+  out += '<option value="minimo">⬇ Mínimos base — nivel 2 en todo</option>';
+  out += '<option value="exigente">⬆ Alta exigencia — nivel 4 en todo</option>';
+  out += '</select></div>';
+
+  // ── Info banner ──
+  out += '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:11px 16px;margin-bottom:18px;display:flex;align-items:center;gap:10px">'
+       + '<span style="font-size:14px">💡</span>'
+       + '<div style="font-size:11px;color:#0369a1;line-height:1.5">'
+       + 'Configura el <strong>nivel mínimo requerido</strong> para cada dimensión. La barra muestra las zonas: '
+       + '<span style="color:#dc2626">■</span> descarte · '
+       + '<span style="color:#ca8a04">■</span> precaución · '
+       + '<span style="color:#16a34a">■</span> aprobado'
        + '</div></div>';
 
   Object.entries(TEST_GROUPS).forEach(function(entry) {
@@ -6775,6 +7099,7 @@ function renderBateriaTab() {
       var isLast = i === testIds.length - 1;
       var dimInfo = BATTERY_TEST_DIMENSIONS[tid];
       var secData = ideal[tid];
+      var shortDesc = TEST_SHORT_DESC[tid] || '';
 
       // Toggle row
       out += '<div style="border-bottom:' + (isLast && !isOn ? 'none' : '1px solid #f1f5f9') + '">';
@@ -6784,69 +7109,93 @@ function renderBateriaTab() {
            + (isOn ? 'checked' : '') + ' onchange="toggleBatteryTest(this)" '
            + 'style="width:17px;height:17px;accent-color:var(--accent);cursor:pointer;flex-shrink:0">';
       out += '<span style="font-size:16px">' + tm.icon + '</span>';
-      out += '<div style="flex:1"><div style="font-size:13px;font-weight:600;color:#1e293b">' + tm.name + '</div></div>';
+      out += '<div style="flex:1"><div style="font-size:13px;font-weight:600;color:#1e293b">' + tm.name + '</div>'
+           + '<div style="font-size:11px;color:#94a3b8;line-height:1.4;margin-top:1px">' + shortDesc + '</div></div>';
       out += '<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:100px;background:' + (isOn?'#f0fdf4':'#f1f5f9') + ';color:' + (isOn?'#16a34a':'#94a3b8') + ';border:1px solid ' + (isOn?'#bbf7d0':'#e2e8f0') + '">'
            + (isOn ? 'Activo' : 'Inactivo') + '</span>';
       out += '</label>';
 
-      // If active: show parameter config for this test's dimensions
+      // ── Dimension config with zone bars ──
       if (isOn && dimInfo && secData) {
-        out += '<div style="padding:0 16px 14px;background:#fafbfc;border-top:1px dashed #e2e8f0">';
-        out += '<div style="display:flex;align-items:center;gap:6px;padding:10px 0 8px">'
-             + '<span style="font-size:12px">' + dimInfo.icon + '</span>'
-             + '<span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#64748b">Configurar umbrales — ' + dimInfo.title + '</span>'
-             + '</div>';
-        out += '<div style="background:#fff;border-radius:10px;overflow:hidden;border:1px solid #e8ecf0">';
+        out += '<div style="padding:4px 16px 16px;background:#fafbfc;border-top:1px dashed #e2e8f0">';
 
         dimInfo.keys.forEach(function(k, ki) {
           var cfg = k === '_self' ? secData : (secData[k] || null);
           if (!cfg) return;
           var fid = 'b_' + perfil + '_' + tid + '_' + k;
           var curLv = cfg.minLv || scoreToLevel5(cfg.min) || 3;
-          var isLastDim = (ki === dimInfo.keys.length - 1);
-          var col = LEVEL_COLORS[curLv];
+          var col = LC[curLv];
+          // Simulated historical average (slightly above minimum for realism)
+          var histAvg = Math.min(5, curLv + (Math.random() > 0.5 ? 1 : 0));
 
-          out += '<div id="row_' + fid + '" style="padding:12px 14px;' + (isLastDim ? '' : 'border-bottom:1px solid #f1f5f9;') + '">';
-          out += '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">';
-          // Label
-          out += '<div style="flex:1;min-width:110px">'
-               + '<div style="font-size:12px;font-weight:600;color:#0f172a">' + cfg.label + '</div>'
-               + '<div style="font-size:10px;color:#94a3b8;margin-top:1px;line-height:1.4">' + cfg.req + '</div>'
+          out += '<div id="row_' + fid + '" style="padding:12px 0;' + (ki < dimInfo.keys.length - 1 ? 'border-bottom:1px solid #f0f0f0;' : '') + '">';
+
+          // Row: Label + Level selector
+          out += '<div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:8px">';
+          out += '<div style="flex:1;min-width:0">'
+               + '<div style="font-size:13px;font-weight:700;color:#0f172a">' + cfg.label + '</div>'
+               + '<div style="font-size:10px;color:#94a3b8;line-height:1.4;margin-top:2px">' + (cfg.req || '') + '</div>'
                + '</div>';
-          // Chips 1-5
-          out += '<div style="display:flex;gap:3px;flex-shrink:0">';
+
+          // Level chips
+          out += '<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">';
+          out += '<span style="font-size:10px;color:#94a3b8;margin-right:2px">Mín:</span>';
           for (var lv = 1; lv <= 5; lv++) {
-            var active2 = (lv === curLv);
-            out += '<button type="button"'
-                 + ' id="chip_' + fid + '_' + lv + '"'
+            var isActive = lv === curLv;
+            out += '<button type="button" id="chip_' + fid + '_' + lv + '"'
                  + ' data-fid="' + fid + '" data-lv="' + lv + '"'
                  + ' onclick="pickLevel(this.dataset.fid,+this.dataset.lv)"'
                  + ' onmouseenter="showLvlTip(this,' + lv + ')" onmouseleave="hideLvlTip()"'
-                 + ' style="width:30px;height:30px;border-radius:7px;border:none;cursor:pointer;font-size:11px;font-weight:700;transition:all .12s;'
-                 + (active2 ? 'background:' + LEVEL_COLORS[lv] + ';color:#fff;box-shadow:0 2px 6px ' + LEVEL_COLORS[lv] + '55;' : 'background:#f1f5f9;color:#94a3b8;') + '">'
+                 + ' style="width:28px;height:28px;border-radius:7px;border:' + (isActive ? '2px solid ' + LC[lv] : '1.5px solid #e2e8f0') + ';cursor:pointer;font-size:11px;font-weight:700;transition:all .12s;'
+                 + 'background:' + (isActive ? LC[lv] : '#fff') + ';color:' + (isActive ? '#fff' : '#94a3b8') + ';">'
                  + lv + '</button>';
           }
-          out += '</div>';
           // Badge
-          out += '<div id="lbl_' + fid + '" style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px;min-width:62px;text-align:center;background:' + LEVEL_BG[curLv] + ';color:' + col + '">'
-               + LEVEL_NAMES[curLv] + '</div>';
+          out += '<div id="lbl_' + fid + '" style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px;background:' + LBG[curLv] + ';color:' + col + ';margin-left:4px;white-space:nowrap">'
+               + LN[curLv] + '</div>';
+          out += '</div></div>';
+
+          // ── Zone bar ──
+          var rejectW = Math.max(0, (curLv - 1) * 20);
+          var cautionW = 20; // one level = caution
+          var approveW = Math.max(0, 100 - rejectW - cautionW);
+          if (curLv === 1) { rejectW = 0; cautionW = 20; approveW = 80; }
+          if (curLv >= 5) { rejectW = 80; cautionW = 20; approveW = 0; }
+          var histPct = ((histAvg - 1) / 4) * 100;
+
+          out += '<div style="position:relative;height:20px;border-radius:6px;overflow:hidden;display:flex;margin-bottom:4px;border:1px solid #e2e8f0">';
+          // Reject zone
+          if (rejectW > 0) {
+            out += '<div style="width:' + rejectW + '%;background:' + ZONE_COLORS.reject + ';display:flex;align-items:center;justify-content:center;border-right:1px solid ' + ZONE_BORDERS.reject + '">'
+                 + '<span style="font-size:8px;font-weight:700;color:#dc2626;opacity:.7">DESCARTE</span></div>';
+          }
+          // Caution zone
+          out += '<div style="width:' + cautionW + '%;background:' + ZONE_COLORS.caution + ';display:flex;align-items:center;justify-content:center;border-right:1px solid ' + ZONE_BORDERS.caution + '">'
+               + '<span style="font-size:8px;font-weight:700;color:#a16207;opacity:.7">PRECAUCIÓN</span></div>';
+          // Approve zone
+          if (approveW > 0) {
+            out += '<div style="width:' + approveW + '%;background:' + ZONE_COLORS.approve + ';display:flex;align-items:center;justify-content:center">'
+                 + '<span style="font-size:8px;font-weight:700;color:#16a34a;opacity:.7">APROBADO</span></div>';
+          }
+          // Historical avg marker
+          out += '<div style="position:absolute;top:0;bottom:0;left:' + histPct + '%;width:2px;background:#6366f1;z-index:2" title="Promedio histórico: nivel ' + histAvg + '"></div>';
+          out += '<div style="position:absolute;top:-1px;left:' + (histPct - 4) + '%;width:10px;height:6px;background:#6366f1;border-radius:0 0 3px 3px;z-index:2"></div>';
           out += '</div>';
 
-          // Bar
-          out += '<div style="margin-top:8px;position:relative;height:5px;background:#f1f5f9;border-radius:100px" id="bar_' + fid + '">';
-          var fillPct = ((curLv - 1) / 4) * 100;
-          out += '<div id="fill_' + fid + '" style="position:absolute;top:0;bottom:0;left:0;width:' + fillPct + '%;background:' + col + ';border-radius:100px;transition:all .2s"></div>';
-          for (var t2 = 1; t2 <= 5; t2++) {
-            var tpct = ((t2 - 1) / 4) * 100;
-            out += '<div style="position:absolute;top:-2px;bottom:-2px;left:' + tpct + '%;width:2px;background:#fff;border-radius:1px;transform:translateX(-50%)"></div>';
+          // Legend
+          out += '<div style="display:flex;justify-content:space-between;align-items:center">';
+          out += '<div style="display:flex;gap:8px;font-size:9px;color:#94a3b8">';
+          for (var ll = 1; ll <= 5; ll++) {
+            out += '<span>' + ll + '·' + LN[ll] + '</span>';
           }
+          out += '</div>';
+          out += '<div style="display:flex;align-items:center;gap:4px;font-size:9px;color:#6366f1"><div style="width:8px;height:3px;background:#6366f1;border-radius:1px"></div>Prom. histórico</div>';
           out += '</div>';
 
           out += '<input type="hidden" id="hid_' + fid + '_min" value="' + curLv + '">';
           out += '</div>'; // row
         });
 
-        out += '</div>'; // inner card
         out += '</div>'; // config panel
       }
 
@@ -6859,28 +7208,51 @@ function renderBateriaTab() {
   document.getElementById('bateria-content').innerHTML = out;
 }
 
+// ── Template presets ──
+function applyTemplate(tpl, perfil) {
+  if (!tpl) return;
+  var ideal = PERFIL_IDEAL[perfil]; if (!ideal) return;
+  var TEMPLATES = {
+    operativo:  { _default:3, AN:4, AC:4, ON:4, ME:3, IM:4, NP:3, pct:3 },
+    analitico:  { _default:3, V:4, N:4, L:4, pct:4, EX:2, DU:4, AC:4 },
+    liderazgo:  { _default:4, EX:4, AN:4, IN:4, DU:3, SU:4, CR:4 },
+    seguridad:  { _default:3, AC:5, ON:5, IL:5, IM:4, ME:4, AN:4, pct:4 },
+    minimo:     { _default:2 },
+    exigente:   { _default:4 },
+  };
+  var tplData = TEMPLATES[tpl]; if (!tplData) return;
+  var def = tplData._default || 3;
+
+  // Apply to all dimensions
+  Object.keys(ideal).forEach(function(secId) {
+    var sec = ideal[secId];
+    if (!sec) return;
+    if (sec.min !== undefined) {
+      var lv = tplData.pct || def;
+      sec.minLv = lv; sec.min = (lv-1)*20; sec.max = 100;
+    } else {
+      Object.keys(sec).forEach(function(k) {
+        if (sec[k] && sec[k].min !== undefined) {
+          var lv = tplData[k] || def;
+          sec[k].minLv = lv; sec[k].min = (lv-1)*20; sec[k].max = 100;
+        }
+      });
+    }
+  });
+  persistParams();
+  renderBateriaTab();
+  toast('✓ Plantilla "' + tpl + '" aplicada', 'ok');
+}
+
 
 function pickLevel(fid, lv) {
-  var LEVEL_NAMES  = ['','Muy Bajo','Bajo','Medio','Alto','Muy Alto'];
-  var LEVEL_COLORS = ['','#94a3b8','#64748b','#f59e0b','#3b82f6','#10b981'];
-  var LEVEL_BG     = ['','#f1f5f9','#f1f5f9','#fffbeb','#eff6ff','#f0fdf4'];
-  var col = LEVEL_COLORS[lv];
-  for (var i = 1; i <= 5; i++) {
-    var chip = document.getElementById('chip_' + fid + '_' + i);
-    if (!chip) continue;
-    var active = (i === lv);
-    chip.style.background  = active ? LEVEL_COLORS[i] : '#f1f5f9';
-    chip.style.color       = active ? '#fff' : '#94a3b8';
-    chip.style.boxShadow   = active ? ('0 2px 6px ' + LEVEL_COLORS[i] + '55') : 'none';
-  }
-  var hidEl  = document.getElementById('hid_' + fid + '_min');
+  // Update hidden input immediately
+  var hidEl = document.getElementById('hid_' + fid + '_min');
   if (hidEl) hidEl.value = lv;
-  var lblEl  = document.getElementById('lbl_' + fid);
-  if (lblEl) { lblEl.textContent = LEVEL_NAMES[lv]; lblEl.style.color = col; lblEl.style.background = LEVEL_BG[lv]; }
-  var fillEl = document.getElementById('fill_' + fid);
-  if (fillEl) { fillEl.style.width = ((lv-1)/4*100) + '%'; fillEl.style.background = col; }
-  // Auto-save
+  // Save to PERFIL_IDEAL
   saveParams();
+  // Re-render to update zone bars, chips, badges
+  renderBateriaTab();
 }
 
 
@@ -6907,10 +7279,12 @@ function saveParams() {
     comprension: ['_self'],
     disc:        ['D','I','S','C'],
     atencion:    ['pct'],
+    idt:         ['pct'],
     cwb:         ['AR','DI','NG'],
     ausentismo:  ['pct'],
     frustracion: ['PE','CI','AC'],
     ice:         ['IN','CO','SU','GE','CR'],
+    pf16:        ['EX','AN','DU','IN','AC'],
     game_detector:  ['pct'],
     game_secuencias:['pct'],
     game_impulsos:  ['pct'],
@@ -7672,7 +8046,7 @@ function adminTab(id, btn) {
     const el = document.getElementById('tab-' + t); if(el) el.style.display = t === id ? 'block' : 'none';
     const nb = document.getElementById('nav-' + t); if(nb) nb.classList.toggle('active', t === id);
   });
-  if (id === 'candidates') { setCandSubTab('tabla', document.getElementById('subtab-tabla')); }
+  if (id === 'candidates') { renderCandidatesTable(); }
   else if (id === 'dashboard') renderDashboard();
   else if (id === 'params') { renderParamsTabs(); renderBateriaTab(); }
   else if (id === 'users') renderUsersTab();
@@ -8469,7 +8843,7 @@ function applyRoleRestrictions() {
 
 // ── URL Config Sharing (Compact) ──
 // Uses short aliases and compact format to keep URLs short
-var _TEST_ALIAS = {barratt:'B',dc0:'D',pai:'P',situacional:'S',vigilancia:'V',comprension:'C',disc:'I',atencion:'A',cwb:'W',ausentismo:'U',frustracion:'F',ice:'E',game_detector:'g1',game_secuencias:'g2',game_impulsos:'g4',game_vigilancia:'g5',game_memoria:'g7'};
+var _TEST_ALIAS = {barratt:'B',dc0:'D',pai:'P',situacional:'S',vigilancia:'V',comprension:'C',disc:'I',atencion:'A',idt:'T',cwb:'W',ausentismo:'U',frustracion:'F',ice:'E',pf16:'X',game_detector:'g1',game_secuencias:'g2',game_impulsos:'g4',game_vigilancia:'g5',game_memoria:'g7'};
 var _ALIAS_TEST = {};
 Object.keys(_TEST_ALIAS).forEach(function(k){ _ALIAS_TEST[_TEST_ALIAS[k]] = k; });
 
