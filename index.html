@@ -2262,6 +2262,16 @@ const PAI_BASE = [
   {id:'ai23',dim:'ML', r:false, text:'Me esfuerzo más allá de lo requerido cuando creo en el proyecto.'},
   {id:'ai24',dim:'ML', r:true,  text:'Raramente encuentro motivación en las tareas que me asignan.'},
   {id:'ai25',dim:'ML', r:false, text:'Mantengo una actitud positiva incluso cuando el trabajo es rutinario.'},
+  // ── Escala de Deseabilidad Social (DS-8) — ítems trampa ──
+  // Nadie honesto responde 4 en todos. Sirve para detectar respuesta inflada.
+  {id:'ds1', dim:'DS', r:false, text:'Nunca me he quedado callado/a cuando debería haber dicho algo incómodo.'},
+  {id:'ds2', dim:'DS', r:false, text:'Siempre cumplo mis promesas, sin excepción.'},
+  {id:'ds3', dim:'DS', r:false, text:'Nunca he llegado tarde a una reunión de trabajo.'},
+  {id:'ds4', dim:'DS', r:false, text:'Jamás he actuado de forma deshonesta, ni en situaciones menores.'},
+  {id:'ds5', dim:'DS', r:false, text:'Nunca he tenido un mal día que afecte mi trato con los demás.'},
+  {id:'ds6', dim:'DS', r:false, text:'Siempre me hago responsable de mis errores sin justificarlos de ninguna forma.'},
+  {id:'ds7', dim:'DS', r:false, text:'Nunca he exagerado algo para que me vean mejor ante otros.'},
+  {id:'ds8', dim:'DS', r:false, text:'Siempre digo exactamente lo que pienso, sin importar las consecuencias.'},
 ];
 
 // ═══════════════════════════════════════════════════════════
@@ -2812,19 +2822,24 @@ function calcScores(answers, selectedTests, perfil) {
 
   // PAI — raw mean per dimension (1-4 scale, higher = more of the trait)
   if (selectedTests.includes('pai')) {
-    const dims = {EE:[],AS:[],ON:[],ME:[],IL:[],ML:[]};
+    const dims = {EE:[],AS:[],ON:[],ME:[],IL:[],ML:[],DS:[]};
     allQs.filter(q=>q.testId==='pai').forEach(q => {
       const v = answers[q.id]; if (v===undefined) return;
-      const adj = q.r ? (5 - v) : v; // invert negatively-keyed items
+      const adj = q.r ? (5 - v) : v;
       if (dims[q.dim]) dims[q.dim].push(adj);
     });
     scores.pai = { _raw:{} };
-    Object.keys(dims).forEach(k => {
+    ['EE','AS','ON','ME','IL','ML'].forEach(k => {
       const vals = dims[k];
       const mean = vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : 2.5;
-      scores.pai._raw[k] = Math.round(mean * 10) / 10; // e.g. 3.2 (scale 1-4)
-      scores.pai[k] = Math.round((mean - 1) / 3 * 100); // normalized 0-100 for radar
+      scores.pai._raw[k] = Math.round(mean * 10) / 10;
+      scores.pai[k] = Math.round((mean - 1) / 3 * 100);
     });
+    // DS: social desirability. Mean >3.2 on 4-point scale = suspect inflation
+    const dsVals = dims.DS || [];
+    const dsMean = dsVals.length ? dsVals.reduce((a,b)=>a+b,0)/dsVals.length : 2.5;
+    scores.pai._ds_mean = Math.round(dsMean * 10) / 10;
+    scores.pai._ds_flag = dsMean >= 3.2; // inflated if average ≥ 3.2/4
   }
 
   // Juicio Situacional
@@ -4980,6 +4995,70 @@ function rawBandPct(pct) { // for choice tests % correct
   if (pct >= 50) return { label:'Parcialmente logrado', color:'#b45309', bg:'#fffbeb', border:'#fde68a' };
   return                { label:'Por desarrollar', color:'#b91c1c', bg:'#fef2f2', border:'#fecaca' };
 }
+
+// ═══════════════════════════════════════════════════════════
+//  NORMA INTERNA — percentiles desde BD
+// ═══════════════════════════════════════════════════════════
+var _normCache = null; // { pai:{EE:{mean,sd,...}}, barratt:{AI:{mean,sd},...}, dc0:{...} }
+
+async function fetchInternalNorm(perfil) {
+  // Fetch last 200 completed candidates of same perfil
+  try {
+    var url = SUPA_URL + '/rest/v1/candidates?estado=eq.completed&perfil=eq.' + perfil
+      + '&select=scores&order=created_at.desc&limit=200';
+    var r = await fetch(url, { headers: DB_HEADERS });
+    if (!r.ok) return null;
+    var data = await r.json();
+    if (!data || data.length < 3) return null; // need at least 3 for meaningful norm
+
+    // Collect values per test/dim
+    var acc = { pai:{EE:[],AS:[],ON:[],ME:[],IL:[],ML:[]}, barratt:{AI:[],IM:[],NP:[]}, dc0:{V:[],N:[],L:[]} };
+    data.forEach(function(c) {
+      var s = c.scores; if (!s) return;
+      if (s.pai) ['EE','AS','ON','ME','IL','ML'].forEach(function(k){ if(s.pai[k]!==undefined) acc.pai[k].push(s.pai[k]); });
+      if (s.barratt) ['AI','IM','NP'].forEach(function(k){ if(s.barratt[k]!==undefined) acc.barratt[k].push(s.barratt[k]); });
+      if (s.dc0) ['V','N','L'].forEach(function(k){ if(s.dc0[k]!==undefined) acc.dc0[k].push(s.dc0[k]); });
+    });
+
+    // Compute mean and sd per dim
+    function stats(arr) {
+      if (arr.length < 2) return null;
+      var mean = arr.reduce(function(a,b){return a+b;},0) / arr.length;
+      var sd = Math.sqrt(arr.reduce(function(a,b){return a+(b-mean)*(b-mean);},0) / arr.length);
+      return { mean: Math.round(mean*10)/10, sd: Math.max(1, Math.round(sd*10)/10), n: arr.length };
+    }
+
+    var norm = { n: data.length };
+    ['pai','barratt','dc0'].forEach(function(test) {
+      norm[test] = {};
+      Object.keys(acc[test]).forEach(function(k) {
+        var st = stats(acc[test][k]);
+        if (st) norm[test][k] = st;
+      });
+    });
+    return norm;
+  } catch(e) { return null; }
+}
+
+function normPercentile(score, mean, sd) {
+  // Approximate percentile from z-score using error function approximation
+  if (!mean || !sd) return null;
+  var z = (score - mean) / sd;
+  // Approximation of normal CDF
+  var t = 1 / (1 + 0.3275911 * Math.abs(z));
+  var poly = t * (0.254829592 + t * (-0.284496736 + t * (1.421413741 + t * (-1.453152027 + t * 1.061405429))));
+  var erfApprox = 1 - poly * Math.exp(-z * z);
+  var cdf = 0.5 * (1 + (z >= 0 ? erfApprox : -erfApprox));
+  return Math.round(Math.max(1, Math.min(99, cdf * 100)));
+}
+
+function percBand(pct) {
+  if (pct === null) return null;
+  if (pct >= 75) return { label:'Por encima del grupo', color:'#0f766e', bg:'#f0fdfa', border:'#99f6e4' };
+  if (pct >= 40) return { label:'Dentro del grupo', color:'#b45309', bg:'#fffbeb', border:'#fde68a' };
+  return              { label:'Por debajo del grupo', color:'#b91c1c', bg:'#fef2f2', border:'#fecaca' };
+}
+
 function buildFitReport(c) {
   const s = c.scores;
   const perfil = c.perfil || 'administrativo';
@@ -6084,6 +6163,17 @@ function buildReportHtml(c, withClose) {
     html += '<div style="font-size:17px;font-weight:800;color:#0f172a;margin-bottom:6px">🔎 Ajuste Psicológico — PAI</div>';
     html += '<div style="font-size:13px;color:#64748b;line-height:1.6;margin-bottom:16px">Evalúa 6 dimensiones del ajuste psicológico laboral. Los puntajes son promedios por dimensión en escala <strong>1–4</strong> (1=Nunca, 4=Siempre).</div>';
 
+    // ── DS Flag ──────────────────────────────────────────────
+    if (s.pai._ds_flag) {
+      html += '<div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:flex-start;gap:10px">';
+      html += '<span style="font-size:18px;flex-shrink:0">⚠️</span>';
+      html += '<div><div style="font-size:13px;font-weight:700;color:#92400e;margin-bottom:2px">Posible sesgo de deseabilidad social</div>';
+      html += '<div style="font-size:12px;color:#92400e;line-height:1.5">El candidato muestra un patrón de respuesta consistentemente alto en ítems de validación ('
+        + (s.pai._ds_mean||'—') + '/4.0). Esto puede indicar que las respuestas reflejan cómo desea ser percibido más que su perfil real. '
+        + 'Se recomienda explorar estas dimensiones en entrevista.</div></div>';
+      html += '</div>';
+    }
+
     // Radar
     var paiRadarDims = Object.keys(PAI_FULL).map(function(k){
       var raw = s.pai._raw ? s.pai._raw[k] : null;
@@ -6507,9 +6597,57 @@ async function viewCandReport(id) {
     const c = all.find(x => x.id === id);
     if (!c) { document.getElementById('cand-modal-content').innerHTML = '<div style="padding:40px;text-align:center;color:var(--ink3)">Candidato no encontrado.</div>'; return; }
     document.getElementById('cand-modal-content').innerHTML = buildReportHtml(c, true);
+    // Load internal norm in background and inject percentile cards when ready
+    fetchInternalNorm(c.perfil).then(function(norm) {
+      if (!norm) return;
+      injectNormComparison(c, norm);
+    });
   } catch(e) {
     console.error('Report error:', e);
     document.getElementById('cand-modal-content').innerHTML = '<div style="padding:40px;text-align:center;color:var(--accent)">Error al generar el informe: ' + e.message + '</div>';
+  }
+}
+
+function injectNormComparison(c, norm) {
+  var s = c.scores; if (!s) return;
+  var PAI_FULL   = { EE:'Estab. Emocional', AS:'Adapt. Social', ON:'Orient. Normativa', ME:'Manejo Estrés', IL:'Integridad', ML:'Motivación' };
+  var BARR_FULL  = { AI:'Control Atencional', IM:'Control Motor', NP:'Planificación' };
+  var DC0_FULL   = { V:'Verbal', N:'Numérico', L:'Lógico' };
+
+  function normRow(label, score, st) {
+    if (!st || st.n < 3) return '';
+    var pct = normPercentile(score, st.mean, st.sd);
+    var band = percBand(pct);
+    if (!band) return '';
+    return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f1f5f9">'
+      + '<div style="flex:1;font-size:12px;font-weight:600;color:#475569">' + label + '</div>'
+      + '<div style="font-size:12px;color:#94a3b8;min-width:60px;text-align:right">Media grupo: ' + st.mean + '</div>'
+      + '<div style="min-width:36px;text-align:right;font-size:13px;font-weight:800;color:' + band.color + '">P' + pct + '</div>'
+      + '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px;background:' + band.bg + ';border:1px solid ' + band.border + ';color:' + band.color + ';white-space:nowrap">' + band.label + '</span>'
+      + '</div>';
+  }
+
+  var rows = '';
+  if (s.pai && norm.pai)     Object.keys(PAI_FULL).forEach(function(k){ if(s.pai[k]!==undefined) rows += normRow(PAI_FULL[k], s.pai[k], norm.pai[k]); });
+  if (s.barratt && norm.barratt) Object.keys(BARR_FULL).forEach(function(k){ if(s.barratt[k]!==undefined) rows += normRow(BARR_FULL[k], s.barratt[k], norm.barratt[k]); });
+  if (s.dc0 && norm.dc0)     Object.keys(DC0_FULL).forEach(function(k){ if(s.dc0[k]!==undefined) rows += normRow(DC0_FULL[k], s.dc0[k], norm.dc0[k]); });
+
+  if (!rows) return;
+
+  var card = '<div id="norm-comparison-card" style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:20px 24px;margin-bottom:16px">'
+    + '<div style="font-size:14px;font-weight:800;color:#0f172a;margin-bottom:4px">📊 Comparativa con el grupo de referencia</div>'
+    + '<div style="font-size:12px;color:#64748b;margin-bottom:14px">Percentiles calculados sobre <strong>' + norm.n + ' candidatos</strong> del mismo cargo evaluados en esta plataforma. P50 = promedio del grupo.</div>'
+    + rows
+    + '</div>';
+
+  // Inject after the veredicto card in the general tab
+  var generalPanel = document.getElementById('rpt-panel-general');
+  if (!generalPanel) return;
+  var firstCard = generalPanel.querySelector('div');
+  if (firstCard) {
+    var injected = document.createElement('div');
+    injected.innerHTML = card;
+    generalPanel.insertBefore(injected.firstChild, firstCard.nextSibling);
   }
 }
 
@@ -8775,6 +8913,8 @@ function applyCandidateConfig() {
     saveCargosConfig();
     saveBatteryConfig();
     persistParams();
+    // Signal to restoreSession that this is a candidate link — show landing
+    sessionStorage.setItem('psicoeval_candidate_link', '1');
     return true;
   } catch(e) { console.warn('Error loading URL config:', e); return false; }
 }
@@ -8860,8 +9000,14 @@ function copyShareLink() {
 // Apply URL config if present (priority over localStorage)
 var _urlConfigApplied = applyCandidateConfig();
 
-if (!_urlConfigApplied) restoreParams();
-restoreSession();
+// If this is a shared candidate link, show the landing page directly
+if (_urlConfigApplied && sessionStorage.getItem('psicoeval_candidate_link')) {
+  sessionStorage.removeItem('psicoeval_candidate_link');
+  showView('landing');
+} else {
+  if (!_urlConfigApplied) restoreParams();
+  restoreSession();
+}
 applyCargoVisibility();
 
 // ── Mobile responsive ──
