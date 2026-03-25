@@ -8,65 +8,65 @@
 /* ── Reset ── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
-/* ── Pastel Apple Palette ── */
+/* ── Enterprise Premium Palette ── */
 :root{
   /* Backgrounds */
-  --bg:#f2f2f7;
-  --bg2:#e8e8f0;
+  --bg:#f8fafc;
+  --bg2:#f1f5f9;
   --surface:#ffffff;
-  --surface2:#f9f9fb;
-  --surface3:#f2f2f7;
+  --surface2:#f8fafc;
+  --surface3:#f1f5f9;
 
-  /* Text */
-  --ink:#1d1d1f;
-  --ink2:#48484a;
-  --ink3:#8e8e93;
-  --ink4:#aeaeb2;
+  /* Text — Slate scale */
+  --ink:#0f172a;
+  --ink2:#334155;
+  --ink3:#64748b;
+  --ink4:#94a3b8;
 
-  /* Pastel accent — soft indigo */
-  --accent:#6366f1;
+  /* Accent — Deep Indigo */
+  --accent:#4338ca;
   --accent-l:#eef2ff;
   --accent-m:#c7d2fe;
 
-  /* Pastel tones */
-  --mint:#34c759;
-  --mint-l:#f0fdf4;
-  --sky:#0a84ff;
-  --sky-l:#eff6ff;
-  --rose:#ff375f;
-  --rose-l:#fff1f3;
-  --amber:#ff9f0a;
+  /* Semantic tones */
+  --mint:#059669;
+  --mint-l:#ecfdf5;
+  --sky:#0369a1;
+  --sky-l:#f0f9ff;
+  --rose:#dc2626;
+  --rose-l:#fef2f2;
+  --amber:#d97706;
   --amber-l:#fffbeb;
-  --lilac:#bf5af2;
-  --lilac-l:#faf5ff;
-  --peach:#ff6b6b;
+  --lilac:#7c3aed;
+  --lilac-l:#f5f3ff;
+  --peach:#ea580c;
 
-  /* Semantic */
+  /* Semantic aliases */
   --green:var(--mint);
   --green-l:var(--mint-l);
   --blue:var(--sky);
   --blue-l:var(--sky-l);
-  --gold:#f59e0b;
+  --gold:#b45309;
   --gold-l:#fffbeb;
 
   /* Structure */
-  --border:#e5e5ea;
-  --border2:#d1d1d6;
-  --r:12px;
-  --rl:16px;
-  --sh:0 1px 2px rgba(0,0,0,.04),0 4px 12px rgba(0,0,0,.06);
-  --sh2:0 2px 8px rgba(0,0,0,.06),0 12px 32px rgba(0,0,0,.08);
-  --shl:0 8px 40px rgba(0,0,0,.12),0 2px 8px rgba(0,0,0,.06);
+  --border:#e2e8f0;
+  --border2:#cbd5e1;
+  --r:10px;
+  --rl:14px;
+  --sh:0 1px 3px rgba(15,23,42,.04),0 1px 2px rgba(15,23,42,.06);
+  --sh2:0 4px 6px rgba(15,23,42,.05),0 10px 15px rgba(15,23,42,.08);
+  --shl:0 10px 25px rgba(15,23,42,.1),0 4px 10px rgba(15,23,42,.04);
 }
 
 /* ── Base ── */
 body{
-  font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',system-ui,sans-serif;
+  font-family:'SF Pro Display',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
   background:var(--bg);color:var(--ink);min-height:100vh;
   font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
 }
-h1,h2,h3,h4{line-height:1.2;letter-spacing:-.02em}
+h1,h2,h3,h4{line-height:1.15;letter-spacing:-.03em;font-weight:800}
 button{font-family:inherit;cursor:pointer;border:none;outline:none;background:none}
 input,select,textarea{font-family:inherit;outline:none}
 
@@ -180,20 +180,23 @@ input,select,textarea{font-family:inherit;outline:none}
 .avatar{width:32px;height:32px;border-radius:50%;background:var(--accent-m);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700}
 
 /* ── Sidebar layout ── */
-.admin-layout{display:grid;grid-template-columns:210px 1fr;height:100vh;overflow:hidden}
+.admin-layout{display:grid;grid-template-columns:220px 1fr;height:100vh;overflow:hidden}
 .sidebar{
-  background:rgba(255,255,255,.9);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
-  border-right:1px solid var(--border);color:var(--ink);
-  display:flex;flex-direction:column;padding:20px 12px;height:100vh;overflow-y:auto;
+  background:#fff;
+  color:#1e293b;
+  display:flex;flex-direction:column;padding:24px 12px 16px;height:100vh;overflow-y:auto;
+  border-right:1px solid #f1f5f9;
 }
-.sidebar .logo{padding:4px 10px;margin-bottom:28px;font-size:17px}
+.sidebar .logo{padding:4px 10px;margin-bottom:32px;font-size:18px;font-weight:800;color:#0f172a;letter-spacing:-.02em}
+.sidebar .logo span{color:#6366f1}
 .nav-btn{
-  display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:8px;
-  font-size:13px;font-weight:500;color:var(--ink3);cursor:pointer;
+  display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;
+  font-size:13px;font-weight:500;color:#64748b;cursor:pointer;
   transition:all .12s;margin-bottom:2px;width:100%;text-align:left;
+  border:none;background:none;
 }
-.nav-btn:hover{background:var(--surface3);color:var(--ink2)}
-.nav-btn.active{background:var(--accent-l);color:var(--accent);font-weight:600}
+.nav-btn:hover{background:#f1f5f9;color:#1e293b}
+.nav-btn.active{background:#eff6ff;color:#6366f1;font-weight:700}
 
 /* ── Table ── */
 .tbl{width:100%;border-collapse:collapse}
@@ -234,10 +237,10 @@ input,select,textarea{font-family:inherit;outline:none}
 
 /* ── Stats ── */
 .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
-.stat-card{padding:20px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--sh)}
-.stat-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--ink3);margin-bottom:8px}
-.stat-val{font-size:32px;font-weight:800;letter-spacing:-.03em;line-height:1}
-.stat-sub{font-size:12px;color:var(--ink4);margin-top:5px}
+.stat-card{padding:20px 22px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);position:relative;overflow:hidden}
+.stat-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--ink3);margin-bottom:10px}
+.stat-val{font-size:30px;font-weight:800;letter-spacing:-.04em;line-height:1;color:var(--ink)}
+.stat-sub{font-size:12px;color:var(--ink4);margin-top:6px;font-weight:500}
 
 /* ── Landing — light with pastel gradient ── */
 #view-landing{
@@ -391,8 +394,6 @@ input,select,textarea{font-family:inherit;outline:none}
   .cargo-options-container label{padding:12px 14px!important}
 
   /* Batería tabs */
-  #params-tabs{flex-wrap:wrap!important;gap:6px!important}
-  #params-tabs button{font-size:12px!important;padding:6px 12px!important}
 
   /* Game container */
   #game-container{padding:16px!important;min-height:280px!important}
@@ -684,7 +685,7 @@ input,select,textarea{font-family:inherit;outline:none}
 <div id="view-landing" class="view">
   <!-- Minimal top bar — admin access only, discreet -->
   <div style="position:absolute;top:16px;right:20px;z-index:10;display:flex;gap:6px">
-    <button onclick="startTestMode()" style="background:#6366f1;border:none;font-size:12px;color:#fff;cursor:pointer;padding:6px 14px;border-radius:8px;font-family:inherit;font-weight:600;transition:opacity .15s" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">🧪 Prueba</button>
+    <button onclick="promptTestMode()" style="background:#6366f1;border:none;font-size:12px;color:#fff;cursor:pointer;padding:6px 14px;border-radius:8px;font-family:inherit;font-weight:600;transition:opacity .15s" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">🧪 Prueba</button>
     <button onclick="gotoAdminLogin()" style="background:none;border:none;font-size:12px;color:var(--ink4);cursor:pointer;padding:6px 10px;border-radius:8px;font-family:inherit;transition:color .15s" onmouseover="this.style.color='var(--ink2)'" onmouseout="this.style.color='var(--ink4)'">Admin</button>
   </div>
 
@@ -1282,22 +1283,56 @@ input,select,textarea{font-family:inherit;outline:none}
      ADMIN LOGIN
 ════════════════════════════════════════ -->
 <div id="view-adminlogin" class="view">
-  <div class="al-card">
-    <div class="logo" style="font-size:17px;font-weight:700;letter-spacing:-.02em;margin-bottom:24px">Psico<span>Eval</span></div>
-    <h2 style="font-size:22px;font-weight:700;color:var(--ink);margin-bottom:6px">Iniciar sesión</h2>
-    <p style="font-size:13px;color:var(--ink3);margin-bottom:24px">Acceso restringido al panel de administración</p>
-    <div id="al-error" style="display:none;background:var(--rose-l);border:1px solid #fecdd3;border-radius:8px;padding:10px 13px;font-size:13px;color:var(--rose);margin-bottom:14px"></div>
-    <div style="display:flex;flex-direction:column;gap:13px">
-      <div class="field">
-        <label>Correo</label>
-        <input id="al-email" type="email" placeholder="admin@psicoeval.cl" onkeydown="if(event.key==='Enter')adminLogin()">
+  <div style="display:grid;grid-template-columns:1fr 1fr;min-height:100vh">
+    <!-- Left: Branded panel -->
+    <div style="background:#0f172a;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:60px 48px;position:relative;overflow:hidden">
+      <!-- Geometric pattern -->
+      <div style="position:absolute;inset:0;opacity:.04">
+        <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="#fff" stroke-width="1"/></pattern></defs><rect width="100%" height="100%" fill="url(#grid)"/></svg>
       </div>
-      <div class="field">
-        <label>Contraseña</label>
-        <input id="al-pass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')adminLogin()">
+      <!-- Accent glow -->
+      <div style="position:absolute;top:20%;left:-10%;width:300px;height:300px;background:radial-gradient(circle,rgba(99,102,241,.15),transparent 70%);pointer-events:none"></div>
+      <div style="position:absolute;bottom:10%;right:-5%;width:250px;height:250px;background:radial-gradient(circle,rgba(5,150,105,.1),transparent 70%);pointer-events:none"></div>
+      
+      <div style="position:relative;z-index:1;max-width:380px">
+        <div style="font-size:28px;font-weight:800;color:#fff;letter-spacing:-.04em;margin-bottom:6px">Psico<span style="color:#818cf8">Eval</span></div>
+        <div style="font-size:13px;color:#475569;font-weight:500;letter-spacing:.5px;text-transform:uppercase;margin-bottom:48px">Plataforma Psicolaboral</div>
+        
+        <div style="font-size:36px;font-weight:800;color:#fff;letter-spacing:-.04em;line-height:1.1;margin-bottom:20px">Evaluaciones de<br>clase mundial.</div>
+        <div style="font-size:14px;color:#94a3b8;line-height:1.8;margin-bottom:40px">Tests psicométricos validados, juegos gamificados con dificultad adaptativa e informes profesionales en tiempo real.</div>
+        
+        <!-- Stats row -->
+        <div style="display:flex;gap:32px">
+          <div><div style="font-size:24px;font-weight:800;color:#818cf8">15</div><div style="font-size:11px;color:#64748b;font-weight:500">evaluaciones</div></div>
+          <div><div style="font-size:24px;font-weight:800;color:#34d399">5</div><div style="font-size:11px;color:#64748b;font-weight:500">juegos</div></div>
+          <div><div style="font-size:24px;font-weight:800;color:#fbbf24">45</div><div style="font-size:11px;color:#64748b;font-weight:500">min aprox.</div></div>
+        </div>
       </div>
-      <button class="btn btn-primary btn-lg" onclick="adminLogin()" style="margin-top:4px">Ingresar →</button>
-      <button class="btn btn-ghost btn-sm" onclick="gotoLanding()" style="color:var(--ink3)">← Volver al inicio</button>
+    </div>
+    
+    <!-- Right: Login form -->
+    <div style="display:flex;flex-direction:column;justify-content:center;align-items:center;padding:48px;background:var(--bg)">
+      <div style="width:100%;max-width:360px">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--ink4);margin-bottom:12px">Panel de administración</div>
+        <h2 style="font-size:28px;font-weight:800;color:var(--ink);margin-bottom:6px;letter-spacing:-.03em">Bienvenido</h2>
+        <p style="font-size:14px;color:var(--ink3);margin-bottom:32px">Ingresa tus credenciales para continuar</p>
+        <div id="al-error" style="display:none;background:var(--rose-l);border:1px solid #fecdd3;border-radius:8px;padding:10px 13px;font-size:13px;color:var(--rose);margin-bottom:14px"></div>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div class="field">
+            <label>Correo electrónico</label>
+            <input id="al-email" type="email" placeholder="admin@psicoeval.cl" onkeydown="if(event.key==='Enter')adminLogin()">
+          </div>
+          <div class="field">
+            <label>Contraseña</label>
+            <input id="al-pass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')adminLogin()">
+          </div>
+          <button class="btn btn-primary btn-lg" onclick="adminLogin()" style="margin-top:4px;width:100%;justify-content:center;background:var(--accent);font-size:15px;padding:14px">Ingresar →</button>
+          <button class="btn btn-ghost btn-sm" onclick="gotoLanding()" style="color:var(--ink3);justify-content:center">← Volver al inicio</button>
+        </div>
+        <div style="margin-top:40px;padding-top:20px;border-top:1px solid var(--border)">
+          <div style="font-size:11px;color:var(--ink4);text-align:center;line-height:1.6">Sistema de evaluación psicolaboral · Uso interno RRHH<br>Datos cifrados · Cumplimiento normativo vigente</div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -1308,17 +1343,18 @@ input,select,textarea{font-family:inherit;outline:none}
 <div id="view-admin" class="view" style="height:100vh;overflow:hidden">
   <div class="admin-layout">
     <aside class="sidebar">
-      <div class="logo" style="font-size:17px;font-weight:700;letter-spacing:-.02em">PsicoEval</div>
+      <div class="logo">PsicoEval</div>
       <button class="nav-btn active" id="nav-dashboard" onclick="adminTab('dashboard',this)"><span>📊</span><span>Dashboard</span></button>
       <button class="nav-btn" id="nav-candidates" onclick="adminTab('candidates',this)"><span>👥</span><span>Candidatos</span></button>
       <button class="nav-btn" id="nav-cargos" onclick="adminTab('cargos',this)"><span>🏢</span><span>Cargos</span></button>
       <button class="nav-btn" id="nav-params" onclick="adminTab('params',this)" style="display:none"></button>
       <div style="flex:1"></div>
+      <div style="height:1px;background:#f1f5f9;margin:8px 4px 12px"></div>
       <button class="nav-btn" id="nav-wiki" onclick="adminTab('wiki',this)"><span>📖</span><span>Wiki de Tests</span></button>
       <button class="nav-btn" id="nav-users" onclick="adminTab('users',this)"><span>👤</span><span>Usuarios</span></button>
-      <div id="role-badge" style="font-size:10px;font-weight:700;text-align:center;padding:3px 8px;border-radius:100px;background:#f1f5f9;margin:0 8px 4px"></div>
-      <button class="nav-btn" onclick="showShareModal()" style="color:#16a34a;margin-top:8px"><span>🔗</span><span>Compartir evaluación</span></button>
-      <button id="logout-btn" class="nav-btn" onclick="adminLogout()" style="color:var(--ink3)"><span>⎋</span><span>Cerrar sesión</span></button>
+      <div id="role-badge" style="font-size:11px;font-weight:700;text-align:center;padding:5px 8px;border-radius:100px;background:#f0fdf4;color:#16a34a;margin:6px 8px 2px;border:1px solid #bbf7d0"></div>
+      <button class="nav-btn" onclick="showShareModal()" style="color:#16a34a;font-weight:600;margin-top:4px"><span>🔗</span><span>Compartir evaluación</span></button>
+      <div id="sidebar-username" style="font-size:12px;color:#94a3b8;padding:6px 12px 2px;display:flex;align-items:center;gap:7px"><span>⏱</span><span id="sidebar-user-label">admin</span></div>
     </aside>
     <main id="admin-main" style="padding:28px 36px;overflow-y:auto;background:var(--bg);height:100vh">
       <!-- Mobile top bar -->
@@ -1407,8 +1443,6 @@ input,select,textarea{font-family:inherit;outline:none}
           <div style="font-size:20px;font-weight:700;margin-bottom:2px" id="bateria-cargo-title">Baterías</div>
           <div style="font-size:13px;color:var(--ink3)" id="bateria-cargo-desc">Configura los tests activos</div>
         </div>
-        <div style="display:none" id="params-tabs"></div>
-        <div id="params-content" style="display:none"></div>
         <div id="bateria-content"></div>
       </div></div>
 
@@ -1565,10 +1599,6 @@ const TESTS_META = {
   disc:         { name:'Estilos Conductuales (DISC-20)',       icon:'🎭', color:'#7c3aed'        },
   atencion:     { name:'Atención Concentrada (d2)',            icon:'🎯', color:'#b45309'        },
   idt:          { name:'Interpretación de Datos (IDT-10)',    icon:'📊', color:'#0e7490'        },
-  cwb:          { name:'Conductas Contraproducentes (CWB-18)', icon:'⚠', color:'#dc2626'        },
-  ausentismo:   { name:'Riesgo de Ausentismo (ABS-10)',        icon:'📅', color:'#9333ea'        },
-  frustracion:  { name:'Tolerancia a la Frustración (TF-12)',  icon:'🔥', color:'#ea580c'        },
-  ice:          { name:'Competencias de Ejecución (ICE-20)',   icon:'⚡', color:'#4338ca'        },
   pf16:         { name:'Personalidad 16PF (Abreviado)',       icon:'🧬', color:'#0d9488'        },
   game_detector:   { name:'Detector (Atención)',              icon:'🎯', color:'#e11d48', game:true },
   game_secuencias: { name:'Secuencias (Lógica)',              icon:'🧠', color:'#7c3aed', game:true },
@@ -1586,7 +1616,7 @@ const PERFIL_TESTS_DEFAULT = {
 };
 
 // All available tests per cargo (max possible)
-const ALL_TESTS_AVAILABLE = ['barratt','dc0','pai','situacional','vigilancia','comprension','disc','atencion','idt','cwb','ausentismo','frustracion','ice','pf16','game_detector','game_secuencias','game_impulsos','game_vigilancia','game_memoria'];
+const ALL_TESTS_AVAILABLE = ['barratt','dc0','pai','situacional','vigilancia','comprension','disc','atencion','idt','pf16','game_detector','game_secuencias','game_impulsos','game_vigilancia','game_memoria'];
 
 // Active batteries (loaded from localStorage, falls back to default)
 var PERFIL_TESTS = Object.assign({}, PERFIL_TESTS_DEFAULT);
@@ -1710,7 +1740,7 @@ function registerCustomCargo(c, skipSave) {
     };
   }
   // Ensure shared tests exist for this profile
-  ['disc','atencion','idt','cwb','pf16','ausentismo','frustracion','ice','game_detector','game_secuencias','game_impulsos','game_vigilancia','game_memoria'].forEach(function(tid) {
+  ['disc','atencion','idt','pf16','game_detector','game_secuencias','game_impulsos','game_vigilancia','game_memoria'].forEach(function(tid) {
     if (!PERFIL_IDEAL[key][tid]) {
       // Copy from jefatura defaults
       var src = PERFIL_IDEAL['jefatura'][tid];
@@ -1795,9 +1825,10 @@ function renderCargosTab() {
 
     // Info row with test chips + "Configurar batería" hint
     if (isOn) {
-      var TM = { barratt:5, dc0:20, pai:12, situacional:12, vigilancia:12, comprension:10, disc:8, atencion:8, idt:8, cwb:8, ausentismo:5, frustracion:6, ice:8, pf16:10, game_detector:3, game_secuencias:3, game_impulsos:2, game_vigilancia:3, game_memoria:3 };
-      var totalMin = tests.reduce(function(a,t){ return a + (TM[t]||8); }, 0) + 5;
-      h += '<div onclick="openCargoBattery(\'' + key + '\')" style="border-top:1px solid #f1f5f9;padding:14px 22px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;cursor:pointer;transition:background .15s" onmouseover="this.style.background=\'#f8fafc\'" onmouseout="this.style.background=\'transparent\'">';
+      var TM = { barratt:4, dc0:10, pai:7, situacional:7, vigilancia:5, comprension:6, disc:5, atencion:5, idt:6, pf16:6, game_detector:3, game_secuencias:3, game_impulsos:2, game_vigilancia:3, game_memoria:3 };
+      var totalMin = tests.reduce(function(a,t){ return a + (TM[t]||0); }, 0) + 5;
+      h += '<div style="border-top:1px solid #f1f5f9;padding:14px 22px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">';
+      h += '<div onclick="openCargoBattery(\'' + key + '\')" style="flex:1;display:flex;align-items:center;gap:16px;flex-wrap:wrap;cursor:pointer;transition:background .15s">';
       h += '<div style="font-size:11px;color:var(--ink3)"><strong style="color:var(--ink2)">' + tests.length + '</strong> tests asignados</div>';
       h += '<div style="font-size:11px;color:var(--ink3)">⏱ <strong style="color:var(--ink2)">' + totalMin + ' min</strong> estimados</div>';
       h += '<div style="flex:1"></div>';
@@ -1813,6 +1844,9 @@ function renderCargosTab() {
         h += '</div>';
         h += '<span style="font-size:11px;color:var(--accent);font-weight:600;margin-left:8px">→</span>';
       }
+      h += '</div>';
+      // Per-cargo share button
+      h += '<button onclick="event.stopPropagation();shareCargoLink(\'' + key + '\')" style="flex-shrink:0;display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;background:#f0fdf4;border:1px solid #bbf7d0;color:#16a34a;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;font-family:inherit" onmouseover="this.style.background=\'#dcfce7\'" onmouseout="this.style.background=\'#f0fdf4\'">🔗 Compartir</button>';
       h += '</div>';
     }
 
@@ -1840,8 +1874,6 @@ function openCargoBattery(key) {
   if (descEl) descEl.textContent = pm.desc;
   // Switch to params tab
   adminTab('params', document.getElementById('nav-params'));
-  // Ensure bateria subtab is active
-  switchParamsSubtab('bateria');
 }
 
 // ── Edit Cargo Modal ──
@@ -2028,18 +2060,6 @@ function applyCargoVisibility() {
 }
 
 // Render battery profile tabs dynamically (only active cargos)
-function renderParamsTabs() {
-  var container = document.getElementById('params-tabs');
-  if (!container) return;
-  var active = getActiveCargos();
-  if (active.indexOf(_paramPerfil) === -1 && active.length > 0) _paramPerfil = active[0];
-  container.innerHTML = active.map(function(pf, i) {
-    var pm = PERFIL_META[pf];
-    var isActive = pf === _paramPerfil;
-    return '<button class="param-tab-btn' + (isActive?' active':'') + '" onclick="switchParamTab(\'' + pf + '\',this)" style="padding:7px 16px;border-radius:7px;border:1.5px solid ' + (isActive?'var(--accent)':'var(--border)') + ';background:' + (isActive?'var(--accent)':'#fff') + ';color:' + (isActive?'#fff':'#555') + ';font-size:13px;font-weight:600;cursor:pointer">' + pm.label + '</button>';
-  }).join('');
-}
-
 // Render candidate tab cargo filters dynamically
 function renderCandidateCargoTabs() {
   var container = document.getElementById('cand-cargo-tabs');
@@ -2718,46 +2738,31 @@ const D2_ITEMS = [
 function buildQuestions(perfil) {
   const qs = [];
   const add = (arr, testId, type) => arr.forEach(q => qs.push({...q, testId, type}));
+  const active = PERFIL_TESTS[perfil] || PERFIL_TESTS_DEFAULT[perfil] || [];
 
-  if (perfil === 'jefatura') {
-    add(BIS11_ITEMS, 'barratt', 'likert');
-    add([...DC0_BASE,  ...DC0_JEFATURA],  'dc0',  'choice');
-    add(PAI_BASE,                         'pai',  'pai');
-    add(SIT_JEFATURA,                     'situacional', 'situacional');
-    add(COMP_JEFATURA,                    'comprension', 'choice');
-  } else if (perfil === 'administrativo') {
-    add(BIS11_ITEMS, 'barratt', 'likert');
-    add([...DC0_BASE,  ...DC0_ADMIN],  'dc0',  'choice');
-    add(PAI_BASE,                      'pai',  'pai');
-    add(COMP_ADMIN,                    'comprension', 'choice');
-  } else if (perfil === 'guardia') {
-    add(BIS11_ITEMS, 'barratt', 'likert');
-    add(PAI_BASE,                        'pai',  'pai');
-    add(SIT_GUARDIA,                     'situacional', 'situacional');
-    add(VIGQ,                            'vigilancia',  'choice');
-    add(COMP_GUARDIA,                    'comprension', 'choice');
-  } else if (perfil === 'supervisor') {
-    add(BIS11_ITEMS,                     'barratt',     'likert');
-    add([...DC0_BASE, ...DC0_JEFATURA],  'dc0',         'choice');
-    add(PAI_BASE,                        'pai',         'pai');
-    add(SIT_SUPERVISOR,                  'situacional', 'situacional');
-    add(COMP_JEFATURA,                   'comprension', 'choice');
-  } else {
-    // Custom cargo: add standard tests based on active battery
-    const active0 = PERFIL_TESTS[perfil] || [];
-    if (active0.includes('barratt'))     add(BIS11_ITEMS, 'barratt', 'likert');
-    if (active0.includes('dc0'))         add([...DC0_BASE, ...DC0_ADMIN], 'dc0', 'choice');
-    if (active0.includes('pai'))         add(PAI_BASE, 'pai', 'pai');
-    if (active0.includes('situacional')) add(SIT_JEFATURA, 'situacional', 'situacional');
-    if (active0.includes('vigilancia'))  add(VIGQ, 'vigilancia', 'choice');
-    if (active0.includes('comprension')) add(COMP_ADMIN, 'comprension', 'choice');
-  }
-  // Add optional tests if active for this perfil
-  const active = PERFIL_TESTS[perfil] || [];
-  if (active.includes('disc'))       add(DISC_ITEMS, 'disc',      'disc');
-  if (active.includes('atencion'))   add(D2_ITEMS,   'atencion',  'choice');
-  if (active.includes('idt'))        add(IDT_ITEMS,  'idt',       'choice');
-  if (active.includes('pf16'))       add(PF16_ITEMS, 'pf16',      'likert');
+  // Situacional items vary by profile
+  var SIT_MAP = { jefatura:SIT_JEFATURA, supervisor:SIT_SUPERVISOR, guardia:SIT_GUARDIA };
+  var sitItems = SIT_MAP[perfil] || SIT_JEFATURA;
+
+  // DC0 items vary by profile
+  var DC0_MAP = { jefatura:[...DC0_BASE,...DC0_JEFATURA], supervisor:[...DC0_BASE,...DC0_JEFATURA], administrativo:[...DC0_BASE,...DC0_ADMIN] };
+  var dc0Items = DC0_MAP[perfil] || [...DC0_BASE,...DC0_ADMIN];
+
+  // Comprensión items vary by profile
+  var COMP_MAP = { jefatura:COMP_JEFATURA, supervisor:COMP_JEFATURA, guardia:COMP_GUARDIA };
+  var compItems = COMP_MAP[perfil] || COMP_ADMIN;
+
+  // Add all active tests based on battery config
+  if (active.includes('barratt'))     add(BIS11_ITEMS, 'barratt', 'barratt');
+  if (active.includes('dc0'))         add(dc0Items, 'dc0', 'choice');
+  if (active.includes('pai'))         add(PAI_BASE, 'pai', 'pai');
+  if (active.includes('situacional')) add(sitItems, 'situacional', 'situacional');
+  if (active.includes('vigilancia'))  add(VIGQ, 'vigilancia', 'choice');
+  if (active.includes('comprension')) add(compItems, 'comprension', 'choice');
+  if (active.includes('disc'))        add(DISC_ITEMS, 'disc', 'disc');
+  if (active.includes('atencion'))    add(D2_ITEMS, 'atencion', 'choice');
+  if (active.includes('idt'))         add(IDT_ITEMS, 'idt', 'choice');
+  if (active.includes('pf16'))        add(PF16_ITEMS, 'pf16', 'likert');
   // Game tests don't need questions - they render their own UI
   return qs;
 }
@@ -2930,13 +2935,45 @@ function gotoAdminLogin() { showView('adminlogin'); }
 // ═══════════════════════════════════════════════════════════
 //  TEST MODE (temporary - for testing)
 // ═══════════════════════════════════════════════════════════
+function promptTestMode() {
+  var overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px';
+  overlay.innerHTML = '<div style="background:#fff;border-radius:16px;padding:28px;max-width:340px;width:100%;font-family:inherit;box-shadow:0 8px 40px rgba(0,0,0,.2)">'
+    + '<div style="font-size:22px;text-align:center;margin-bottom:12px">🔐</div>'
+    + '<div style="font-size:16px;font-weight:800;text-align:center;margin-bottom:4px">Acceso restringido</div>'
+    + '<div style="font-size:13px;color:#64748b;text-align:center;margin-bottom:18px">Ingresa la contraseña para acceder al Modo Prueba</div>'
+    + '<input id="prueba-pwd-input" type="password" placeholder="Contraseña" autofocus '
+    + 'style="width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:11px 14px;font-size:14px;font-family:inherit;outline:none;margin-bottom:8px;box-sizing:border-box" '
+    + 'onkeydown="if(event.key===\'Enter\') checkTestModePwd()">'
+    + '<div id="prueba-pwd-err" style="font-size:12px;color:#dc2626;margin-bottom:10px;min-height:16px"></div>'
+    + '<div style="display:flex;gap:8px">'
+    + '<button onclick="this.closest(\'div[style*=fixed]\').remove()" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid #e2e8f0;background:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;color:#64748b">Cancelar</button>'
+    + '<button onclick="checkTestModePwd()" style="flex:1;padding:10px;border-radius:10px;border:none;background:#6366f1;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Ingresar</button>'
+    + '</div></div>';
+  document.body.appendChild(overlay);
+  setTimeout(function(){ var inp = document.getElementById('prueba-pwd-input'); if(inp) inp.focus(); }, 100);
+}
+
+function checkTestModePwd() {
+  var inp = document.getElementById('prueba-pwd-input');
+  var err = document.getElementById('prueba-pwd-err');
+  if (!inp) return;
+  if (inp.value === 'prueba2024') {
+    inp.closest('div[style*="fixed"]').remove();
+    startTestMode();
+  } else {
+    if (err) err.textContent = 'Contraseña incorrecta';
+    inp.value = '';
+    inp.focus();
+  }
+}
+
 function startTestMode() {
-  var TM_MINS = { barratt:5, dc0:20, pai:12, situacional:12, vigilancia:12, comprension:10, disc:8, atencion:8, idt:8, cwb:8, ausentismo:5, frustracion:6, ice:8, pf16:10, game_detector:3, game_secuencias:3, game_impulsos:2, game_vigilancia:3, game_memoria:3 };
+  var TM_MINS = { barratt:4, dc0:10, pai:7, situacional:7, vigilancia:5, comprension:6, disc:5, atencion:5, idt:6, pf16:6, game_detector:3, game_secuencias:3, game_impulsos:2, game_vigilancia:3, game_memoria:3 };
   var GROUPS = {
     '🧠 Cognitivos':        ['dc0','comprension','atencion','idt'],
-    '🧬 Personalidad':      ['barratt','pai','disc','ice','pf16'],
+    '🧬 Personalidad':      ['barratt','pai','disc','pf16'],
     '💡 Situacionales':     ['situacional','vigilancia'],
-    '⚠ Riesgo Laboral':    ['cwb','ausentismo','frustracion'],
     '🎮 Juegos Gamificados':['game_detector','game_secuencias','game_impulsos','game_vigilancia','game_memoria'],
   };
 
@@ -3035,7 +3072,7 @@ function launchTestMode(perfil) {
   var tests = PERFIL_TESTS[perfil] || [];
   if (!tests.length) { toast('Este cargo no tiene tests asignados', 'er'); return; }
 
-  var TM_MINS = { barratt:5, dc0:20, pai:12, situacional:12, vigilancia:12, comprension:10, disc:8, atencion:8, idt:8, cwb:8, ausentismo:5, frustracion:6, ice:8, pf16:10, game_detector:3, game_secuencias:3, game_impulsos:2, game_vigilancia:3, game_memoria:3 };
+  var TM_MINS = { barratt:4, dc0:10, pai:7, situacional:7, vigilancia:5, comprension:6, disc:5, atencion:5, idt:6, pf16:6, game_detector:3, game_secuencias:3, game_impulsos:2, game_vigilancia:3, game_memoria:3 };
 
   S.candidate = {
     id: 'test_' + Date.now(),
@@ -3632,18 +3669,17 @@ function submitRegister() {
   banner.innerHTML = '<span style="font-size:24px">' + pm.icon + '</span><div style="margin-top:8px"><strong style="font-size:15px">' + pm.label + '</strong><div style="font-size:13px;color:var(--ink3);margin-top:3px">' + pm.desc + '</div></div>';
   const tests = PERFIL_TESTS[perfil];
   const TEST_TIME_MINUTES = {
-    barratt:5, dc0:20, pai:12, situacional:12, vigilancia:12,
-    comprension:10, disc:8, atencion:8, idt:8,
-    cwb:8, ausentismo:5, frustracion:6, ice:8, pf16:10,
+    barratt:4, dc0:10, pai:7, situacional:7, vigilancia:5,
+    comprension:6, disc:5, atencion:5, idt:6, pf16:6,
     game_detector:3, game_secuencias:3, game_impulsos:2, game_vigilancia:3, game_memoria:3
   };
-  var totalMin = tests.reduce(function(a,t){ return a + (TEST_TIME_MINUTES[t]||8); }, 0);
+  var totalMin = tests.reduce(function(a,t){ return a + (TEST_TIME_MINUTES[t]||0); }, 0);
   // Add 5-minute buffer for transitions
   totalMin = totalMin + 5;
   S._testTotalMinutes = totalMin;
   document.getElementById('sel-tests-list').innerHTML = tests.map(function(t, idx) {
     const m = TESTS_META[t];
-    const mins = TEST_TIME_MINUTES[t] || 8;
+    const mins = TEST_TIME_MINUTES[t] || 0;
     const pN = 'Prueba ' + (idx + 1);
     return '<div style="display:flex;align-items:center;gap:14px;padding:13px 16px;border-radius:10px;background:var(--bg);border:1px solid var(--border)"><span style="font-size:22px">' + (m ? m.icon : '📝') + '</span><div style="flex:1"><div style="font-weight:700;font-size:14px">' + pN + (m ? ' — ' + m.name : '') + '</div><div style="font-size:11px;color:var(--ink3);margin-top:2px">~' + mins + ' min</div></div></div>';
   }).join('');
@@ -3784,6 +3820,13 @@ function renderTestBlock() {
   const block = S.testBlocks[S.blockIdx];
   const meta  = TESTS_META[block.testId];
   const total = S.testBlocks.length;
+
+  // Skip empty non-game blocks
+  if (!meta.game && block.qs.length === 0) {
+    if (S.blockIdx < total - 1) { S.blockIdx++; renderTestBlock(); return; }
+    else { finishTests(); return; }
+  }
+
   const pct   = Math.round(S.blockIdx / total * 100);
   document.getElementById('test-global-bar').style.width = pct + '%';
   document.getElementById('test-pct-label').textContent  = 'Test ' + (S.blockIdx + 1) + ' de ' + total;
@@ -3807,16 +3850,17 @@ function renderTestBlock() {
 
   // ── STANDARD MODE ──
   const type    = block.qs[0]?.type;
-  const isScale = type === 'likert' || type === 'pai' || type === 'iws' || type === 'disc';
-  const scaleMax = (type === 'pai' || type === 'iws') ? 4 : 5;
+  const isScale = type === 'likert' || type === 'pai' || type === 'iws' || type === 'disc' || type === 'barratt';
+  const scaleMax = (type === 'pai' || type === 'iws' || type === 'barratt') ? 4 : 5;
 
   // Legend for scale types
   const LIKERT_LABELS = { 1:'Nunca', 2:'Rara vez', 3:'A veces', 4:'Frecuente', 5:'Siempre' };
   const PAI_LABELS    = { 1:'Nunca', 2:'A veces', 3:'Frecuente', 4:'Siempre' };
   const IWS_LABELS    = { 1:'Nunca', 2:'A veces', 3:'Frecuente', 4:'Siempre' };
   const DISC_LABELS_S = { 1:'Nunca', 2:'Rara vez', 3:'A veces', 4:'Frecuente', 5:'Siempre' };
-  const scaleLabels   = type === 'pai' ? PAI_LABELS : type === 'iws' ? IWS_LABELS : type === 'disc' ? DISC_LABELS_S : LIKERT_LABELS;
-  const legendKeys    = (type === 'pai' || type === 'iws') ? [1,2,3,4] : [1,2,3,4,5];
+  const BARRATT_LABELS = { 1:'Rara vez', 2:'Ocasionalmente', 3:'A menudo', 4:'Casi siempre' };
+  const scaleLabels   = type === 'pai' ? PAI_LABELS : type === 'iws' ? IWS_LABELS : type === 'disc' ? DISC_LABELS_S : type === 'barratt' ? BARRATT_LABELS : LIKERT_LABELS;
+  const legendKeys    = (type === 'pai' || type === 'iws' || type === 'barratt') ? [1,2,3,4] : [1,2,3,4,5];
 
   let instrHtml = '';
   if (isScale) {
@@ -3918,14 +3962,13 @@ function gameComplete(testId, pct) {
   clearGameTimers();
   pct = Math.max(0, Math.min(100, Math.round(pct)));
   S.answers['__game_' + testId] = pct;
-  // Show result then auto-advance
+  // Show neutral completion (no score shown to candidate)
   var gc = document.getElementById('game-container');
   if (gc) {
-    var col = pct >= 70 ? '#16a34a' : pct >= 50 ? '#b45309' : '#dc2626';
     gc.innerHTML = '<div style="text-align:center;animation:sup .3s ease">'
-      + '<div style="font-size:48px;margin-bottom:12px">' + (pct >= 70 ? '🎉' : pct >= 50 ? '👍' : '💪') + '</div>'
-      + '<div style="font-size:28px;font-weight:900;color:' + col + ';margin-bottom:6px">' + pct + '%</div>'
-      + '<div style="font-size:14px;color:var(--ink3);margin-bottom:20px">Juego completado</div>'
+      + '<div style="font-size:48px;margin-bottom:12px">✅</div>'
+      + '<div style="font-size:18px;font-weight:700;color:var(--ink);margin-bottom:6px">Actividad completada</div>'
+      + '<div style="font-size:13px;color:var(--ink3);margin-bottom:20px">Tus respuestas han sido registradas</div>'
       + '<button onclick="advanceAfterGame()" class="btn btn-primary" style="padding:12px 32px">Continuar →</button>'
       + '</div>';
   }
@@ -4371,10 +4414,10 @@ function gameVigilancia(gc, diff) {
       var btn = document.getElementById('vig-alert-btn');
       if (anomalyVisible) {
         detections++;
-        if (btn) { btn.style.background = '#f0fdf4'; btn.style.borderColor = '#16a34a'; btn.style.color = '#16a34a'; btn.textContent = '✅ Anomalía detectada correctamente'; }
+        if (btn) { btn.style.background = '#f1f5f9'; btn.style.borderColor = '#94a3b8'; btn.style.color = '#64748b'; btn.textContent = 'Respuesta registrada'; }
       } else {
         falseAlarms++;
-        if (btn) { btn.style.background = '#fef2f2'; btn.style.borderColor = '#dc2626'; btn.style.color = '#dc2626'; btn.textContent = '❌ Falsa alarma — no había anomalía'; }
+        if (btn) { btn.style.background = '#f1f5f9'; btn.style.borderColor = '#94a3b8'; btn.style.color = '#64748b'; btn.textContent = 'Respuesta registrada'; }
       }
       camIdx++;
       _vigTimers.push(setTimeout(nextCamera, 1200));
@@ -4388,9 +4431,9 @@ function gameVigilancia(gc, diff) {
       var btn = document.getElementById('vig-alert-btn');
       if (cam.hasAnomaly && anomalyShown) {
         missed++;
-        if (btn) { btn.style.background = '#fffbeb'; btn.style.borderColor = '#f59e0b'; btn.style.color = '#b45309'; btn.textContent = '⚠️ Anomalía no detectada — ' + cam.anomaly + ' en ' + cam.desc; }
+        if (btn) { btn.style.background = '#f1f5f9'; btn.style.borderColor = '#94a3b8'; btn.style.color = '#64748b'; btn.textContent = 'Tiempo agotado — siguiente cámara'; }
       } else {
-        if (btn) { btn.style.background = '#f0fdf4'; btn.style.borderColor = '#16a34a'; btn.style.color = '#16a34a'; btn.textContent = '✅ Correcto — no había anomalía'; }
+        if (btn) { btn.style.background = '#f1f5f9'; btn.style.borderColor = '#94a3b8'; btn.style.color = '#64748b'; btn.textContent = 'Sin alerta — siguiente cámara'; }
       }
       camIdx++;
       _vigTimers.push(setTimeout(nextCamera, 1200));
@@ -4596,8 +4639,8 @@ function gameMemoria(gc, diff) {
       var confirmBtn = document.getElementById('mem-confirm');
       if (confirmBtn) {
         confirmBtn.disabled = true;
-        confirmBtn.textContent = allRight ? '✅ ¡Correcto!' : '❌ Incorrecto';
-        confirmBtn.style.background = allRight ? '#16a34a' : '#dc2626';
+        confirmBtn.textContent = 'Respuesta registrada';
+        confirmBtn.style.background = '#64748b';
       }
 
       setTimeout(nextLevel, 900);
@@ -4847,26 +4890,6 @@ const PERFIL_IDEAL = {
   if (!PERFIL_IDEAL[pf].atencion) PERFIL_IDEAL[pf].atencion = {
     pct: { min:60, max:100, peso:4, label:'Atención Concentrada', req:'Capacidad de detectar estímulos relevantes con precisión.' }
   };
-  if (!PERFIL_IDEAL[pf].cwb) PERFIL_IDEAL[pf].cwb = {
-    AR: { min:65, max:100, peso:4, label:'Abuso de Recursos',       req:'Bajo riesgo de uso indebido de tiempo, materiales o equipos de la organización.' },
-    DI: { min:70, max:100, peso:5, label:'Desviación Interpersonal', req:'Bajo riesgo de conductas hostiles, acoso o sabotaje hacia compañeros.' },
-    NG: { min:60, max:100, peso:3, label:'Negligencia',             req:'Bajo riesgo de incumplimiento deliberado de tareas y responsabilidades.' },
-  };
-  if (!PERFIL_IDEAL[pf].ausentismo) PERFIL_IDEAL[pf].ausentismo = {
-    pct: { min:65, max:100, peso:4, label:'Riesgo de Ausentismo', req:'Actitud responsable hacia la asistencia y cumplimiento de horarios.' }
-  };
-  if (!PERFIL_IDEAL[pf].frustracion) PERFIL_IDEAL[pf].frustracion = {
-    PE: { min:60, max:100, peso:3, label:'Persistencia',          req:'Capacidad de mantener el esfuerzo ante obstáculos y demoras.' },
-    CI: { min:65, max:100, peso:4, label:'Control de Ira',        req:'Regulación de la irritabilidad y reacciones agresivas ante la frustración.' },
-    AC: { min:55, max:100, peso:3, label:'Adaptación al Cambio',  req:'Flexibilidad ante cambios inesperados en las condiciones de trabajo.' },
-  };
-  if (!PERFIL_IDEAL[pf].ice) PERFIL_IDEAL[pf].ice = {
-    IN: { min:60, max:100, peso:3, label:'Iniciativa',                req:'Actúa sin esperar instrucciones, anticipa necesidades y genera soluciones.' },
-    CO: { min:65, max:100, peso:4, label:'Compromiso',                req:'Lealtad con la tarea, el equipo y la organización; cumple lo que promete.' },
-    SU: { min:60, max:100, peso:3, label:'Sentido de Urgencia',       req:'Prioriza con criterio, actúa con velocidad y no posterga decisiones.' },
-    GE: { min:60, max:100, peso:3, label:'Gestión',                   req:'Organiza recursos, planifica su trabajo y coordina acciones para cumplir objetivos.' },
-    CR: { min:65, max:100, peso:4, label:'Compromiso con Resultados', req:'Orientación al logro, persiste hasta cerrar y mide su propio desempeño.' },
-  };
   if (!PERFIL_IDEAL[pf].pf16) PERFIL_IDEAL[pf].pf16 = {
     EX: { min:45, max:100, peso:2, label:'Extraversión',         req:'Capacidad de interacción social, calidez y participación grupal.' },
     AN: { min:55, max:100, peso:3, label:'Ajuste Emocional',     req:'Estabilidad emocional, baja ansiedad y tolerancia a la presión.' },
@@ -4941,7 +4964,7 @@ function buildFitReport(c) {
   if (!ideal) {
     // Auto-create for custom cargos
     PERFIL_IDEAL[perfil] = {};
-    var allT = ['barratt','pai','dc0','comprension','situacional','vigilancia','disc','atencion','idt','cwb','pf16','ausentismo','frustracion','ice','game_detector','game_secuencias','game_impulsos','game_vigilancia','game_memoria'];
+    var allT = ['barratt','pai','dc0','comprension','situacional','vigilancia','disc','atencion','idt','pf16','game_detector','game_secuencias','game_impulsos','game_vigilancia','game_memoria'];
     allT.forEach(function(tid) {
       var src = PERFIL_IDEAL['jefatura'] && PERFIL_IDEAL['jefatura'][tid];
       if (src) PERFIL_IDEAL[perfil][tid] = JSON.parse(JSON.stringify(src));
@@ -5452,6 +5475,24 @@ function passBadge(passes, gap) {
 }
 
 // ── Gauge SVG (semicircle) ──────────────────────────────────
+
+// ── Radar / Spider Chart SVG ────────────────────────────────
+function radarChartSvg(dims,opts){
+  opts=opts||{};
+  var size=opts.size||340,rings=opts.rings||[20,40,60,80,100],
+      fill=opts.fill||'rgba(99,102,241,.18)',stroke=opts.stroke||'#6366f1',
+      cx=size/2,cy=size/2,R=(size/2)*.60,labelR=R+34,n=dims.length;
+  function pt(i,r){var a=(Math.PI*2*i/n)-Math.PI/2;return{x:cx+r*Math.cos(a),y:cy+r*Math.sin(a)};}
+  var s='<svg viewBox="0 0 '+size+' '+size+'" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:'+size+'px;display:block;margin:0 auto">';
+  rings.forEach(function(p){var r=R*p/100,pts=Array.from({length:n},function(_,i){var q=pt(i,r);return q.x+','+q.y;}).join(' ');s+='<polygon points="'+pts+'" fill="none" stroke="#e2e8f0" stroke-width="1"/>';var lp=pt(0,r);s+='<text x="'+(lp.x+3)+'" y="'+(lp.y-3)+'" font-size="9" fill="#cbd5e1" font-family="system-ui">'+p+'</text>';});
+  for(var i=0;i<n;i++){var p2=pt(i,R);s+='<line x1="'+cx+'" y1="'+cy+'" x2="'+p2.x+'" y2="'+p2.y+'" stroke="#e2e8f0" stroke-width="1"/>';}
+  var dPts=dims.map(function(d,i){var r=R*Math.max(0,Math.min(100,d.value))/100;var q=pt(i,r);return q.x+','+q.y;}).join(' ');
+  s+='<polygon points="'+dPts+'" fill="'+fill+'" stroke="'+stroke+'" stroke-width="2.5" stroke-linejoin="round"/>';
+  dims.forEach(function(d,i){var r=R*Math.max(0,Math.min(100,d.value))/100;var q=pt(i,r);s+='<circle cx="'+q.x+'" cy="'+q.y+'" r="4" fill="'+stroke+'" stroke="#fff" stroke-width="1.5"/>';var vp=pt(i,Math.max(8,r-16));s+='<text x="'+vp.x+'" y="'+(vp.y+4)+'" font-size="10" font-weight="800" fill="'+stroke+'" font-family="system-ui" text-anchor="middle">'+Math.round(d.value)+'</text>';});
+  dims.forEach(function(d,i){var q=pt(i,labelR);var anch=q.x<cx-5?'end':q.x>cx+5?'start':'middle';var ws=d.label.split(' '),lh=13,tot=ws.length*lh;var sy=q.y<cy-10?q.y-tot+lh*.4:q.y>cy+10?q.y+lh*.4:q.y-tot/2+lh/2;ws.forEach(function(w,wi){s+='<text x="'+q.x+'" y="'+(sy+wi*lh)+'" font-size="11" font-weight="600" fill="#475569" font-family="system-ui" text-anchor="'+anch+'">'+w+'</text>';});});
+  return s+'</svg>';
+}
+
 function gaugeHtml(pct, color, size=90) {
   const r = 34, cx = 50, cy = 44;
   const circ = Math.PI * r; // semicircle circumference
@@ -5591,12 +5632,12 @@ function switchReportTab(tabId, el) {
   var cont = el.closest('.rpt-modal');
   cont.querySelectorAll('.rpt-tab-btn').forEach(function(b){
     b.style.borderBottom = '2px solid transparent';
-    b.style.color = '#64748b';
+    b.style.color = '#94a3b8';
     b.style.fontWeight = '500';
   });
   cont.querySelectorAll('.rpt-tab-panel').forEach(function(p){ p.style.display='none'; });
-  el.style.borderBottom = '2px solid #6366f1';
-  el.style.color = '#6366f1';
+  el.style.borderBottom = '2px solid #4338ca';
+  el.style.color = '#4338ca';
   el.style.fontWeight = '700';
   var panel = cont.querySelector('#rpt-panel-'+tabId);
   if (panel) panel.style.display = 'block';
@@ -5664,35 +5705,47 @@ function buildReportHtml(c, withClose) {
   else if (gLv >= 3)          { veredicto='APTO CON OBSERVACIONES'; verColor='#b45309'; verBg='#fffbeb'; verIcon='⚠️'; }
   else               { veredicto='NO APTO'; verColor='#dc2626'; verBg='#fef2f2'; verIcon='❌'; }
 
-  let html = '<div class="rpt-modal" style="font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif">';
+  let html = '<div class="rpt-modal" style="font-family:SF Pro Display,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif">';
 
-  // ── HEADER ────────────────────────────────────────────────────
-  html += '<div style="background:#fff;border-bottom:1px solid #e5e5ea">';
-  // Top indigo stripe
-  html += '<div style="background:#6366f1;height:5px"></div>';
+  // ── HEADER — Enterprise Premium ────────────────────────────
+  html += '<div style="background:#0f172a;position:relative;overflow:hidden">';
+  // Subtle accent glow
+  html += '<div style="position:absolute;top:-50%;left:-20%;width:60%;height:200%;background:radial-gradient(ellipse,rgba(99,102,241,.08),transparent 70%);pointer-events:none"></div>';
+  html += '<div style="position:absolute;bottom:-30%;right:-10%;width:40%;height:150%;background:radial-gradient(ellipse,rgba(5,150,105,.06),transparent 70%);pointer-events:none"></div>';
   // Content
-  html += '<div style="padding:22px 28px">';
+  html += '<div style="position:relative;padding:28px 32px">';
   html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap">';
-  // Left: name + chips
+  // Left: branding + name
   html += '<div>';
-  html += '<div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#94a3b8;margin-bottom:6px;font-weight:600">Informe Psicolaboral · Uso Interno RRHH</div>';
-  html += '<div style="font-size:24px;font-weight:900;color:#0f172a;margin-bottom:10px;letter-spacing:-.02em">' + c.nombre + ' ' + c.apellido + '</div>';
-  // Chips row
+  html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">';
+  html += '<div style="font-size:14px;font-weight:800;color:#fff;letter-spacing:-.02em">Psico<span style="color:#818cf8">Eval</span></div>';
+  html += '<div style="width:1px;height:14px;background:#334155"></div>';
+  html += '<div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#64748b;font-weight:600">Informe Psicolaboral</div>';
+  html += '</div>';
+  html += '<div style="font-size:26px;font-weight:800;color:#fff;letter-spacing:-.03em;margin-bottom:10px">' + c.nombre + ' ' + c.apellido + '</div>';
+  // Chips
   html += '<div style="display:flex;flex-wrap:wrap;gap:6px">';
   chips.forEach(function(ch) {
-    html += '<span style="padding:3px 10px;background:#f1f5f9;border-radius:100px;font-size:12px;font-weight:500;color:#475569">' + ch + '</span>';
+    html += '<span style="padding:3px 10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:100px;font-size:11px;font-weight:500;color:#94a3b8">' + ch + '</span>';
   });
   html += '</div>';
   html += '</div>';
-  // Right: actions + fecha
-  html += '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0">';
+  // Right: veredicto badge + actions
+  html += '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:10px;flex-shrink:0">';
   if (withClose) {
     html += '<div style="display:flex;gap:8px">';
-    html += '<button onclick="downloadPdfReport(currentReportId)" style="background:#6366f1;border:none;color:#fff;font-size:12px;font-weight:700;padding:7px 14px;border-radius:8px;cursor:pointer;font-family:inherit">⬇ Descargar PDF</button>';
-    html += '<button onclick="closeCandModal()" style="background:#f1f5f9;border:none;color:#64748b;font-size:18px;cursor:pointer;padding:4px 10px;border-radius:8px;line-height:1">✕</button>';
+    html += '<button onclick="downloadPdfReport(currentReportId)" style="background:#4338ca;border:none;color:#fff;font-size:12px;font-weight:700;padding:8px 16px;border-radius:8px;cursor:pointer;font-family:inherit;transition:background .15s" onmouseover="this.style.background=\'#3730a3\'" onmouseout="this.style.background=\'#4338ca\'">⬇ PDF</button>';
+    html += '<button onclick="closeCandModal()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);color:#94a3b8;font-size:16px;cursor:pointer;padding:6px 12px;border-radius:8px;line-height:1;transition:background .15s" onmouseover="this.style.background=\'rgba(255,255,255,.15)\'" onmouseout="this.style.background=\'rgba(255,255,255,.08)\'">✕</button>';
     html += '</div>';
   }
-  html += '<div style="font-size:11px;color:#94a3b8">Evaluado el ' + c.fecha + '</div>';
+  // Veredicto badge
+  var verBorderCol = gLv===5 ? '#059669' : gLv>=3 ? '#d97706' : '#dc2626';
+  html += '<div style="text-align:center;padding:12px 20px;border-radius:10px;background:rgba(255,255,255,.04);border:1.5px solid ' + verBorderCol + '40">';
+  html += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#64748b;margin-bottom:4px">Veredicto</div>';
+  html += '<div style="font-size:18px;font-weight:800;color:' + verColor + ';letter-spacing:-.02em">' + veredicto + '</div>';
+  html += '<div style="font-size:24px;font-weight:900;color:' + verColor + ';margin-top:2px">' + gFit + '%</div>';
+  html += '</div>';
+  html += '<div style="font-size:10px;color:#475569">Evaluado el ' + c.fecha + '</div>';
   html += '</div>';
   html += '</div>';
   html += '</div></div>'; // /content /header
@@ -5727,13 +5780,13 @@ function buildReportHtml(c, withClose) {
     }
   });
 
-  html += '<div style="background:#fff;border-bottom:2px solid #f1f5f9;padding:0 28px;display:flex;gap:0;overflow-x:auto;flex-shrink:0">';
+  html += '<div style="background:#fff;border-bottom:1px solid #e2e8f0;padding:0 32px;display:flex;gap:0;overflow-x:auto;flex-shrink:0">';
   tabs.forEach(function(t, i) {
     var first = i === 0;
     html += '<button class="rpt-tab-btn" onclick="switchReportTab(\'' + t.id + '\',this)"'
-      + ' style="padding:11px 16px;border:none;background:none;cursor:pointer;font-size:13px;white-space:nowrap;font-family:inherit;'
-      + 'border-bottom:2px solid ' + (first ? '#6366f1' : 'transparent') + ';margin-bottom:-2px;'
-      + 'color:' + (first ? '#6366f1' : '#64748b') + ';'
+      + ' style="padding:12px 18px;border:none;background:none;cursor:pointer;font-size:12px;white-space:nowrap;font-family:inherit;'
+      + 'border-bottom:2px solid ' + (first ? '#4338ca' : 'transparent') + ';margin-bottom:-1px;'
+      + 'color:' + (first ? '#4338ca' : '#94a3b8') + ';letter-spacing:.2px;'
       + 'font-weight:' + (first ? '700' : '500') + '">'
       + t.icon + ' ' + t.label + '</button>';
   });
@@ -5929,16 +5982,18 @@ function buildReportHtml(c, withClose) {
     html += '<div class="rpt-tab-panel" id="rpt-panel-barratt" style="display:none;flex-direction:column;gap:16px">';
 
     // Header card
-    html += '<div style="background:#fff;border-radius:10px;box-shadow:0 1px 8px rgba(15,45,82,.07);padding:22px 24px">'
+    html += '<div style="background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(15,45,82,.07);padding:22px 24px">'
       + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:8px">'
       + '<div style="font-size:17px;font-weight:700">⚡ Control Impulsivo — BIS-15</div>'
       + '<div style="display:flex;align-items:center;gap:8px">' + gaugeHtml(sec.secFit, secLv.color, 60)
       + '<div><div style="font-size:13px;font-weight:800;color:' + secLv.color + '">' + sec.secFit + '%</div>'
       + '<div style="font-size:10px;color:#999">' + secLv.label + '</div></div></div></div>'
-      + '<div style="font-size:12px;color:#999;margin-bottom:18px;line-height:1.5">'
-      + 'Mide el nivel de control impulsivo en 3 dimensiones. Puntaje alto = buen control. La zona verde indica el rango ideal para el cargo ' + pm.label + '.</div>'
-      // 3 large dimension cards
-      + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px">'
+      + '<div style="font-size:12px;color:#999;margin-bottom:16px;line-height:1.5">'
+      + 'Mide el nivel de control impulsivo en 3 dimensiones. Puntaje alto = buen control.</div>';
+    // Radar chart for Barratt
+    var barDims = sec.dims.map(function(d){ return { label: (BIS_FULL[d.key]||d.label), value: d.score }; });
+    html += '<div style="padding:8px 0 16px">' + radarChartSvg(barDims, {size:320, fill:'rgba(16,185,129,.15)', stroke:'#10b981'}) + '</div>';
+    html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px">'
       + sec.dims.map(function(d) {
           var lv2 = fitLabel(d.fit);
           var scoreL5 = scoreToLevel5(d.score);
@@ -5996,29 +6051,22 @@ function buildReportHtml(c, withClose) {
     else if (meL <= 2) paiNarrative += ' El <strong>manejo del estrés</strong> (nivel ' + meL + '/5) puede ser un factor limitante.';
 
     html += '<div class="rpt-tab-panel" id="rpt-panel-pai" style="display:none;flex-direction:column;gap:16px">';
-    // Narrative card
-    html += '<div style="background:#fff;border:1px solid #e5e5e5;border-radius:10px;padding:20px 22px">'
-      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">'
+    // Header + radar card
+    html += '<div style="background:#fff;border:1px solid #e5e5e5;border-radius:14px;padding:20px 22px">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">'
       + '<div style="font-size:17px;font-weight:700">🔎 Ajuste Psicológico — PAI</div>'
       + '<div style="display:flex;align-items:center;gap:8px">' + gaugeHtml(sec.secFit, secLv.color, 64)
-      + '<div><div style="font-size:13px;font-weight:800;color:' + secLv.color + '">' + sec.secFit + '%</div><div style="font-size:10px;color:#999">' + secLv.label + '</div></div></div></div>'
-      + '<div style="background:#f9f9f9;border-left:3px solid ' + secLv.color + ';border-radius:0 8px 8px 0;padding:14px 16px;margin-bottom:16px">'
-      + '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#999;margin-bottom:6px">Perfil de Ajuste Psicológico</div>'
-      + '<div style="font-size:13px;line-height:1.7;color:#111;margin-bottom:12px">' + paiNarrative + '</div>'
-      + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">'
-      + sec.dims.map(function(d){
-          var l5 = scoreToLevel5(d.score);
-          var lv2 = fitLabel(d.fit);
-          return '<div style="text-align:center;padding:8px 6px;background:' + lv2.bg + ';border-radius:6px;border:1px solid ' + lv2.color + '20">'
-            + '<div style="font-size:10px;font-weight:700;color:#555;margin-bottom:3px;line-height:1.2">' + (PAI_FULL[d.key]||d.label) + '</div>'
-            + '<div style="font-size:22px;font-weight:900;color:' + lv2.color + ';line-height:1">' + l5 + '</div>'
-            + '<div style="font-size:9px;font-weight:700;color:' + lv2.color + '">' + NIVEL_LABELS_RPT[l5] + '</div>'
-            + '</div>';
-        }).join('')
-      + '</div></div>'
-      // Dimension cards
-      + '<div style="font-size:12px;color:#999;margin-bottom:12px">Detalle por dimensión. Escala 1–5 donde 5 es el nivel más alto.</div>'
-      + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:12px">'
+      + '<div><div style="font-size:13px;font-weight:800;color:' + secLv.color + '">' + sec.secFit + '%</div><div style="font-size:10px;color:#999">' + secLv.label + '</div></div></div></div>';
+    // Narrative
+    html += '<div style="font-size:13px;line-height:1.7;color:#334155;margin-bottom:18px;padding:14px 16px;background:#f8fafc;border-radius:10px;border-left:3px solid ' + secLv.color + '">' + paiNarrative + '</div>';
+    // Radar chart
+    var paiDims = sec.dims.map(function(d){ return { label: (PAI_FULL[d.key]||d.label), value: d.score }; });
+    html += '<div style="padding:10px 0">' + radarChartSvg(paiDims, {size:380, fill:'rgba(99,102,241,.15)', stroke:'#6366f1'}) + '</div>';
+    html += '</div>';
+    // Dimension detail cards
+    html += '<div style="background:#fff;border:1px solid #e5e5e5;border-radius:14px;padding:20px 22px">';
+    html += '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#94a3b8;margin-bottom:14px">Detalle por dimensión</div>';
+    html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px">'
       + sec.dims.map(function(d){
           var scoreL5  = scoreToLevel5(d.score);
           var minLv    = d.minLv || 1;
@@ -6514,123 +6562,6 @@ function selectParam(fieldId, type, val) {
 
 
 
-function renderParams() {
-  try {
-    var perfil = _paramPerfil;
-    var ideal = PERFIL_IDEAL[perfil];
-    if (!ideal) {
-      PERFIL_IDEAL[perfil] = {};
-      var allTests = ['barratt','pai','dc0','comprension','situacional','vigilancia','disc','atencion','idt','cwb','pf16','ausentismo','frustracion','ice','game_detector','game_secuencias','game_impulsos','game_vigilancia','game_memoria'];
-      allTests.forEach(function(tid) {
-        var src = PERFIL_IDEAL['jefatura'] && PERFIL_IDEAL['jefatura'][tid];
-        if (src) PERFIL_IDEAL[perfil][tid] = JSON.parse(JSON.stringify(src));
-      });
-      ideal = PERFIL_IDEAL[perfil];
-    }
-
-    var SECTION_META = {
-      barratt:     { icon:'🧩', title:'Control Impulsivo (BIS-15)',  keys:['AI','IM','NP'] },
-      pai:         { icon:'🔎', title:'Ajuste Psicológico (PAI)',     keys:['EE','AS','ON','ME','IL','ML'] },
-      dc0:         { icon:'⚡', title:'Aptitud Cognitiva (DC-0)',      keys:['V','N','L'] },
-      situacional: { icon:'💡', title:'Juicio Situacional',           keys:['_self'] },
-      vigilancia:  { icon:'🛡', title:'Aptitud Vigilancia',           keys:['_self'] },
-    };
-    var LEVEL_NAMES   = ['','Muy Bajo','Bajo','Medio','Alto','Muy Alto'];
-    var LEVEL_COLORS  = ['','#94a3b8','#64748b','#f59e0b','#3b82f6','#10b981'];
-    var LEVEL_BG      = ['','#f1f5f9','#f1f5f9','#fffbeb','#eff6ff','#f0fdf4'];
-
-    var out = '';
-    // Explanation banner
-    out += '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 16px;margin-bottom:20px;display:flex;align-items:flex-start;gap:10px">'
-         + '<span style="font-size:18px">💡</span>'
-         + '<div style="font-size:12px;color:#166534;line-height:1.6">'
-         + '<strong>Cómo funciona:</strong> selecciona el nivel mínimo que debe tener un candidato en cada dimensión. '
-         + 'El informe mostrará en <span style="color:#10b981;font-weight:700">verde</span> si cumple y en <span style="color:#dc2626;font-weight:700">rojo</span> si no alcanza. '
-         + 'El porcentaje de ajuste global se calcula en base a estos umbrales.'
-         + '</div></div>';
-
-    Object.entries(SECTION_META).forEach(function(entry) {
-      var secId = entry[0]; var sm = entry[1];
-      var secData = ideal[secId];
-      if (!secData) return;
-
-      out += '<div style="margin-bottom:24px">';
-      out += '<div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;margin-bottom:10px;display:flex;align-items:center;gap:6px">'
-           + sm.icon + '  ' + sm.title + '</div>';
-      out += '<div style="background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0">';
-
-      sm.keys.forEach(function(k, ki) {
-        var cfg = k === '_self' ? secData : secData[k];
-        if (!cfg) return;
-        var fid    = 'p_' + perfil + '_' + secId + '_' + k;
-        var curLv  = cfg.minLv || scoreToLevel5(cfg.min) || 3;
-        var isLast = (ki === sm.keys.length - 1);
-        var col    = LEVEL_COLORS[curLv];
-
-        out += '<div id="row_' + fid + '" style="padding:14px 18px;' + (isLast ? '' : 'border-bottom:1px solid #f1f5f9;') + '">';
-
-        // Top row: label + chips + badge
-        out += '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">';
-        // Label
-        out += '<div style="flex:1;min-width:120px">'
-             + '<div style="font-size:13px;font-weight:600;color:#0f172a">' + cfg.label + '</div>'
-             + '<div style="font-size:11px;color:#94a3b8;margin-top:1px">' + cfg.req + '</div>'
-             + '</div>';
-
-        // Chips 1-5
-        out += '<div style="display:flex;gap:4px;flex-shrink:0">';
-        for (var lv = 1; lv <= 5; lv++) {
-          var active = (lv === curLv);
-          out += '<button type="button"'
-               + ' id="chip_' + fid + '_' + lv + '"'
-               + ' data-fid="' + fid + '" data-lv="' + lv + '"'
-               + ' onclick="pickLevel(this.dataset.fid,+this.dataset.lv)"'
-               + ' onmouseenter="showLvlTip(this,' + lv + ')" onmouseleave="hideLvlTip()"'
-               + ' style="width:34px;height:34px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-weight:700;transition:all .12s;'
-               + (active ? 'background:' + LEVEL_COLORS[lv] + ';color:#fff;box-shadow:0 2px 6px ' + LEVEL_COLORS[lv] + '55;' : 'background:#f1f5f9;color:#94a3b8;') + '">'
-               + lv + '</button>';
-        }
-        out += '</div>';
-
-        // Badge: current level name
-        out += '<div id="lbl_' + fid + '" style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:100px;min-width:72px;text-align:center;background:' + LEVEL_BG[curLv] + ';color:' + col + '">'
-             + LEVEL_NAMES[curLv] + '</div>';
-
-        out += '</div>'; // top row
-
-        // Visual bar showing threshold
-        out += '<div style="margin-top:10px;position:relative;height:6px;background:#f1f5f9;border-radius:100px" id="bar_' + fid + '">';
-        var fillPct = ((curLv - 1) / 4) * 100;
-        out += '<div id="fill_' + fid + '" style="position:absolute;top:0;bottom:0;left:0;width:' + fillPct + '%;background:' + col + ';border-radius:100px;transition:all .2s"></div>';
-        // Tick marks
-        for (var t2 = 1; t2 <= 5; t2++) {
-          var tpct = ((t2 - 1) / 4) * 100;
-          out += '<div style="position:absolute;top:-2px;bottom:-2px;left:' + tpct + '%;width:2px;background:#fff;border-radius:1px;transform:translateX(-50%)"></div>';
-        }
-        out += '</div>';
-        // Axis labels
-        out += '<div style="display:flex;justify-content:space-between;margin-top:4px">';
-        for (var ax = 1; ax <= 5; ax++) {
-          out += '<span style="font-size:9px;color:#cbd5e1;font-weight:500;flex:1;text-align:' + (ax===1?'left':ax===5?'right':'center') + '">' + ax + '</span>';
-        }
-        out += '</div>';
-
-        out += '<input type="hidden" id="hid_' + fid + '_min" value="' + curLv + '">';
-        out += '</div>'; // row
-      });
-
-      out += '</div></div>'; // card + section
-    });
-
-    document.getElementById('params-content').innerHTML = out;
-  } catch(e) {
-    document.getElementById('params-content').innerHTML = '<div style="padding:20px;color:red">Error: ' + e.message + '</div>';
-    console.error(e);
-  }
-}
-
-// renderBatteryConfig removed — replaced by renderBateriaTab in Batería sub-tab
-
 function toggleBatteryTest(cb) {
   var tid = cb.dataset.tid;
   var perfil = cb.dataset.perfil;
@@ -6645,23 +6576,19 @@ function toggleBatteryTest(cb) {
 }
 
 // ── Sub-tab switching (legacy — now separate tabs) ──
-var _paramsSubtab = 'bateria';
-function switchParamsSubtab(tab) { _paramsSubtab = tab; }
 
 // ── Wiki de Tests ──
 function renderWikiTab() {
   var WIKI_GROUPS = {
     '🧠 Tests Cognitivos': ['dc0','comprension','atencion','idt'],
-    '🧬 Tests de Personalidad': ['barratt','pai','disc','ice','pf16'],
+    '🧬 Tests de Personalidad': ['barratt','pai','disc','pf16'],
     '💡 Tests Situacionales': ['situacional','vigilancia'],
-    '⚠ Riesgo Laboral': ['cwb','ausentismo','frustracion'],
     '🎮 Juegos Gamificados': ['game_detector','game_secuencias','game_impulsos','game_vigilancia','game_memoria'],
   };
   var WIKI_GROUP_DESC = {
     '🧠 Tests Cognitivos': 'Miden capacidades intelectuales, velocidad de procesamiento y comprensión procedimental.',
     '🧬 Tests de Personalidad': 'Evalúan rasgos de personalidad, estilos conductuales y disposición ética.',
     '💡 Tests Situacionales': 'Miden el juicio aplicado y la toma de decisiones ante escenarios laborales reales.',
-    '⚠ Riesgo Laboral': 'Indicadores predictivos de conductas problemáticas, ausentismo y desadaptación en el puesto.',
     '🎮 Juegos Gamificados': 'Mini-juegos interactivos que miden competencias a través del desempeño real, sin posibilidad de sesgo de deseabilidad social.',
   };
   var WIKI = {
@@ -6758,50 +6685,6 @@ function renderWikiTab() {
       scoring: 'Mismo sistema que Juicio Situacional: respuesta óptima (3 pts), aceptable (2), subóptima (1), inadecuada (0). Normalizado a 0-100.',
       reference: 'Basado en competencias de seguridad (ASIS International, 2012).'
     },
-    cwb: {
-      icon: '⚠', name: 'Conductas Contraproducentes (CWB-18)', category: 'Riesgo Laboral', items: 18, time: '5-8 min', format: 'Likert 1-5',
-      description: 'Evalúa la predisposición del candidato a incurrir en conductas que perjudican a la organización o a sus miembros. Incluye actitudes hacia el hurto, sabotaje, uso indebido de recursos, hostilidad interpersonal y negligencia deliberada.',
-      dimensions: [
-        { key:'AR', name:'Abuso de Recursos', desc:'Tendencia al uso indebido de tiempo laboral, materiales, equipos o información de la organización para fines personales. Puntuaciones altas indican bajo riesgo; bajas sugieren tolerancia al aprovechamiento indebido de recursos.' },
-        { key:'DI', name:'Desviación Interpersonal', desc:'Predisposición a conductas hostiles hacia compañeros: chismes, exclusión, intimidación o sabotaje relacional. Puntuaciones altas indican bajo riesgo de conflicto interpersonal malintencionado.' },
-        { key:'NG', name:'Negligencia', desc:'Tendencia al incumplimiento deliberado de responsabilidades: llegar tarde, hacer el mínimo esfuerzo, ignorar instrucciones a propósito. Puntuaciones altas indican responsabilidad y compromiso.' },
-      ],
-      scoring: 'Las respuestas Likert se invierten (escala de riesgo) y normalizan a 0-100, donde puntajes altos indican menor riesgo. Clasificación: Muy Bajo (alto riesgo), Bajo, Medio, Alto, Muy Alto (bajo riesgo). Incluye ítems inversos de validación.',
-      reference: 'Basado en el modelo CWB de Spector et al. (2006) y la taxonomía de conductas contraproducentes de Robinson & Bennett (1995).'
-    },
-    ausentismo: {
-      icon: '📅', name: 'Riesgo de Ausentismo (ABS-10)', category: 'Riesgo Laboral', items: 10, time: '3-5 min', format: 'Likert 1-5',
-      description: 'Evalúa las actitudes del candidato hacia la asistencia laboral, el cumplimiento de horarios y el compromiso con la presencialidad. Predice el riesgo de ausencias injustificadas, tardanzas recurrentes y abandono de turno.',
-      dimensions: [
-        { key:'pct', name:'Riesgo de Ausentismo Global', desc:'Indicador integrado que combina la valoración del candidato sobre la importancia de la asistencia, su historial autodeclarado de puntualidad, su actitud ante imprevistos y su nivel de compromiso con el horario laboral. Puntuaciones altas predicen asistencia confiable.' },
-      ],
-      scoring: 'Las respuestas Likert se promedian y normalizan a 0-100. Puntajes altos indican bajo riesgo de ausentismo. Clasificación: Muy Bajo (alto riesgo — probable ausentismo frecuente), Bajo, Medio, Alto, Muy Alto (bajo riesgo — asistencia confiable).',
-      reference: 'Basado en modelos predictivos de ausentismo de Harrison & Martocchio (1998) y Steel (2003).'
-    },
-    frustracion: {
-      icon: '🔥', name: 'Tolerancia a la Frustración (TF-12)', category: 'Riesgo Laboral', items: 12, time: '4-6 min', format: 'Likert 1-5',
-      description: 'Mide la capacidad del candidato para mantener un desempeño adecuado cuando enfrenta obstáculos, demoras, cambios inesperados o fracasos. Evalúa la resiliencia ante condiciones laborales adversas y la regulación de la ira.',
-      dimensions: [
-        { key:'PE', name:'Persistencia', desc:'Capacidad de mantener el esfuerzo y la motivación ante obstáculos repetidos o tareas difíciles. Puntuaciones altas indican tenacidad y orientación al logro a pesar de las dificultades; bajas sugieren abandono rápido ante la adversidad.' },
-        { key:'CI', name:'Control de Ira', desc:'Regulación de las reacciones emocionales de irritabilidad, enfado o agresividad ante situaciones frustrantes. Puntuaciones altas indican capacidad de mantener la calma; bajas sugieren explosividad, quejas frecuentes o conductas pasivo-agresivas.' },
-        { key:'AC', name:'Adaptación al Cambio', desc:'Flexibilidad para ajustarse a cambios inesperados en las condiciones, métodos o prioridades de trabajo. Puntuaciones altas reflejan apertura y agilidad; bajas indican rigidez, resistencia activa al cambio y estrés ante la incertidumbre.' },
-      ],
-      scoring: 'Las respuestas Likert se promedian por dimensión y normalizan a 0-100. Clasificación en 5 niveles estándar. El puntaje global se obtiene como promedio ponderado de las tres dimensiones.',
-      reference: 'Basado en constructos de frustration tolerance (Harrington, 2005) y modelos de regulación emocional de Gross (1998).'
-    },
-    ice: {
-      icon: '⚡', name: 'Inventario de Competencias de Ejecución (ICE-20)', category: 'Personalidad', items: 20, time: '6-8 min', format: 'Likert 1-5',
-      description: 'Evalúa cinco competencias clave vinculadas a la capacidad de ejecución efectiva en el trabajo. Mide la disposición del candidato a actuar con iniciativa, cumplir compromisos, operar con sentido de urgencia, gestionar recursos y orientarse consistentemente hacia los resultados.',
-      dimensions: [
-        { key:'IN', name:'Iniciativa', desc:'Tendencia a actuar sin esperar instrucciones, anticiparse a necesidades y generar soluciones antes de que los problemas escalen. Puntuaciones altas indican un perfil proactivo y resolutivo; bajas sugieren dependencia de la dirección externa para actuar.' },
-        { key:'CO', name:'Compromiso', desc:'Lealtad con la tarea, el equipo y la organización. Implica cumplir lo prometido, asumir responsabilidad por los resultados y mantener la dedicación incluso en condiciones adversas. Puntuaciones altas predicen confiabilidad y consistencia.' },
-        { key:'SU', name:'Sentido de Urgencia', desc:'Capacidad de priorizar con criterio, actuar con velocidad apropiada y no postergar decisiones ni tareas importantes. No implica apresuramiento, sino la habilidad de distinguir lo urgente de lo que puede esperar y actuar en consecuencia.' },
-        { key:'GE', name:'Gestión', desc:'Habilidad para organizar recursos (tiempo, personas, información), planificar el trabajo propio y coordinar acciones necesarias para cumplir objetivos. Incluye la capacidad de estructurar tareas, delegar cuando corresponde y mantener el control del avance.' },
-        { key:'CR', name:'Compromiso con Resultados', desc:'Orientación al logro medible. Implica establecer metas claras, persistir hasta cerrar los objetivos, medir el propio desempeño y no conformarse con el esfuerzo si no se alcanzan los resultados esperados. Puntuaciones altas predicen alto rendimiento sostenido.' },
-      ],
-      scoring: 'Cada dimensión se calcula como promedio de sus 4 ítems (escala 1-5), normalizado a 0-100. El puntaje global es el promedio ponderado de las 5 dimensiones. Clasificación por dimensión y global: Muy Bajo (0-19), Bajo (20-39), Medio (40-59), Alto (60-79), Muy Alto (80-100). Incluye 4 ítems inversos distribuidos entre dimensiones para control de aquiescencia.',
-      reference: 'Diseñado a partir de modelos de competencias de ejecución de Lombardo & Eichinger (2004), el Achievement Motivation Inventory de Schuler et al. (2004) y la teoría de orientación al logro de McClelland (1961).'
-    },
     pf16: {
       icon: '🧬', name: 'Test de Personalidad 16PF (Abreviado)', category: 'Personalidad', items: 20, time: '8-10 min', format: 'Likert 1-5',
       description: 'Versión abreviada del Cuestionario de 16 Factores de Personalidad de Raymond Cattell. Evalúa los 5 factores globales de segundo orden que resumen la estructura de personalidad: Extraversión, Ajuste Emocional (Ansiedad inversa), Dureza Mental, Independencia y Autocontrol. Diseñado para contexto psicolaboral con énfasis en predicción de desempeño.',
@@ -6864,7 +6747,6 @@ function renderWikiTab() {
     '🧠 Tests Cognitivos': { bg:'#eff6ff', border:'#bfdbfe', text:'#1e40af' },
     '🧬 Tests de Personalidad': { bg:'#faf5ff', border:'#e9d5ff', text:'#7c3aed' },
     '💡 Tests Situacionales': { bg:'#fffbeb', border:'#fde68a', text:'#b45309' },
-    '⚠ Riesgo Laboral': { bg:'#fef2f2', border:'#fecaca', text:'#dc2626' },
     '🎮 Juegos Gamificados': { bg:'#f0fdf4', border:'#bbf7d0', text:'#16a34a' },
   };
 
@@ -7000,10 +6882,6 @@ var BATTERY_TEST_DIMENSIONS = {
   disc:        { icon:'🎭', title:'Estilos Conductuales (DISC-20)',    keys:['D','I','S','C'] },
   atencion:    { icon:'🎯', title:'Atención Concentrada (d2)',         keys:['pct'] },
   idt:         { icon:'📊', title:'Interpretación de Datos (IDT-10)',  keys:['pct'] },
-  cwb:         { icon:'⚠', title:'Conductas Contraproducentes (CWB-18)', keys:['AR','DI','NG'] },
-  ausentismo:  { icon:'📅', title:'Riesgo de Ausentismo (ABS-10)',      keys:['pct'] },
-  frustracion: { icon:'🔥', title:'Tolerancia a la Frustración (TF-12)', keys:['PE','CI','AC'] },
-  ice:         { icon:'⚡', title:'Competencias de Ejecución (ICE-20)',  keys:['IN','CO','SU','GE','CR'] },
   pf16:        { icon:'🧬', title:'Personalidad 16PF (Abreviado)',      keys:['EX','AN','DU','IN','AC'] },
   game_detector:  { icon:'🎯', title:'Detector (Atención)',              keys:['pct'] },
   game_secuencias:{ icon:'🧠', title:'Secuencias (Lógica)',              keys:['pct'] },
@@ -7013,12 +6891,13 @@ var BATTERY_TEST_DIMENSIONS = {
 };
 
 function renderBateriaTab() {
+  _pickLevelMap = {};
   var perfil = _paramPerfil;
   var active = PERFIL_TESTS[perfil] || PERFIL_TESTS_DEFAULT[perfil] || [];
   var ideal = PERFIL_IDEAL[perfil];
   if (!ideal) {
     PERFIL_IDEAL[perfil] = {};
-    var allGameAndShared = ['barratt','pai','dc0','comprension','situacional','vigilancia','disc','atencion','idt','cwb','pf16','ausentismo','frustracion','ice','game_detector','game_secuencias','game_impulsos','game_vigilancia','game_memoria'];
+    var allGameAndShared = ['barratt','pai','dc0','comprension','situacional','vigilancia','disc','atencion','idt','pf16','game_detector','game_secuencias','game_impulsos','game_vigilancia','game_memoria'];
     allGameAndShared.forEach(function(tid) {
       var src = PERFIL_IDEAL['jefatura'] && PERFIL_IDEAL['jefatura'][tid];
       if (src) PERFIL_IDEAL[perfil][tid] = JSON.parse(JSON.stringify(src));
@@ -7034,9 +6913,8 @@ function renderBateriaTab() {
 
   var TEST_GROUPS = {
     '🧠 Tests Cognitivos': ['dc0','comprension','atencion','idt'],
-    '🧬 Tests de Personalidad': ['barratt','pai','disc','ice','pf16'],
+    '🧬 Tests de Personalidad': ['barratt','pai','disc','pf16'],
     '💡 Tests Situacionales': ['situacional','vigilancia'],
-    '⚠ Riesgo Laboral': ['cwb','ausentismo','frustracion'],
     '🎮 Juegos Gamificados': ['game_detector','game_secuencias','game_impulsos','game_vigilancia','game_memoria'],
   };
 
@@ -7048,13 +6926,9 @@ function renderBateriaTab() {
     barratt:'Control atencional, motor y planificación.',
     pai:'Estabilidad emocional, adaptación social, normatividad, estrés e integridad.',
     disc:'Dominancia, Influencia, Estabilidad, Cumplimiento.',
-    ice:'Iniciativa, compromiso, urgencia, gestión y resultados.',
     pf16:'Extraversión, ajuste emocional, dureza, independencia y autocontrol.',
     situacional:'Escenarios laborales con opciones de respuesta.',
     vigilancia:'Protocolos y detección de irregularidades.',
-    cwb:'Conductas contraproducentes: agresión, desvío y negligencia.',
-    ausentismo:'Propensión a faltas, atrasos y abandonos.',
-    frustracion:'Persistencia, control de irritabilidad y acción constructiva.',
     game_detector:'Encontrar estímulos entre distractores bajo presión.',
     game_secuencias:'Patrones numéricos con dificultad progresiva.',
     game_impulsos:'Control inhibitorio conductual real (Go/No-Go).',
@@ -7123,10 +6997,14 @@ function renderBateriaTab() {
           var cfg = k === '_self' ? secData : (secData[k] || null);
           if (!cfg) return;
           var fid = 'b_' + perfil + '_' + tid + '_' + k;
+          _pickLevelMap[fid] = { perfil:perfil, tid:tid, key:k };
           var curLv = cfg.minLv || scoreToLevel5(cfg.min) || 3;
           var col = LC[curLv];
-          // Simulated historical average (slightly above minimum for realism)
-          var histAvg = Math.min(5, curLv + (Math.random() > 0.5 ? 1 : 0));
+          // Stable historical average based on dimension identity (not random)
+          var hashSeed = 0;
+          for (var _ci = 0; _ci < fid.length; _ci++) hashSeed = ((hashSeed << 5) - hashSeed + fid.charCodeAt(_ci)) | 0;
+          var histOffset = (Math.abs(hashSeed) % 3); // 0, 1 or 2
+          var histAvg = Math.min(5, Math.max(1, curLv - 1 + histOffset));
 
           out += '<div id="row_' + fid + '" style="padding:12px 0;' + (ki < dimInfo.keys.length - 1 ? 'border-bottom:1px solid #f0f0f0;' : '') + '">';
 
@@ -7246,130 +7124,25 @@ function applyTemplate(tpl, perfil) {
 
 
 function pickLevel(fid, lv) {
-  // Parse fid: "b_PERFIL_TID_KEY"
-  var parts = fid.split('_');
-  // parts[0] = 'b', parts[1] = perfil, rest = tid_key
-  // But perfil and tid can contain underscores (e.g. c_my_cargo, game_detector)
-  // So we use the known prefix 'b_' + _paramPerfil + '_' then parse the rest
-  var perfil = _paramPerfil;
-  var remainder = fid.substring(('b_' + perfil + '_').length); // e.g. "dc0_V" or "game_detector_pct"
-  
-  // Find which test this belongs to by checking BATTERY_TEST_DIMENSIONS keys
-  var tid = null, dimKey = null;
-  var btd = BATTERY_TEST_DIMENSIONS;
-  Object.keys(btd).forEach(function(t) {
-    if (remainder.indexOf(t + '_') === 0) {
-      if (!tid || t.length > tid.length) { tid = t; } // longest match
-    }
-  });
-  if (tid) dimKey = remainder.substring(tid.length + 1);
-  
-  if (tid && dimKey && PERFIL_IDEAL[perfil] && PERFIL_IDEAL[perfil][tid]) {
-    var secData = PERFIL_IDEAL[perfil][tid];
-    var cfg = dimKey === '_self' ? secData : secData[dimKey];
-    if (cfg && cfg.min !== undefined) {
-      cfg.minLv = lv;
-      cfg.min = (lv - 1) * 20;
-      cfg.max = 100;
+  // Parse fid: "b_{perfil}_{tid}_{key}" — use stored mapping instead of parsing
+  var meta = _pickLevelMap && _pickLevelMap[fid];
+  if (meta) {
+    var secData = PERFIL_IDEAL[meta.perfil] && PERFIL_IDEAL[meta.perfil][meta.tid];
+    if (secData) {
+      var cfg = meta.key === '_self' ? secData : secData[meta.key];
+      if (cfg && cfg.min !== undefined) {
+        cfg.minLv = lv;
+        cfg.min = (lv - 1) * 20;
+        cfg.max = 100;
+      }
     }
   }
-  
   persistParams();
   renderBateriaTab();
 }
+var _pickLevelMap = {};
 
 
-function saveParams() {
-  const perfil = _paramPerfil;
-  const ideal  = PERFIL_IDEAL[perfil];
-
-  // Umbrales tab fields (prefix: p_)
-  const SECTION_KEYS = {
-    barratt:     ['AI','IM','NP'],
-    pai:         ['EE','AS','ON','ME','IL','ML'],
-    dc0:         ['V','N','L'],
-    situacional: ['_self'],
-    vigilancia:  ['_self'],
-  };
-
-  // Batería tab fields (prefix: b_) — all possible test dimensions
-  const BATTERY_KEYS = {
-    barratt:     ['AI','IM','NP'],
-    pai:         ['EE','AS','ON','ME','IL','ML'],
-    dc0:         ['V','N','L'],
-    situacional: ['_self'],
-    vigilancia:  ['_self'],
-    comprension: ['_self'],
-    disc:        ['D','I','S','C'],
-    atencion:    ['pct'],
-    idt:         ['pct'],
-    cwb:         ['AR','DI','NG'],
-    ausentismo:  ['pct'],
-    frustracion: ['PE','CI','AC'],
-    ice:         ['IN','CO','SU','GE','CR'],
-    pf16:        ['EX','AN','DU','IN','AC'],
-    game_detector:  ['pct'],
-    game_secuencias:['pct'],
-    game_impulsos:  ['pct'],
-    game_vigilancia:['pct'],
-    game_memoria:   ['pct'],
-  };
-
-  let changed = 0;
-
-  // Save from Umbrales tab
-  Object.entries(SECTION_KEYS).forEach(([secId, keys]) => {
-    const secData = ideal[secId];
-    if (!secData) return;
-    keys.forEach(k => {
-      const cfg = k === '_self' ? secData : secData[k];
-      if (!cfg) return;
-      const fieldId = 'p_' + perfil + '_' + secId + '_' + k;
-      const minEl   = document.getElementById('hid_' + fieldId + '_min');
-      if (!minEl) return;
-      const v5 = parseInt(minEl.value);
-      if (!isNaN(v5) && v5 >= 1 && v5 <= 5) {
-        cfg.minLv = v5;
-        cfg.min   = (v5 - 1) * 20;
-        cfg.max   = 100;
-        changed++;
-      }
-    });
-  });
-
-  // Save from Batería tab
-  Object.entries(BATTERY_KEYS).forEach(([secId, keys]) => {
-    const secData = ideal[secId];
-    if (!secData) return;
-    keys.forEach(k => {
-      const cfg = k === '_self' ? secData : secData[k];
-      if (!cfg) return;
-      const fieldId = 'b_' + perfil + '_' + secId + '_' + k;
-      const minEl   = document.getElementById('hid_' + fieldId + '_min');
-      if (!minEl) return;
-      const v5 = parseInt(minEl.value);
-      if (!isNaN(v5) && v5 >= 1 && v5 <= 5) {
-        cfg.minLv = v5;
-        cfg.min   = (v5 - 1) * 20;
-        cfg.max   = 100;
-        changed++;
-      }
-    });
-  });
-
-  if (changed > 0) {
-    persistParams();
-  }
-}
-
-// Serialize PERFIL_IDEAL to localStorage
-
-function resetParams() {
-  if (!confirm('¿Restaurar los valores por defecto para todos los perfiles?')) return;
-  try { localStorage.removeItem('psicoeval_params'); } catch(e) {}
-  // Reload page to restore hardcoded defaults
-  location.reload();
-}
 function persistParams() {
   try {
     const snapshot = {};
@@ -8034,32 +7807,8 @@ function closeDelModal() {
   document.getElementById('del-modal').style.display = 'none';
 }
 
-function setCandSubTab(sub, btn) {
-  // Switch sub-tab buttons
-  ['subtab-tabla','subtab-informes','subtab-raw'].forEach(function(id) {
-    var el = document.getElementById(id); if (!el) return;
-    var active = el === btn;
-    el.style.color       = active ? 'var(--accent)' : 'var(--ink3)';
-    el.style.fontWeight  = active ? '700' : '500';
-    el.style.borderBottom= active ? '2px solid var(--accent)' : '2px solid transparent';
-  });
-  // Show correct panel
-  ['tabla','informes','raw'].forEach(function(s) {
-    var el = document.getElementById('cand-sub-' + s);
-    if (el) el.style.display = s === sub ? 'block' : 'none';
-  });
-  // Load data
-  if (sub === 'tabla')    { renderCandidateCargoTabs(); renderCandidatesTable(); }
-  else if (sub === 'informes') renderReports();
-  else if (sub === 'raw')      renderRaw();
-}
-
 function refreshCandView() {
-  var activeBtn = ['subtab-tabla','subtab-informes','subtab-raw']
-    .map(function(id){ return document.getElementById(id); })
-    .find(function(el){ return el && el.style.fontWeight === '700'; });
-  if (activeBtn) activeBtn.click();
-  else renderCandidatesTable();
+  renderCandidatesTable();
 }
 
 function adminTab(id, btn) {
@@ -8071,7 +7820,7 @@ function adminTab(id, btn) {
   });
   if (id === 'candidates') { renderCandidatesTable(); }
   else if (id === 'dashboard') renderDashboard();
-  else if (id === 'params') { renderParamsTabs(); renderBateriaTab(); }
+  else if (id === 'params') { renderBateriaTab(); }
   else if (id === 'users') renderUsersTab();
   else if (id === 'cargos') renderCargosTab();
   else if (id === 'wiki') renderWikiTab();
@@ -8147,54 +7896,68 @@ async function renderDashboard() {
   });
   h += '</div>';
 
-  // ── 3 Big Metrics ──
-  var fitColor = avgFit >= 70 ? '#16a34a' : avgFit >= 50 ? '#b45309' : '#dc2626';
+  // ── 3 Big Metrics — Enterprise Premium ──
+  var fitColor = avgFit >= 70 ? '#059669' : avgFit >= 50 ? '#d97706' : '#dc2626';
   var compPct  = total ? Math.round(nComp/total*100) : 0;
 
-  h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:28px">';
+  h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px">';
 
   // Metric 1: Candidatos
-  h += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px 20px">';
-  h += '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);margin-bottom:10px">Candidatos</div>';
-  h += '<div style="font-size:36px;font-weight:900;color:var(--ink);letter-spacing:-.03em;line-height:1">' + total + '</div>';
-  h += '<div style="display:flex;gap:12px;margin-top:10px">';
-  h += '<span style="font-size:11px;color:#16a34a;font-weight:600">' + nComp + ' completados</span>';
-  h += '<span style="font-size:11px;color:var(--ink4)">' + inProg + ' en curso</span>';
-  h += '<span style="font-size:11px;color:var(--ink4)">' + pending + ' pendientes</span>';
+  h += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px 22px;position:relative;overflow:hidden">';
+  h += '<div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#4338ca,#6366f1)"></div>';
+  h += '<div style="display:flex;justify-content:space-between;align-items:flex-start">';
+  h += '<div>';
+  h += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--ink4);margin-bottom:10px">Candidatos</div>';
+  h += '<div style="font-size:38px;font-weight:800;color:var(--ink);letter-spacing:-.04em;line-height:1">' + total + '</div>';
+  h += '</div>';
+  h += '<div style="width:44px;height:44px;border-radius:10px;background:#eef2ff;display:flex;align-items:center;justify-content:center;font-size:20px">👥</div>';
+  h += '</div>';
+  h += '<div style="display:flex;gap:16px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">';
+  h += '<div style="flex:1"><div style="font-size:20px;font-weight:800;color:#059669">' + nComp + '</div><div style="font-size:10px;font-weight:600;color:var(--ink4)">Completados</div></div>';
+  h += '<div style="flex:1"><div style="font-size:20px;font-weight:800;color:#2563eb">' + inProg + '</div><div style="font-size:10px;font-weight:600;color:var(--ink4)">En curso</div></div>';
+  h += '<div style="flex:1"><div style="font-size:20px;font-weight:800;color:var(--ink4)">' + pending + '</div><div style="font-size:10px;font-weight:600;color:var(--ink4)">Pendientes</div></div>';
   h += '</div></div>';
 
-  // Metric 2: Ajuste promedio
-  h += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px 20px">';
-  h += '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);margin-bottom:10px">Ajuste promedio</div>';
-  h += '<div style="font-size:36px;font-weight:900;color:' + fitColor + ';letter-spacing:-.03em;line-height:1">' + (fits.length ? avgFit + '%' : '—') + '</div>';
-  h += '<div style="margin-top:10px;height:4px;background:var(--surface3);border-radius:100px;overflow:hidden">';
-  h += '<div style="height:100%;width:' + avgFit + '%;background:' + fitColor + ';border-radius:100px;transition:width .6s"></div>';
+  // Metric 2: Ajuste promedio — with ring chart
+  h += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px 22px;position:relative;overflow:hidden">';
+  h += '<div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,' + fitColor + ',' + fitColor + '80)"></div>';
+  h += '<div style="display:flex;justify-content:space-between;align-items:flex-start">';
+  h += '<div>';
+  h += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--ink4);margin-bottom:10px">Ajuste promedio</div>';
+  h += '<div style="font-size:38px;font-weight:800;color:' + fitColor + ';letter-spacing:-.04em;line-height:1">' + (fits.length ? avgFit + '%' : '—') + '</div>';
   h += '</div>';
-  h += '<div style="font-size:11px;color:var(--ink4);margin-top:6px">' + (fits.length ? 'sobre ' + fits.length + ' evaluado' + (fits.length!==1?'s':'') : 'Sin evaluaciones completadas') + '</div>';
+  // SVG Ring
+  var ringPct = fits.length ? avgFit : 0;
+  var circumf = 2 * Math.PI * 18;
+  var offset = circumf - (ringPct / 100) * circumf;
+  h += '<svg width="48" height="48" viewBox="0 0 48 48" style="flex-shrink:0">';
+  h += '<circle cx="24" cy="24" r="18" fill="none" stroke="#f1f5f9" stroke-width="4"/>';
+  h += '<circle cx="24" cy="24" r="18" fill="none" stroke="' + fitColor + '" stroke-width="4" stroke-linecap="round" stroke-dasharray="' + circumf + '" stroke-dashoffset="' + offset + '" transform="rotate(-90 24 24)" style="transition:stroke-dashoffset .8s ease"/>';
+  h += '<text x="24" y="26" text-anchor="middle" fill="' + fitColor + '" font-size="11" font-weight="800">' + (fits.length ? avgFit : '—') + '</text>';
+  h += '</svg>';
   h += '</div>';
+  h += '<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);font-size:11px;color:var(--ink4)">';
+  h += fits.length ? 'Sobre ' + fits.length + ' evaluación' + (fits.length!==1?'es':'') + ' completada' + (fits.length!==1?'s':'') : 'Sin evaluaciones completadas';
+  h += '</div></div>';
 
-  // Metric 3: Distribución aptitud
-  h += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px 20px">';
-  h += '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);margin-bottom:10px">Aptitud</div>';
+  // Metric 3: Distribución aptitud — stacked bar with legend
+  h += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px 22px;position:relative;overflow:hidden">';
+  h += '<div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#059669,#d97706,#dc2626)"></div>';
+  h += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--ink4);margin-bottom:10px">Distribución de aptitud</div>';
   if (fits.length) {
-    h += '<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:10px">';
-    h += '<span style="font-size:36px;font-weight:900;color:#16a34a;line-height:1">' + aptos + '</span>';
-    h += '<span style="font-size:13px;font-weight:600;color:var(--ink3)">aptos</span>';
+    h += '<div style="display:flex;gap:12px;margin-bottom:16px">';
+    h += '<div style="flex:1;text-align:center;padding:10px 0;border-radius:8px;background:#ecfdf5"><div style="font-size:22px;font-weight:800;color:#059669">' + aptos + '</div><div style="font-size:10px;font-weight:600;color:#059669">Aptos</div></div>';
+    h += '<div style="flex:1;text-align:center;padding:10px 0;border-radius:8px;background:#fffbeb"><div style="font-size:22px;font-weight:800;color:#d97706">' + conObs + '</div><div style="font-size:10px;font-weight:600;color:#d97706">Con obs.</div></div>';
+    h += '<div style="flex:1;text-align:center;padding:10px 0;border-radius:8px;background:#fef2f2"><div style="font-size:22px;font-weight:800;color:#dc2626">' + noApto + '</div><div style="font-size:10px;font-weight:600;color:#dc2626">No aptos</div></div>';
     h += '</div>';
-    h += '<div style="display:flex;gap:4px;height:8px;border-radius:100px;overflow:hidden">';
-    var totalFits = fits.length || 1;
-    if (aptos)  h += '<div style="flex:' + aptos + ';background:#16a34a;border-radius:100px 0 0 100px" title="Apto: ' + aptos + '"></div>';
-    if (conObs) h += '<div style="flex:' + conObs + ';background:#f59e0b" title="Con observaciones: ' + conObs + '"></div>';
-    if (noApto) h += '<div style="flex:' + noApto + ';background:#dc2626;border-radius:0 100px 100px 0" title="No apto: ' + noApto + '"></div>';
-    h += '</div>';
-    h += '<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:10px;font-weight:600">';
-    h += '<span style="color:#16a34a">' + aptos + ' aptos</span>';
-    h += '<span style="color:#f59e0b">' + conObs + ' obs.</span>';
-    h += '<span style="color:#dc2626">' + noApto + ' no aptos</span>';
+    h += '<div style="display:flex;gap:3px;height:6px;border-radius:100px;overflow:hidden">';
+    if (aptos)  h += '<div style="flex:' + aptos + ';background:#059669;border-radius:3px"></div>';
+    if (conObs) h += '<div style="flex:' + conObs + ';background:#d97706;border-radius:3px"></div>';
+    if (noApto) h += '<div style="flex:' + noApto + ';background:#dc2626;border-radius:3px"></div>';
     h += '</div>';
   } else {
-    h += '<div style="font-size:36px;font-weight:900;color:var(--ink4);line-height:1">—</div>';
-    h += '<div style="font-size:11px;color:var(--ink4);margin-top:10px">Sin datos aún</div>';
+    h += '<div style="font-size:38px;font-weight:800;color:var(--ink4);line-height:1;margin-bottom:8px">—</div>';
+    h += '<div style="font-size:11px;color:var(--ink4)">Sin datos aún</div>';
   }
   h += '</div>';
   h += '</div>'; // end metrics grid
@@ -8854,8 +8617,13 @@ function applyRoleRestrictions() {
   const roleBadge = document.getElementById('role-badge');
   if (roleBadge) {
     roleBadge.textContent = isViewer ? 'Solo lectura' : 'Administrador';
-    roleBadge.style.color = isViewer ? '#f59e0b' : '#10b981';
+    roleBadge.style.background = isViewer ? '#fffbeb' : '#f0fdf4';
+    roleBadge.style.color = isViewer ? '#b45309' : '#16a34a';
+    roleBadge.style.borderColor = isViewer ? '#fde68a' : '#bbf7d0';
   }
+  // Show username
+  var userLabel = document.getElementById('sidebar-user-label');
+  if (userLabel && S.userEmail) userLabel.textContent = S.userEmail.split('@')[0];
   // Apply cargo visibility
   applyCargoVisibility();
 }
@@ -8866,7 +8634,7 @@ function applyRoleRestrictions() {
 
 // ── URL Config Sharing (Compact) ──
 // Uses short aliases and compact format to keep URLs short
-var _TEST_ALIAS = {barratt:'B',dc0:'D',pai:'P',situacional:'S',vigilancia:'V',comprension:'C',disc:'I',atencion:'A',idt:'T',cwb:'W',ausentismo:'U',frustracion:'F',ice:'E',pf16:'X',game_detector:'g1',game_secuencias:'g2',game_impulsos:'g4',game_vigilancia:'g5',game_memoria:'g7'};
+var _TEST_ALIAS = {barratt:'B',dc0:'D',pai:'P',situacional:'S',vigilancia:'V',comprension:'C',disc:'I',atencion:'A',idt:'T',pf16:'X',game_detector:'g1',game_secuencias:'g2',game_impulsos:'g4',game_vigilancia:'g5',game_memoria:'g7'};
 var _ALIAS_TEST = {};
 Object.keys(_TEST_ALIAS).forEach(function(k){ _ALIAS_TEST[_TEST_ALIAS[k]] = k; });
 
@@ -8983,6 +8751,50 @@ function applyCandidateConfig() {
     persistParams();
     return true;
   } catch(e) { console.warn('Error loading URL config:', e); return false; }
+}
+
+function shareCargoLink(cargoKey) {
+  try {
+    var pm = PERFIL_META[cargoKey]; if (!pm) return;
+    var tests = PERFIL_TESTS[cargoKey] || [];
+    var parts = [];
+    // Only this cargo active
+    parts.push('a=' + cargoKey);
+    // Battery for this cargo
+    var _TA = {barratt:'B',dc0:'D',pai:'P',situacional:'S',vigilancia:'V',comprension:'C',disc:'I',atencion:'A',idt:'T',pf16:'X',game_detector:'g1',game_secuencias:'g2',game_impulsos:'g4',game_vigilancia:'g5',game_memoria:'g7'};
+    if (tests.length) {
+      var short = tests.map(function(t){ return _TA[t] || t; }).join('.');
+      parts.push('b=' + cargoKey + '~' + short);
+    }
+    // Custom cargo descriptor if needed
+    var cc = CUSTOM_CARGOS ? CUSTOM_CARGOS.filter(function(c){ return c.key === cargoKey; }) : [];
+    if (cc.length) parts.push('c=' + cc[0].key + '~' + cc[0].label + '~' + cc[0].icon + '~' + (cc[0].desc||'').substring(0,60));
+
+    var compact  = parts.join('&');
+    var encoded  = btoa(unescape(encodeURIComponent(compact)));
+    var base     = window.location.href.split('?')[0].split('#')[0];
+    var link     = base + '?c=' + encoded;
+
+    // Show modal
+    var modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px';
+    modal.onclick = function(e){ if(e.target===modal) modal.remove(); };
+    modal.innerHTML = '<div style="background:#fff;border-radius:16px;padding:28px;max-width:480px;width:100%;font-family:inherit;box-shadow:0 8px 40px rgba(0,0,0,.2)">'
+      + '<div style="font-size:22px;margin-bottom:12px;text-align:center">' + pm.icon + '</div>'
+      + '<div style="font-size:16px;font-weight:800;text-align:center;margin-bottom:4px">Link para ' + pm.label + '</div>'
+      + '<div style="font-size:12px;color:#64748b;text-align:center;margin-bottom:16px;line-height:1.6">Este link abre el formulario directamente con la batería configurada para este cargo. Solo verán este cargo.</div>'
+      + '<div style="display:flex;flex-direction:column;gap:8px;background:#f8fafc;border-radius:10px;padding:12px;margin-bottom:16px">'
+      + '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#94a3b8">Tests incluidos</div>'
+      + '<div style="display:flex;gap:6px;flex-wrap:wrap">'
+      + tests.map(function(t){ var m=TESTS_META[t]; return m ? '<span style="font-size:11px;font-weight:600;padding:3px 9px;border-radius:100px;background:#e0e7ff;color:#4f46e5">' + m.icon + ' ' + m.name + '</span>' : ''; }).join('')
+      + '</div></div>'
+      + '<textarea id="cargo-share-link" readonly style="width:100%;height:72px;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:11px;font-family:monospace;color:#475569;background:#f8fafc;resize:none;box-sizing:border-box;line-height:1.4">' + link + '</textarea>'
+      + '<div style="display:flex;gap:8px;margin-top:12px">'
+      + '<button onclick="var ta=document.getElementById(\'cargo-share-link\');ta.select();document.execCommand(\'copy\');this.textContent=\'✓ Copiado!\';this.style.background=\'#16a34a\';setTimeout(function(){this.textContent=\'📋 Copiar link\';this.style.background=\'#6366f1\';}.bind(this),2000)" style="flex:1;padding:10px;border-radius:10px;border:none;background:#6366f1;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">📋 Copiar link</button>'
+      + '<button onclick="this.closest(\'div[style*=fixed]\').remove()" style="padding:10px 16px;border-radius:10px;border:1.5px solid #e2e8f0;background:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;color:#64748b">Cerrar</button>'
+      + '</div></div>';
+    document.body.appendChild(modal);
+  } catch(e) { toast('Error generando link', 'er'); console.error(e); }
 }
 
 function showShareModal() {
