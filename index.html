@@ -2774,22 +2774,26 @@ function calcScores(answers, selectedTests, perfil) {
   const allQs = buildQuestions(perfil);
   const scores = {};
 
-  // BIS-11 Barratt
+  // BIS-15 Barratt — raw sums per subscale (5 items × 1-4 = range 5-20 per subscale)
   if (selectedTests.includes('barratt')) {
     const dims = {AI:[],IM:[],NP:[]};
     allQs.filter(q=>q.testId==='barratt').forEach(q => {
       const v = answers[q.id]; if (v===undefined) return;
-      // r=true items are direct impulsivity; r=false are control (invert)
-      const adj = q.r ? v : (5 - v);   // 1-4 → high=impulsive
-      if (dims[q.sub]) dims[q.sub].push(adj);
+      // Store original item value (1-4). High = more impulsive.
+      if (dims[q.sub]) dims[q.sub].push(v);
     });
-    scores.barratt = {};
+    scores.barratt = { _raw:{} };
     ['AI','IM','NP'].forEach(k => {
       const vals = dims[k];
-      const raw = vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : 2.5;
-      // Convert to 0-100 where HIGH = GOOD CONTROL (invert impulsivity)
-      scores.barratt[k] = Math.round((1 - (raw-1)/3) * 100);
+      const rawSum = vals.reduce((a,b)=>a+b,0); // sum: 5-20
+      const rawMean = vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : 2.5; // mean: 1-4
+      scores.barratt._raw[k] = rawSum; // e.g. 12/20
+      scores.barratt._n = vals.length;
+      // Normalized 0-100 for radar/report (high = high impulsivity, matching raw direction)
+      scores.barratt[k] = Math.round((rawMean - 1) / 3 * 100);
     });
+    const totalRaw = (scores.barratt._raw.AI||0) + (scores.barratt._raw.IM||0) + (scores.barratt._raw.NP||0);
+    scores.barratt._raw.total = totalRaw; // range 15-60
     scores.barratt.total = Math.round((scores.barratt.AI + scores.barratt.IM + scores.barratt.NP)/3);
   }
 
@@ -2806,18 +2810,20 @@ function calcScores(answers, selectedTests, perfil) {
     scores.dc0.total = Math.round((scores.dc0.V + scores.dc0.N + scores.dc0.L)/3);
   }
 
-  // PAI
+  // PAI — raw mean per dimension (1-4 scale, higher = more of the trait)
   if (selectedTests.includes('pai')) {
     const dims = {EE:[],AS:[],ON:[],ME:[],IL:[],ML:[]};
     allQs.filter(q=>q.testId==='pai').forEach(q => {
       const v = answers[q.id]; if (v===undefined) return;
-      const adj = q.r ? (5 - v) : v;
+      const adj = q.r ? (5 - v) : v; // invert negatively-keyed items
       if (dims[q.dim]) dims[q.dim].push(adj);
     });
-    scores.pai = {};
+    scores.pai = { _raw:{} };
     Object.keys(dims).forEach(k => {
       const vals = dims[k];
-      scores.pai[k] = vals.length ? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length/4*100) : 50;
+      const mean = vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : 2.5;
+      scores.pai._raw[k] = Math.round(mean * 10) / 10; // e.g. 3.2 (scale 1-4)
+      scores.pai[k] = Math.round((mean - 1) / 3 * 100); // normalized 0-100 for radar
     });
   }
 
@@ -4957,6 +4963,23 @@ function fitLabel(fit) {
   return               { label:'No Apto',               color:'#dc2626', bg:'#fef2f2' };
 }
 
+
+// ── Descriptive band from normalized 0-100 score ────────────────
+function rawBand(score100) {
+  if (score100 >= 80) return { label:'Alto',     color:'#0f766e', bg:'#f0fdfa', border:'#99f6e4' };
+  if (score100 >= 55) return { label:'Moderado', color:'#b45309', bg:'#fffbeb', border:'#fde68a' };
+  return                     { label:'Bajo',     color:'#b91c1c', bg:'#fef2f2', border:'#fecaca' };
+}
+function rawBand4(mean14) { // for PAI 1-4 scale
+  if (mean14 >= 3.0) return { label:'Alto',     color:'#0f766e', bg:'#f0fdfa', border:'#99f6e4' };
+  if (mean14 >= 2.0) return { label:'Moderado', color:'#b45309', bg:'#fffbeb', border:'#fde68a' };
+  return                    { label:'Bajo',     color:'#b91c1c', bg:'#fef2f2', border:'#fecaca' };
+}
+function rawBandPct(pct) { // for choice tests % correct
+  if (pct >= 75) return { label:'Logrado',         color:'#0f766e', bg:'#f0fdfa', border:'#99f6e4' };
+  if (pct >= 50) return { label:'Parcialmente logrado', color:'#b45309', bg:'#fffbeb', border:'#fde68a' };
+  return                { label:'Por desarrollar', color:'#b91c1c', bg:'#fef2f2', border:'#fecaca' };
+}
 function buildFitReport(c) {
   const s = c.scores;
   const perfil = c.perfil || 'administrativo';
@@ -5970,136 +5993,130 @@ function buildReportHtml(c, withClose) {
   html += '</div>'; // end tab-panel general
 
   // ════════════════════════════════════════════
+  // ════════════════════════════════════════════
   // TAB: BARRATT
   // ════════════════════════════════════════════
   if (s.barratt && rpt.sections.find(function(x){return x.id==='barratt';})) {
     const sec = rpt.sections.find(function(x){return x.id==='barratt';});
-    const secLv = fitLabel(sec.secFit);
     const BIS_FULL = { AI:'Control Atencional', IM:'Control Motor', NP:'Planificación' };
-    const BIS_COLOR = { AI:'#0f2d52', IM:'#10b981', NP:'#2563eb' };
-    const BIS_ICON  = { AI:'🎯', IM:'⚡', NP:'📋' };
+    const BIS_DESC = {
+      AI: { hi: 'Mantiene el foco de manera consistente y procesa la información antes de actuar. Muestra baja distracción y alta capacidad para sostener la atención en tareas demandantes.',
+            md: 'Atiende adecuadamente en situaciones rutinarias. En contextos de alta carga o múltiples estímulos puede requerir esfuerzo adicional para mantener el foco.',
+            lo: 'Presenta dificultades para sostener la atención. Tiende a distraerse con facilidad, lo que puede afectar la precisión y calidad del trabajo.' },
+      IM: { hi: 'Actúa con reflexión y autocontrol. Evalúa consecuencias antes de responder, incluso bajo presión o conflicto. Transmite seguridad y madurez.',
+            md: 'Generalmente reflexivo/a. Bajo estrés puede reaccionar antes de tiempo, aunque logra corregir el curso con relativa facilidad.',
+            lo: 'Muestra tendencia a actuar impulsivamente, especialmente bajo presión. Puede tomar decisiones sin evaluar sus consecuencias.' },
+      NP: { hi: 'Orientado/a al largo plazo. Anticipa consecuencias y organiza el trabajo de forma sistemática. Se enfoca en resultados sostenibles.',
+            md: 'Planifica adecuadamente para tareas cotidianas. En proyectos complejos puede beneficiarse de mayor estructura.',
+            lo: 'Dificultades para proyectarse y organizar con anticipación. Tiende a priorizar lo inmediato, lo que puede generar improvisación.' },
+    };
 
     html += '<div class="rpt-tab-panel" id="rpt-panel-barratt" style="display:none;flex-direction:column;gap:16px">';
 
-    // Header card
-    html += '<div style="background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(15,45,82,.07);padding:22px 24px">'
-      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:8px">'
-      + '<div style="font-size:17px;font-weight:700">⚡ Control Impulsivo — BIS-15</div>'
-      + '<div style="display:flex;align-items:center;gap:8px">' + gaugeHtml(sec.secFit, secLv.color, 60)
-      + '<div><div style="font-size:13px;font-weight:800;color:' + secLv.color + '">' + sec.secFit + '%</div>'
-      + '<div style="font-size:10px;color:#999">' + secLv.label + '</div></div></div></div>'
-      + '<div style="font-size:12px;color:#999;margin-bottom:16px;line-height:1.5">'
-      + 'Mide el nivel de control impulsivo en 3 dimensiones. Puntaje alto = buen control.</div>';
-    // Radar chart for Barratt
-    var barDims = sec.dims.map(function(d){ return { label: (BIS_FULL[d.key]||d.label), value: d.score }; });
-    html += '<div style="padding:8px 0 16px">' + radarChartSvg(barDims, {size:320, fill:'rgba(16,185,129,.15)', stroke:'#10b981'}) + '</div>';
-    html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px">'
-      + sec.dims.map(function(d) {
-          var lv2 = fitLabel(d.fit);
-          var scoreL5 = scoreToLevel5(d.score);
-          var minLv   = d.minLv || 1;
-          var passes  = scoreL5 >= minLv;
-          var gap     = minLv - scoreL5;
-          var borderColor = passes ? '#16a34a' : (gap === 1 ? '#b45309' : '#e11d48');
-          var bgColor     = passes ? '#f0fdf4'  : (gap === 1 ? '#fff7ed'  : '#fff1f3');
-          var desc = dimDescWithGap('barratt', d.key, d.score, scoreL5, minLv);
-          var idealMin100 = parseInt((d.ideal||'60-100').split('–')[0]);
-          var idealMax100 = parseInt((d.ideal||'60-100').split('–')[1]||'100');
-          return '<div style="background:' + bgColor + ';border-radius:10px;padding:18px 20px;border:2px solid ' + borderColor + '40">'
-            + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">'
-            + '<div style="flex:1">'
-            + '<div style="font-size:13px;font-weight:700;color:#0f172a">' + BIS_ICON[d.key] + ' ' + (BIS_FULL[d.key]||d.label) + '</div>'
-            + '<div style="font-size:11px;color:#94a3b8;margin-top:2px">' + d.req + '</div>'
-            + '</div>'
-            + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;margin-left:10px">'
-            + '<div style="text-align:center;background:#fff;border-radius:8px;padding:5px 10px;border:2px solid ' + borderColor + '">'
-            + '<div style="font-size:22px;font-weight:900;color:' + borderColor + ';line-height:1">' + scoreL5 + '</div>'
-            + '<div style="font-size:9px;font-weight:700;color:' + borderColor + '">/5</div>'
-            + '</div>'
-            + passBadge(passes, gap)
-            + '</div></div>'
-            + trackBar(d.score, idealMin100, idealMax100, true, d.fit, lv2)
-            + '<div style="font-size:10px;color:#94a3b8;margin-bottom:6px">Mínimo requerido: <strong style="color:' + borderColor + '">nivel ' + minLv + '</strong></div>'
-            + dualBadge(scoreToLevel5(d.score), d.fit, borderColor)
-            + '<div style="font-size:12px;color:#475569;line-height:1.6;padding-top:10px;border-top:1px solid ' + borderColor + '30">' + desc + '</div>'
-            + '</div>';
-        }).join('')
-      + '</div></div>';
+    // Header
+    html += '<div style="background:#fff;border-radius:14px;border:1px solid #e2e8f0;padding:20px 24px">';
+    html += '<div style="font-size:17px;font-weight:800;color:#0f172a;margin-bottom:6px">⚡ Control Impulsivo — BIS-15</div>';
+    html += '<div style="font-size:13px;color:#64748b;line-height:1.6;margin-bottom:14px">Evalúa la tendencia a actuar sin reflexión previa en tres dimensiones. <strong>Puntaje alto = mayor impulsividad.</strong> Se presentan los puntajes directos obtenidos en la escala 1–4 por ítem.</div>';
+
+    // Raw total badge
+    var rawTot = s.barratt._raw ? s.barratt._raw.total : '—';
+    var totBand = rawBand(s.barratt.total);
+    html += '<div style="display:inline-flex;align-items:center;gap:12px;padding:10px 18px;border-radius:12px;background:' + totBand.bg + ';border:1.5px solid ' + totBand.border + ';margin-bottom:18px">';
+    html += '<span style="font-size:24px;font-weight:900;color:' + totBand.color + '">' + rawTot + '</span>';
+    html += '<div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:' + totBand.color + '">' + totBand.label + '</div>';
+    html += '<div style="font-size:11px;color:#64748b">Puntaje total (rango 15–60)</div></div></div>';
+
+    // Radar
+    var bisRadarDims = Object.keys(BIS_FULL).map(function(k){ return {label: BIS_FULL[k], value: s.barratt[k]||0}; });
+    html += radarChartSvg(bisRadarDims, {size:320, fill:'rgba(239,68,68,.12)', stroke:'#ef4444'});
+
+    // Dimension detail cards
+    html += '<div style="display:flex;flex-direction:column;gap:12px;margin-top:16px">';
+    ['AI','IM','NP'].forEach(function(k) {
+      var rawVal = s.barratt._raw ? s.barratt._raw[k] : '—';
+      var norm = s.barratt[k] || 0;
+      var band = rawBand(norm);
+      var descs = BIS_DESC[k];
+      var descText = norm >= 80 ? descs.hi : norm >= 55 ? descs.md : descs.lo;
+      html += '<div style="border-radius:12px;padding:16px 18px;background:' + band.bg + ';border:1.5px solid ' + band.border + '">';
+      html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;gap:12px">';
+      html += '<div style="flex:1"><div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:2px">' + BIS_FULL[k] + '</div>';
+      html += '<div style="font-size:12px;color:#64748b">Puntaje bruto: <strong>' + rawVal + '/20</strong> &nbsp;·&nbsp; Escala normalizada: <strong>' + norm + '/100</strong></div></div>';
+      html += '<span style="flex-shrink:0;padding:4px 12px;border-radius:100px;background:#fff;border:1.5px solid ' + band.border + ';font-size:12px;font-weight:700;color:' + band.color + '">' + band.label + '</span>';
+      html += '</div>';
+      html += '<div style="font-size:13px;line-height:1.7;color:#334155">' + descText + '</div>';
+      html += '</div>';
+    });
+    html += '</div></div>';
     html += '</div>';
   }
 
-    // ════════════════════════════════════════════
+  // ════════════════════════════════════════════
   // TAB: PAI
   // ════════════════════════════════════════════
   if (s.pai && rpt.sections.find(function(x){return x.id==='pai';})) {
     const sec = rpt.sections.find(function(x){return x.id==='pai';});
-    const secLv = fitLabel(sec.secFit);
-    const PAI_FULL = { EE:'Estabilidad Emocional', AS:'Adaptación Social', ON:'Orient. Normativa', ME:'Manejo del Estrés', IL:'Integridad Laboral', ML:'Motivación Laboral' };
-    const paiLevels = {};
-    sec.dims.forEach(function(d){ paiLevels[d.key] = scoreToLevel5(d.score); });
-    var eeL = paiLevels.EE||3, meL = paiLevels.ME||3, ilL = paiLevels.IL||3;
-    var paiNarrative = sec.secFit >= 80
-      ? 'El perfil de ajuste psicológico es sólido y consistente con los requerimientos del cargo.'
-      : sec.secFit >= 60
-      ? 'El perfil de ajuste psicológico es adecuado en la mayoría de las dimensiones evaluadas. Algunas áreas requieren seguimiento inicial.'
-      : 'El perfil presenta áreas de desarrollo relevantes que deben explorarse antes de tomar una decisión de contratación.';
-    if (eeL >= 4) paiNarrative += ' Su <strong>estabilidad emocional</strong> (nivel ' + eeL + '/5) es un activo relevante.';
-    else if (eeL <= 2) paiNarrative += ' La <strong>estabilidad emocional</strong> (nivel ' + eeL + '/5) es un área prioritaria de desarrollo.';
-    if (ilL >= 4) paiNarrative += ' Destaca su <strong>integridad laboral</strong> (nivel ' + ilL + '/5).';
-    else if (ilL <= 2) paiNarrative += ' La <strong>integridad laboral</strong> (nivel ' + ilL + '/5) requiere ser explorada en entrevista.';
-    if (meL >= 4) paiNarrative += ' Buena capacidad de <strong>manejo del estrés</strong> (nivel ' + meL + '/5).';
-    else if (meL <= 2) paiNarrative += ' El <strong>manejo del estrés</strong> (nivel ' + meL + '/5) puede ser un factor limitante.';
+    const PAI_FULL  = { EE:'Estabilidad Emocional', AS:'Adaptación Social', ON:'Orientación Normativa', ME:'Manejo del Estrés', IL:'Integridad Laboral', ML:'Motivación Laboral' };
+    const PAI_DESC  = {
+      EE: { hi:'Muestra sólida estabilidad emocional. Mantiene la compostura ante situaciones de presión, conflicto o cambio. No se desborda emocionalmente y recupera el equilibrio con rapidez.',
+            md:'Generalmente estable emocionalmente. En situaciones de alta presión puede presentar reacciones emocionales más marcadas, aunque logra reencuadrarse.',
+            lo:'Presenta inestabilidad emocional significativa. Puede reaccionar de forma desproporcionada ante el estrés, la crítica o los cambios inesperados.' },
+      AS:  { hi:'Alta capacidad de adaptación social. Se relaciona con facilidad en distintos contextos, construye vínculos funcionales y maneja los conflictos interpersonales con madurez.',
+            md:'Adecuada capacidad de adaptación. En situaciones socialmente complejas puede requerir mayor esfuerzo para ajustarse o mantener relaciones armónicas.',
+            lo:'Dificultades para adaptarse socialmente. Puede presentar conflictos interpersonales frecuentes o evitar situaciones que requieran interacción activa.' },
+      ON:  { hi:'Alta orientación a las normas y procedimientos. Cumple con los protocolos de forma consistente y actúa éticamente incluso sin supervisión.',
+            md:'Orientación normativa adecuada en situaciones regulares. Bajo presión puede flexibilizar su adherencia a los procedimientos.',
+            lo:'Baja orientación normativa. Puede mostrar resistencia a seguir procedimientos o justificar omisiones según el contexto.' },
+      ME:  { hi:'Excelente capacidad de manejo del estrés. Mantiene su rendimiento y claridad de pensamiento incluso en situaciones de alta demanda.',
+            md:'Manejo del estrés adecuado en contextos habituales. Ante acumulación de presión puede presentar señales de desgaste o disminución del rendimiento.',
+            lo:'Dificultades significativas para manejar el estrés. Puede presentar reacciones de parálisis, irritabilidad o conductas de escape ante situaciones demandantes.' },
+      IL:  { hi:'Alta integridad laboral. Actúa con honestidad, transparencia y consistencia ética, independientemente del grado de supervisión.',
+            md:'Integridad laboral dentro de parámetros normales. Puede presentar flexibilizaciones en situaciones ambiguas o de presión grupal.',
+            lo:'Señales de baja integridad laboral. Se recomienda explorar en entrevista situaciones concretas relacionadas con honestidad y manejo de recursos.' },
+      ML:  { hi:'Alta motivación laboral intrínseca. Muestra compromiso proactivo con sus tareas, busca superar los estándares mínimos y mantiene el entusiasmo ante los desafíos.',
+            md:'Motivación laboral adecuada. Cumple con sus funciones de forma consistente, aunque puede requerir reconocimiento externo para sostener el desempeño.',
+            lo:'Baja motivación laboral aparente. Puede mostrar dificultades para mantenerse comprometido/a con las tareas, especialmente en períodos sin reconocimiento o variedad.' },
+    };
 
     html += '<div class="rpt-tab-panel" id="rpt-panel-pai" style="display:none;flex-direction:column;gap:16px">';
-    // Header + radar card
-    html += '<div style="background:#fff;border:1px solid #e5e5e5;border-radius:14px;padding:20px 22px">';
-    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">'
-      + '<div style="font-size:17px;font-weight:700">🔎 Ajuste Psicológico — PAI</div>'
-      + '<div style="display:flex;align-items:center;gap:8px">' + gaugeHtml(sec.secFit, secLv.color, 64)
-      + '<div><div style="font-size:13px;font-weight:800;color:' + secLv.color + '">' + sec.secFit + '%</div><div style="font-size:10px;color:#999">' + secLv.label + '</div></div></div></div>';
-    // Narrative
-    html += '<div style="font-size:13px;line-height:1.7;color:#334155;margin-bottom:18px;padding:14px 16px;background:#f8fafc;border-radius:10px;border-left:3px solid ' + secLv.color + '">' + paiNarrative + '</div>';
-    // Radar chart
-    var paiDims = sec.dims.map(function(d){ return { label: (PAI_FULL[d.key]||d.label), value: d.score }; });
-    html += '<div style="padding:10px 0">' + radarChartSvg(paiDims, {size:380, fill:'rgba(99,102,241,.15)', stroke:'#6366f1'}) + '</div>';
+
+    html += '<div style="background:#fff;border-radius:14px;border:1px solid #e2e8f0;padding:20px 24px">';
+    html += '<div style="font-size:17px;font-weight:800;color:#0f172a;margin-bottom:6px">🔎 Ajuste Psicológico — PAI</div>';
+    html += '<div style="font-size:13px;color:#64748b;line-height:1.6;margin-bottom:16px">Evalúa 6 dimensiones del ajuste psicológico laboral. Los puntajes son promedios por dimensión en escala <strong>1–4</strong> (1=Nunca, 4=Siempre).</div>';
+
+    // Radar
+    var paiRadarDims = Object.keys(PAI_FULL).map(function(k){
+      var raw = s.pai._raw ? s.pai._raw[k] : null;
+      var norm = raw != null ? Math.round((raw-1)/3*100) : (s.pai[k]||0);
+      return {label: PAI_FULL[k], value: norm};
+    });
+    html += radarChartSvg(paiRadarDims, {size:400, fill:'rgba(99,102,241,.15)', stroke:'#6366f1'});
     html += '</div>';
-    // Dimension detail cards
-    html += '<div style="background:#fff;border:1px solid #e5e5e5;border-radius:14px;padding:20px 22px">';
-    html += '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#94a3b8;margin-bottom:14px">Detalle por dimensión</div>';
-    html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px">'
-      + sec.dims.map(function(d){
-          var scoreL5  = scoreToLevel5(d.score);
-          var minLv    = d.minLv || 1;
-          var passes   = scoreL5 >= minLv;
-          var gap      = minLv - scoreL5;
-          var borderC  = passes ? '#16a34a' : (gap === 1 ? '#b45309' : '#e11d48');
-          var bgC      = passes ? '#f0fdf4'  : (gap === 1 ? '#fff7ed'  : '#fff1f3');
-          var desc = dimDescWithGap('pai', d.key, d.score, scoreL5, minLv);
-          var pts = (d.ideal||'0–100').split('–');
-          var iMin5 = scoreToLevel5(parseInt(pts[0]||0));
-          var iMax5 = scoreToLevel5(parseInt(pts[1]||100));
-          var scoreC = passes ? '#16a34a' : (gap === 1 ? '#b45309' : '#dc2626');
-          return '<div style="background:' + bgC + ';border-radius:8px;padding:14px;border:2px solid ' + borderC + '40">'
-            + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">'
-            + '<div style="flex:1"><div style="font-size:13px;font-weight:700;color:#0f172a">' + (PAI_FULL[d.key]||d.label) + '</div>'
-            + '<div style="font-size:10px;color:#94a3b8;margin-top:1px">' + d.req + '</div></div>'
-            + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;margin-left:10px">'
-            + '<div style="text-align:center;min-width:44px;padding:5px 6px;background:#fff;border-radius:7px;border:2px solid ' + borderC + '">'
-            + '<div style="font-size:22px;font-weight:900;color:' + borderC + ';line-height:1">' + scoreL5 + '</div>'
-            + '<div style="font-size:9px;font-weight:700;color:' + borderC + '">/5</div></div>'
-            + passBadge(passes, gap)
-            + '</div></div>'
-            + '<div style="height:7px;background:#e5e5e5;border-radius:4px;overflow:hidden;position:relative;margin-bottom:5px">'
-            + '<div style="height:100%;width:' + d.score + '%;background:' + scoreC + ';border-radius:4px"></div>'
-            + '<div style="position:absolute;top:0;height:100%;left:' + pts[0] + '%;width:' + Math.max(0,parseInt(pts[1]||100)-parseInt(pts[0]||0)) + '%;background:rgba(0,0,0,.1);border-left:2px solid rgba(0,0,0,.2);border-right:2px solid rgba(0,0,0,.2)"></div>'
-            + '</div>'
-            + '<div style="font-size:10px;color:#94a3b8;margin-bottom:6px">Mínimo requerido: <strong style="color:' + borderC + '">nivel ' + minLv + '</strong></div>'
-            + dualBadge(scoreToLevel5(d.score), d.fit, borderC)
-            + '<div style="font-size:11px;color:#475569;line-height:1.55;padding-top:8px;border-top:1px solid ' + borderC + '30">' + desc + '</div>'
-            + '</div>';
-        }).join('')
-      + '</div></div>';
-    html += '</div>';
+
+    // Dimension cards
+    html += '<div style="display:flex;flex-direction:column;gap:10px">';
+    Object.keys(PAI_FULL).forEach(function(k) {
+      var rawMean = s.pai._raw ? s.pai._raw[k] : null;
+      var norm = rawMean != null ? Math.round((rawMean-1)/3*100) : (s.pai[k]||0);
+      var band = rawBand(norm);
+      var descs = PAI_DESC[k];
+      var descText = norm >= 80 ? descs.hi : norm >= 55 ? descs.md : descs.lo;
+      var rawDisplay = rawMean != null ? rawMean.toFixed(1) + '/4.0' : '—';
+      html += '<div style="background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:16px 18px">';
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:12px">';
+      html += '<div style="font-size:14px;font-weight:700;color:#0f172a">' + PAI_FULL[k] + '</div>';
+      html += '<div style="display:flex;align-items:center;gap:8px">';
+      html += '<span style="font-size:12px;color:#64748b;font-weight:600">' + rawDisplay + '</span>';
+      html += '<span style="padding:3px 12px;border-radius:100px;background:' + band.bg + ';border:1.5px solid ' + band.border + ';font-size:12px;font-weight:700;color:' + band.color + '">' + band.label + '</span>';
+      html += '</div></div>';
+      // Progress bar
+      html += '<div style="height:6px;background:#f1f5f9;border-radius:100px;overflow:hidden;margin-bottom:10px">';
+      html += '<div style="height:100%;width:' + (rawMean != null ? ((rawMean-1)/3*100) : norm) + '%;background:' + band.color + ';border-radius:100px;transition:width .4s"></div>';
+      html += '</div>';
+      html += '<div style="font-size:13px;line-height:1.7;color:#334155">' + descText + '</div>';
+      html += '</div>';
+    });
+    html += '</div></div>';
   }
 
   // ════════════════════════════════════════════
@@ -6107,54 +6124,66 @@ function buildReportHtml(c, withClose) {
   // ════════════════════════════════════════════
   if (s.dc0 && rpt.sections.find(function(x){return x.id==='dc0';})) {
     const sec = rpt.sections.find(function(x){return x.id==='dc0';});
-    const secLv = fitLabel(sec.secFit);
-    const DC_FULL  = { V:'Razonamiento Verbal', N:'Razonamiento Numérico', L:'Razonamiento Lógico' };
-    const DC_COLOR = { V:'#2563eb', N:'#16a34a', L:'#b45309' };
+    const DC_FULL  = { V:'Razonamiento Verbal', N:'Razonamiento Numérico', L:'Razonamiento Lógico-Abstracto' };
     const DC_ICON  = { V:'📖', N:'🔢', L:'🧩' };
+    const DC_DESC  = {
+      V: { hi:'Excelente comprensión y manejo del lenguaje. Entiende instrucciones complejas, extrae información clave de textos y se expresa con precisión.',
+           md:'Comprensión verbal adecuada para tareas estándar. Puede tener dificultades ocasionales con instrucciones muy complejas o vocabulario técnico especializado.',
+           lo:'Comprensión verbal limitada. Puede presentar errores al interpretar instrucciones escritas o comunicados con múltiples condiciones.' },
+      N: { hi:'Sólida capacidad de razonamiento numérico. Maneja cálculos, proporciones e interpretación de datos con precisión y eficiencia.',
+           md:'Razonamiento numérico funcional para operaciones básicas. Puede presentar dificultades con cálculos más complejos o interpretación de datos estadísticos.',
+           lo:'Razonamiento numérico por debajo del promedio. Puede cometer errores en cálculos básicos o en la lectura de información numérica.' },
+      L: { hi:'Alta capacidad de razonamiento abstracto. Identifica patrones, establece relaciones lógicas y resuelve problemas no estructurados con facilidad.',
+           md:'Razonamiento lógico adecuado para problemas convencionales. En situaciones nuevas o poco estructuradas puede requerir más tiempo o apoyo.',
+           lo:'Razonamiento lógico-abstracto limitado. Puede tener dificultades para identificar patrones o resolver problemas que requieren pensamiento inferencial.' },
+    };
     html += '<div class="rpt-tab-panel" id="rpt-panel-dc0" style="display:none;flex-direction:column;gap:16px">';
-    html += '<div style="background:#fff;border:1px solid #e5e5e5;border-radius:10px;padding:20px 22px">'
-      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;flex-wrap:wrap;gap:8px">'
-      + '<div style="font-size:17px;font-weight:700">⚡ Aptitud Cognitiva — DC-0</div>'
-      + '<div style="display:flex;align-items:center;gap:8px">' + gaugeHtml(s.dc0.total, secLv.color, 64)
-      + '<div><div style="font-size:13px;font-weight:800;color:' + secLv.color + '">' + s.dc0.total + ' pts</div><div style="font-size:10px;color:#999">Puntaje global</div></div></div></div>'
-      + '<div style="font-size:12px;color:#999;margin-bottom:16px">Evalúa tres dimensiones del razonamiento. Puntaje = % de respuestas correctas.</div>'
-      + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">'
-      + ['V','N','L'].map(function(k){
-          var score = s.dc0[k];
-          var lv2 = scoreLevel(score);
-          var l5 = scoreToLevel5(score);
-          return '<div style="text-align:center;padding:16px 10px;background:#f9f9f9;border-radius:8px;border:1.5px solid ' + DC_COLOR[k] + '30">'
-            + '<div style="font-size:22px;margin-bottom:6px">' + DC_ICON[k] + '</div>'
-            + '<div style="font-size:11px;font-weight:700;color:#555;margin-bottom:8px;line-height:1.3">' + DC_FULL[k] + '</div>'
-            + gaugeHtml(score, DC_COLOR[k], 72)
-            + '<div style="font-size:12px;font-weight:800;color:' + DC_COLOR[k] + ';margin-top:4px">Nivel ' + l5 + '/5</div>'
-            + '<div style="font-size:10px;font-weight:700;color:' + lv2.color + '">' + lv2.label + '</div>'
-            + '</div>';
-        }).join('')
-      + '</div>'
-      + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px">'
-      + ['V','N','L'].map(function(k){
-          var score = s.dc0[k];
-          var dim = sec.dims.find(function(d){return d.key===k;});
-          var scoreL5 = scoreToLevel5(score);
-          var minLv   = dim ? (dim.minLv || 1) : 1;
-          var passes  = scoreL5 >= minLv;
-          var gap     = minLv - scoreL5;
-          var borderC = passes ? DC_COLOR[k] : (gap === 1 ? '#b45309' : '#e11d48');
-          var bgC     = passes ? '#f9f9f9' : (gap === 1 ? '#fff7ed' : '#fff1f3');
-          var desc = dimDescWithGap('dc0', k, score, scoreL5, minLv);
-          var lv2 = fitLabel(dim ? dim.fit : 0);
-          return '<div style="background:' + bgC + ';border-radius:8px;padding:12px 14px;border:2px solid ' + borderC + (passes ? '50' : '60') + '">'
-            + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'
-            + '<div style="font-size:11px;font-weight:800;color:' + borderC + '">' + DC_FULL[k] + ' — Nivel ' + scoreL5 + '/5</div>'
-            + passBadge(passes, gap)
-            + '</div>'
-            + '<div style="font-size:11px;color:#475569;line-height:1.55">' + desc + '</div>'
-            + (dim ? dualBadge(scoreL5, dim.fit, borderC) : '')
-            + '</div>';
-        }).join('')
-      + '</div></div>';
+    html += '<div style="background:#fff;border-radius:14px;border:1px solid #e2e8f0;padding:20px 24px">';
+    html += '<div style="font-size:17px;font-weight:800;color:#0f172a;margin-bottom:6px">🧠 Aptitud Cognitiva — DC-0</div>';
+    html += '<div style="font-size:13px;color:#64748b;line-height:1.6;margin-bottom:16px">Evalúa tres dimensiones del razonamiento. El puntaje es el <strong>porcentaje de respuestas correctas</strong> por área.</div>';
+
+    // Summary row
+    html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">';
+    ['V','N','L'].forEach(function(k) {
+      var pct = s.dc0[k] || 0;
+      var band = rawBandPct(pct);
+      // Find correct/total from dims
+      var dim = sec.dims.find(function(d){return d.key===k;});
+      var extra = dim && dim.extra ? dim.extra : '';
+      html += '<div style="text-align:center;padding:16px 12px;border-radius:12px;background:' + band.bg + ';border:1.5px solid ' + band.border + '">';
+      html += '<div style="font-size:22px;margin-bottom:6px">' + DC_ICON[k] + '</div>';
+      html += '<div style="font-size:12px;font-weight:700;color:#475569;margin-bottom:6px;line-height:1.3">' + DC_FULL[k] + '</div>';
+      html += '<div style="font-size:32px;font-weight:900;color:' + band.color + ';line-height:1">' + pct + '%</div>';
+      if (extra) html += '<div style="font-size:11px;color:#94a3b8;margin-top:3px">' + extra + '</div>';
+      html += '<div style="margin-top:6px;padding:2px 10px;border-radius:100px;background:#fff;display:inline-block;border:1px solid ' + band.border + ';font-size:11px;font-weight:700;color:' + band.color + '">' + band.label + '</div>';
+      html += '</div>';
+    });
     html += '</div>';
+
+    // Radar
+    var dc0RadarDims = Object.keys(DC_FULL).map(function(k){ return {label: DC_FULL[k], value: s.dc0[k]||0}; });
+    html += radarChartSvg(dc0RadarDims, {size:320, fill:'rgba(37,99,235,.12)', stroke:'#2563eb'});
+    html += '</div>';
+
+    // Descriptive cards
+    html += '<div style="display:flex;flex-direction:column;gap:10px">';
+    ['V','N','L'].forEach(function(k) {
+      var pct = s.dc0[k]||0;
+      var band = rawBandPct(pct);
+      var descs = DC_DESC[k];
+      var descText = pct >= 75 ? descs.hi : pct >= 50 ? descs.md : descs.lo;
+      html += '<div style="background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:16px 18px">';
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
+      html += '<div style="font-size:14px;font-weight:700;color:#0f172a">' + DC_ICON[k] + ' ' + DC_FULL[k] + '</div>';
+      html += '<span style="padding:3px 12px;border-radius:100px;background:' + band.bg + ';border:1.5px solid ' + band.border + ';font-size:12px;font-weight:700;color:' + band.color + '">' + pct + '% — ' + band.label + '</span>';
+      html += '</div>';
+      html += '<div style="height:6px;background:#f1f5f9;border-radius:100px;overflow:hidden;margin-bottom:10px">';
+      html += '<div style="height:100%;width:' + pct + '%;background:' + band.color + ';border-radius:100px"></div>';
+      html += '</div>';
+      html += '<div style="font-size:13px;line-height:1.7;color:#334155">' + descText + '</div>';
+      html += '</div>';
+    });
+    html += '</div></div>';
   }
 
   // ════════════════════════════════════════════
@@ -6162,57 +6191,34 @@ function buildReportHtml(c, withClose) {
   // ════════════════════════════════════════════
   if (s.situacional && rpt.sections.find(function(x){return x.id==='situacional';})) {
     const sec = rpt.sections.find(function(x){return x.id==='situacional';});
-    const secLv = fitLabel(sec.secFit);
-    const pct = s.situacional.pct;
-    const lv5 = scoreToLevel5(pct);
-    const minLv = (PERFIL_IDEAL[perfil]?.situacional?.minLv) || scoreToLevel5(PERFIL_IDEAL[perfil]?.situacional?.min || 60);
-    const passes = lv5 >= minLv;
-    const gap    = minLv - lv5;
-    const borderC = passes ? '#16a34a' : (gap === 1 ? '#b45309' : '#e11d48');
-    const bgC     = passes ? '#f0fdf4'  : (gap === 1 ? '#fff7ed'  : '#fff1f3');
-    const LV5N = {1:'Muy Bajo',2:'Bajo',3:'Medio',4:'Alto',5:'Muy Alto'};
-    var sitText = lv5 >= 4 ? 'Demostró excelente criterio para evaluar situaciones laborales complejas, eligiendo respuestas coherentes, proporcionales y orientadas a la solución.'
-      : lv5 >= 3 ? 'Mostró criterio adecuado ante situaciones laborales típicas. En escenarios de mayor complejidad podría beneficiarse de mayor orientación.'
-      : lv5 >= 2 ? 'Juicio situacional variable. Se recomienda explorar en entrevista su proceso de toma de decisiones.'
-      : 'Juicio situacional por debajo de lo esperado. Se recomienda evaluación complementaria del criterio en situaciones de gestión.';
+    var pct = s.situacional.pct, corr = s.situacional.correct, tot = s.situacional.total;
+    var band = rawBandPct(pct);
+    var sitDesc = pct >= 75
+      ? 'Demuestra buen juicio ante situaciones laborales complejas. Selecciona consistentemente la respuesta más adecuada, considerando protocolos, relaciones interpersonales y consecuencias de cada decisión.'
+      : pct >= 50
+      ? 'Muestra juicio situacional adecuado en la mayoría de los escenarios presentados. En situaciones de alta complejidad o ambigüedad puede beneficiarse de mayor experiencia o capacitación.'
+      : 'Presenta dificultades para identificar la respuesta más adecuada en situaciones laborales complejas. Se recomienda explorar en entrevista el criterio de decisión y la experiencia práctica del candidato.';
     html += '<div class="rpt-tab-panel" id="rpt-panel-situacional" style="display:none;flex-direction:column;gap:16px">';
-    html += '<div style="background:#fff;border:1px solid #e5e5ea;border-radius:10px;padding:20px 22px">'
-      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;flex-wrap:wrap;gap:8px">'
-      + '<div style="font-size:17px;font-weight:700">💡 Juicio Situacional</div>'
-      + '<div style="display:flex;align-items:center;gap:8px">'
-      + gaugeHtml(pct, borderC, 64)
-      + '<div><div style="font-size:13px;font-weight:800;color:' + borderC + '">Nivel ' + lv5 + '/5</div>'
-      + '<div style="font-size:10px;color:#8e8e93">' + LV5N[lv5] + '</div></div></div></div>'
-      + '<div style="font-size:12px;color:#8e8e93;margin-bottom:16px">Mide capacidad de tomar decisiones correctas ante escenarios laborales del cargo.</div>'
-      // Main score card
-      + '<div style="display:flex;align-items:center;gap:20px;padding:16px;background:' + bgC + ';border-radius:10px;border:2px solid ' + borderC + '40">'
-      + '<div style="min-width:100px;text-align:center;flex-shrink:0">'
-      + '<div style="font-size:56px;font-weight:900;color:' + borderC + ';line-height:1">' + lv5 + '</div>'
-      + '<div style="font-size:13px;font-weight:700;color:' + borderC + '">/5 · ' + LV5N[lv5] + '</div>'
-      + '<div style="font-size:11px;color:#8e8e93;margin-top:4px">' + s.situacional.correct + ' de ' + s.situacional.total + ' correctas</div>'
-      + '</div>'
-      // Level bar 1-5
-      + '<div style="flex:1">'
-      + passBadge(passes, gap)
-      + '<div style="margin:10px 0 4px;position:relative;height:8px;background:#e5e5ea;border-radius:100px">'
-      + '<div style="position:absolute;top:0;bottom:0;left:0;width:' + ((lv5-1)/4*100) + '%;background:' + borderC + ';border-radius:100px"></div>'
-      + '<div style="position:absolute;top:-3px;bottom:-3px;left:' + ((minLv-1)/4*100) + '%;width:2px;background:#1d1d1f;border-radius:1px;transform:translateX(-50%)"></div>'
-      + '</div>'
-      + '<div style="display:flex;justify-content:space-between;font-size:9px;color:#aeaeb2;margin-bottom:10px">'
-      + '<span>1</span><span>2</span><span>3</span><span>4</span><span>5</span></div>'
-      + '<div style="font-size:12px;font-weight:600;color:#48484a;margin-bottom:6px">Mínimo requerido: <span style="color:' + (passes?'#16a34a':'#e11d48') + '">nivel ' + minLv + ' · ' + LV5N[minLv] + '</span></div>'
-      + '<div style="font-size:13px;line-height:1.65;color:#48484a">' + sitText + '</div>'
-      + '</div></div>'
-      // Dot row
-      + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:14px;align-items:center">'
-      + '<span style="font-size:11px;color:#8e8e93;margin-right:4px">Respuestas:</span>'
-      + Array.from({length:s.situacional.total}, function(_,i){
-          return '<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:' + (i<s.situacional.correct ? '#dcfce7' : '#f1f5f9') + ';border:1.5px solid ' + (i<s.situacional.correct ? '#16a34a' : '#d1d1d6') + ';font-size:12px">' + (i<s.situacional.correct ? '✓' : '✕') + '</span>';
-        }).join('')
-      + '</div>'
-      + '</div>';
+    html += '<div style="background:#fff;border-radius:14px;border:1px solid #e2e8f0;padding:24px">';
+    html += '<div style="font-size:17px;font-weight:800;color:#0f172a;margin-bottom:6px">💡 Juicio Situacional</div>';
+    html += '<div style="font-size:13px;color:#64748b;line-height:1.6;margin-bottom:20px">Evalúa la capacidad de tomar decisiones adecuadas ante situaciones laborales reales. Puntaje = respuestas correctas.</div>';
+    html += '<div style="display:flex;align-items:center;gap:24px;padding:20px;background:' + band.bg + ';border-radius:12px;border:1.5px solid ' + band.border + ';margin-bottom:20px">';
+    html += '<div style="text-align:center;flex-shrink:0"><div style="font-size:52px;font-weight:900;color:' + band.color + ';line-height:1">' + pct + '%</div>';
+    html += '<div style="font-size:13px;color:#64748b;margin-top:4px">' + corr + ' de ' + tot + ' correctas</div></div>';
+    html += '<div><div style="font-size:14px;font-weight:700;color:' + band.color + ';margin-bottom:6px">' + band.label + '</div>';
+    html += '<div style="font-size:13px;line-height:1.7;color:#334155">' + sitDesc + '</div></div>';
     html += '</div>';
+    // Item dots
+    html += '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">';
+    html += '<span style="font-size:11px;color:#94a3b8;margin-right:4px">Respuestas:</span>';
+    for (var qi=0; qi<tot; qi++) {
+      var ok = qi < corr;
+      html += '<span style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:' + (ok?'#dcfce7':'#f1f5f9') + ';border:1.5px solid ' + (ok?'#16a34a':'#d1d1d6') + ';font-size:14px">' + (ok?'✓':'✕') + '</span>';
+    }
+    html += '</div></div></div>';
   }
+
+
 
   // ════════════════════════════════════════════
   // TAB: VIGILANCIA
@@ -6374,29 +6380,49 @@ function buildReportHtml(c, withClose) {
       html += '</div>';
     });
     html += '</div></div>';
-    // Special DISC radar summary
+    // Special DISC descriptive summary
     if (testId === 'disc' && s.disc) {
       var DISC_LABELS = {D:'Dominancia',I:'Influencia',S:'Estabilidad',C:'Cumplimiento'};
-      var DISC_DESC = {
-        D:'Orientación a resultados, iniciativa, toma de decisiones.',
-        I:'Comunicación, entusiasmo, influencia social.',
-        S:'Constancia, paciencia, estabilidad emocional.',
-        C:'Respeto a normas, precisión, calidad del trabajo.'
+      var DISC_FULL_DESC = {
+        D: { hi:'Alta orientación a resultados e iniciativa. Enfrenta los desafíos de forma directa, asume riesgos calculados y busca resultados concretos. Puede ser percibido/a como asertivo/a o decidido/a.',
+             md:'Orientación a resultados moderada. Toma iniciativa en situaciones familiares pero puede ser más cauteloso/a ante lo desconocido.',
+             lo:'Baja orientación dominante. Prefiere ejecutar antes que liderar, y tiende a ceder el protagonismo en situaciones de conflicto o decisión.' },
+        I: { hi:'Alta capacidad de influencia social. Comunicativo/a, entusiasta y con habilidad natural para motivar a otros. Construye relaciones con facilidad.',
+             md:'Influencia social adecuada. Se comunica bien en entornos conocidos, aunque puede ser más reservado/a en contextos nuevos.',
+             lo:'Baja orientación hacia la influencia. Prefiere el trabajo independiente y puede evitar situaciones que requieran persuasión o interacción social intensa.' },
+        S: { hi:'Alta estabilidad y constancia. Valora los entornos predecibles, es paciente y confiable. Produce resultados sólidos en tareas rutinarias.',
+             md:'Estabilidad moderada. Se adapta razonablemente a los cambios aunque puede preferir la continuidad sobre la variación frecuente.',
+             lo:'Baja estabilidad conductual. Se adapta rápido a los cambios y puede aburrirse en entornos rutinarios, buscando variedad y dinamismo.' },
+        C: { hi:'Alta orientación al cumplimiento y la calidad. Sigue los procedimientos con precisión, verifica su trabajo y prioriza la exactitud sobre la velocidad.',
+             md:'Cumplimiento adecuado. Respeta las normas en general, aunque puede ser flexible cuando considera que una norma no es práctica.',
+             lo:'Baja orientación normativa. Tiende a priorizar la velocidad o los resultados por encima de los procedimientos establecidos. Requiere supervisión en tareas con alta exigencia de detalle.' },
       };
+      // Radar
+      var discRadarDims = ['D','I','S','C'].map(function(k){ return {label: DISC_LABELS[k], value: s.disc[k]||0}; });
       html += '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:20px 24px">';
-      html += '<div style="font-size:13px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:14px">Perfil DISC</div>';
-      html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
+      html += '<div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#94a3b8;margin-bottom:14px">Perfil DISC — Estilo conductual dominante: <span style="color:#7c3aed">' + DISC_LABELS[s.disc.dominant] + '</span></div>';
+      html += radarChartSvg(discRadarDims, {size:340, fill:'rgba(124,58,237,.13)', stroke:'#7c3aed'});
+      html += '</div>';
+      // Descriptive cards
+      html += '<div style="display:flex;flex-direction:column;gap:10px">';
       ['D','I','S','C'].forEach(function(k) {
-        var v = s.disc[k]||50;
-        var kcol = v>=70?'#16a34a':v>=45?'#b45309':'#64748b';
+        var v = s.disc[k]||0;
+        var band = rawBand(v);
         var isDom = s.disc.dominant === k;
-        html += '<div style="padding:12px 14px;border-radius:10px;background:' + (isDom?'#f5f3ff':'#f8fafc') + ';border:1.5px solid ' + (isDom?'#c4b5fd':'#e2e8f0') + '">';
-        html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">';
-        html += '<div style="font-size:13px;font-weight:700">' + (isDom?'★ ':'') + DISC_LABELS[k] + '</div>';
-        html += '<div style="font-size:18px;font-weight:900;color:' + kcol + '">' + v + '</div></div>';
-        html += '<div style="font-size:11px;color:#64748b">' + DISC_DESC[k] + '</div></div>';
+        var descs = DISC_FULL_DESC[k];
+        var descText = v >= 80 ? descs.hi : v >= 55 ? descs.md : descs.lo;
+        html += '<div style="background:#fff;border-radius:12px;border:' + (isDom?'2px solid #c4b5fd':'1px solid #e2e8f0') + ';padding:16px 18px">';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
+        html += '<div style="font-size:14px;font-weight:700;color:#0f172a">' + (isDom?'★ ':'') + DISC_LABELS[k] + '<span style="font-size:11px;font-weight:400;color:#94a3b8;margin-left:8px">Puntaje: ' + v + '/100</span></div>';
+        html += '<span style="padding:3px 12px;border-radius:100px;background:' + band.bg + ';border:1.5px solid ' + band.border + ';font-size:12px;font-weight:700;color:' + band.color + '">' + band.label + '</span>';
+        html += '</div>';
+        html += '<div style="height:6px;background:#f1f5f9;border-radius:100px;overflow:hidden;margin-bottom:10px">';
+        html += '<div style="height:100%;width:' + v + '%;background:' + (isDom?'#7c3aed':band.color) + ';border-radius:100px"></div>';
+        html += '</div>';
+        html += '<div style="font-size:13px;line-height:1.7;color:#334155">' + descText + '</div>';
+        html += '</div>';
       });
-      html += '</div></div>';
+      html += '</div>';
     }
     html += '</div>';
   });
