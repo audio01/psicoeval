@@ -931,14 +931,14 @@ input,select,textarea{font-family:inherit;outline:none}
         <div class="field">
           <label>¿Posees curso OS-10 vigente? *</label>
           <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px">
-            <label style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s" id="os10-yes-lbl">
+            <label style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s" id="os10-yes-lbl" onclick="setTimeout(styleOs10,0)">
               <input type="radio" name="os10" id="r-os10-si" value="si" onchange="styleOs10()" style="width:18px;height:18px;accent-color:var(--accent)">
               <div>
                 <div style="font-size:14px;font-weight:600;color:var(--ink)">Sí, tengo OS-10 vigente</div>
                 <div style="font-size:12px;color:var(--ink3)">Curso aprobado y al día con Carabineros de Chile</div>
               </div>
             </label>
-            <label style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s" id="os10-no-lbl">
+            <label style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s" id="os10-no-lbl" onclick="setTimeout(styleOs10,0)">
               <input type="radio" name="os10" id="r-os10-no" value="no" onchange="styleOs10()" style="width:18px;height:18px;accent-color:var(--accent)">
               <div>
                 <div style="font-size:14px;font-weight:600;color:var(--ink)">No tengo OS-10 o está vencido</div>
@@ -955,35 +955,35 @@ input,select,textarea{font-family:inherit;outline:none}
           <p style="font-size:12px;color:var(--ink3);margin:4px 0 8px;line-height:1.5">El cargo requiere <strong>mínimo 4º Medio completo</strong>. Selecciona tu nivel actual.</p>
           <div style="display:flex;flex-direction:column;gap:7px">
             <label id="edu-g-basica-lbl" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s">
-              <input type="radio" name="edu-guardia" id="r-edu-g-basica" value="basica" onchange="styleEduG()" style="width:18px;height:18px;accent-color:var(--accent)">
+              <input type="radio" name="edu-guardia" id="r-edu-g-basica" value="basica" onchange="styleEduG()" onclick="setTimeout(styleEduG,0)" style="width:18px;height:18px;accent-color:var(--accent)">
               <div>
                 <div style="font-size:13px;font-weight:600;color:var(--ink)">Educación Básica</div>
                 <div style="font-size:11px;color:#e11d48;font-weight:600">No cumple el requisito mínimo</div>
               </div>
             </label>
             <label id="edu-g-sin4-lbl" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s">
-              <input type="radio" name="edu-guardia" id="r-edu-g-sin4" value="media_incompleta" onchange="styleEduG()" style="width:18px;height:18px;accent-color:var(--accent)">
+              <input type="radio" name="edu-guardia" id="r-edu-g-sin4" value="media_incompleta" onchange="styleEduG()" onclick="setTimeout(styleEduG,0)" style="width:18px;height:18px;accent-color:var(--accent)">
               <div>
                 <div style="font-size:13px;font-weight:600;color:var(--ink)">Educación Media incompleta</div>
                 <div style="font-size:11px;color:#e11d48;font-weight:600">No cumple el requisito mínimo</div>
               </div>
             </label>
             <label id="edu-g-4medio-lbl" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s">
-              <input type="radio" name="edu-guardia" id="r-edu-g-4medio" value="media" onchange="styleEduG()" style="width:18px;height:18px;accent-color:var(--accent)">
+              <input type="radio" name="edu-guardia" id="r-edu-g-4medio" value="media" onchange="styleEduG()" onclick="setTimeout(styleEduG,0)" style="width:18px;height:18px;accent-color:var(--accent)">
               <div>
                 <div style="font-size:13px;font-weight:600;color:var(--ink)">4º Medio completo</div>
                 <div style="font-size:11px;color:#16a34a;font-weight:600">✓ Cumple el requisito mínimo</div>
               </div>
             </label>
             <label id="edu-g-tecnica-lbl" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s">
-              <input type="radio" name="edu-guardia" id="r-edu-g-tecnica" value="tecnica" onchange="styleEduG()" style="width:18px;height:18px;accent-color:var(--accent)">
+              <input type="radio" name="edu-guardia" id="r-edu-g-tecnica" value="tecnica" onchange="styleEduG()" onclick="setTimeout(styleEduG,0)" style="width:18px;height:18px;accent-color:var(--accent)">
               <div>
                 <div style="font-size:13px;font-weight:600;color:var(--ink)">Técnico de Nivel Superior</div>
                 <div style="font-size:11px;color:#16a34a;font-weight:600">✓ Cumple el requisito mínimo</div>
               </div>
             </label>
             <label id="edu-g-univ-lbl" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s">
-              <input type="radio" name="edu-guardia" id="r-edu-g-univ" value="universitaria" onchange="styleEduG()" style="width:18px;height:18px;accent-color:var(--accent)">
+              <input type="radio" name="edu-guardia" id="r-edu-g-univ" value="universitaria" onchange="styleEduG()" onclick="setTimeout(styleEduG,0)" style="width:18px;height:18px;accent-color:var(--accent)">
               <div>
                 <div style="font-size:13px;font-weight:600;color:var(--ink)">Universitaria o superior</div>
                 <div style="font-size:11px;color:#16a34a;font-weight:600">✓ Cumple el requisito mínimo</div>
@@ -998,42 +998,42 @@ input,select,textarea{font-family:inherit;outline:none}
             </div>
 
             <label id="edu-g-ej-retiro-lbl" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s">
-              <input type="radio" name="edu-guardia" id="r-edu-g-ej-retiro" value="ejercito_retiro" onchange="styleEduG()" style="width:18px;height:18px;accent-color:var(--accent)">
+              <input type="radio" name="edu-guardia" id="r-edu-g-ej-retiro" value="ejercito_retiro" onchange="styleEduG()" onclick="setTimeout(styleEduG,0)" style="width:18px;height:18px;accent-color:var(--accent)">
               <div>
                 <div style="font-size:13px;font-weight:600;color:var(--ink)">🎖 Retirado/a del Ejército — carrera completa</div>
                 <div style="font-size:11px;color:#16a34a;font-weight:600">✓ Cumple · Situación de retiro reconocida</div>
               </div>
             </label>
             <label id="edu-g-ej-baja-lbl" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s">
-              <input type="radio" name="edu-guardia" id="r-edu-g-ej-baja" value="ejercito_baja" onchange="styleEduG()" style="width:18px;height:18px;accent-color:var(--accent)">
+              <input type="radio" name="edu-guardia" id="r-edu-g-ej-baja" value="ejercito_baja" onchange="styleEduG()" onclick="setTimeout(styleEduG,0)" style="width:18px;height:18px;accent-color:var(--accent)">
               <div>
                 <div style="font-size:13px;font-weight:600;color:var(--ink)">🎖 Retirado/a del Ejército — antes de completar carrera</div>
                 <div style="font-size:11px;color:#2563eb;font-weight:600">✓ Cumple · Considerar años de servicio en evaluación</div>
               </div>
             </label>
             <label id="edu-g-car-retiro-lbl" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s">
-              <input type="radio" name="edu-guardia" id="r-edu-g-car-retiro" value="carabineros_retiro" onchange="styleEduG()" style="width:18px;height:18px;accent-color:var(--accent)">
+              <input type="radio" name="edu-guardia" id="r-edu-g-car-retiro" value="carabineros_retiro" onchange="styleEduG()" onclick="setTimeout(styleEduG,0)" style="width:18px;height:18px;accent-color:var(--accent)">
               <div>
                 <div style="font-size:13px;font-weight:600;color:var(--ink)">👮 Retirado/a de Carabineros — carrera completa</div>
                 <div style="font-size:11px;color:#16a34a;font-weight:600">✓ Cumple · Situación de retiro reconocida</div>
               </div>
             </label>
             <label id="edu-g-car-baja-lbl" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s">
-              <input type="radio" name="edu-guardia" id="r-edu-g-car-baja" value="carabineros_baja" onchange="styleEduG()" style="width:18px;height:18px;accent-color:var(--accent)">
+              <input type="radio" name="edu-guardia" id="r-edu-g-car-baja" value="carabineros_baja" onchange="styleEduG()" onclick="setTimeout(styleEduG,0)" style="width:18px;height:18px;accent-color:var(--accent)">
               <div>
                 <div style="font-size:13px;font-weight:600;color:var(--ink)">👮 Retirado/a de Carabineros — antes de completar carrera</div>
                 <div style="font-size:11px;color:#2563eb;font-weight:600">✓ Cumple · Considerar años de servicio en evaluación</div>
               </div>
             </label>
             <label id="edu-g-arm-retiro-lbl" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s">
-              <input type="radio" name="edu-guardia" id="r-edu-g-arm-retiro" value="armada_retiro" onchange="styleEduG()" style="width:18px;height:18px;accent-color:var(--accent)">
+              <input type="radio" name="edu-guardia" id="r-edu-g-arm-retiro" value="armada_retiro" onchange="styleEduG()" onclick="setTimeout(styleEduG,0)" style="width:18px;height:18px;accent-color:var(--accent)">
               <div>
                 <div style="font-size:13px;font-weight:600;color:var(--ink)">⚓ Retirado/a de la Armada — carrera completa</div>
                 <div style="font-size:11px;color:#16a34a;font-weight:600">✓ Cumple · Situación de retiro reconocida</div>
               </div>
             </label>
             <label id="edu-g-arm-baja-lbl" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s">
-              <input type="radio" name="edu-guardia" id="r-edu-g-arm-baja" value="armada_baja" onchange="styleEduG()" style="width:18px;height:18px;accent-color:var(--accent)">
+              <input type="radio" name="edu-guardia" id="r-edu-g-arm-baja" value="armada_baja" onchange="styleEduG()" onclick="setTimeout(styleEduG,0)" style="width:18px;height:18px;accent-color:var(--accent)">
               <div>
                 <div style="font-size:13px;font-weight:600;color:var(--ink)">⚓ Retirado/a de la Armada — antes de completar carrera</div>
                 <div style="font-size:11px;color:#2563eb;font-weight:600">✓ Cumple · Considerar años de servicio en evaluación</div>
@@ -3480,7 +3480,7 @@ function genUUID() {
   });
 }
 const SUPA_URL = 'https://refjkmmlivssauxdnflf.supabase.co';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJlZmprbW1saXZzc2F1eGRuZmxmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNzA3MzAsImV4cCI6MjA4ODc0NjczMH0.ZMRiBxFZL5cP0akPZ-DRNLuPvEDmgO6wuTjKpnAn5S4';
+const SUPA_KEY = 'sb_publishable_iiS3T7VOXatZ3GQDPI1qhQ_P6YbASUh';
 // ⚠️ Service Role Key — NUNCA incluir en código público ni subir a GitHub.
 // Si necesitas gestión de usuarios desde la app, configúrala solo en un entorno privado.
 // Supabase Dashboard → Project Settings → API → service_role
@@ -4104,10 +4104,20 @@ function regNext(fromStep) {
     if (perfil === 'guardia') {
       // Validate OS-10
       const os10 = document.querySelector('input[name="os10"]:checked');
-      if (!os10) { document.getElementById('e-os10').textContent = 'Selecciona una opción'; return; }
+      if (!os10) {
+        var e10 = document.getElementById('e-os10');
+        e10.textContent = 'Selecciona una opción';
+        e10.scrollIntoView({behavior:'smooth', block:'center'});
+        return;
+      }
       // Validate education
       const edu = document.querySelector('input[name="edu-guardia"]:checked');
-      if (!edu) { document.getElementById('e-edu-guardia').textContent = 'Selecciona tu nivel educativo'; return; }
+      if (!edu) {
+        var eedu = document.getElementById('e-edu-guardia');
+        eedu.textContent = 'Selecciona tu nivel educativo';
+        eedu.scrollIntoView({behavior:'smooth', block:'center'});
+        return;
+      }
     } else if (perfil === 'supervisor') {
       // 1. Education
       var retiroSup = document.querySelector('input[name="es-retiro-sup"]:checked');
@@ -4461,7 +4471,7 @@ function renderTestBlock() {
       var makeDiscRow = function(role, label, color) {
         return '<div style="margin-bottom:10px">'
           + '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:' + color + ';margin-bottom:6px">' + label + '</div>'
-          + '<div style="display:flex;gap:8px;flex-wrap:wrap">'
+          + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">'
           + ['D','I','S','C'].map(function(d) {
               var isSel  = bAns[role] === d;
               var isOther = (role === 'most' ? bAns.least : bAns.most) === d;
@@ -4474,7 +4484,7 @@ function renderTestBlock() {
                 + ' aria-pressed="' + isSel + '"'
                 + ' aria-label="' + dimLabel + (role === 'most' ? ' — Me describe más' : ' — Me describe menos') + '"'
                 + (isOther ? ' aria-disabled="true"' : '')
-                + ' style="padding:8px 18px;border-radius:8px;border:2px solid ' + (isSel ? selColor : '#e2e8f0') + ';background:' + (isSel ? selBg : '#fff') + ';color:' + (isSel ? selColor : '#64748b') + ';font-size:13px;font-weight:' + (isSel ? '700' : '500') + ';cursor:pointer;transition:all .12s' + (isOther ? ';opacity:0.35' : '') + '">'
+                + ' style="padding:8px 12px;border-radius:8px;border:2px solid ' + (isSel ? selColor : '#e2e8f0') + ';background:' + (isSel ? selBg : '#fff') + ';color:' + (isSel ? selColor : '#64748b') + ';font-size:13px;font-weight:' + (isSel ? '700' : '500') + ';cursor:pointer;transition:all .12s;width:100%;text-align:center' + (isOther ? ';opacity:0.35' : '') + '">'
                 + dimLabel + '</button>';
             }).join('')
           + '</div></div>';
@@ -4607,7 +4617,12 @@ function prevTest() {
 //  GAME ENGINE
 // ═══════════════════════════════════════════════════════════
 var _gameInterval = null;
-function clearGameTimers() { if (_gameInterval) { clearInterval(_gameInterval); _gameInterval = null; } }
+var gameTimers = [];
+function clearGameTimers() {
+  if (_gameInterval) { clearInterval(_gameInterval); _gameInterval = null; }
+  gameTimers.forEach(function(id) { clearInterval(id); });
+  gameTimers = [];
+}
 
 function gameComplete(testId, pct) {
   clearGameTimers();
