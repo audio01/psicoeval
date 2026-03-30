@@ -3481,10 +3481,10 @@ function genUUID() {
 }
 const SUPA_URL = 'https://refjkmmlivssauxdnflf.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJlZmprbW1saXZzc2F1eGRuZmxmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNzA3MzAsImV4cCI6MjA4ODc0NjczMH0.ZMRiBxFZL5cP0akPZ-DRNLuPvEDmgO6wuTjKpnAn5S4';
-// ⚠️ Service Role Key: permite crear/eliminar usuarios desde la app.
-// Encuéntrala en Supabase Dashboard → Project Settings → API → service_role.
-// Solo rellena si confías en que nadie externo accederá al código fuente.
-const SUPA_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJlZmprbW1saXZzc2F1eGRuZmxmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MzE3MDczMCwiZXhwIjoyMDg4NzQ2NzMwfQ.TFlcdoWwdylFgcc5kQ6Sai-UYS-KTTrIOOmaNnNh3zs';
+// ⚠️ Service Role Key — NUNCA incluir en código público ni subir a GitHub.
+// Si necesitas gestión de usuarios desde la app, configúrala solo en un entorno privado.
+// Supabase Dashboard → Project Settings → API → service_role
+const SUPA_SERVICE_KEY = ''; // ← dejar vacío en producción pública
 // Resend API key para notificaciones por email al admin cuando un candidato termina.
 // Obtén una gratuita en https://resend.com — plan free incluye 3,000 emails/mes.
 const RESEND_API_KEY  = '';    // pega aquí tu API key de Resend (empieza con "re_")
