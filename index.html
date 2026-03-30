@@ -1287,6 +1287,20 @@ input,select,textarea{font-family:inherit;outline:none}
         </div>
       </div>
 
+      <!-- ── Referencia Laboral ── -->
+      <div style="background:#f0f9ff;border-radius:12px;padding:16px;margin-bottom:4px;border:1px solid #bae6fd">
+        <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#0369a1;margin-bottom:6px">📞 Referencia Laboral</div>
+        <p style="font-size:12px;color:#475569;margin:0 0 12px;line-height:1.5">Indica una persona que pueda validar tu experiencia laboral anterior. El equipo de RRHH podrá contactarla durante el proceso de selección.</p>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div class="field"><label>Empresa</label><input id="r-ref-empresa" placeholder="Empresa donde trabajaste"></div>
+          <div class="form-row">
+            <div class="field"><label>Nombre del referente</label><input id="r-ref-nombre" placeholder="Nombre del jefe o supervisor"></div>
+            <div class="field"><label>Cargo del referente</label><input id="r-ref-cargo" placeholder="Ej: Supervisor, Jefe de turno"></div>
+          </div>
+          <div class="field"><label>Teléfono de contacto</label><input id="r-ref-telefono" type="tel" placeholder="9 1234 5678" maxlength="11" oninput="formatTel(this)"></div>
+        </div>
+      </div>
+
       <div style="display:flex;gap:10px">
         <button class="btn btn-outline" onclick="regBack(3)">← Anterior</button>
         <button class="btn btn-primary btn-lg" style="flex:1" onclick="submitRegister()">Finalizar y comenzar →</button>
@@ -1667,9 +1681,9 @@ input,select,textarea{font-family:inherit;outline:none}
 
 
 <!-- Candidate report modal -->
-<div id="cand-modal-overlay" class="overlay" style="display:none" onclick="closeCandModal()">
-  <div style="background:#f9f9f9;width:100%;max-width:940px;max-height:90vh;border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,.18);display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden" onclick="event.stopPropagation()">
-    <div id="cand-modal-content"></div>
+<div id="cand-modal-overlay" class="overlay" style="display:none;align-items:stretch;padding:20px" onclick="closeCandModal()">
+  <div style="background:#f9f9f9;width:100%;max-width:940px;height:100%;max-height:90vh;border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,.18);display:flex;flex-direction:column;overflow:hidden;margin:auto" onclick="event.stopPropagation()">
+    <div id="cand-modal-content" style="display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0"></div>
   </div>
 </div>
 
@@ -3663,12 +3677,17 @@ async function getDB() {
   } catch(e) { _setConnState('error'); return []; }
 }
 async function addToDB(c) {
-  // Store extended fields inside scores._meta to avoid schema changes
+  // Embed referencia inside scores JSONB to avoid schema changes
+  var scoresRow = Object.assign({}, c.scores || {});
+  if (c.referencia)  scoresRow._referencia  = c.referencia;
+  if (c.ref_notas)   scoresRow._ref_notas   = c.ref_notas;
+  if (c.ref_estado)  scoresRow._ref_estado  = c.ref_estado;
+
   const row = {
     id: c.id, nombre: c.nombre, apellido: c.apellido, email: c.email,
     rut: c.rut||'', cargo: c.cargo||'', perfil: c.perfil||'',
     fecha: c.fecha, tests: c.tests, estado: c.estado,
-    scores: c.scores || null,
+    scores: scoresRow,
     telefono:   c.telefono   || null,
     fechanac:   c.fechanac   || null,
     edad:       c.edad       || null,
@@ -4207,6 +4226,15 @@ function submitRegister() {
   if (emp1 || cargo1) historial.push({ empresa: emp1, cargo: cargo1, duracion: dur1, duracion_label: DUR_LABELS[dur1]||'', salida: salida1, salida_label: SALIDA_LABELS[salida1]||'' });
   if (emp2 || cargo2) historial.push({ empresa: emp2, cargo: cargo2, duracion: dur2, duracion_label: DUR_LABELS[dur2]||'', salida: salida2, salida_label: SALIDA_LABELS[salida2]||'' });
 
+  // Build referencia laboral
+  const refEmpresa  = document.getElementById('r-ref-empresa')?.value.trim()  || '';
+  const refNombre   = document.getElementById('r-ref-nombre')?.value.trim()   || '';
+  const refCargo    = document.getElementById('r-ref-cargo')?.value.trim()    || '';
+  const refTelefono = document.getElementById('r-ref-telefono')?.value.replace(/\s/g,'') || '';
+  const referencia  = (refEmpresa || refNombre || refTelefono)
+    ? { empresa: refEmpresa, nombre: refNombre, cargo: refCargo, telefono: refTelefono }
+    : null;
+
   S.candidate = {
     id: genUUID(), nombre, apellido, email,
     rut: document.getElementById('r-rut').value.trim(),
@@ -4222,6 +4250,7 @@ function submitRegister() {
     os10: os10 || null,
     rubro, rubro_label: RUBRO_LABELS[rubro] || '',
     historial: historial.length ? historial : null,
+    referencia: referencia,
   };
 
   const init = (nombre[0]||'') + (apellido[0]||'');
@@ -7318,7 +7347,10 @@ function buildReportHtml(c, withClose) {
   if (!s) return '<div style="padding:40px;text-align:center;color:#999">Sin datos de evaluación.</div>';
   const perfil = c.perfil || 'administrativo';
   const pm = PERFIL_META[perfil] || { label: c.cargo || perfil, icon:'📋', color:'var(--accent)', desc:'' };
-  const isLegacy = !s.dc0 && !s.pai && (s.bigfive || s.disc || s.cognitivo);
+  // Legacy = only old-format tests present, none of the new battery
+  var _newBatteryIds = ['dc0','pai','situacional','vigilancia','comprension','pf16','game_crisis','game_dilemas','game_dilemas_op','game_detector','game_secuencias','game_impulsos','game_vigilancia','game_memoria'];
+  var _hasNewTests = _newBatteryIds.some(function(t){ return !!s[t]; });
+  const isLegacy = !_hasNewTests && !!(s.bigfive || s.disc || s.cognitivo);
 
   // ══════════════════════════════════════════════════════════════
   //  REPORT HEADER + GENERAL TAB — Redesigned
@@ -7369,10 +7401,10 @@ function buildReportHtml(c, withClose) {
   else if (gLv >= 3)          { veredicto='APTO CON OBSERVACIONES'; verColor='#b45309'; verBg='#fffbeb'; verIcon='⚠️'; }
   else               { veredicto='NO APTO'; verColor='#dc2626'; verBg='#fef2f2'; verIcon='❌'; }
 
-  let html = '<div class="rpt-modal" style="font-family:SF Pro Display,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif">';
+  let html = '<div class="rpt-modal" style="font-family:SF Pro Display,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;display:flex;flex-direction:column;height:100%;min-height:0">';
 
   // ── HEADER — Enterprise Premium ────────────────────────────
-  html += '<div style="background:#0f172a;position:relative;overflow:hidden">';
+  html += '<div style="background:#0f172a;position:relative;overflow:hidden;flex-shrink:0">';
   // Subtle accent glow
   html += '<div style="position:absolute;top:-50%;left:-20%;width:60%;height:200%;background:radial-gradient(ellipse,rgba(99,102,241,.08),transparent 70%);pointer-events:none"></div>';
   html += '<div style="position:absolute;bottom:-30%;right:-10%;width:40%;height:150%;background:radial-gradient(ellipse,rgba(5,150,105,.06),transparent 70%);pointer-events:none"></div>';
@@ -7453,6 +7485,8 @@ function buildReportHtml(c, withClose) {
       tabs.push({ id:gid, label:GAME_TAB_LABELS[gid], icon:tm.icon||'🎮' });
     }
   });
+  // Referencias tab (always shown in admin view)
+  if (withClose) tabs.push({ id:'referencias', label:'Referencias', icon:'📞' });
 
   html += '<div style="background:#fff;overflow-x:auto;white-space:nowrap;display:flex;gap:2px;border-bottom:1.5px solid #e2e8f0;padding-bottom:0;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;flex-shrink:0;padding-left:16px;padding-right:16px">';
   tabs.forEach(function(t, i) {
@@ -8907,9 +8941,122 @@ function buildReportHtml(c, withClose) {
   // ── Disclaimer ───────────────────────────────────────────────────────
   html += '<div style="font-size:11px;color:#bbb;padding:8px 0;line-height:1.6">⚠ Informe de uso interno RRHH. No reemplaza el juicio de un psicólogo habilitado. Basado en PAI y DC-0. Instrumentos de uso libre para investigación y selección.</div>';
 
+  // ══════════════════════════════════════════════════════════════
+  // TAB: REFERENCIAS LABORALES
+  // ══════════════════════════════════════════════════════════════
+  if (withClose) {
+    // referencia stored in scores._referencia (JSONB) or top-level field
+    var ref = c.referencia || (c.scores && c.scores._referencia) || null;
+    var refNotas  = c.ref_notas  || (c.scores && c.scores._ref_notas)  || '';
+    var refEstado = c.ref_estado || (c.scores && c.scores._ref_estado) || 'pendiente';
+    var _refEstados = [
+      { val:'pendiente',   label:'Pendiente',    color:'#94a3b8', bg:'#f8fafc' },
+      { val:'contactado',  label:'Contactado',   color:'#d97706', bg:'#fffbeb' },
+      { val:'verificado',  label:'Verificado ✓', color:'#16a34a', bg:'#f0fdf4' },
+      { val:'no_contesta', label:'No contesta',  color:'#dc2626', bg:'#fef2f2' },
+      { val:'negativa',    label:'Referencia negativa', color:'#7c3aed', bg:'#faf5ff' },
+    ];
+    var _refE = _refEstados.find(function(e){ return e.val === refEstado; }) || _refEstados[0];
+
+    html += '<div class="rpt-tab-panel" id="rpt-panel-referencias" style="display:none;flex-direction:column;gap:16px">';
+
+    // Header card
+    html += '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:20px 22px">';
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px">';
+    html += '<div><div style="font-size:15px;font-weight:800;color:#0f172a">📞 Referencia Laboral</div>';
+    html += '<div style="font-size:12px;color:#64748b;margin-top:2px">Contacto provisto por el candidato para verificación de experiencia</div></div>';
+    // Estado selector
+    html += '<div>';
+    html += '<select id="ref-estado-sel" onchange="saveRefEstado(this.value,\'' + htmlEsc(c.id) + '\')" style="padding:6px 12px;border-radius:8px;border:1.5px solid ' + _refE.color + ';background:' + _refE.bg + ';color:' + _refE.color + ';font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;-webkit-appearance:none;appearance:none;padding-right:28px;background-image:url(\'data:image/svg+xml,%3Csvg xmlns=\\\'http://www.w3.org/2000/svg\\\' width=\\\'12\\\' height=\\\'12\\\' viewBox=\\\'0 0 24 24\\\' fill=\\\'none\\\' stroke=\\\'' + encodeURIComponent(_refE.color) + '\\\' stroke-width=\\\'3\\\' stroke-linecap=\\\'round\\\' stroke-linejoin=\\\'round\\\'%3E%3Cpolyline points=\\\'6 9 12 15 18 9\\\'/%3E%3C/svg%3E\');background-repeat:no-repeat;background-position:right 8px center">';
+    _refEstados.forEach(function(e) {
+      html += '<option value="' + e.val + '"' + (e.val === refEstado ? ' selected' : '') + '>' + e.label + '</option>';
+    });
+    html += '</select></div>';
+    html += '</div>'; // end header row
+
+    if (ref) {
+      html += '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px">';
+      var _refFields = [
+        { icon:'🏢', label:'Empresa', val: ref.empresa },
+        { icon:'👤', label:'Nombre del referente', val: ref.nombre },
+        { icon:'💼', label:'Cargo del referente', val: ref.cargo },
+        { icon:'📱', label:'Teléfono de contacto', val: ref.telefono },
+      ];
+      _refFields.forEach(function(f) {
+        html += '<div style="background:#f8fafc;border-radius:10px;padding:14px 16px;border:1px solid #e2e8f0">';
+        html += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#94a3b8;margin-bottom:4px">' + f.icon + ' ' + f.label + '</div>';
+        html += '<div style="font-size:14px;font-weight:600;color:' + (f.val ? '#1e293b' : '#cbd5e1') + '">' + htmlEsc(f.val || '—') + '</div>';
+        if (f.label === 'Teléfono de contacto' && f.val) {
+          html += '<a href="tel:' + htmlEsc(f.val) + '" style="font-size:11px;color:#6366f1;font-weight:600;text-decoration:none;display:inline-block;margin-top:4px">📲 Llamar</a>';
+        }
+        html += '</div>';
+      });
+      html += '</div>'; // end grid
+    } else {
+      html += '<div style="text-align:center;padding:24px;color:#94a3b8;font-size:13px">El candidato no ingresó referencia laboral.</div>';
+    }
+    html += '</div>'; // end header card
+
+    // Notas HR card
+    html += '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:20px 22px">';
+    html += '<div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:#0f172a;margin-bottom:12px">🗒️ Notas del proceso de referencia</div>';
+    html += '<textarea id="ref-notas-area" placeholder="Registra aquí los resultados de la llamada: ¿quién contestó, qué informó, si corroboró experiencia, actitud general, recomendación final…" '
+      + 'style="width:100%;min-height:130px;padding:12px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;font-family:inherit;color:#1e293b;background:#f8fafc;resize:vertical;box-sizing:border-box;line-height:1.6">'
+      + htmlEsc(refNotas) + '</textarea>';
+    html += '<div style="display:flex;justify-content:flex-end;margin-top:10px">';
+    html += '<button onclick="saveRefNotas(\'' + htmlEsc(c.id) + '\')" class="btn btn-primary" style="padding:9px 22px;font-size:13px">Guardar notas</button>';
+    html += '</div>';
+    html += '</div>'; // end notas card
+
+    html += '</div>'; // end rpt-panel-referencias
+  }
+
   html += '</div>'; // end panels wrap
   html += '</div>'; // end rpt-modal
   return html;
+}
+
+// ── Patch campo dentro de scores JSONB en Supabase ───────────────────────
+async function _patchScoresField(candidateId, key, value) {
+  // Fetch current scores, merge, then PATCH
+  const r0 = await fetch(SUPA_URL + '/rest/v1/candidates?id=eq.' + candidateId + '&select=scores', { headers: getDBHeaders() });
+  if (!r0.ok) throw new Error('Fetch scores ' + r0.status);
+  const rows = await r0.json();
+  if (!rows.length) throw new Error('Candidato no encontrado');
+  var scores = Object.assign({}, rows[0].scores || {});
+  scores[key] = value;
+  const r1 = await fetch(SUPA_URL + '/rest/v1/candidates?id=eq.' + candidateId, {
+    method: 'PATCH',
+    headers: Object.assign({}, getDBHeaders(), { 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }),
+    body: JSON.stringify({ scores: scores })
+  });
+  if (!r1.ok) { var t = await r1.text(); throw new Error('PATCH ' + r1.status + ': ' + t); }
+}
+
+// ── Guardar notas de referencia ───────────────────────────────────────────
+async function saveRefNotas(candidateId) {
+  var notas = document.getElementById('ref-notas-area')?.value || '';
+  try {
+    await _patchScoresField(candidateId, '_ref_notas', notas);
+    toast('Notas guardadas ✓', 'ok');
+  } catch(e) { toast('Error al guardar: ' + e.message, 'er'); }
+}
+
+async function saveRefEstado(val, candidateId) {
+  var _refEstados = [
+    { val:'pendiente',   color:'#94a3b8', bg:'#f8fafc' },
+    { val:'contactado',  color:'#d97706', bg:'#fffbeb' },
+    { val:'verificado',  color:'#16a34a', bg:'#f0fdf4' },
+    { val:'no_contesta', color:'#dc2626', bg:'#fef2f2' },
+    { val:'negativa',    color:'#7c3aed', bg:'#faf5ff' },
+  ];
+  var e = _refEstados.find(function(e){ return e.val === val; }) || _refEstados[0];
+  try {
+    await _patchScoresField(candidateId, '_ref_estado', val);
+    var sel = document.getElementById('ref-estado-sel');
+    if (sel) { sel.style.borderColor = e.color; sel.style.background = e.bg; sel.style.color = e.color; }
+    toast('Estado actualizado ✓', 'ok');
+  } catch(err) { toast('Error: ' + err.message, 'er'); }
 }
 
 let currentReportId = null;
