@@ -889,7 +889,7 @@ input,select,textarea{font-family:inherit;outline:none}
         </div>
         <div class="form-row">
           <div class="field">
-            <label for="r-rut">RUT / DNI</label>
+            <label for="r-rut">RUT *</label>
             <input id="r-rut" placeholder="12.345.678-9"
               oninput="formatRut(this)" onblur="validateRutBlur()" maxlength="12"
               aria-describedby="e-rut" aria-invalid="false">
@@ -990,13 +990,14 @@ input,select,textarea{font-family:inherit;outline:none}
               </div>
             </label>
 
-            <!-- Separador FF.AA. / Carabineros -->
-            <div style="display:flex;align-items:center;gap:8px;margin:4px 0 2px">
+            <!-- Separador FF.AA. / Carabineros — toggle -->
+            <button type="button" id="edu-g-ffaa-toggle" onclick="toggleEduGffaa()" style="display:flex;align-items:center;gap:8px;margin:4px 0 2px;background:none;border:none;cursor:pointer;width:100%;padding:0">
               <div style="flex:1;height:1px;background:var(--border)"></div>
-              <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink4)">Personal en retiro</span>
+              <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--accent);white-space:nowrap">🎖 Soy personal en retiro ▾</span>
               <div style="flex:1;height:1px;background:var(--border)"></div>
-            </div>
+            </button>
 
+            <div id="edu-g-ffaa-block" style="display:none;flex-direction:column;gap:7px">
             <label id="edu-g-ej-retiro-lbl" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s">
               <input type="radio" name="edu-guardia" id="r-edu-g-ej-retiro" value="ejercito_retiro" onchange="styleEduG()" onclick="setTimeout(styleEduG,0)" style="width:18px;height:18px;accent-color:var(--accent)">
               <div>
@@ -1039,6 +1040,7 @@ input,select,textarea{font-family:inherit;outline:none}
                 <div style="font-size:11px;color:#2563eb;font-weight:600">✓ Cumple · Considerar años de servicio en evaluación</div>
               </div>
             </label>
+            </div>
           </div>
           <span class="err" id="e-edu-guardia"></span>
         </div>
@@ -1780,6 +1782,29 @@ input,select,textarea{font-family:inherit;outline:none}
   </div>
 </div>
 
+<!-- Re-evaluación modal -->
+<div id="reeval-modal" class="overlay" style="display:none">
+  <div class="modal" style="max-width:440px;width:100%">
+    <div style="font-size:32px;text-align:center;margin-bottom:8px">🔄</div>
+    <h3 style="text-align:center;margin-bottom:6px">Permitir re-evaluación</h3>
+    <p class="sub" style="text-align:center;margin-bottom:16px">Vas a resetear la evaluación de <strong id="reeval-name"></strong>.</p>
+    <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:14px 16px;margin-bottom:20px;font-size:12px;color:#92400e;line-height:1.6">
+      <strong>¿Qué hace esto?</strong><br>
+      • Borra todos los resultados y puntajes obtenidos<br>
+      • Resetea el estado a "pendiente"<br>
+      • El candidato podrá volver a ingresar con su mismo RUT<br>
+      • <strong>Los datos personales se conservan</strong> (nombre, correo, RUT, etc.)
+    </div>
+    <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:12px;color:#0369a1;line-height:1.6">
+      💡 <strong>Tip:</strong> Después de hacer el reset, comparte el link de evaluación al candidato para que pueda completar las pruebas nuevamente.
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-outline" onclick="closeReevalModal()">Cancelar</button>
+      <button class="btn" style="background:#f59e0b;color:#fff;border:none" id="reeval-confirm-btn" onclick="confirmReeval()">🔄 Sí, resetear evaluación</button>
+    </div>
+  </div>
+</div>
+
 <!-- Add cargo modal -->
 <div id="add-cargo-modal" class="overlay" style="display:none">
   <div class="modal" style="max-width:480px;width:100%">
@@ -2098,6 +2123,17 @@ const PERFIL_META = {
   guardia:       { label:'Guardia de Seguridad',icon:'🛡', color:'var(--ink2)',  desc:'Evaluación para roles de seguridad. Incluye juicio situacional, aptitud de vigilancia, perfil conductual (DISC/16PF) y juegos de crisis e integridad.' },
   supervisor:    { label:'Supervisor de Seguridad', icon:'⚙️', color:'var(--amber)', desc:'Evaluación para supervisores de turno u operaciones. Incluye aptitud cognitiva, juicio situacional, perfil conductual (DISC/16PF) y juegos conductuales de crisis y dilemas supervisivos.' },
 };
+
+// ── localStorage key constants (centralizadas para evitar typos) ──────────────
+const SESSION_KEY          = 'psicoeval_session';
+const LS_BATTERIES         = 'psicoeval_batteries';
+const LS_CARGOS            = 'psicoeval_cargos';
+const LS_CUSTOM_CARGOS     = 'psicoeval_custom_cargos';
+const LS_PILARES           = 'psicoeval_pilares';
+const LS_DISC_PROFILE      = 'psicoeval_disc_profile';
+const LS_PF16_PROFILE      = 'psicoeval_pf16_profile';
+const LS_PARAMS            = 'psicoeval_params';
+// ─────────────────────────────────────────────────────────────────────────────
 
 // ═══════════════════════════════════════════════════════════
 //  CARGOS ACTIVOS / INACTIVOS
@@ -3470,7 +3506,7 @@ const PAI_COLORS = {EE:'#1c5d8c',AS:'#3a7850',ON:'#a07528',ME:'#c04b1c',IL:'#3a7
 // ═══════════════════════════════════════════════════════════
 //  STATE
 // ═══════════════════════════════════════════════════════════
-let S = { candidate:null, selectedTests:[], allQs:[], answers:{}, testBlocks:[], blockIdx:0, deleteId:null };
+let S = { candidate:null, selectedTests:[], allQs:[], answers:{}, testBlocks:[], blockIdx:0, deleteId:null, reevalId:null };
 
 // ═══════════════════════════════════════════════════════════
 //  TOAST
@@ -3970,14 +4006,31 @@ function styleOs10() {
   document.getElementById('e-os10').textContent = '';
 }
 
+var _eduGffaaOpen = false;
+function toggleEduGffaa() {
+  _eduGffaaOpen = !_eduGffaaOpen;
+  var block  = document.getElementById('edu-g-ffaa-block');
+  var toggle = document.getElementById('edu-g-ffaa-toggle');
+  if (block)  block.style.display = _eduGffaaOpen ? 'flex' : 'none';
+  if (toggle) {
+    var span = toggle.querySelector('span');
+    if (span) span.textContent = _eduGffaaOpen ? '🎖 Soy personal en retiro ▴' : '🎖 Soy personal en retiro ▾';
+  }
+}
+
 function styleEduG() {
+  var ffaaKeys = ['ej-retiro','ej-baja','car-retiro','car-baja','arm-retiro','arm-baja'];
+  var anyFfaaChecked = false;
   ['basica','sin4','4medio','tecnica','univ','ej-retiro','ej-baja','car-retiro','car-baja','arm-retiro','arm-baja'].forEach(function(k) {
     const radio = document.getElementById('r-edu-g-' + k);
     const lbl   = document.getElementById('edu-g-' + k + '-lbl');
     if (!radio || !lbl) return;
     lbl.style.borderColor = radio.checked ? 'var(--accent)' : 'var(--border)';
     lbl.style.background  = radio.checked ? 'var(--accent-l)' : 'var(--surface)';
+    if (radio.checked && ffaaKeys.indexOf(k) !== -1) anyFfaaChecked = true;
   });
+  // Auto-expand FFAA block if a FFAA option is already selected
+  if (anyFfaaChecked && !_eduGffaaOpen) toggleEduGffaa();
   document.getElementById('e-edu-guardia').textContent = '';
 }
 
@@ -4068,7 +4121,11 @@ function regNext(fromStep) {
       document.getElementById('e-telefono').textContent = ''; 
     }
     var rutVal = document.getElementById('r-rut').value.trim();
-    if (rutVal) {
+    if (!rutVal) {
+      document.getElementById('e-rut').textContent = 'El RUT es obligatorio';
+      document.getElementById('e-rut').style.color = 'var(--rose)';
+      ok = false;
+    } else {
       var rutClean = rutVal.replace(/[^0-9kK]/g,'');
       var rutDV = rutClean.slice(-1).toUpperCase();
       var rutBody = rutClean.slice(0,-1);
@@ -4076,6 +4133,8 @@ function regNext(fromStep) {
         document.getElementById('e-rut').textContent = 'RUT inválido — verifica el dígito verificador';
         document.getElementById('e-rut').style.color = 'var(--rose)';
         ok = false;
+      } else {
+        document.getElementById('e-rut').textContent = '';
       }
     }
     const fechanac = document.getElementById('r-fechanac').value;
@@ -4116,7 +4175,25 @@ function regNext(fromStep) {
       }
       return;
     }
-    regSetStep(2);
+    // ── Verificar si el RUT ya tiene una evaluación registrada ───
+    var rutNorm = document.getElementById('r-rut').value.trim();
+    var btnCont = document.querySelector('#reg-step-1 .btn-primary');
+    if (btnCont) { btnCont.disabled = true; btnCont.textContent = 'Verificando…'; }
+    fetch(SUPA_URL + '/rest/v1/candidates?rut=eq.' + encodeURIComponent(rutNorm) + '&select=id,nombre,apellido,estado&limit=1', {
+      headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY }
+    }).then(function(r){ return r.json(); }).then(function(rows) {
+      if (btnCont) { btnCont.disabled = false; btnCont.textContent = 'Continuar →'; }
+      if (rows && rows.length > 0) {
+        var existing = rows[0];
+        showRutDuplicateBlock(existing);
+      } else {
+        regSetStep(2);
+      }
+    }).catch(function() {
+      if (btnCont) { btnCont.disabled = false; btnCont.textContent = 'Continuar →'; }
+      // Si falla la verificación, dejar pasar (no bloquear por error de red)
+      regSetStep(2);
+    });
 
   } else if (fromStep === 2) {
     const perfil = document.getElementById('r-perfil').value;
@@ -4170,6 +4247,39 @@ function regNext(fromStep) {
 
 function regBack(fromStep) {
   regSetStep(fromStep - 1);
+}
+
+function showRutDuplicateBlock(existing) {
+  // Hide all registration steps
+  ['reg-step-0','reg-step-1','reg-step-2-guardia','reg-step-2-general','reg-step-2-supervisor','reg-step-3'].forEach(function(id) {
+    var el = document.getElementById(id); if (el) el.style.display = 'none';
+  });
+  // Build blocking screen
+  var container = document.getElementById('reg-form-container') || document.querySelector('.reg-container') || document.getElementById('reg-step-1')?.parentElement;
+  var blockDiv = document.createElement('div');
+  blockDiv.id = 'rut-duplicate-block';
+  blockDiv.style.cssText = 'padding:32px 24px;text-align:center;max-width:480px;margin:0 auto';
+  var estadoLabel = existing.estado === 'completed' ? 'completada' : existing.estado === 'in_progress' ? 'en progreso' : 'registrada';
+  var estadoBg = existing.estado === 'completed' ? '#f0fdf4' : '#fffbeb';
+  var estadoColor = existing.estado === 'completed' ? '#16a34a' : '#b45309';
+  blockDiv.innerHTML =
+    '<div style="font-size:48px;margin-bottom:16px">🔒</div>' +
+    '<div style="font-size:20px;font-weight:800;color:var(--ink);margin-bottom:8px">Evaluación ya registrada</div>' +
+    '<div style="font-size:14px;color:var(--ink3);margin-bottom:20px;line-height:1.6">El RUT <strong>' + htmlEsc(document.getElementById('r-rut').value.trim()) + '</strong> ya tiene una evaluación ' + estadoLabel + ' en el sistema.</div>' +
+    '<div style="background:' + estadoBg + ';border-radius:12px;padding:16px 20px;margin-bottom:24px;text-align:left">' +
+    '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:' + estadoColor + ';margin-bottom:6px">Registro encontrado</div>' +
+    '<div style="font-size:14px;font-weight:600;color:var(--ink)">' + htmlEsc((existing.nombre||'') + ' ' + (existing.apellido||'')) + '</div>' +
+    '<div style="font-size:12px;color:var(--ink3);margin-top:4px">Estado: ' + estadoLabel + '</div>' +
+    '</div>' +
+    '<div style="font-size:13px;color:var(--ink3);margin-bottom:24px;line-height:1.6">Si crees que esto es un error o necesitas repetir la evaluación, contacta al equipo de RRHH que te envió este formulario.</div>' +
+    '<button onclick="document.getElementById(\'rut-duplicate-block\').remove(); regSetStep(1);" style="padding:10px 24px;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-weight:600;color:var(--ink3);cursor:pointer;font-family:inherit">← Volver e ingresar otro RUT</button>';
+  // Insert after the progress bar area
+  var regSteps = document.getElementById('reg-step-1');
+  if (regSteps && regSteps.parentElement) {
+    regSteps.parentElement.insertBefore(blockDiv, regSteps);
+  } else {
+    document.body.appendChild(blockDiv);
+  }
 }
 
 function submitRegister() {
@@ -7447,14 +7557,16 @@ function buildReportHtml(c, withClose) {
     html += '<button onclick="closeCandModal()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);color:#94a3b8;font-size:16px;cursor:pointer;padding:6px 12px;border-radius:8px;line-height:1;transition:background .15s" onmouseover="this.style.background=\'rgba(255,255,255,.15)\'" onmouseout="this.style.background=\'rgba(255,255,255,.08)\'">✕</button>';
     html += '</div>';
   }
-  // Veredicto badge
+  // Veredicto badge — compact chip
   var verBorderCol = gLv===5 ? '#059669' : gLv>=3 ? '#d97706' : '#dc2626';
-  html += '<div style="text-align:center;padding:12px 20px;border-radius:10px;background:rgba(255,255,255,.04);border:1.5px solid ' + verBorderCol + '40">';
-  html += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#64748b;margin-bottom:4px">Veredicto</div>';
-  html += '<div style="font-size:18px;font-weight:800;color:' + verColor + ';letter-spacing:-.02em">' + veredicto + '</div>';
-  html += '<div style="font-size:24px;font-weight:900;color:' + verColor + ';margin-top:2px">' + gFit + '%</div>';
+  html += '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">';
+  html += '<div style="display:flex;align-items:center;gap:8px;padding:7px 14px;border-radius:8px;background:rgba(255,255,255,.06);border:1.5px solid ' + verBorderCol + '50">';
+  html += '<div style="font-size:13px;font-weight:900;color:' + verColor + ';letter-spacing:-.01em">' + veredicto + '</div>';
+  html += '<div style="width:1px;height:14px;background:rgba(255,255,255,.15)"></div>';
+  html += '<div style="font-size:18px;font-weight:900;color:' + verColor + '">' + gFit + '%</div>';
   html += '</div>';
   html += '<div style="font-size:10px;color:#475569">Evaluado el ' + htmlEsc(c.fecha) + '</div>';
+  html += '</div>';
   html += '</div>';
   html += '</div>';
   html += '</div></div>'; // /content /header
@@ -7507,6 +7619,44 @@ function buildReportHtml(c, withClose) {
   // TAB: GENERAL (Resumen)
   // ══════════════════════════════════════════════════════════════
   html += '<div class="rpt-tab-panel" id="rpt-panel-general" style="display:block;flex-direction:column;gap:16px">';
+
+  // ── Pruebas incompletas / faltantes ──────────────────────────
+  var expectedTests = PERFIL_TESTS[perfil] || PERFIL_TESTS_DEFAULT[perfil] || [];
+  var TEST_LABELS = {
+    dc0:'Aptitud Cognitiva', pai:'Aj. Psicológico', situacional:'Juicio Situacional',
+    vigilancia:'Vigilancia', comprension:'Comprensión', disc:'DISC', pf16:'16PF',
+    game_crisis:'Sala de Crisis', game_dilemas:'Dilemas', game_dilemas_op:'Dilemas Operativo',
+    game_detector:'Detector', game_secuencias:'Secuencias', game_impulsos:'Control de Impulsos',
+    game_vigilancia:'Vigilancia Activa', game_memoria:'Memoria Operativa'
+  };
+  var missingTests  = expectedTests.filter(function(t){ return !s[t]; });
+  var emptyTests    = expectedTests.filter(function(t){
+    if (!s[t]) return false;
+    var val = s[t];
+    if (typeof val !== 'object') return false;
+    return Object.keys(val).length === 0;
+  });
+  var incompleteTests = [];
+  emptyTests.forEach(function(t){ if(missingTests.indexOf(t)===-1) incompleteTests.push(t); });
+  var hasIssues = missingTests.length > 0 || incompleteTests.length > 0;
+  if (hasIssues) {
+    html += '<div style="background:#fffbeb;border:1.5px solid #f59e0b;border-radius:12px;padding:14px 18px;display:flex;gap:14px;align-items:flex-start">';
+    html += '<div style="font-size:20px;flex-shrink:0;margin-top:1px">⚠️</div>';
+    html += '<div style="flex:1">';
+    html += '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#b45309;margin-bottom:6px">Evaluación incompleta</div>';
+    if (missingTests.length > 0) {
+      html += '<div style="font-size:12px;color:#78350f;margin-bottom:4px;line-height:1.6"><strong>Pruebas no realizadas:</strong> ';
+      html += missingTests.map(function(t){ return TEST_LABELS[t]||t; }).join(', ');
+      html += '</div>';
+    }
+    if (incompleteTests.length > 0) {
+      html += '<div style="font-size:12px;color:#78350f;margin-bottom:4px;line-height:1.6"><strong>Pruebas con datos incompletos:</strong> ';
+      html += incompleteTests.map(function(t){ return TEST_LABELS[t]||t; }).join(', ');
+      html += '</div>';
+    }
+    html += '<div style="font-size:11px;color:#92400e;margin-top:4px;line-height:1.5">El candidato puede haber abandonado la evaluación o cerrado la sesión antes de completarla. Se recomienda solicitar una nueva evaluación para obtener un análisis completo. El puntaje actual solo refleja las pruebas finalizadas.</div>';
+    html += '</div></div>';
+  }
 
   // ── Veredicto card ────────────────────────────────────────────
   html += '<div style="background:' + verBg + ';border:2px solid ' + verColor + '30;border-radius:14px;padding:20px 24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap">';
@@ -10654,6 +10804,58 @@ function closeDelModal() {
   document.getElementById('del-modal').style.display = 'none';
 }
 
+function openReevalModal(id, name) {
+  S.reevalId = id;
+  document.getElementById('reeval-name').textContent = name;
+  document.getElementById('reeval-modal').style.display = 'flex';
+}
+function closeReevalModal() {
+  S.reevalId = null;
+  document.getElementById('reeval-modal').style.display = 'none';
+}
+async function confirmReeval() {
+  if (!S.reevalId) return;
+  var btn = document.getElementById('reeval-confirm-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Reseteando…'; }
+  try {
+    var perfil = null;
+    var tests = null;
+    // Fetch current candidate to keep perfil/tests assigned
+    var r0 = await fetch(SUPA_URL + '/rest/v1/candidates?id=eq.' + S.reevalId + '&select=perfil,tests', {
+      headers: getDBHeaders()
+    });
+    var rows = await r0.json();
+    if (rows && rows[0]) { perfil = rows[0].perfil; tests = rows[0].tests; }
+    // Reset: clear scores, estado=pending
+    var r1 = await fetch(SUPA_URL + '/rest/v1/candidates?id=eq.' + S.reevalId, {
+      method: 'PATCH',
+      headers: Object.assign({}, getDBHeaders(), { 'Prefer': 'return=minimal' }),
+      body: JSON.stringify({ scores: {}, estado: 'pending' })
+    });
+    if (!r1.ok) throw new Error('PATCH failed: ' + r1.status);
+    closeReevalModal();
+    toast('✓ Evaluación reseteada — el candidato puede volver a rendir', 'ok');
+    // Update row state in table without full re-render
+    var row = document.querySelector('tr[data-id="' + S.reevalId + '"]');
+    if (row) {
+      var statusCell = row.querySelector('td:nth-child(5)');
+      if (statusCell) statusCell.innerHTML = statusBadge('pending');
+      var actionsCell = row.querySelector('td:last-child');
+      if (actionsCell) {
+        var infLink = actionsCell.querySelector('a[onclick*="viewCandReport"]');
+        var pdfLink = actionsCell.querySelector('a[onclick*="downloadPdf"]');
+        if (infLink) infLink.remove();
+        if (pdfLink) pdfLink.remove();
+      }
+    }
+    S.reevalId = null;
+    renderDashboard();
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = '🔄 Sí, resetear evaluación'; }
+    toast('Error al resetear: ' + e.message, 'er');
+  }
+}
+
 function refreshCandView() {
   renderCandidatesTable();
 }
@@ -11355,6 +11557,7 @@ async function renderCandidatesTable() {
              <a onclick="downloadPdfReport('${id}')" style="color:var(--ink2);margin-left:10px">⬇ PDF</a>`
           : `<span style="font-size:11px;color:var(--ink3)">Sin informe</span>`}
         <a onclick="copyCandLink('${htmlEsc(c.perfil||'')}','${htmlEsc(c.cargo||'')}')" style="color:#16a34a;margin-left:10px;font-size:12px" title="Copiar enlace de evaluación para este cargo">🔗</a>
+        <a onclick="openReevalModal('${id}','${fullName}')" style="color:#f59e0b;margin-left:10px;font-size:12px" title="Permitir que el candidato repita la evaluación">🔄 Re-eval</a>
         <a onclick="openDelModal('${id}','${fullName}')" style="color:#e11d48;margin-left:10px;font-size:12px">Eliminar</a>
       </td>
     </tr>`;
@@ -11618,17 +11821,6 @@ window.addEventListener('beforeunload', function(e) {
     return '';
   }
 });
-
-// ── localStorage key constants (centralizadas para evitar typos) ──────────────
-const SESSION_KEY          = 'psicoeval_session';
-const LS_BATTERIES         = 'psicoeval_batteries';
-const LS_CARGOS            = 'psicoeval_cargos';
-const LS_CUSTOM_CARGOS     = 'psicoeval_custom_cargos';
-const LS_PILARES           = 'psicoeval_pilares';
-const LS_DISC_PROFILE      = 'psicoeval_disc_profile';
-const LS_PF16_PROFILE      = 'psicoeval_pf16_profile';
-const LS_PARAMS            = 'psicoeval_params';
-// ─────────────────────────────────────────────────────────────────────────────
 
 function saveSession() {
   try {
