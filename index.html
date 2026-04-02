@@ -2158,7 +2158,6 @@ const SESSION_KEY          = 'psicoeval_session';
 const LS_BATTERIES         = 'psicoeval_batteries';
 const LS_CARGOS            = 'psicoeval_cargos';
 const LS_CUSTOM_CARGOS     = 'psicoeval_custom_cargos';
-const LS_PILARES           = 'psicoeval_pilares';
 const LS_DISC_PROFILE      = 'psicoeval_disc_profile';
 const LS_PF16_PROFILE      = 'psicoeval_pf16_profile';
 const LS_PARAMS            = 'psicoeval_params';
@@ -2207,7 +2206,6 @@ function saveCargosConfig() {
 loadCargosConfig();
 // Re-load battery config AFTER custom cargos exist so their saved batteries are restored
 loadBatteryConfig();
-loadPilarConfig();
 loadProfileConfig();
 
 function getAllCargos() {
@@ -6233,109 +6231,6 @@ const PERFIL_IDEAL = {
   if (!PERFIL_IDEAL[pf].game_dilemas_op) PERFIL_IDEAL[pf].game_dilemas_op = { pct:{ min:55, max:100, peso:3, label:'Dilemas Operacionales',    req:'Integridad y criterio de escalación en campo.' }};
 });
 
-// ═══════════════════════════════════════════════════════════
-//  SISTEMA DE 3 PILARES: Cognición · Emoción · Conducta
-// ═══════════════════════════════════════════════════════════
-const PILAR_META = {
-  cognicion: { label:'Cognición',  icon:'🧠', color:'#4f46e5', bg:'#eef2ff', border:'#c7d2fe' },
-  emocion:   { label:'Emoción',    icon:'❤️',  color:'#0891b2', bg:'#ecfeff', border:'#a5f3fc' },
-  conducta:  { label:'Conducta',   icon:'⚡',  color:'#059669', bg:'#ecfdf5', border:'#6ee7b7' },
-};
-
-const PILAR_MAP = {
-  cognicion: [
-    { test:'dc0',           key:'V',   peso:2, label:'Razonamiento Verbal' },
-    { test:'dc0',           key:'N',   peso:2, label:'Razonamiento Numérico' },
-    { test:'dc0',           key:'L',   peso:2, label:'Razonamiento Lógico' },
-    { test:'comprension',   key:'pct', peso:2, label:'Comprensión de Instrucciones' },
-    { test:'pf16',          key:'DU',  peso:1, label:'Dureza Mental' },
-    { test:'pf16',          key:'AC',  peso:1, label:'Autocontrol' },
-    { test:'game_detector', key:'pct', peso:1, label:'Atención' },
-    { test:'game_secuencias',key:'pct',peso:1, label:'Lógica (Juego)' },
-    { test:'game_memoria',  key:'pct', peso:1, label:'Memoria Operativa' },
-  ],
-  emocion: [
-    { test:'pai',           key:'EE',  peso:2, label:'Estabilidad Emocional' },
-    { test:'pai',           key:'AS',  peso:2, label:'Adaptación Social' },
-    { test:'pai',           key:'ME',  peso:2, label:'Manejo del Estrés' },
-    { test:'pf16',          key:'AN',  peso:2, label:'Ajuste Emocional' },
-    { test:'pf16',          key:'EX',  peso:1, label:'Extraversión' },
-    { test:'game_impulsos', key:'pct', peso:2, label:'Control de Impulsos' },
-  ],
-  conducta: [
-    { test:'pai',           key:'ON',  peso:2, label:'Orientación Normativa' },
-    { test:'pai',           key:'IL',  peso:2, label:'Integridad Laboral' },
-    { test:'pai',           key:'ML',  peso:2, label:'Motivación Laboral' },
-    { test:'pf16',          key:'IN',  peso:1, label:'Independencia' },
-    { test:'disc',          key:'D',   peso:1, label:'Dominancia' },
-    { test:'disc',          key:'I',   peso:1, label:'Influencia' },
-    { test:'disc',          key:'S',   peso:1, label:'Estabilidad Conductual' },
-    { test:'disc',          key:'C',   peso:1, label:'Cumplimiento' },
-    { test:'situacional',   key:'pct', peso:2, label:'Juicio Situacional' },
-    { test:'vigilancia',    key:'pct', peso:2, label:'Aptitud de Vigilancia' },
-    { test:'game_vigilancia',key:'pct',peso:1, label:'Vigilancia (Juego)' },
-  ],
-};
-
-const PERFIL_IDEAL_V2_DEFAULT = {
-  jefatura:      { cognicion:{ min:3 }, emocion:{ min:3 }, conducta:{ min:4 } },
-  administrativo:{ cognicion:{ min:3 }, emocion:{ min:3 }, conducta:{ min:3 } },
-  guardia:       { cognicion:{ min:2 }, emocion:{ min:3 }, conducta:{ min:4 } },
-  supervisor:    { cognicion:{ min:3 }, emocion:{ min:3 }, conducta:{ min:4 } },
-};
-var PERFIL_IDEAL_V2 = JSON.parse(JSON.stringify(PERFIL_IDEAL_V2_DEFAULT));
-
-function loadPilarConfig() {
-  try {
-    var saved = localStorage.getItem(LS_PILARES);
-    if (saved) {
-      var parsed = JSON.parse(saved);
-      Object.keys(parsed).forEach(function(pf) {
-        if (!PERFIL_IDEAL_V2[pf]) PERFIL_IDEAL_V2[pf] = { cognicion:{min:3}, emocion:{min:3}, conducta:{min:3} };
-        ['cognicion','emocion','conducta'].forEach(function(p) {
-          if (parsed[pf][p]) PERFIL_IDEAL_V2[pf][p] = parsed[pf][p];
-        });
-      });
-    }
-  } catch(e) {}
-}
-function savePilarConfig() {
-  try { localStorage.setItem(LS_PILARES, JSON.stringify(PERFIL_IDEAL_V2)); } catch(e) {}
-}
-
-function calcPilarScores(scores) {
-  var result = { cognicion:null, emocion:null, conducta:null, total:null };
-  ['cognicion','emocion','conducta'].forEach(function(pilar) {
-    var items = PILAR_MAP[pilar];
-    var totalPeso = 0, totalScore = 0;
-    items.forEach(function(item) {
-      var ts = scores[item.test];
-      if (!ts) return;
-      var val = item.key === 'pct' ? ts.pct : ts[item.key];
-      if (val === undefined || val === null) return;
-      totalPeso += item.peso;
-      totalScore += val * item.peso;
-    });
-    if (totalPeso > 0) result[pilar] = Math.round(totalScore / totalPeso);
-  });
-  var available = ['cognicion','emocion','conducta'].filter(function(p){ return result[p] !== null; });
-  result.total = available.length > 0 ? Math.round(available.reduce(function(a,p){ return a+result[p]; },0) / available.length) : 0;
-  return result;
-}
-
-function getPilarFit(pilarScores, perfil) {
-  var cfg = PERFIL_IDEAL_V2[perfil] || PERFIL_IDEAL_V2_DEFAULT[perfil] || { cognicion:{min:3}, emocion:{min:3}, conducta:{min:3} };
-  var fits = {};
-  ['cognicion','emocion','conducta'].forEach(function(p) {
-    if (pilarScores[p] === null) { fits[p] = null; return; }
-    var minScore = (cfg[p].min - 1) * 20;
-    var score = pilarScores[p];
-    fits[p] = score >= minScore ? Math.min(100, Math.round(50 + (score - minScore) / (100 - minScore) * 50)) : Math.round(score / minScore * 50);
-  });
-  var available = ['cognicion','emocion','conducta'].filter(function(p){ return fits[p] !== null; });
-  fits.total = available.length > 0 ? Math.round(available.reduce(function(a,p){ return a+fits[p]; },0) / available.length) : 0;
-  return fits;
-}
 
 // ═══════════════════════════════════════════════════════════
 //  DISC — PERFILES POR ZONA (Bajo/Medio/Alto)
@@ -7755,189 +7650,102 @@ function buildReportHtml(c, withClose) {
     html += '</div></div>';
   }
 
-  // ── Resultado global — solo categoría + % ────────────────────
-  html += '<div style="display:flex;align-items:center;gap:12px;padding:14px 20px;background:#fff;border:1px solid #e2e8f0;border-left:4px solid ' + verColor + ';border-radius:10px">';
-  html += '<div style="font-size:22px;font-weight:900;color:' + verColor + ';letter-spacing:-.02em">' + gFit + '%</div>';
-  html += '<div style="width:1px;height:28px;background:#e2e8f0;flex-shrink:0"></div>';
-  html += '<div style="font-size:13px;font-weight:800;color:' + verColor + ';letter-spacing:.01em">' + veredicto + '</div>';
-  html += '</div>';
-
-  // ── Ajuste por Área (mini score bars) ────────────────────────
+  // ── OPCIÓN 1: Hero Badge (WonScore style) ────────────────────
   {
-    var _secSortForSummary = ['pai','dc0','situacional','vigilancia','comprension','disc','pf16',
-      'game_crisis','game_dilemas','game_dilemas_op','game_detector','game_secuencias',
-      'game_impulsos','game_vigilancia','game_memoria'];
-    var _sumSections = rpt.sections.slice().sort(function(a,b){
-      return (_secSortForSummary.indexOf(a.id)<0?99:_secSortForSummary.indexOf(a.id))
-           - (_secSortForSummary.indexOf(b.id)<0?99:_secSortForSummary.indexOf(b.id));
-    });
+    var _badgeBg  = gFit>=80?'#16a34a':gFit>=55?'#d97706':'#dc2626';
+    var _badgeRing= gFit>=80?'#bbf7d0':gFit>=55?'#fde68a':'#fecaca';
+    var _badgeBgLight = gFit>=80?'#f0fdf4':gFit>=55?'#fffbeb':'#fef2f2';
+
+    // Compute 3 group averages: Aptitud, Psicológico, Práctico
     var _AREA_LABELS = {
       pai:'Ajuste Psicológico', dc0:'Aptitud Cognitiva', situacional:'Juicio Situacional',
       vigilancia:'Vigilancia', comprension:'Comprensión', disc:'DISC', pf16:'16PF',
-      game_crisis:'Sala de Crisis', game_dilemas:'Dilemas', game_dilemas_op:'Dilemas Op.',
-      game_detector:'Detector', game_secuencias:'Secuencias', game_impulsos:'Impulsos',
-      game_vigilancia:'Vig. Activa', game_memoria:'Memoria Op.'
+      game_crisis:'Sala de Crisis', game_dilemas:'Dilemas Supervisión', game_dilemas_op:'Dilemas Operacionales',
+      game_detector:'Detector de Estímulos', game_secuencias:'Secuencias Lógicas', game_impulsos:'Control de Impulsos',
+      game_vigilancia:'Vigilancia Activa', game_memoria:'Memoria Operativa'
     };
-    if (_sumSections.length > 0) {
+    var _grpApt   = ['dc0','comprension','situacional'];
+    var _grpPsic  = ['pai','disc','pf16','vigilancia'];
+    var _grpGame  = ['game_crisis','game_dilemas','game_dilemas_op','game_detector','game_secuencias','game_impulsos','game_vigilancia','game_memoria'];
+    var _grpAvg = function(ids) {
+      var vals = rpt.sections.filter(function(s){ return ids.indexOf(s.id)>=0; }).map(function(s){ return s.secFit; });
+      if (!vals.length) return null;
+      return Math.round(vals.reduce(function(a,b){return a+b;},0)/vals.length);
+    };
+    var _aptAvg  = _grpAvg(_grpApt);
+    var _psicAvg = _grpAvg(_grpPsic);
+    var _gameAvg = _grpAvg(_grpGame);
+    var _miniCol = function(v){ return v===null?'#94a3b8':v>=80?'#16a34a':v>=55?'#d97706':'#dc2626'; };
+    var _miniBg  = function(v){ return v===null?'#f8fafc':v>=80?'#f0fdf4':v>=55?'#fffbeb':'#fef2f2'; };
+
+    html += '<div style="background:' + _badgeBgLight + ';border:1.5px solid ' + _badgeRing + ';border-radius:16px;padding:28px 24px 22px;text-align:center">';
+
+    // Circle badge
+    html += '<div style="display:inline-flex;flex-direction:column;align-items:center;justify-content:center;'
+          + 'width:110px;height:110px;border-radius:50%;'
+          + 'background:' + _badgeBg + ';'
+          + 'box-shadow:0 0 0 6px ' + _badgeRing + ',0 8px 32px rgba(0,0,0,.15);'
+          + 'margin-bottom:14px">';
+    html += '<span style="font-size:30px;font-weight:900;color:#fff;line-height:1;letter-spacing:-.02em">' + gFit + '</span>';
+    html += '<span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.85);line-height:1;margin-top:3px">%</span>';
+    html += '</div>';
+
+    // Veredicto label
+    html += '<div style="font-size:16px;font-weight:900;color:' + _badgeBg + ';letter-spacing:.04em;text-transform:uppercase;margin-bottom:18px">' + veredicto + '</div>';
+
+    // 3 mini badges
+    html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">';
+    var _miniGroups = [
+      { label:'Aptitud', avg: _aptAvg },
+      { label:'Psicológico', avg: _psicAvg },
+      { label:'Práctico', avg: _gameAvg }
+    ];
+    _miniGroups.forEach(function(g) {
+      var col = _miniCol(g.avg);
+      var bg  = _miniBg(g.avg);
+      html += '<div style="background:' + bg + ';border:1px solid ' + col + '33;border-radius:10px;padding:10px 8px">';
+      html += '<div style="font-size:18px;font-weight:900;color:' + col + ';line-height:1">' + (g.avg !== null ? g.avg+'%' : '—') + '</div>';
+      html += '<div style="font-size:10px;color:#64748b;margin-top:3px;font-weight:600">' + g.label + '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+    html += '</div>';
+  }
+
+  // ── OPCIÓN 5: Ranking de Tests (Talogy style) ─────────────────
+  {
+    if (rpt.sections && rpt.sections.length > 0) {
+      var _ranked = rpt.sections.slice().sort(function(a,b){ return b.secFit - a.secFit; });
+      var _AREA_LABELS2 = {
+        pai:'Ajuste Psicológico', dc0:'Aptitud Cognitiva', situacional:'Juicio Situacional',
+        vigilancia:'Vigilancia', comprension:'Comprensión', disc:'DISC', pf16:'16PF',
+        game_crisis:'Sala de Crisis', game_dilemas:'Dilemas Supervisión', game_dilemas_op:'Dilemas Operacionales',
+        game_detector:'Detector de Estímulos', game_secuencias:'Secuencias Lógicas', game_impulsos:'Control de Impulsos',
+        game_vigilancia:'Vigilancia Activa', game_memoria:'Memoria Operativa'
+      };
       html += '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:18px 22px">';
-      html += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#94a3b8;margin-bottom:14px">Ajuste al perfil por área</div>';
-      html += '<div style="display:flex;flex-direction:column;gap:8px">';
-      _sumSections.forEach(function(sec) {
+      html += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#94a3b8;margin-bottom:14px">Ranking de ajuste por test</div>';
+      html += '<div style="display:flex;flex-direction:column;gap:0">';
+      _ranked.forEach(function(sec, idx) {
         var fit = sec.secFit;
         var fitCol = fit>=80?'#16a34a':fit>=55?'#d97706':'#dc2626';
-        var fitBg  = fit>=80?'#dcfce7':fit>=55?'#fef9c3':'#fee2e2';
-        html += '<div style="display:grid;grid-template-columns:130px 1fr 38px;align-items:center;gap:10px">';
-        html += '<span style="font-size:11px;color:#475569;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (_AREA_LABELS[sec.id]||sec.id) + '</span>';
-        html += '<div style="height:6px;background:#f1f5f9;border-radius:3px;position:relative;overflow:hidden">';
-        html += '<div style="height:100%;width:' + fit + '%;background:' + fitCol + ';border-radius:3px;transition:width .4s"></div>';
-        html += '</div>';
-        html += '<span style="font-size:11px;font-weight:700;color:' + fitCol + ';text-align:right">' + fit + '%</span>';
-        html += '</div>';
-      });
-      html += '</div></div>';
-    }
-  }
-
-  // ── 3 Pilares: cruce Cognición · Emoción · Conducta ──────────
-  {
-    var _pScores = calcPilarScores(s);
-    var _pilarDef = [
-      { key:'cognicion', label:'Cognición',  icon:'◈', col:'#4f46e5', bgC:'#eef2ff', brd:'#c7d2fe',
-        items:[
-          { test:'dc0', key:'V', label:'Verbal' }, { test:'dc0', key:'N', label:'Numérico' },
-          { test:'dc0', key:'L', label:'Lógico' }, { test:'comprension', key:'pct', label:'Comprensión' },
-          { test:'game_detector', key:'pct', label:'Atención' }, { test:'game_memoria', key:'pct', label:'Memoria' }
-        ]
-      },
-      { key:'emocion', label:'Emoción',    icon:'◈', col:'#0891b2', bgC:'#ecfeff', brd:'#a5f3fc',
-        items:[
-          { test:'pai', key:'EE', label:'Est. Emocional' }, { test:'pai', key:'AS', label:'Adapt. Social' },
-          { test:'pai', key:'ME', label:'Manejo Estrés' }, { test:'pf16', key:'AN', label:'Aj. Emocional (16PF)' },
-          { test:'game_impulsos', key:'pct', label:'Control Impulsos' }
-        ]
-      },
-      { key:'conducta', label:'Conducta',  icon:'◈', col:'#059669', bgC:'#ecfdf5', brd:'#6ee7b7',
-        items:[
-          { test:'pai', key:'ON', label:'Orientación Normativa' }, { test:'pai', key:'IL', label:'Integridad Laboral' },
-          { test:'disc', key:'S', label:'Estabilidad (DISC)' }, { test:'disc', key:'C', label:'Cumplimiento (DISC)' },
-          { test:'situacional', key:'pct', label:'Juicio Situacional' }, { test:'vigilancia', key:'pct', label:'Vigilancia' }
-        ]
-      }
-    ];
-    var _hasAnyPilar = _pilarDef.some(function(p){ return _pScores[p.key] !== null; });
-    if (_hasAnyPilar) {
-      html += '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:18px 22px">';
-      html += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#94a3b8;margin-bottom:14px">Análisis cruzado por pilar</div>';
-      html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">';
-      _pilarDef.forEach(function(pd) {
-        var score = _pScores[pd.key];
-        if (score === null) return;
-        var scoreCol = score>=70?'#16a34a':score>=45?'#d97706':'#dc2626';
-        html += '<div style="border:1px solid ' + pd.brd + ';border-radius:10px;padding:14px 16px;background:' + pd.bgC + '">';
-        html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">';
-        html += '<span style="font-size:11px;font-weight:800;color:' + pd.col + ';text-transform:uppercase;letter-spacing:.6px">' + pd.label + '</span>';
-        html += '<span style="font-size:20px;font-weight:900;color:' + scoreCol + ';line-height:1">' + score + '</span>';
-        html += '</div>';
-        // Mini dimension chips
-        var _dimItems = pd.items.filter(function(it){
-          var ts = s[it.test];
-          if (!ts) return false;
-          var val = it.key==='pct' ? ts.pct : ts[it.key];
-          return val !== undefined && val !== null;
-        });
-        html += '<div style="display:flex;flex-direction:column;gap:4px">';
-        _dimItems.forEach(function(it) {
-          var ts = s[it.test];
-          var val = it.key==='pct' ? ts.pct : ts[it.key];
-          var dimCol = val>=70?'#16a34a':val>=45?'#d97706':'#dc2626';
-          html += '<div style="display:flex;align-items:center;gap:6px">';
-          html += '<span style="font-size:9px;color:#64748b;flex:1;line-height:1.3">' + it.label + '</span>';
-          html += '<span style="font-size:9px;font-weight:700;color:' + dimCol + ';white-space:nowrap">' + val + '</span>';
-          html += '</div>';
-        });
-        html += '</div></div>';
-      });
-      html += '</div></div>';
-    }
-  }
-
-  // ── Patrones de consistencia (cruce entre tests) ─────────────
-  {
-    var _insights = [];
-    // 1. Estabilidad emocional — DISC-S vs PAI-EE vs 16PF-AN
-    var _discS = s.disc && s.disc.S !== undefined ? s.disc.S : null;
-    var _paiEE = s.pai  && s.pai.EE  !== undefined ? s.pai.EE  : null;
-    var _pfAN  = s.pf16 && s.pf16.AN !== undefined ? s.pf16.AN : null;
-    if ((_discS!==null || _paiEE!==null) && _pfAN!==null) {
-      var _vals = [_discS,_paiEE,_pfAN].filter(function(v){return v!==null;});
-      var _avg  = Math.round(_vals.reduce(function(a,b){return a+b;},0)/_vals.length);
-      var _max  = Math.max.apply(null,_vals), _min = Math.min.apply(null,_vals);
-      var _gap  = _max - _min;
-      var _note = _gap >= 25 ? 'Inconsistencia entre mediciones — explorar en entrevista.' : (_avg>=65 ? 'Consistente y estable.' : 'Vulnerabilidad emocional presente en múltiples mediciones.');
-      _insights.push({ label:'Estabilidad emocional', points:[
-        _paiEE!==null?{src:'PAI',val:_paiEE}:null, _pfAN!==null?{src:'16PF',val:_pfAN}:null, _discS!==null?{src:'DISC·S',val:_discS}:null
-      ].filter(Boolean), score:_avg, note:_note });
-    }
-    // 2. Autocontrol — 16PF-AC vs game_impulsos
-    var _pfAC   = s.pf16 && s.pf16.AC !== undefined ? s.pf16.AC : null;
-    var _gImp   = s.game_impulsos && s.game_impulsos.pct !== undefined ? s.game_impulsos.pct : null;
-    if (_pfAC!==null && _gImp!==null) {
-      var _acAvg  = Math.round((_pfAC+_gImp)/2);
-      var _acGap  = Math.abs(_pfAC-_gImp);
-      var _acNote = _acGap>=25 ? 'Autoinforme vs comportamiento presentan divergencia.' : (_acAvg>=65?'Autocontrol sólido en ambas mediciones.':'Déficit de autocontrol consistente — revisar.');
-      _insights.push({ label:'Autocontrol conductual', points:[{src:'16PF',val:_pfAC},{src:'Juego',val:_gImp}], score:_acAvg, note:_acNote });
-    }
-    // 3. Adherencia normativa — PAI-ON vs DISC-C vs comprensión
-    var _paiON  = s.pai && s.pai.ON !== undefined ? s.pai.ON : null;
-    var _discC  = s.disc && s.disc.C !== undefined ? s.disc.C : null;
-    var _compPct= s.comprension && s.comprension.pct !== undefined ? s.comprension.pct : null;
-    if ((_paiON!==null || _discC!==null) && _compPct!==null) {
-      var _nVals  = [_paiON,_discC,_compPct].filter(function(v){return v!==null;});
-      var _nAvg   = Math.round(_nVals.reduce(function(a,b){return a+b;},0)/_nVals.length);
-      var _nNote  = _nAvg>=70 ? 'Alto apego a normas y procedimientos.' : _nAvg>=50 ? 'Adecuada orientación normativa.' : 'Señales de baja adherencia normativa — revisar.';
-      _insights.push({ label:'Orientación normativa', points:[
-        _paiON!==null?{src:'PAI',val:_paiON}:null, _discC!==null?{src:'DISC·C',val:_discC}:null, _compPct!==null?{src:'Comprensión',val:_compPct}:null
-      ].filter(Boolean), score:_nAvg, note:_nNote });
-    }
-    // 4. Aptitud aplicada — DC0 media vs Situacional
-    var _dc0Vals= s.dc0 ? ['V','N','L'].map(function(k){return s.dc0[k];}).filter(function(v){return v!==null&&v!==undefined;}) : [];
-    var _dc0Avg = _dc0Vals.length>0 ? Math.round(_dc0Vals.reduce(function(a,b){return a+b;},0)/_dc0Vals.length) : null;
-    var _sitPct = s.situacional && s.situacional.pct !== undefined ? s.situacional.pct : null;
-    if (_dc0Avg!==null && _sitPct!==null) {
-      var _apGap  = _dc0Avg - _sitPct;
-      var _apNote = _apGap>=20 ? 'Capacidad cognitiva superior al criterio demostrado — gap de aplicación.' : _apGap<=-15 ? 'Juicio situacional supera la aptitud medida — resultado atípico, explorar.' : 'Aptitud cognitiva consistente con decisiones situacionales.';
-      _insights.push({ label:'Aptitud aplicada', points:[{src:'DC-0',val:_dc0Avg},{src:'Situacional',val:_sitPct}], score:Math.round((_dc0Avg+_sitPct)/2), note:_apNote });
-    }
-    // 5. Atención sostenida — vigilancia vs game_vigilancia
-    var _vigPct  = s.vigilancia && s.vigilancia.pct !== undefined ? s.vigilancia.pct : null;
-    var _gVigPct = s.game_vigilancia && s.game_vigilancia.pct !== undefined ? s.game_vigilancia.pct : null;
-    if (_vigPct!==null && _gVigPct!==null) {
-      var _atAvg  = Math.round((_vigPct+_gVigPct)/2);
-      var _atGap  = Math.abs(_vigPct-_gVigPct);
-      var _atNote = _atGap>=25 ? 'Resultado dispar entre prueba de papel y prueba gamificada — revisar condiciones.' : (_atAvg>=65?'Atención sostenida consistente en ambas mediciones.':'Déficit de atención identificado de forma consistente.');
-      _insights.push({ label:'Atención sostenida', points:[{src:'Vigilancia',val:_vigPct},{src:'Jue. Vigilancia',val:_gVigPct}], score:_atAvg, note:_atNote });
-    }
-
-    if (_insights.length > 0) {
-      html += '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:18px 22px">';
-      html += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#94a3b8;margin-bottom:14px">Consistencia entre instrumentos</div>';
-      html += '<div style="display:flex;flex-direction:column;gap:0">';
-      _insights.forEach(function(ins, ii) {
-        var iCol = ins.score>=70?'#16a34a':ins.score>=50?'#d97706':'#dc2626';
-        html += '<div style="display:grid;grid-template-columns:160px 1fr auto;align-items:start;gap:14px;padding:10px 0;' + (ii>0?'border-top:1px solid #f1f5f9':'') + '">';
-        // Label
+        var fitBg  = fit>=80?'#f0fdf4':fit>=55?'#fffbeb':'#fef2f2';
+        var icon   = fit>=80?'✓':fit>=55?'⚠':'✗';
+        var iconBg = fit>=80?'#dcfce7':fit>=55?'#fef9c3':'#fee2e2';
+        html += '<div style="display:grid;grid-template-columns:24px 1fr auto 44px 28px;align-items:center;gap:10px;padding:9px 0;'
+              + (idx>0?'border-top:1px solid #f1f5f9':'') + '">';
+        // Rank number
+        html += '<span style="font-size:10px;font-weight:700;color:#cbd5e1;text-align:center">' + (idx+1) + '</span>';
+        // Label + bar
         html += '<div>';
-        html += '<div style="font-size:12px;font-weight:700;color:#0f172a">' + ins.label + '</div>';
-        html += '<div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap">';
-        ins.points.forEach(function(pt) {
-          var ptCol = pt.val>=70?'#16a34a':pt.val>=50?'#d97706':'#dc2626';
-          html += '<span style="font-size:9px;color:#64748b;background:#f8fafc;border:1px solid #e2e8f0;border-radius:4px;padding:1px 6px">' + pt.src + ' <b style="color:' + ptCol + '">' + pt.val + '</b></span>';
-        });
+        html += '<div style="font-size:11px;font-weight:600;color:#334155;margin-bottom:4px">' + (_AREA_LABELS2[sec.id]||sec.id) + '</div>';
+        html += '<div style="height:5px;background:#f1f5f9;border-radius:3px;overflow:hidden">';
+        html += '<div style="height:100%;width:' + fit + '%;background:' + fitCol + ';border-radius:3px"></div>';
         html += '</div></div>';
-        // Note
-        html += '<div style="font-size:11px;color:#475569;line-height:1.5;padding-top:1px">' + ins.note + '</div>';
-        // Score
-        html += '<div style="font-size:22px;font-weight:900;color:' + iCol + ';white-space:nowrap;padding-top:1px">' + ins.score + '<span style="font-size:10px;font-weight:500;color:#94a3b8">%</span></div>';
+        // % badge
+        html += '<span style="font-size:12px;font-weight:800;color:' + fitCol + '">' + fit + '%</span>';
+        // Status chip
+        html += '<span style="font-size:10px;font-weight:800;color:' + fitCol + ';background:' + iconBg + ';border-radius:6px;padding:2px 0;text-align:center">' + icon + '</span>';
         html += '</div>';
       });
       html += '</div></div>';
@@ -10176,12 +9984,6 @@ function toggleBatteryExpand(perfil, tid) {
   renderBateriaTab();
 }
 
-function pickPilarLevel(perfil, pilar, lv) {
-  if (!PERFIL_IDEAL_V2[perfil]) PERFIL_IDEAL_V2[perfil] = { cognicion:{min:3}, emocion:{min:3}, conducta:{min:3} };
-  PERFIL_IDEAL_V2[perfil][pilar] = { min: lv };
-  savePilarConfig();
-  renderBateriaTab();
-}
 
 
 function persistParams() {
