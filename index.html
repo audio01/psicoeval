@@ -7712,10 +7712,130 @@ function buildReportHtml(c, withClose) {
     html += '</div>';
   }
 
+  // ── Síntesis integrativa (estilo psicólogo experto) ──────────
+  {
+    // ── recolectar datos clave ───────────────────────────────────
+    var _siDisc = rpt.sections.find(function(x){ return x.id==='disc'; });
+    var _siPf16 = rpt.sections.find(function(x){ return x.id==='pf16'; });
+    var _siDc0  = rpt.sections.find(function(x){ return x.id==='dc0'; });
+    var _siPai  = rpt.sections.find(function(x){ return x.id==='pai'; });
+
+    // Cognitivo
+    var _cogFit = _siDc0 ? _siDc0.secFit : null;
+    var _cogLbl = _cogFit===null ? null : _cogFit>=80 ? 'adecuada para las exigencias del cargo' : _cogFit>=55 ? 'dentro de rangos funcionales aunque con margen de desarrollo' : 'por debajo del umbral requerido para el cargo';
+
+    // Ajuste psicológico (PAI)
+    var _paiScore = _siPai ? (_siPai.dims.find(function(d){ return d.key==='EE'; }) || {}).score : null;
+    var _paiMe    = _siPai ? (_siPai.dims.find(function(d){ return d.key==='ME'; }) || {}).score : null;
+    var _paiIl    = _siPai ? (_siPai.dims.find(function(d){ return d.key==='IL'; }) || {}).score : null;
+
+    // DISC: polo dominante y polo bajo
+    var _dTop2 = null, _dLow2 = null;
+    var _DISC_NM = { D:'orientación a resultados', I:'influencia social', S:'estabilidad conductual', C:'cumplimiento normativo' };
+    var _DISC_NM_ADJ = { D:'orientado a resultados con tendencia dominante', I:'comunicativo e influyente socialmente', S:'estable conductualmente y predecible bajo rutina', C:'normativo, preciso y orientado al procedimiento' };
+    if (_siDisc && _siDisc.dims) {
+      _dTop2 = _siDisc.dims.slice().sort(function(a,b){ return b.score-a.score; })[0];
+      _dLow2 = _siDisc.dims.slice().sort(function(a,b){ return a.score-b.score; })[0];
+    }
+
+    // 16PF: factores relevantes
+    var _pf = {};
+    if (_siPf16 && _siPf16.dims) _siPf16.dims.forEach(function(d){ _pf[d.key]=d.score; });
+    var _pfAN = _pf.AN !== undefined ? _pf.AN : null;
+    var _pfAC = _pf.AC !== undefined ? _pf.AC : null;
+    var _pfEX = _pf.EX !== undefined ? _pf.EX : null;
+    var _pfIN = _pf.IN !== undefined ? _pf.IN : null;
+
+    // Tests con ajuste alto / bajo (excluye disc/pf16)
+    var _siHigh = rpt.sections.filter(function(x){ return x.id!=='disc'&&x.id!=='pf16'&&x.secFit>=75; });
+    var _siLow  = rpt.sections.filter(function(x){ return x.id!=='disc'&&x.id!=='pf16'&&x.secFit<55; });
+    var _NLsi = { pai:'ajuste psicológico', dc0:'aptitud cognitiva', situacional:'juicio situacional', vigilancia:'vigilancia', comprension:'comprensión de instrucciones', game_crisis:'manejo de crisis bajo presión', game_dilemas:'toma de decisiones éticas', game_dilemas_op:'dilemas operacionales', game_detector:'atención focalizada', game_secuencias:'razonamiento secuencial', game_impulsos:'control de impulsos', game_vigilancia:'vigilancia activa', game_memoria:'memoria operativa' };
+    var _nameOf = function(sec){ return '<strong>'+ (_NLsi[sec.id]||sec.title) +'</strong>'; };
+
+    // ── Párrafo 1: cognitivo + conductual + personalidad ─────────
+    var _p1Parts = [];
+
+    // Apertura según ajuste global
+    if (gFit >= 80) {
+      _p1Parts.push('El/la evaluado/a presenta un <strong>perfil psicolaboral sólido y consistente con los requerimientos del cargo</strong> (' + gFit + '% de ajuste global).');
+    } else if (gFit >= 55) {
+      _p1Parts.push('El/la evaluado/a evidencia un <strong>ajuste parcial al perfil del cargo</strong> (' + gFit + '%), con competencias funcionales en áreas relevantes y brechas que deben considerarse en la toma de decisión.');
+    } else {
+      _p1Parts.push('El/la evaluado/a presenta un <strong>ajuste insuficiente al perfil del cargo</strong> (' + gFit + '%), con brechas significativas en dimensiones consideradas críticas para el desempeño esperado.');
+    }
+
+    // Capacidad cognitiva
+    if (_cogLbl) {
+      _p1Parts.push('A nivel cognitivo, su capacidad se sitúa ' + _cogLbl + (gFit>=55?', evidenciando recursos intelectuales ' + (_cogFit>=75?'suficientes para el análisis y la toma de decisiones requeridas.':'básicos para el desempeño del rol.'):'debiéndose considerar como factor limitante.'));
+    }
+
+    // Conductual DISC
+    if (_dTop2 && _dTop2.score >= 60) {
+      var _discAdj = _DISC_NM_ADJ[_dTop2.key] || 'con estilo conductual definido';
+      var _discStr = 'Conductualmente, se muestra <strong>' + _discAdj + '</strong>';
+      if (_dLow2 && _dLow2.score < 40 && _dLow2.key !== _dTop2.key) {
+        _discStr += ', con menor énfasis en ' + (_DISC_NM[_dLow2.key]||'') + '';
+      }
+      _p1Parts.push(_discStr + '.');
+    }
+
+    // Personalidad 16PF (ajuste emocional + autocontrol son los más relevantes para selección)
+    var _pfBits = [];
+    if (_pfAN !== null) {
+      if (_pfAN >= 70) _pfBits.push('<strong>estabilidad emocional</strong> para afrontar situaciones de presión');
+      else if (_pfAN <= 35) _pfBits.push('<strong>reactividad emocional elevada</strong> que puede comprometer el desempeño bajo estrés');
+    }
+    if (_pfAC !== null) {
+      if (_pfAC >= 70) _pfBits.push('<strong>alta autodisciplina y orientación normativa</strong>');
+      else if (_pfAC <= 35) _pfBits.push('<strong>baja regulación conductual</strong> que requiere supervisión activa en entornos normados');
+    }
+    if (_pfIN !== null && _pfIN >= 70) _pfBits.push('marcada independencia de criterio');
+    if (_pfEX !== null && _pfEX >= 70) _pfBits.push('disposición proactiva hacia el contacto social');
+    if (_pfBits.length) {
+      _p1Parts.push('El perfil de personalidad (16PF) revela ' + _pfBits.join(', con ') + '.');
+    }
+
+    var _p1 = _p1Parts.join(' ');
+
+    // ── Párrafo 2: fortalezas críticas + brechas relevantes ──────
+    var _p2Parts = [];
+
+    if (_siHigh.length) {
+      var _highNames = _siHigh.slice(0,3).map(_nameOf);
+      var _highStr = _highNames.length > 1
+        ? _highNames.slice(0,-1).join(', ') + ' y ' + _highNames[_highNames.length-1]
+        : _highNames[0];
+      _p2Parts.push('Entre sus competencias más desarrolladas destacan ' + _highStr + ', constituyendo recursos diferenciadores para el rol.');
+    }
+
+    if (_siLow.length) {
+      var _lowNames = _siLow.slice(0,3).map(_nameOf);
+      var _lowStr = _lowNames.length > 1
+        ? _lowNames.slice(0,-1).join(', ') + ' y ' + _lowNames[_lowNames.length-1]
+        : _lowNames[0];
+      var _lowSuffix = gFit >= 80
+        ? 'dimensiones que, si bien no invalidan su candidatura, deberían abordarse en el proceso de inducción.'
+        : gFit >= 55
+        ? 'aspectos que se recomienda explorar y ponderar en la entrevista por competencias.'
+        : 'brechas que representan un riesgo operacional relevante para el cargo.';
+      _p2Parts.push('Se identifican oportunidades de desarrollo en ' + _lowStr + ', ' + _lowSuffix);
+    } else if (gFit >= 80) {
+      _p2Parts.push('No se registran brechas significativas en las áreas evaluadas, lo que refuerza la recomendación de avanzar en el proceso selectivo.');
+    }
+
+    var _p2 = _p2Parts.join(' ');
+
+    // ── Render ───────────────────────────────────────────────────
+    html += '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:18px 22px">';
+    html += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#94a3b8;margin-bottom:12px">Síntesis integrativa</div>';
+    html += '<p style="font-size:12.5px;color:#334155;line-height:1.9;margin:0 0 ' + (_p2?'12px':'0') + '">' + _p1 + '</p>';
+    if (_p2) html += '<p style="font-size:12.5px;color:#334155;line-height:1.9;margin:0">' + _p2 + '</p>';
+    html += '</div>';
+  }
+
   // ── OPCIÓN 5: Ranking de Tests (Talogy style) ─────────────────
   {
     if (rpt.sections && rpt.sections.length > 0) {
-      var _ranked = rpt.sections.slice().sort(function(a,b){ return b.secFit - a.secFit; });
       var _AREA_LABELS2 = {
         pai:'Ajuste Psicológico', dc0:'Aptitud Cognitiva', situacional:'Juicio Situacional',
         vigilancia:'Vigilancia', comprension:'Comprensión', disc:'DISC', pf16:'16PF',
@@ -7723,32 +7843,246 @@ function buildReportHtml(c, withClose) {
         game_detector:'Detector de Estímulos', game_secuencias:'Secuencias Lógicas', game_impulsos:'Control de Impulsos',
         game_vigilancia:'Vigilancia Activa', game_memoria:'Memoria Operativa'
       };
-      html += '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:18px 22px">';
+      // Separate DISC/16PF from the rest; sort others by fit desc
+      var _secDisc  = rpt.sections.find(function(s){ return s.id==='disc'; });
+      var _secPf16  = rpt.sections.find(function(s){ return s.id==='pf16'; });
+      var _secOthers = rpt.sections.filter(function(s){ return s.id!=='disc'&&s.id!=='pf16'; })
+                        .sort(function(a,b){ return b.secFit - a.secFit; });
+
+      var _fitCol = function(v){ return v>=80?'#16a34a':v>=55?'#d97706':'#dc2626'; };
+      var _fitBg  = function(v){ return v>=80?'#f0fdf4':v>=55?'#fffbeb':'#fef2f2'; };
+      var _fitRing= function(v){ return v>=80?'#bbf7d0':v>=55?'#fde68a':'#fecaca'; };
+      var _icon   = function(v){ return v>=80?'✓':v>=55?'⚠':'✗'; };
+
+      html += '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:18px 20px;max-width:600px;margin:0 auto;width:100%">';
       html += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#94a3b8;margin-bottom:14px">Ranking de ajuste por test</div>';
-      html += '<div style="display:flex;flex-direction:column;gap:0">';
-      _ranked.forEach(function(sec, idx) {
+
+      // ── Others: 2 per row as compact cards ──────────────────
+      html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">';
+      _secOthers.forEach(function(sec, idx) {
         var fit = sec.secFit;
-        var fitCol = fit>=80?'#16a34a':fit>=55?'#d97706':'#dc2626';
-        var fitBg  = fit>=80?'#f0fdf4':fit>=55?'#fffbeb':'#fef2f2';
-        var icon   = fit>=80?'✓':fit>=55?'⚠':'✗';
-        var iconBg = fit>=80?'#dcfce7':fit>=55?'#fef9c3':'#fee2e2';
-        html += '<div style="display:grid;grid-template-columns:24px 1fr auto 44px 28px;align-items:center;gap:10px;padding:9px 0;'
-              + (idx>0?'border-top:1px solid #f1f5f9':'') + '">';
-        // Rank number
-        html += '<span style="font-size:10px;font-weight:700;color:#cbd5e1;text-align:center">' + (idx+1) + '</span>';
-        // Label + bar
-        html += '<div>';
-        html += '<div style="font-size:11px;font-weight:600;color:#334155;margin-bottom:4px">' + (_AREA_LABELS2[sec.id]||sec.id) + '</div>';
-        html += '<div style="height:5px;background:#f1f5f9;border-radius:3px;overflow:hidden">';
-        html += '<div style="height:100%;width:' + fit + '%;background:' + fitCol + ';border-radius:3px"></div>';
+        html += '<div style="background:' + _fitBg(fit) + ';border:1px solid ' + _fitRing(fit) + ';border-radius:10px;padding:10px 12px">';
+        // Top row: label + icon + %
+        html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">';
+        html += '<span style="font-size:10px;font-weight:700;color:#334155;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px">' + (_AREA_LABELS2[sec.id]||sec.id) + '</span>';
+        html += '<div style="display:flex;align-items:center;gap:5px;flex-shrink:0">';
+        html += '<span style="font-size:12px;font-weight:900;color:' + _fitCol(fit) + '">' + fit + '%</span>';
+        html += '<span style="font-size:9px;font-weight:800;color:' + _fitCol(fit) + ';width:16px;height:16px;border-radius:50%;background:' + _fitRing(fit) + ';display:inline-flex;align-items:center;justify-content:center">' + _icon(fit) + '</span>';
         html += '</div></div>';
-        // % badge
-        html += '<span style="font-size:12px;font-weight:800;color:' + fitCol + '">' + fit + '%</span>';
-        // Status chip
-        html += '<span style="font-size:10px;font-weight:800;color:' + fitCol + ';background:' + iconBg + ';border-radius:6px;padding:2px 0;text-align:center">' + icon + '</span>';
-        html += '</div>';
+        // Bar
+        html += '<div style="height:4px;background:#e2e8f0;border-radius:2px;overflow:hidden">';
+        html += '<div style="height:100%;width:' + fit + '%;background:' + _fitCol(fit) + ';border-radius:2px"></div>';
+        html += '</div></div>';
       });
-      html += '</div></div>';
+      html += '</div>';
+
+      html += '</div>'; // end ranking card
+
+      // ── DISC — detalle completo ───────────────────────────────
+      if (_secDisc) {
+        var _sd = _secDisc;
+        var _sdFit = _sd.secFit;
+        var _sdCol = _fitCol(_sdFit), _sdBg = _fitBg(_sdFit), _sdRing = _fitRing(_sdFit);
+        html += '<div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:18px 20px;max-width:600px;margin:0 auto;width:100%">';
+        // Header
+        html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">';
+        html += '<div style="font-size:13px;font-weight:800;color:#0f172a">DISC — Perfil Conductual</div>';
+        html += '<span style="font-size:12px;font-weight:800;color:' + _sdCol + ';background:' + _sdBg + ';border:1px solid ' + _sdRing + ';border-radius:8px;padding:3px 10px">' + _sdFit + '%  ' + _icon(_sdFit) + '</span>';
+        html += '</div>';
+        // Profile badge
+        var _dsSorted = _sd.dims.slice().sort(function(a,b){ return b.score-a.score; });
+        var _dsAlto = _dsSorted.filter(function(d){ return d.score>=65; });
+        var _dsPKeys = (_dsAlto.length>=2?_dsAlto.slice(0,2):_dsSorted.slice(0,2)).map(function(d){ return d.key; });
+        var _dsPKey = _dsPKeys.join('');
+        var _dsPD = DISC_STYLE_PROFILES[_dsPKey] || DISC_STYLE_PROFILES[_dsPKeys[0]] || { name:'Perfil mixto', tagline:'', fortalezas:[], dificultades:[], motivaciones:[], frustraciones:[], trabajaMejorCon:'' };
+        var _liS = function(arr){ return arr.map(function(t){ return '<li style="margin-bottom:3px">'+t+'</li>'; }).join(''); };
+        html += '<div style="border-radius:10px;overflow:hidden;margin-bottom:14px;box-shadow:0 2px 8px rgba(79,70,229,.1)">'
+          + '<div style="background:linear-gradient(135deg,#4f46e5,#7c3aed);padding:12px 16px;color:#fff">'
+          + '<div style="font-size:9px;opacity:.75;text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px">Perfil conductual obtenido</div>'
+          + '<div style="font-size:17px;font-weight:900;margin-bottom:3px">'+_dsPD.name+'</div>'
+          + '<div style="font-size:11px;opacity:.9;line-height:1.5">'+_dsPD.tagline+'</div>'
+          + '</div>'
+          + '<div style="background:#fafbff;padding:12px 16px;border:1.5px solid #e0e7ff;border-top:none;border-radius:0 0 10px 10px">'
+          + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">'
+          + '<div><div style="font-size:9px;font-weight:800;color:#16a34a;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Fortalezas</div><ul style="margin:0;padding-left:14px;font-size:10px;color:#1e293b;line-height:1.7">'+_liS(_dsPD.fortalezas)+'</ul></div>'
+          + '<div><div style="font-size:9px;font-weight:800;color:#dc2626;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Dificultades</div><ul style="margin:0;padding-left:14px;font-size:10px;color:#1e293b;line-height:1.7">'+_liS(_dsPD.dificultades)+'</ul></div>'
+          + '</div>'
+          + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">'
+          + '<div style="background:#f0fdf4;border-radius:8px;padding:8px 10px"><div style="font-size:9px;font-weight:800;color:#15803d;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Motivado por</div><ul style="margin:0;padding-left:14px;font-size:10px;color:#1e293b;line-height:1.7">'+_liS(_dsPD.motivaciones)+'</ul></div>'
+          + '<div style="background:#fef2f2;border-radius:8px;padding:8px 10px"><div style="font-size:9px;font-weight:800;color:#b91c1c;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Frustraciones</div><ul style="margin:0;padding-left:14px;font-size:10px;color:#1e293b;line-height:1.7">'+_liS(_dsPD.frustraciones)+'</ul></div>'
+          + '</div>'
+          + '<div style="background:#eff6ff;border-radius:8px;padding:8px 10px"><div style="font-size:9px;font-weight:800;color:#1d4ed8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">Trabaja mejor con</div><div style="font-size:10px;color:#1e293b;line-height:1.6">'+_dsPD.trabajaMejorCon+'</div></div>'
+          + '</div></div>';
+        // Dimension cards
+        var _DISC_FD = {
+          D:{ bajo:'Baja orientación dominante. Prefiere ejecutar antes que liderar.',medio:'Orientación a resultados moderada. Toma iniciativa en situaciones familiares.',alto:'Alta orientación a resultados. Enfrenta desafíos de forma directa y asume riesgos calculados.' },
+          I:{ bajo:'Baja orientación social. Prefiere trabajo independiente.',medio:'Influencia social adecuada. Se comunica bien en entornos conocidos.',alto:'Alta capacidad de influencia. Comunicativo, construye relaciones con facilidad.' },
+          S:{ bajo:'Se adapta rápido a cambios, busca variedad y dinamismo.',medio:'Estabilidad moderada. Se adapta razonablemente aunque prefiere la continuidad.',alto:'Alta estabilidad. Valora entornos predecibles y produce resultados sólidos en rutinas.' },
+          C:{ bajo:'Prioriza velocidad sobre procedimientos. Requiere supervisión en tareas de detalle.',medio:'Respeta normas en general con cierta flexibilidad.',alto:'Alta orientación al cumplimiento. Sigue procedimientos con precisión.' }
+        };
+        var _DISC_DIM_LBL = { D:'Dominancia', I:'Influencia', S:'Estabilidad', C:'Cumplimiento' };
+        html += '<div style="display:flex;flex-direction:column;gap:8px">';
+        _sd.dims.forEach(function(d) {
+          var _dz = DISC_ZONES[d.zone]||DISC_ZONES.medio;
+          var _ez = DISC_ZONES[d.expected]||DISC_ZONES.medio;
+          var _inZ = d.zone===d.expected;
+          var _adjZ = !_inZ&&(d.zone==='medio'||d.expected==='medio');
+          var _stC = _inZ?'#16a34a':_adjZ?'#d97706':'#dc2626';
+          var _stB = _inZ?'#f0fdf4':_adjZ?'#fffbeb':'#fef2f2';
+          var _stL = _inZ?'✓ En zona':_adjZ?'≈ Adyacente':'✗ Fuera del perfil';
+          var _dDesc = (_DISC_FD[d.key]||{})[d.zone]||'';
+          html += '<div style="background:#fff;border-radius:10px;border:1.5px solid '+(_inZ?'#bbf7d0':_adjZ?'#fde68a':'#fecaca')+';padding:12px 14px">';
+          html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px">';
+          html += '<div style="font-size:13px;font-weight:700;color:#0f172a">'+_DISC_DIM_LBL[d.key]+'<span style="font-size:10px;font-weight:400;color:#94a3b8;margin-left:6px">'+d.score+'/100</span></div>';
+          html += '<div style="display:flex;gap:6px;align-items:center">';
+          html += '<span style="font-size:9px;padding:2px 8px;border-radius:100px;background:'+_ez.bg+';border:1px solid '+_ez.border+';color:'+_ez.color+'">Esperado: '+_ez.label+'</span>';
+          html += '<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:100px;background:'+_stB+';color:'+_stC+'">'+_stL+'</span>';
+          html += '</div></div>';
+          html += '<div style="display:flex;height:6px;border-radius:100px;overflow:hidden;margin-bottom:6px">';
+          ['bajo','medio','alto'].forEach(function(z){ var zc=DISC_ZONES[z]; var isE=z===d.expected; var isC=z===d.zone; html += '<div style="flex:1;background:'+(isC?zc.color:'#e2e8f0')+';'+(isE?'outline:2px solid '+zc.color+';outline-offset:-2px;':'')+' "></div>'; });
+          html += '</div>';
+          html += '<div style="display:flex;justify-content:space-between;font-size:9px;color:#94a3b8;margin-bottom:6px"><span>Bajo</span><span>Medio</span><span>Alto</span></div>';
+          if (_dDesc) html += '<div style="font-size:11px;line-height:1.6;color:#475569">'+_dDesc+'</div>';
+          html += '</div>';
+        });
+        html += '</div>';
+        html += '<div style="font-size:9px;color:#94a3b8;margin-top:10px;font-style:italic">El DISC mide estilo conductual, no aptitud — no hay puntajes buenos o malos.</div>';
+        html += '</div>'; // end DISC card
+      }
+
+      // ── 16PF — detalle completo ───────────────────────────────
+      if (_secPf16) {
+        var _sp = _secPf16;
+        var _spFit = _sp.secFit;
+        var _spCol = _fitCol(_spFit), _spBg = _fitBg(_spFit), _spRing = _fitRing(_spFit);
+        var _pf2 = {}; _sp.dims.forEach(function(d){ _pf2[d.key]=d.score; });
+        var _pz2 = function(sv){ return sv>=65?'hi':sv<=35?'lo':'mid'; };
+        var _sten2 = function(sv){ return Math.min(10,Math.max(1,Math.round(sv/10))); };
+        var _liHpf = function(arr){ return arr.map(function(t){ return '<li style="margin-bottom:3px">'+t+'</li>'; }).join(''); };
+
+        html += '<div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:18px 20px;max-width:600px;margin:0 auto;width:100%">';
+        // Header
+        html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">';
+        html += '<div style="font-size:13px;font-weight:800;color:#0f172a">16PF — Perfil de Personalidad</div>';
+        html += '<span style="font-size:12px;font-weight:800;color:'+_spCol+';background:'+_spBg+';border:1px solid '+_spRing+';border-radius:8px;padding:3px 10px">'+_spFit+'%  '+_icon(_spFit)+'</span>';
+        html += '</div>';
+
+        // Factores bipolares
+        html += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#64748b;margin-bottom:10px">Perfil de factores</div>';
+        html += '<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">';
+        _sp.dims.forEach(function(d){
+          var st2 = _sten2(d.score);
+          var pl2 = _POLES16[d.key]||{lo:'Bajo',hi:'Alto',col:'#64748b'};
+          var stZone2 = st2>=8?'hi':st2<=3?'lo':'mid';
+          var exp2 = _sp.pf16Profile?_sp.pf16Profile[d.key]:null;
+          var expLo2 = exp2==='bajo'?0:exp2==='medio'?40:70;
+          var expHi2 = exp2==='bajo'?39:exp2==='medio'?69:100;
+          var inZone2b = d.score>=expLo2&&d.score<=expHi2;
+          var mCol2 = inZone2b?'#16a34a':'#d97706';
+          html += '<div style="background:#f8fafc;border-radius:10px;padding:10px 14px">'
+            + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">'
+            + '<span style="font-size:10.5px;font-weight:800;color:#0f172a;min-width:110px">'+(d.label||d.key)+'</span>'
+            + '<span style="font-size:9px;font-weight:700;color:'+pl2.col+';background:'+pl2.col+'15;padding:2px 8px;border-radius:100px;white-space:nowrap">Sten '+st2+'</span>'
+            + '<span style="font-size:9px;color:'+mCol2+';font-weight:600;margin-left:auto;white-space:nowrap">'+(inZone2b?'✓ En zona':'⚠ Fuera de zona')+'</span>'
+            + '</div>'
+            + '<div style="display:grid;grid-template-columns:80px 1fr 80px;gap:6px;align-items:center">'
+            + '<span style="font-size:8.5px;color:#94a3b8;text-align:right">'+pl2.lo+'</span>'
+            + '<div style="position:relative;height:8px;background:#e2e8f0;border-radius:4px">'
+            + '<div style="position:absolute;top:0;bottom:0;left:'+expLo2+'%;width:'+(expHi2-expLo2)+'%;background:'+pl2.col+'30;border-radius:4px"></div>'
+            + '<div style="position:absolute;top:-3px;bottom:-3px;width:4px;left:calc('+d.score+'% - 2px);background:'+pl2.col+';border-radius:2px;box-shadow:0 0 0 2px #fff"></div>'
+            + '</div>'
+            + '<span style="font-size:8.5px;color:#94a3b8">'+pl2.hi+'</span>'
+            + '</div>'
+            + (stZone2!=='mid'?'<div style="font-size:9px;color:'+pl2.col+';margin-top:5px;font-weight:600">Polo activo: '+(stZone2==='hi'?pl2.hi:pl2.lo)+'</div>':'')
+            + '</div>';
+        });
+        html += '</div>';
+
+        // Factores con expresión clara (sten >=7 o <=3)
+        var _hiF2 = _sp.dims.filter(function(d){ return _sten2(d.score)>=7; });
+        var _loF2 = _sp.dims.filter(function(d){ return _sten2(d.score)<=3; });
+        if (_hiF2.length||_loF2.length) {
+          html += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#64748b;margin-bottom:8px">Factores con expresión clara</div>';
+          html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px;margin-bottom:16px">';
+          _hiF2.forEach(function(d){
+            var pl2=_POLES16[d.key]||{hi:'Alto',col:'#0d9488'};
+            var ctr2=_PF16_CTR[d.key]&&_PF16_CTR[d.key].hi;
+            var forts2=ctr2?ctr2.forts.slice(0,3):[];
+            var dif2=ctr2&&ctr2.difs.length?ctr2.difs[0]:'';
+            html += '<div style="border-radius:10px;overflow:hidden;border:1.5px solid #99f6e4">'
+              + '<div style="background:linear-gradient(135deg,#0d9488,#0891b2);padding:8px 12px;color:#fff">'
+              + '<div style="font-size:8px;opacity:.75;text-transform:uppercase">Sten '+_sten2(d.score)+' · Polo alto</div>'
+              + '<div style="font-size:11px;font-weight:800">'+(d.label||d.key)+' — '+pl2.hi+'</div>'
+              + '</div>'
+              + '<div style="padding:8px 12px;background:#f0fdfa">'
+              + (forts2.length?'<ul style="margin:0;padding-left:14px;font-size:10px;color:#1e293b;line-height:1.7">'+_liHpf(forts2)+'</ul>':'')
+              + (dif2?'<div style="font-size:9.5px;color:#b45309;margin-top:4px;font-style:italic">A considerar: '+dif2+'</div>':'')
+              + '</div></div>';
+          });
+          _loF2.forEach(function(d){
+            var pl2=_POLES16[d.key]||{lo:'Bajo',col:'#d97706'};
+            var ctr2=_PF16_CTR[d.key]&&_PF16_CTR[d.key].lo;
+            var forts2=ctr2?ctr2.forts.slice(0,3):[];
+            var dif2=ctr2&&ctr2.difs.length?ctr2.difs[0]:'';
+            html += '<div style="border-radius:10px;overflow:hidden;border:1.5px solid #fed7aa">'
+              + '<div style="background:linear-gradient(135deg,#d97706,#b45309);padding:8px 12px;color:#fff">'
+              + '<div style="font-size:8px;opacity:.75;text-transform:uppercase">Sten '+_sten2(d.score)+' · Polo bajo</div>'
+              + '<div style="font-size:11px;font-weight:800">'+(d.label||d.key)+' — '+pl2.lo+'</div>'
+              + '</div>'
+              + '<div style="padding:8px 12px;background:#fffbeb">'
+              + (forts2.length?'<ul style="margin:0;padding-left:14px;font-size:10px;color:#1e293b;line-height:1.7">'+_liHpf(forts2)+'</ul>':'')
+              + (dif2?'<div style="font-size:9.5px;color:#b91c1c;margin-top:4px;font-style:italic">A considerar: '+dif2+'</div>':'')
+              + '</div></div>';
+          });
+          html += '</div>';
+        }
+
+        // Integraciones entre escalas
+        var _ints2=[];
+        if (_pz2(_pf2.AN)==='hi'&&_pz2(_pf2.DU)==='hi') _ints2.push({icon:'🛡',title:'Fortaleza emocional analítica',text:'Estabilidad emocional (AN) + pragmatismo (DU): maneja el estrés sin afectarse emocionalmente y toma decisiones difíciles sin vacilar.'});
+        if (_pz2(_pf2.AN)==='hi'&&_pz2(_pf2.DU)==='lo') _ints2.push({icon:'🤝',title:'Estabilidad empática',text:'Estable emocionalmente (AN) pero muy sensible al malestar del equipo (DU). Excelente en liderazgo humano; puede tener dificultades con decisiones que dañen relaciones.'});
+        if (_pz2(_pf2.AN)==='lo'&&_pz2(_pf2.DU)==='hi') _ints2.push({icon:'⚡',title:'Analítico con alta activación',text:'Toma decisiones pragmáticas (DU) pero bajo tensión interna sostenida (AN). Funciona bien a corto plazo; el estrés acumulado puede afectar el rendimiento.'});
+        if (_pz2(_pf2.AN)==='lo'&&_pz2(_pf2.DU)==='lo') _ints2.push({icon:'⚠',title:'Alta sensibilidad emocional global',text:'Ansiedad elevada (AN) + alta sensibilidad interpersonal (DU): riesgo de sobrecarga en entornos de presión o conflicto.'});
+        if (_pz2(_pf2.EX)==='hi'&&_pz2(_pf2.IN)==='hi') _ints2.push({icon:'🌟',title:'Liderazgo social con criterio propio',text:'Líder visible (EX) que actúa con criterio propio sin necesitar aprobación (IN). Puede generar fricciones en estructuras muy jerárquicas.'});
+        if (_pz2(_pf2.EX)==='hi'&&_pz2(_pf2.IN)==='lo') _ints2.push({icon:'🤝',title:'Liderazgo social colaborativo',text:'Extrovertido (EX) y adaptable al consenso (IN). Genera buen clima; puede ceder cuando debería mantener criterio.'});
+        if (_pz2(_pf2.EX)==='lo'&&_pz2(_pf2.IN)==='hi') _ints2.push({icon:'🔬',title:'Autonomía reservada',text:'Reservado (EX) e independiente (IN). Alta autonomía en análisis individual; puede ser difícil de gestionar en estructuras jerárquicas.'});
+        if (_pz2(_pf2.AC)==='hi'&&_pz2(_pf2.IN)==='lo') _ints2.push({icon:'📋',title:'Cumplidor disciplinado',text:'Alta disciplina normativa (AC) + deferencia al consenso (IN): el perfil más confiable en roles de alta normativa.'});
+        if (_pz2(_pf2.AN)==='hi'&&_pz2(_pf2.AC)==='hi') _ints2.push({icon:'🏆',title:'Autorregulación completa',text:'Máxima estabilidad emocional (AN) + alta autodisciplina (AC): el candidato más predecible y confiable en roles de seguridad.'});
+        if (_pz2(_pf2.AC)==='lo'&&_pz2(_pf2.IN)==='hi') _ints2.push({icon:'🚀',title:'Autonomía espontánea',text:'Criterio propio (IN) + flexibilidad normativa (AC): autónomo y creativo, pero con riesgo en roles de alta normativa.'});
+        _ints2 = _ints2.slice(0,3);
+        if (_ints2.length) {
+          html += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#64748b;margin-bottom:8px">Integraciones entre escalas</div>';
+          html += '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px">';
+          _ints2.forEach(function(ig){
+            html += '<div style="background:#f8fafc;border-radius:10px;padding:10px 14px;border-left:3px solid #0d9488">'
+              + '<div style="font-size:10.5px;font-weight:800;color:#0f172a;margin-bottom:2px">'+ig.icon+' '+ig.title+'</div>'
+              + '<div style="font-size:10.5px;color:#475569;line-height:1.55">'+ig.text+'</div>'
+              + '</div>';
+          });
+          html += '</div>';
+        }
+
+        // Señales de alerta
+        var _alts2=[];
+        if (_pz2(_pf2.AN)==='lo'&&_pz2(_pf2.AC)==='lo') _alts2.push({lvl:'high',text:'Ansiedad elevada + baja autorregulación: patrón de riesgo en roles de seguridad.'});
+        if (_pz2(_pf2.AN)==='lo'&&_pz2(_pf2.IN)==='hi') _alts2.push({lvl:'med',text:'Alta ansiedad + alta independencia: puede ser difícil de gestionar bajo presión.'});
+        if (_pz2(_pf2.DU)==='lo'&&_pz2(_pf2.IN)==='lo') _alts2.push({lvl:'med',text:'Alta sensibilidad + alta deferencia: riesgo de seguir instrucciones incorrectas para no generar conflicto.'});
+        if (_pz2(_pf2.AC)==='lo'&&_pz2(_pf2.EX)==='hi') _alts2.push({lvl:'med',text:'Alta sociabilidad + baja autorregulación: puede priorizar interacción social sobre el cumplimiento de procedimientos.'});
+        if (_pz2(_pf2.AN)==='lo'&&_pz2(_pf2.DU)==='lo'&&_pz2(_pf2.AC)==='lo') _alts2.push({lvl:'high',text:'Triple vulnerabilidad emocional: patrón de alto riesgo en roles de seguridad o supervisión. Se recomienda exploración en entrevista.'});
+        if (_alts2.length) {
+          html += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#b91c1c;margin-bottom:8px">Señales de alerta para la entrevista</div>';
+          html += '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px">';
+          _alts2.forEach(function(al){
+            var aC=al.lvl==='high'?'#dc2626':'#d97706'; var aB=al.lvl==='high'?'#fef2f2':'#fffbeb';
+            html += '<div style="background:'+aB+';border-radius:8px;padding:9px 12px;border-left:3px solid '+aC+'">'
+              + '<div style="font-size:10.5px;color:#1e293b;line-height:1.6">'+al.text+'</div>'
+              + '</div>';
+          });
+          html += '</div>';
+        }
+        html += '<div style="font-size:9px;color:#94a3b8;font-style:italic">El 16PF mide factores de personalidad, no aptitud. Ningún extremo es inherentemente positivo o negativo. (Cattell & Schuerger, 2003)</div>';
+        html += '</div>'; // end 16PF card
+      }
     }
   }
 
