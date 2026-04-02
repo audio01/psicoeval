@@ -479,6 +479,18 @@ input,select,textarea{font-family:inherit;outline:none}
   .test-bottom-bar{padding:10px 12px!important}
   .test-bottom-bar button{font-size:12px!important;padding:8px 12px!important}
 
+  /* Test engine header — mobile */
+  #view-test .app-header .logo{display:none!important}
+  #view-test .app-header{padding:8px 10px!important;gap:6px!important}
+  #test-pills-bar{gap:4px!important}
+  #test-pills-bar .test-pill{font-size:10px!important;padding:4px 8px!important}
+  #test-timer{padding:4px 10px!important;font-size:12px!important}
+
+  /* Testselect — mobile */
+  .testselect-body{padding:20px 14px 40px!important}
+  #view-testselect .app-header .logo{font-size:15px!important}
+  #sel-name{display:none!important}
+
   /* Report sections */
   .res-grid{gap:10px!important}
 }
@@ -1341,33 +1353,32 @@ input,select,textarea{font-family:inherit;outline:none}
   </header>
   <div class="testselect-body">
     <button class="btn btn-ghost btn-sm" onclick="gotoRegister()" style="margin-bottom:24px;color:var(--ink3)">← Volver</button>
-    <h2 style="font-size:30px;font-weight:800;margin-bottom:6px" id="sel-title">Tu evaluación</h2>
-    <p style="color:var(--ink3);font-size:14px;margin-bottom:32px" id="sel-subtitle">A continuación se describen las evaluaciones asignadas a tu cargo.</p>
-    <div id="sel-profile-banner" style="border-radius:12px;padding:18px 22px;margin-bottom:28px;border:1.5px solid"></div>
-    <div id="sel-tests-list" style="display:flex;flex-direction:column;gap:12px;margin-bottom:12px"></div>
-    <div id="sel-total-time" style="font-size:12px;color:var(--ink3);margin-bottom:20px;text-align:right"></div>
+    <h2 style="font-size:26px;font-weight:800;margin-bottom:14px" id="sel-title">Tu evaluación</h2>
+    <div id="sel-profile-banner" style="border-radius:12px;padding:16px 18px;margin-bottom:20px;border:1.5px solid"></div>
+    <div id="sel-tests-list" style="display:none"></div>
+    <div id="sel-total-time" style="display:none"></div>
 
     <!-- Aviso de tiempo — banner prominente -->
     <div style="background:#fff1f2;border:2px solid #f43f5e;border-radius:14px;overflow:hidden;margin-bottom:16px;box-shadow:0 4px 16px rgba(244,63,94,.15)">
       <!-- Cabecera roja -->
-      <div style="background:linear-gradient(135deg,#e11d48,#f43f5e);padding:14px 20px;display:flex;align-items:center;gap:12px">
-        <div style="font-size:32px;line-height:1">⏱</div>
-        <div>
-          <div style="font-size:15px;font-weight:900;color:#fff;letter-spacing:-.01em">Esta evaluación tiene tiempo límite</div>
-          <div style="font-size:12px;color:#fecdd3;margin-top:2px">El cronómetro inicia en el momento en que presionas "Comenzar"</div>
+      <div style="background:linear-gradient(135deg,#e11d48,#f43f5e);padding:14px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div style="font-size:28px;line-height:1;flex-shrink:0">⏱</div>
+        <div style="flex:1;min-width:160px">
+          <div style="font-size:14px;font-weight:900;color:#fff;letter-spacing:-.01em">Esta evaluación tiene tiempo límite</div>
+          <div style="font-size:11px;color:#fecdd3;margin-top:2px">El cronómetro inicia al presionar "Comenzar"</div>
         </div>
-        <div style="margin-left:auto;text-align:center;background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.3);border-radius:10px;padding:8px 16px">
-          <div style="font-size:22px;font-weight:900;color:#fff;line-height:1" id="disclaimer-time-value">40 min</div>
-          <div style="font-size:10px;color:#fecdd3;margin-top:2px;text-transform:uppercase;letter-spacing:.5px">Tiempo total</div>
+        <div style="text-align:center;background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.3);border-radius:10px;padding:7px 14px;flex-shrink:0">
+          <div style="font-size:20px;font-weight:900;color:#fff;line-height:1" id="disclaimer-time-value">40 min</div>
+          <div style="font-size:9px;color:#fecdd3;margin-top:2px;text-transform:uppercase;letter-spacing:.5px">Tiempo total</div>
         </div>
       </div>
       <!-- Reglas -->
-      <div style="padding:14px 20px">
-        <ul style="font-size:13px;color:#9f1239;line-height:1.9;padding-left:18px;margin:0">
+      <div style="padding:12px 16px">
+        <ul style="font-size:12.5px;color:#9f1239;line-height:1.8;padding-left:16px;margin:0">
           <li><strong>Una vez que presiones "Comenzar", el tiempo no se detiene.</strong></li>
-          <li>Si cambias de pestaña o aplicación, <strong>el tiempo contará el doble</strong> hasta que regreses.</li>
-          <li>Al agotarse el tiempo, tus respuestas se enviarán automáticamente con lo que hayas respondido.</li>
-          <li>Responde con honestidad y de forma autónoma. No uses asistencia externa.</li>
+          <li>Si cambias de pestaña o app, <strong>el tiempo contará el doble</strong> hasta que regreses.</li>
+          <li>Al agotarse el tiempo, tus respuestas se enviarán automáticamente.</li>
+          <li>Responde con honestidad y de forma autónoma.</li>
         </ul>
       </div>
     </div>
@@ -1421,10 +1432,7 @@ input,select,textarea{font-family:inherit;outline:none}
     <p style="font-size:14px;color:var(--ink3);line-height:1.7;margin-bottom:36px">
       Los resultados serán revisados por el equipo evaluador y te contactarán en los próximos días. Puedes cerrar esta ventana.
     </p>
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:20px 24px;margin-bottom:32px;text-align:left">
-      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--ink3);margin-bottom:12px">Tests completados</div>
-      <div id="done-tests" style="display:flex;flex-direction:column;gap:8px"></div>
-    </div>
+    <div id="done-tests" style="display:none"></div>
     <button class="btn btn-outline btn-lg" onclick="gotoLanding()" style="width:100%">← Volver al inicio</button>
   </div>
 </div>
@@ -3499,20 +3507,9 @@ function launchTestMode(perfil) {
   document.getElementById('sel-avatar').textContent = 'PD';
   document.getElementById('sel-name').textContent = '🧪 Candidato de Prueba';
   document.getElementById('sel-title').textContent = 'Modo Prueba: ' + pm.label;
-  document.getElementById('sel-subtitle').textContent = pm.desc;
   var banner = document.getElementById('sel-profile-banner');
   banner.style.background = '#6366f115'; banner.style.borderColor = '#6366f140';
   banner.innerHTML = '<span style="font-size:24px">' + pm.icon + '</span><div style="margin-top:8px"><strong style="font-size:15px">' + pm.label + '</strong><div style="font-size:13px;color:var(--ink3);margin-top:3px">' + pm.desc + '</div></div>';
-
-  document.getElementById('sel-tests-list').innerHTML = tests.map(function(t, idx) {
-    var m2 = TESTS_META[t];
-    var mins = TM_MINS[t] || 8;
-    var isGame = m2 && m2.game;
-    return '<div style="display:flex;align-items:center;gap:14px;padding:13px 16px;border-radius:10px;background:var(--bg);border:1px solid var(--border)"><span style="font-size:22px">' + (m2 ? m2.icon : '📝') + '</span><div style="flex:1"><div style="font-weight:700;font-size:14px">Prueba ' + (idx+1) + (m2 ? ' — ' + m2.name : '') + '</div><div style="font-size:11px;color:var(--ink3);margin-top:2px">~' + mins + ' min' + (isGame ? ' · 🎮 Juego' : '') + '</div></div></div>';
-  }).join('');
-
-  var ttEl = document.getElementById('sel-total-time');
-  if (ttEl) ttEl.textContent = 'Tiempo total asignado: ' + totalMin + ' minutos';
   var disclaimerTimeEl = document.getElementById('disclaimer-time-value');
   if (disclaimerTimeEl) disclaimerTimeEl.textContent = totalMin + ' min';
 
@@ -4417,7 +4414,6 @@ function submitRegister() {
   document.getElementById('sel-name').textContent = nombre + ' ' + apellido;
   const pm = PERFIL_META[perfil];
   document.getElementById('sel-title').textContent = 'Evaluación: ' + pm.label;
-  document.getElementById('sel-subtitle').textContent = pm.desc;
   const banner = document.getElementById('sel-profile-banner');
   banner.style.background = pm.color + '10'; banner.style.borderColor = pm.color + '40';
   banner.innerHTML = '<span style="font-size:24px">' + pm.icon + '</span><div style="margin-top:8px"><strong style="font-size:15px">' + pm.label + '</strong><div style="font-size:13px;color:var(--ink3);margin-top:3px">' + pm.desc + '</div></div>';
@@ -4427,19 +4423,8 @@ function submitRegister() {
     comprension:4, disc:3, pf16:4,
     game_detector:2, game_secuencias:2, game_impulsos:2, game_vigilancia:2, game_memoria:2, game_crisis:4, game_dilemas:3
   };
-  var totalMin = tests.reduce(function(a,t){ return a + (TEST_TIME_MINUTES[t]||0); }, 0);
-  // Add 2-minute buffer for transitions
-  totalMin = totalMin + 2;
+  var totalMin = tests.reduce(function(a,t){ return a + (TEST_TIME_MINUTES[t]||0); }, 0) + 2;
   S._testTotalMinutes = totalMin;
-  document.getElementById('sel-tests-list').innerHTML = tests.map(function(t, idx) {
-    const m = TESTS_META[t];
-    const mins = TEST_TIME_MINUTES[t] || 0;
-    const pN = 'Prueba ' + (idx + 1);
-    return '<div style="display:flex;align-items:center;gap:14px;padding:13px 16px;border-radius:10px;background:var(--bg);border:1px solid var(--border)"><span style="font-size:22px">' + (m ? m.icon : '📝') + '</span><div style="flex:1"><div style="font-weight:700;font-size:14px">' + pN + (m ? ' — ' + m.name : '') + '</div><div style="font-size:11px;color:var(--ink3);margin-top:2px">~' + mins + ' min</div></div></div>';
-  }).join('');
-  const ttEl = document.getElementById('sel-total-time');
-  if (ttEl) ttEl.textContent = 'Tiempo total asignado: ' + totalMin + ' minutos';
-  // Update disclaimer time
   var disclaimerTimeEl = document.getElementById('disclaimer-time-value');
   if (disclaimerTimeEl) disclaimerTimeEl.textContent = totalMin + ' min';
   showView('testselect');
@@ -7890,12 +7875,15 @@ function buildReportHtml(c, withClose) {
         var _sd = _secDisc;
         var _sdFit = _sd.secFit;
         var _sdCol = _fitCol(_sdFit), _sdBg = _fitBg(_sdFit), _sdRing = _fitRing(_sdFit);
-        html += '<div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:18px 20px;max-width:600px;margin:0 auto;width:100%">';
+        html += '<div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:14px;padding:20px 24px">';
         // Header
-        html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">';
-        html += '<div style="font-size:13px;font-weight:800;color:#0f172a">DISC — Perfil Conductual</div>';
-        html += '<span style="font-size:12px;font-weight:800;color:' + _sdCol + ';background:' + _sdBg + ';border:1px solid ' + _sdRing + ';border-radius:8px;padding:3px 10px">' + _sdFit + '%  ' + _icon(_sdFit) + '</span>';
-        html += '</div>';
+        html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;flex-wrap:wrap;gap:8px">';
+        html += '<div><div style="font-size:17px;font-weight:800;color:#0f172a">DISC — Perfil Conductual</div></div>';
+        html += '<div style="text-align:center;background:' + _sdBg + ';border-radius:10px;padding:8px 16px;border:1.5px solid ' + _sdCol + '40">';
+        html += '<div style="font-size:13px;font-weight:800;color:' + _sdCol + ';white-space:nowrap">' + (_sdFit>=80?'Compatible':_sdFit>=55?'Parcialmente compatible':'Diferente al perfil') + '</div>';
+        var _sdMatch = _sd.dims.filter(function(d){ return d.zone===d.expected; }).length;
+        html += '<div style="font-size:10px;color:#94a3b8;margin-top:2px">' + _sdMatch + '/' + _sd.dims.length + ' dimensiones en zona esperada</div>';
+        html += '</div></div>';
         // Profile badge
         var _dsSorted = _sd.dims.slice().sort(function(a,b){ return b.score-a.score; });
         var _dsAlto = _dsSorted.filter(function(d){ return d.score>=65; });
@@ -7903,36 +7891,36 @@ function buildReportHtml(c, withClose) {
         var _dsPKey = _dsPKeys.join('');
         var _dsPD = DISC_STYLE_PROFILES[_dsPKey] || DISC_STYLE_PROFILES[_dsPKeys[0]] || { name:'Perfil mixto', tagline:'', fortalezas:[], dificultades:[], motivaciones:[], frustraciones:[], trabajaMejorCon:'' };
         var _liS = function(arr){ return arr.map(function(t){ return '<li style="margin-bottom:3px">'+t+'</li>'; }).join(''); };
-        // ── Dimension mini-grid (compact, before descriptive) ─────
+        // ── Dimension grid (2×2, matching tab card style) ─────────
         var _DISC_DIM_LBL = { D:'Dominancia', I:'Influencia', S:'Estabilidad', C:'Cumplimiento' };
-        html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">';
+        html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">';
         _sd.dims.forEach(function(d) {
           var _ez = DISC_ZONES[d.expected]||DISC_ZONES.medio;
           var _inZ = d.zone===d.expected;
           var _adjZ = !_inZ&&(d.zone==='medio'||d.expected==='medio');
           var _stC = _inZ?'#16a34a':_adjZ?'#d97706':'#dc2626';
-          var _stB = _inZ?'#f0fdf4':_adjZ?'#fffbeb':'#fef2f2';
+          var _stBg2 = _inZ?'#f0fdf4':_adjZ?'#fffbeb':'#fef2f2';
           var _stRing = _inZ?'#bbf7d0':_adjZ?'#fde68a':'#fecaca';
-          var _stL = _inZ?'✓':_adjZ?'≈':'✗';
-          html += '<div style="background:'+_stB+';border:1px solid '+_stRing+';border-radius:10px;padding:9px 12px">';
-          // Label + score + status
-          html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">';
-          html += '<span style="font-size:11px;font-weight:700;color:#0f172a">'+_DISC_DIM_LBL[d.key]+'</span>';
-          html += '<div style="display:flex;align-items:center;gap:5px">';
-          html += '<span style="font-size:10px;color:#64748b">'+d.score+'</span>';
-          html += '<span style="font-size:9px;font-weight:800;color:'+_stC+';background:#fff;border:1px solid '+_stRing+';border-radius:4px;padding:1px 5px">'+_stL+'</span>';
+          var _stLabel = _inZ?'✓ En zona esperada':_adjZ?'≈ Zona adyacente':'✗ Fuera del perfil';
+          html += '<div style="background:#fff;border-radius:12px;border:1.5px solid '+_stRing+';padding:14px 16px">';
+          // Label + score
+          html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:4px">';
+          html += '<div style="font-size:13px;font-weight:700;color:#0f172a">'+_DISC_DIM_LBL[d.key]+'<span style="font-size:10px;font-weight:400;color:#94a3b8;margin-left:6px">'+d.score+'/100</span></div>';
+          html += '<div style="display:flex;align-items:center;gap:4px">';
+          html += '<span style="font-size:9px;font-weight:600;padding:2px 7px;border-radius:100px;background:'+_ez.bg+';border:1px solid '+_ez.border+';color:'+_ez.color+';white-space:nowrap">Esp: '+_ez.label+'</span>';
+          html += '<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:100px;background:'+_stBg2+';color:'+_stC+';white-space:nowrap">'+_stLabel+'</span>';
           html += '</div></div>';
-          // Tri-zone bar
-          html += '<div style="display:flex;height:5px;border-radius:100px;overflow:hidden;margin-bottom:4px">';
-          ['bajo','medio','alto'].forEach(function(z){ var zc=DISC_ZONES[z]; var isC=z===d.zone; var isE=z===d.expected; html += '<div style="flex:1;background:'+(isC?zc.color:'#e2e8f0')+';'+(isE&&!isC?'box-shadow:inset 0 0 0 1.5px '+zc.color+';':'')+' "></div>'; });
+          // Zone bar
+          html += '<div style="display:flex;height:8px;border-radius:100px;overflow:hidden;margin-bottom:6px">';
+          ['bajo','medio','alto'].forEach(function(z){ var zc=DISC_ZONES[z]; var isE=z===d.expected; var isC=z===d.zone; html += '<div style="flex:1;background:'+(isC?zc.color:'#e2e8f0')+';'+(isE?'outline:2px solid '+zc.color+';outline-offset:-2px;':'')+' "></div>'; });
           html += '</div>';
-          html += '<div style="display:flex;justify-content:space-between;font-size:8px;color:#cbd5e1"><span>B</span><span>M</span><span>A</span></div>';
+          html += '<div style="display:flex;justify-content:space-between;font-size:9px;color:#94a3b8"><span>Bajo</span><span>Medio</span><span>Alto</span></div>';
           html += '</div>';
         });
         html += '</div>';
 
         // ── Perfil descriptivo ────────────────────────────────────
-        html += '<div style="border-radius:10px;overflow:hidden;margin-bottom:14px;box-shadow:0 2px 8px rgba(79,70,229,.1)">'
+        html += '<div style="border-radius:12px;overflow:hidden;margin-bottom:14px;box-shadow:0 2px 8px rgba(79,70,229,.1)">'
           + '<div style="background:linear-gradient(135deg,#4f46e5,#7c3aed);padding:12px 16px;color:#fff">'
           + '<div style="font-size:9px;opacity:.75;text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px">Perfil conductual obtenido</div>'
           + '<div style="font-size:17px;font-weight:900;margin-bottom:3px">'+_dsPD.name+'</div>'
