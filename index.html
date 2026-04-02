@@ -1290,16 +1290,31 @@ input,select,textarea{font-family:inherit;outline:none}
       </div>
 
       <!-- ── Referencia Laboral ── -->
-      <div style="background:#f0f9ff;border-radius:12px;padding:16px;margin-bottom:4px;border:1px solid #bae6fd">
-        <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#0369a1;margin-bottom:6px">📞 Referencia Laboral</div>
-        <p style="font-size:12px;color:#475569;margin:0 0 12px;line-height:1.5">Indica una persona que pueda validar tu experiencia laboral anterior. El equipo de RRHH podrá contactarla durante el proceso de selección.</p>
+      <div style="background:#f0f9ff;border-radius:12px;padding:16px;margin-bottom:4px;border:1.5px solid #0ea5e9">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#0369a1">📞 Referencia Laboral</div>
+          <span style="font-size:10px;font-weight:800;background:#dc2626;color:#fff;padding:2px 8px;border-radius:100px;letter-spacing:.4px;text-transform:uppercase">Obligatorio</span>
+        </div>
+        <p style="font-size:12px;color:#475569;margin:0 0 12px;line-height:1.5">Es requisito del proceso indicar una referencia laboral verificable. El equipo de RRHH podrá contactarla durante la selección.</p>
         <div style="display:flex;flex-direction:column;gap:10px">
-          <div class="field"><label>Empresa</label><input id="r-ref-empresa" placeholder="Empresa donde trabajaste"></div>
+          <div class="field">
+            <label>Empresa <span style="color:#dc2626">*</span></label>
+            <input id="r-ref-empresa" placeholder="Empresa donde trabajaste">
+            <span id="e-ref-empresa" style="font-size:11px;color:#dc2626;display:none;margin-top:3px"></span>
+          </div>
           <div class="form-row">
-            <div class="field"><label>Nombre del referente</label><input id="r-ref-nombre" placeholder="Nombre del jefe o supervisor"></div>
+            <div class="field">
+              <label>Nombre del referente <span style="color:#dc2626">*</span></label>
+              <input id="r-ref-nombre" placeholder="Nombre del jefe o supervisor">
+              <span id="e-ref-nombre" style="font-size:11px;color:#dc2626;display:none;margin-top:3px"></span>
+            </div>
             <div class="field"><label>Cargo del referente</label><input id="r-ref-cargo" placeholder="Ej: Supervisor, Jefe de turno"></div>
           </div>
-          <div class="field"><label>Teléfono de contacto</label><input id="r-ref-telefono" type="tel" placeholder="9 1234 5678" maxlength="11" oninput="formatTel(this)"></div>
+          <div class="field">
+            <label>Teléfono de contacto <span style="color:#dc2626">*</span></label>
+            <input id="r-ref-telefono" type="tel" placeholder="9 1234 5678" maxlength="11" oninput="formatTel(this)">
+            <span id="e-ref-telefono" style="font-size:11px;color:#dc2626;display:none;margin-top:3px"></span>
+          </div>
         </div>
       </div>
 
@@ -1332,15 +1347,29 @@ input,select,textarea{font-family:inherit;outline:none}
     <div id="sel-tests-list" style="display:flex;flex-direction:column;gap:12px;margin-bottom:12px"></div>
     <div id="sel-total-time" style="font-size:12px;color:var(--ink3);margin-bottom:20px;text-align:right"></div>
 
-    <!-- Disclaimer de condiciones -->
-    <div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:14px;padding:18px 20px;margin-bottom:16px">
-      <div style="font-size:13px;font-weight:700;color:#92400e;margin-bottom:10px">⚠️ Condiciones de la evaluación</div>
-      <ul style="font-size:13px;color:#78350f;line-height:1.8;padding-left:18px;margin:0">
-        <li>Tienes <strong id="disclaimer-time-value">40 minutos</strong> para completar todas las pruebas. El tiempo comienza al presionar "Comenzar".</li>
-        <li>Si abandonas esta pestaña o cambias de aplicación, <strong>el tiempo contará el doble</strong> hasta que regreses.</li>
-        <li>Al agotarse el tiempo, tus respuestas se enviarán automáticamente.</li>
-        <li>Responde con honestidad. No uses asistencia externa durante la evaluación.</li>
-      </ul>
+    <!-- Aviso de tiempo — banner prominente -->
+    <div style="background:#fff1f2;border:2px solid #f43f5e;border-radius:14px;overflow:hidden;margin-bottom:16px;box-shadow:0 4px 16px rgba(244,63,94,.15)">
+      <!-- Cabecera roja -->
+      <div style="background:linear-gradient(135deg,#e11d48,#f43f5e);padding:14px 20px;display:flex;align-items:center;gap:12px">
+        <div style="font-size:32px;line-height:1">⏱</div>
+        <div>
+          <div style="font-size:15px;font-weight:900;color:#fff;letter-spacing:-.01em">Esta evaluación tiene tiempo límite</div>
+          <div style="font-size:12px;color:#fecdd3;margin-top:2px">El cronómetro inicia en el momento en que presionas "Comenzar"</div>
+        </div>
+        <div style="margin-left:auto;text-align:center;background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.3);border-radius:10px;padding:8px 16px">
+          <div style="font-size:22px;font-weight:900;color:#fff;line-height:1" id="disclaimer-time-value">40 min</div>
+          <div style="font-size:10px;color:#fecdd3;margin-top:2px;text-transform:uppercase;letter-spacing:.5px">Tiempo total</div>
+        </div>
+      </div>
+      <!-- Reglas -->
+      <div style="padding:14px 20px">
+        <ul style="font-size:13px;color:#9f1239;line-height:1.9;padding-left:18px;margin:0">
+          <li><strong>Una vez que presiones "Comenzar", el tiempo no se detiene.</strong></li>
+          <li>Si cambias de pestaña o aplicación, <strong>el tiempo contará el doble</strong> hasta que regreses.</li>
+          <li>Al agotarse el tiempo, tus respuestas se enviarán automáticamente con lo que hayas respondido.</li>
+          <li>Responde con honestidad y de forma autónoma. No uses asistencia externa.</li>
+        </ul>
+      </div>
     </div>
 
     <!-- Checkbox de aceptación -->
@@ -1909,10 +1938,10 @@ const TESTS_META = {
 
 // Default batteries — can be overridden via Baterías
 const PERFIL_TESTS_DEFAULT = {
-  jefatura:      ['dc0','situacional','comprension','disc','pf16','game_crisis','game_dilemas'],
-  administrativo:['dc0','comprension','disc','pf16','game_dilemas'],
-  guardia:       ['situacional','vigilancia','comprension','disc','pf16','game_crisis','game_dilemas_op'],
-  supervisor:    ['dc0','situacional','comprension','disc','pf16','game_crisis','game_dilemas'],
+  jefatura:      ['game_crisis','game_dilemas','dc0','situacional','comprension','disc','pf16'],
+  administrativo:['game_dilemas','dc0','comprension','disc','pf16'],
+  guardia:       ['game_crisis','game_dilemas_op','situacional','vigilancia','comprension','disc','pf16'],
+  supervisor:    ['game_crisis','game_dilemas','dc0','situacional','comprension','disc','pf16'],
 };
 
 // All available tests per cargo (max possible)
@@ -3487,7 +3516,7 @@ function launchTestMode(perfil) {
   var ttEl = document.getElementById('sel-total-time');
   if (ttEl) ttEl.textContent = 'Tiempo total asignado: ' + totalMin + ' minutos';
   var disclaimerTimeEl = document.getElementById('disclaimer-time-value');
-  if (disclaimerTimeEl) disclaimerTimeEl.textContent = totalMin + ' minutos';
+  if (disclaimerTimeEl) disclaimerTimeEl.textContent = totalMin + ' min';
 
   var cb = document.getElementById('disclaimer-check');
   if (cb) cb.checked = false;
@@ -4336,11 +4365,33 @@ function submitRegister() {
   if (emp1 || cargo1) historial.push({ empresa: emp1, cargo: cargo1, duracion: dur1, duracion_label: DUR_LABELS[dur1]||'', salida: salida1, salida_label: SALIDA_LABELS[salida1]||'' });
   if (emp2 || cargo2) historial.push({ empresa: emp2, cargo: cargo2, duracion: dur2, duracion_label: DUR_LABELS[dur2]||'', salida: salida2, salida_label: SALIDA_LABELS[salida2]||'' });
 
-  // Build referencia laboral
+  // ── Validar referencia laboral obligatoria ───────────────────
   const refEmpresa  = document.getElementById('r-ref-empresa')?.value.trim()  || '';
   const refNombre   = document.getElementById('r-ref-nombre')?.value.trim()   || '';
   const refCargo    = document.getElementById('r-ref-cargo')?.value.trim()    || '';
   const refTelefono = document.getElementById('r-ref-telefono')?.value.replace(/\s/g,'') || '';
+  var refOk = true;
+  var _setRefErr = function(id, msg) {
+    var el = document.getElementById(id);
+    if (el) { el.textContent = msg; el.style.display = msg ? 'block' : 'none'; }
+  };
+  _setRefErr('e-ref-empresa',  '');
+  _setRefErr('e-ref-nombre',   '');
+  _setRefErr('e-ref-telefono', '');
+  if (!refEmpresa)  { _setRefErr('e-ref-empresa',  'Indica la empresa del referente.'); refOk = false; }
+  if (!refNombre)   { _setRefErr('e-ref-nombre',   'Indica el nombre del referente.'); refOk = false; }
+  if (!refTelefono || refTelefono.replace(/\D/g,'').length < 8) {
+    _setRefErr('e-ref-telefono', 'Ingresa un teléfono de contacto válido.'); refOk = false;
+  }
+  if (!refOk) {
+    // Scroll to reference section
+    var refBlock = document.getElementById('r-ref-empresa');
+    if (refBlock) refBlock.scrollIntoView({ behavior:'smooth', block:'center' });
+    return;
+  }
+  // ─────────────────────────────────────────────────────────────
+
+  // Build referencia laboral
   const referencia  = (refEmpresa || refNombre || refTelefono)
     ? { empresa: refEmpresa, nombre: refNombre, cargo: refCargo, telefono: refTelefono }
     : null;
@@ -4392,7 +4443,7 @@ function submitRegister() {
   if (ttEl) ttEl.textContent = 'Tiempo total asignado: ' + totalMin + ' minutos';
   // Update disclaimer time
   var disclaimerTimeEl = document.getElementById('disclaimer-time-value');
-  if (disclaimerTimeEl) disclaimerTimeEl.textContent = totalMin + ' minutos';
+  if (disclaimerTimeEl) disclaimerTimeEl.textContent = totalMin + ' min';
   showView('testselect');
 }
 
@@ -4567,14 +4618,60 @@ function renderTestBlock() {
   if (meta && meta.game) {
     document.getElementById('btn-next-test').style.display = 'none';
     document.getElementById('btn-prev-test').style.display = 'none';
-    var pruebaN = 'Prueba ' + (S.blockIdx + 1);
+    var pruebaN = 'Prueba ' + (S.blockIdx + 1) + ' de ' + total;
+    var _testId = block.testId;
+
+    // ── Pantalla de concentración previa ────────────────────────
+    var _isCrisis  = (_testId === 'game_crisis');
+    var _isDilemas = (_testId === 'game_dilemas' || _testId === 'game_dilemas_op');
+    var _accentCol = _isCrisis ? '#dc2626' : _isDilemas ? '#4f46e5' : '#0369a1';
+    var _accentBg  = _isCrisis ? '#fef2f2' : _isDilemas ? '#eef2ff' : '#f0f9ff';
+    var _accentBrd = _isCrisis ? '#fecaca' : _isDilemas ? '#c7d2fe' : '#bae6fd';
+    var _tips = _isCrisis
+      ? ['Tendrás varias alertas simultáneas. Mantén la calma y prioriza.', 'No hay respuesta perfecta — usa tu criterio operativo.', 'El tiempo corre desde que presiones Comenzar.']
+      : _isDilemas
+      ? ['Leerás situaciones reales del rol. Elige la respuesta más correcta según protocolo.', 'Sé honesto/a — no hay respuesta "esperada", hay una respuesta válida.', 'El tiempo corre desde que presiones Comenzar.']
+      : ['Sigue las instrucciones en pantalla con atención.', 'El tiempo corre desde que presiones Comenzar.'];
+
     document.getElementById('test-body').innerHTML =
-      '<div style="display:inline-flex;align-items:center;gap:8px;padding:5px 14px;border-radius:100px;font-size:12px;font-weight:700;background:#f0fdf4;border:1px solid #bbf7d0;color:#16a34a;margin-bottom:16px">🎮 ' + pruebaN + '</div>'
-      + '<h2 style="font-size:20px;font-weight:800;margin-bottom:4px;line-height:1.2">' + meta.icon + ' ' + meta.name + '</h2>'
-      + '<p style="font-size:13px;color:var(--ink3);margin-bottom:20px">Mini-juego interactivo — sigue las instrucciones en pantalla</p>'
-      + '<div id="game-container" style="background:#fff;border-radius:16px;border:1.5px solid var(--border);padding:28px;min-height:320px;display:flex;flex-direction:column;align-items:center;justify-content:center"></div>';
+      '<div style="max-width:520px;margin:0 auto;padding:8px 0">'
+      // Encabezado prueba
+      + '<div style="display:inline-flex;align-items:center;gap:8px;padding:4px 14px;border-radius:100px;font-size:11px;font-weight:700;background:#f8fafc;border:1px solid #e2e8f0;color:#64748b;margin-bottom:20px">'
+      + meta.icon + ' ' + pruebaN + '</div>'
+      // Banner de alerta
+      + '<div style="background:' + _accentBg + ';border:2px solid ' + _accentBrd + ';border-radius:14px;overflow:hidden;margin-bottom:22px">'
+      + '<div style="background:' + _accentCol + ';padding:14px 20px;display:flex;align-items:center;gap:12px">'
+      + '<div style="font-size:28px;line-height:1">⏱</div>'
+      + '<div>'
+      + '<div style="font-size:15px;font-weight:900;color:#fff">Esta prueba es cronometrada</div>'
+      + '<div style="font-size:12px;color:rgba(255,255,255,.75);margin-top:2px">Una vez que comiences, no se puede pausar ni repetir</div>'
+      + '</div>'
+      + '</div>'
+      + '<div style="padding:14px 20px">'
+      + '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:' + _accentCol + ';margin-bottom:10px">Antes de comenzar</div>'
+      + '<ul style="margin:0;padding-left:18px;font-size:13px;color:#1e293b;line-height:2">'
+      + _tips.map(function(t){ return '<li>' + t + '</li>'; }).join('')
+      + '</ul>'
+      + '</div>'
+      + '</div>'
+      // Nombre del test
+      + '<h2 style="font-size:22px;font-weight:900;color:#0f172a;margin-bottom:6px">' + meta.icon + ' ' + meta.name + '</h2>'
+      + '<p style="font-size:13px;color:#64748b;margin-bottom:24px">Prueba interactiva — sigue las instrucciones en pantalla.</p>'
+      // Contenedor para el juego (oculto hasta confirmar)
+      + '<div id="game-container" style="display:none;background:#fff;border-radius:16px;border:1.5px solid var(--border);padding:28px;min-height:320px;flex-direction:column;align-items:center;justify-content:center"></div>'
+      // Botón confirmar
+      + '<div id="game-focus-confirm" style="text-align:center">'
+      + '<div style="font-size:12px;color:#94a3b8;margin-bottom:12px">Elimina distracciones. Cuando estés listo/a presiona el botón.</div>'
+      + '<button onclick="(function(){'
+      + 'document.getElementById(\'game-focus-confirm\').style.display=\'none\';'
+      + 'var gc=document.getElementById(\'game-container\');gc.style.display=\'flex\';'
+      + 'startGame(\'' + _testId + '\');'
+      + '})()" style="background:' + _accentCol + ';border:none;color:#fff;font-size:15px;font-weight:800;padding:14px 40px;border-radius:12px;cursor:pointer;font-family:inherit;letter-spacing:-.01em;box-shadow:0 4px 14px ' + _accentCol + '40;transition:opacity .15s" onmouseover="this.style.opacity=\'.85\'" onmouseout="this.style.opacity=\'1\'">'
+      + 'Estoy concentrado/a — Comenzar →</button>'
+      + '</div>'
+      + '</div>';
+
     window.scrollTo(0, 0);
-    startGame(block.testId);
     return;
   }
 
@@ -7658,102 +7755,239 @@ function buildReportHtml(c, withClose) {
     html += '</div></div>';
   }
 
-  // ── Veredicto card ────────────────────────────────────────────
-  html += '<div style="background:' + verBg + ';border:2px solid ' + verColor + '30;border-radius:14px;padding:20px 24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap">';
-  html += '<div style="font-size:40px;line-height:1">' + verIcon + '</div>';
-  html += '<div style="flex:1;min-width:180px">';
-  html += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:' + verColor + ';margin-bottom:4px">Resultado general</div>';
-  html += '<div style="font-size:22px;font-weight:900;color:' + verColor + ';letter-spacing:-.01em">' + veredicto + '</div>';
-  html += '</div>';
-  // Global score badge
-  html += '<div style="text-align:center;background:#fff;border-radius:12px;padding:12px 20px;border:1.5px solid ' + verColor + '30">';
-  html += '<div style="font-size:36px;font-weight:900;color:' + verColor + ';line-height:1">' + gLv + '/5</div>';
-  html += '<div style="font-size:11px;font-weight:600;color:' + verColor + ';margin-top:2px">' + (gLv===5?'Apto':gLv>=3?'Apto con Observaciones':'No Apto') + '</div>';
-  html += '<div style="font-size:10px;color:#94a3b8;margin-top:1px">Ajuste al perfil</div>';
-  html += '</div>';
-  html += '</div>';
+  // ── Ajuste por Área (mini score bars) ────────────────────────
+  {
+    var _secSortForSummary = ['pai','dc0','situacional','vigilancia','comprension','disc','pf16',
+      'game_crisis','game_dilemas','game_dilemas_op','game_detector','game_secuencias',
+      'game_impulsos','game_vigilancia','game_memoria'];
+    var _sumSections = rpt.sections.slice().sort(function(a,b){
+      return (_secSortForSummary.indexOf(a.id)<0?99:_secSortForSummary.indexOf(a.id))
+           - (_secSortForSummary.indexOf(b.id)<0?99:_secSortForSummary.indexOf(b.id));
+    });
+    var _AREA_LABELS = {
+      pai:'Ajuste Psicológico', dc0:'Aptitud Cognitiva', situacional:'Juicio Situacional',
+      vigilancia:'Vigilancia', comprension:'Comprensión', disc:'DISC', pf16:'16PF',
+      game_crisis:'Sala de Crisis', game_dilemas:'Dilemas', game_dilemas_op:'Dilemas Op.',
+      game_detector:'Detector', game_secuencias:'Secuencias', game_impulsos:'Impulsos',
+      game_vigilancia:'Vig. Activa', game_memoria:'Memoria Op.'
+    };
+    if (_sumSections.length > 0) {
+      html += '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:18px 22px">';
+      html += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#94a3b8;margin-bottom:14px">Ajuste al perfil por área</div>';
+      html += '<div style="display:flex;flex-direction:column;gap:8px">';
+      _sumSections.forEach(function(sec) {
+        var fit = sec.secFit;
+        var fitCol = fit>=80?'#16a34a':fit>=55?'#d97706':'#dc2626';
+        var fitBg  = fit>=80?'#dcfce7':fit>=55?'#fef9c3':'#fee2e2';
+        html += '<div style="display:grid;grid-template-columns:130px 1fr 38px;align-items:center;gap:10px">';
+        html += '<span style="font-size:11px;color:#475569;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (_AREA_LABELS[sec.id]||sec.id) + '</span>';
+        html += '<div style="height:6px;background:#f1f5f9;border-radius:3px;position:relative;overflow:hidden">';
+        html += '<div style="height:100%;width:' + fit + '%;background:' + fitCol + ';border-radius:3px;transition:width .4s"></div>';
+        html += '</div>';
+        html += '<span style="font-size:11px;font-weight:700;color:' + fitCol + ';text-align:right">' + fit + '%</span>';
+        html += '</div>';
+      });
+      html += '</div></div>';
+    }
+  }
 
-  // ── Resumen ejecutivo ─────────────────────────────────────────
-  html += '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:20px 24px">';
-  html += '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#94a3b8;margin-bottom:10px">Resumen Ejecutivo</div>';
-  html += '<div style="font-size:14px;line-height:1.8;color:#1e293b">' + rpt.resumen + '</div>';
-  html += '</div>';
+  // ── 3 Pilares: cruce Cognición · Emoción · Conducta ──────────
+  {
+    var _pScores = calcPilarScores(s);
+    var _pilarDef = [
+      { key:'cognicion', label:'Cognición',  icon:'◈', col:'#4f46e5', bgC:'#eef2ff', brd:'#c7d2fe',
+        items:[
+          { test:'dc0', key:'V', label:'Verbal' }, { test:'dc0', key:'N', label:'Numérico' },
+          { test:'dc0', key:'L', label:'Lógico' }, { test:'comprension', key:'pct', label:'Comprensión' },
+          { test:'game_detector', key:'pct', label:'Atención' }, { test:'game_memoria', key:'pct', label:'Memoria' }
+        ]
+      },
+      { key:'emocion', label:'Emoción',    icon:'◈', col:'#0891b2', bgC:'#ecfeff', brd:'#a5f3fc',
+        items:[
+          { test:'pai', key:'EE', label:'Est. Emocional' }, { test:'pai', key:'AS', label:'Adapt. Social' },
+          { test:'pai', key:'ME', label:'Manejo Estrés' }, { test:'pf16', key:'AN', label:'Aj. Emocional (16PF)' },
+          { test:'game_impulsos', key:'pct', label:'Control Impulsos' }
+        ]
+      },
+      { key:'conducta', label:'Conducta',  icon:'◈', col:'#059669', bgC:'#ecfdf5', brd:'#6ee7b7',
+        items:[
+          { test:'pai', key:'ON', label:'Orientación Normativa' }, { test:'pai', key:'IL', label:'Integridad Laboral' },
+          { test:'disc', key:'S', label:'Estabilidad (DISC)' }, { test:'disc', key:'C', label:'Cumplimiento (DISC)' },
+          { test:'situacional', key:'pct', label:'Juicio Situacional' }, { test:'vigilancia', key:'pct', label:'Vigilancia' }
+        ]
+      }
+    ];
+    var _hasAnyPilar = _pilarDef.some(function(p){ return _pScores[p.key] !== null; });
+    if (_hasAnyPilar) {
+      html += '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:18px 22px">';
+      html += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#94a3b8;margin-bottom:14px">Análisis cruzado por pilar</div>';
+      html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">';
+      _pilarDef.forEach(function(pd) {
+        var score = _pScores[pd.key];
+        if (score === null) return;
+        var scoreCol = score>=70?'#16a34a':score>=45?'#d97706':'#dc2626';
+        html += '<div style="border:1px solid ' + pd.brd + ';border-radius:10px;padding:14px 16px;background:' + pd.bgC + '">';
+        html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">';
+        html += '<span style="font-size:11px;font-weight:800;color:' + pd.col + ';text-transform:uppercase;letter-spacing:.6px">' + pd.label + '</span>';
+        html += '<span style="font-size:20px;font-weight:900;color:' + scoreCol + ';line-height:1">' + score + '</span>';
+        html += '</div>';
+        // Mini dimension chips
+        var _dimItems = pd.items.filter(function(it){
+          var ts = s[it.test];
+          if (!ts) return false;
+          var val = it.key==='pct' ? ts.pct : ts[it.key];
+          return val !== undefined && val !== null;
+        });
+        html += '<div style="display:flex;flex-direction:column;gap:4px">';
+        _dimItems.forEach(function(it) {
+          var ts = s[it.test];
+          var val = it.key==='pct' ? ts.pct : ts[it.key];
+          var dimCol = val>=70?'#16a34a':val>=45?'#d97706':'#dc2626';
+          html += '<div style="display:flex;align-items:center;gap:6px">';
+          html += '<span style="font-size:9px;color:#64748b;flex:1;line-height:1.3">' + it.label + '</span>';
+          html += '<span style="font-size:9px;font-weight:700;color:' + dimCol + ';white-space:nowrap">' + val + '</span>';
+          html += '</div>';
+        });
+        html += '</div></div>';
+      });
+      html += '</div></div>';
+    }
+  }
 
+  // ── Patrones de consistencia (cruce entre tests) ─────────────
+  {
+    var _insights = [];
+    // 1. Estabilidad emocional — DISC-S vs PAI-EE vs 16PF-AN
+    var _discS = s.disc && s.disc.S !== undefined ? s.disc.S : null;
+    var _paiEE = s.pai  && s.pai.EE  !== undefined ? s.pai.EE  : null;
+    var _pfAN  = s.pf16 && s.pf16.AN !== undefined ? s.pf16.AN : null;
+    if ((_discS!==null || _paiEE!==null) && _pfAN!==null) {
+      var _vals = [_discS,_paiEE,_pfAN].filter(function(v){return v!==null;});
+      var _avg  = Math.round(_vals.reduce(function(a,b){return a+b;},0)/_vals.length);
+      var _max  = Math.max.apply(null,_vals), _min = Math.min.apply(null,_vals);
+      var _gap  = _max - _min;
+      var _note = _gap >= 25 ? 'Inconsistencia entre mediciones — explorar en entrevista.' : (_avg>=65 ? 'Consistente y estable.' : 'Vulnerabilidad emocional presente en múltiples mediciones.');
+      _insights.push({ label:'Estabilidad emocional', points:[
+        _paiEE!==null?{src:'PAI',val:_paiEE}:null, _pfAN!==null?{src:'16PF',val:_pfAN}:null, _discS!==null?{src:'DISC·S',val:_discS}:null
+      ].filter(Boolean), score:_avg, note:_note });
+    }
+    // 2. Autocontrol — 16PF-AC vs game_impulsos
+    var _pfAC   = s.pf16 && s.pf16.AC !== undefined ? s.pf16.AC : null;
+    var _gImp   = s.game_impulsos && s.game_impulsos.pct !== undefined ? s.game_impulsos.pct : null;
+    if (_pfAC!==null && _gImp!==null) {
+      var _acAvg  = Math.round((_pfAC+_gImp)/2);
+      var _acGap  = Math.abs(_pfAC-_gImp);
+      var _acNote = _acGap>=25 ? 'Autoinforme vs comportamiento presentan divergencia.' : (_acAvg>=65?'Autocontrol sólido en ambas mediciones.':'Déficit de autocontrol consistente — revisar.');
+      _insights.push({ label:'Autocontrol conductual', points:[{src:'16PF',val:_pfAC},{src:'Juego',val:_gImp}], score:_acAvg, note:_acNote });
+    }
+    // 3. Adherencia normativa — PAI-ON vs DISC-C vs comprensión
+    var _paiON  = s.pai && s.pai.ON !== undefined ? s.pai.ON : null;
+    var _discC  = s.disc && s.disc.C !== undefined ? s.disc.C : null;
+    var _compPct= s.comprension && s.comprension.pct !== undefined ? s.comprension.pct : null;
+    if ((_paiON!==null || _discC!==null) && _compPct!==null) {
+      var _nVals  = [_paiON,_discC,_compPct].filter(function(v){return v!==null;});
+      var _nAvg   = Math.round(_nVals.reduce(function(a,b){return a+b;},0)/_nVals.length);
+      var _nNote  = _nAvg>=70 ? 'Alto apego a normas y procedimientos.' : _nAvg>=50 ? 'Adecuada orientación normativa.' : 'Señales de baja adherencia normativa — revisar.';
+      _insights.push({ label:'Orientación normativa', points:[
+        _paiON!==null?{src:'PAI',val:_paiON}:null, _discC!==null?{src:'DISC·C',val:_discC}:null, _compPct!==null?{src:'Comprensión',val:_compPct}:null
+      ].filter(Boolean), score:_nAvg, note:_nNote });
+    }
+    // 4. Aptitud aplicada — DC0 media vs Situacional
+    var _dc0Vals= s.dc0 ? ['V','N','L'].map(function(k){return s.dc0[k];}).filter(function(v){return v!==null&&v!==undefined;}) : [];
+    var _dc0Avg = _dc0Vals.length>0 ? Math.round(_dc0Vals.reduce(function(a,b){return a+b;},0)/_dc0Vals.length) : null;
+    var _sitPct = s.situacional && s.situacional.pct !== undefined ? s.situacional.pct : null;
+    if (_dc0Avg!==null && _sitPct!==null) {
+      var _apGap  = _dc0Avg - _sitPct;
+      var _apNote = _apGap>=20 ? 'Capacidad cognitiva superior al criterio demostrado — gap de aplicación.' : _apGap<=-15 ? 'Juicio situacional supera la aptitud medida — resultado atípico, explorar.' : 'Aptitud cognitiva consistente con decisiones situacionales.';
+      _insights.push({ label:'Aptitud aplicada', points:[{src:'DC-0',val:_dc0Avg},{src:'Situacional',val:_sitPct}], score:Math.round((_dc0Avg+_sitPct)/2), note:_apNote });
+    }
+    // 5. Atención sostenida — vigilancia vs game_vigilancia
+    var _vigPct  = s.vigilancia && s.vigilancia.pct !== undefined ? s.vigilancia.pct : null;
+    var _gVigPct = s.game_vigilancia && s.game_vigilancia.pct !== undefined ? s.game_vigilancia.pct : null;
+    if (_vigPct!==null && _gVigPct!==null) {
+      var _atAvg  = Math.round((_vigPct+_gVigPct)/2);
+      var _atGap  = Math.abs(_vigPct-_gVigPct);
+      var _atNote = _atGap>=25 ? 'Resultado dispar entre prueba de papel y prueba gamificada — revisar condiciones.' : (_atAvg>=65?'Atención sostenida consistente en ambas mediciones.':'Déficit de atención identificado de forma consistente.');
+      _insights.push({ label:'Atención sostenida', points:[{src:'Vigilancia',val:_vigPct},{src:'Jue. Vigilancia',val:_gVigPct}], score:_atAvg, note:_atNote });
+    }
 
-  // ── Fortalezas y Brechas ──────────────────────────────────────
+    if (_insights.length > 0) {
+      html += '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:18px 22px">';
+      html += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#94a3b8;margin-bottom:14px">Consistencia entre instrumentos</div>';
+      html += '<div style="display:flex;flex-direction:column;gap:0">';
+      _insights.forEach(function(ins, ii) {
+        var iCol = ins.score>=70?'#16a34a':ins.score>=50?'#d97706':'#dc2626';
+        html += '<div style="display:grid;grid-template-columns:160px 1fr auto;align-items:start;gap:14px;padding:10px 0;' + (ii>0?'border-top:1px solid #f1f5f9':'') + '">';
+        // Label
+        html += '<div>';
+        html += '<div style="font-size:12px;font-weight:700;color:#0f172a">' + ins.label + '</div>';
+        html += '<div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap">';
+        ins.points.forEach(function(pt) {
+          var ptCol = pt.val>=70?'#16a34a':pt.val>=50?'#d97706':'#dc2626';
+          html += '<span style="font-size:9px;color:#64748b;background:#f8fafc;border:1px solid #e2e8f0;border-radius:4px;padding:1px 6px">' + pt.src + ' <b style="color:' + ptCol + '">' + pt.val + '</b></span>';
+        });
+        html += '</div></div>';
+        // Note
+        html += '<div style="font-size:11px;color:#475569;line-height:1.5;padding-top:1px">' + ins.note + '</div>';
+        // Score
+        html += '<div style="font-size:22px;font-weight:900;color:' + iCol + ';white-space:nowrap;padding-top:1px">' + ins.score + '<span style="font-size:10px;font-weight:500;color:#94a3b8">%</span></div>';
+        html += '</div>';
+      });
+      html += '</div></div>';
+    }
+  }
+
+  // ── Fortalezas / Brechas — compact ───────────────────────────
   html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">';
-
   // Fortalezas
-  html += '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:18px 20px">';
-  html += '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#16a34a;border-bottom:2px solid #bbf7d0;padding-bottom:8px;margin-bottom:12px">✓ Fortalezas</div>';
+  html += '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px 18px">';
+  html += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#16a34a;margin-bottom:10px;padding-bottom:8px;border-bottom:1.5px solid #bbf7d0">Fortalezas</div>';
   if (rpt.fortalezas.length) {
     rpt.fortalezas.forEach(function(f) {
-      var desc = dimDesc(f.testId, f.key, f.score);
-      // Badge: zona para DISC/16PF, score bruto para aptitud
-      var isZone = (f.testId === 'disc' || f.testId === 'pf16');
-      var zone = f.zone || (f.score >= 70 ? 'alto' : f.score >= 40 ? 'medio' : 'bajo');
-      var zoneLbl = zone === 'alto' ? 'Alto' : zone === 'medio' ? 'Medio' : 'Bajo';
-      var badgeVal = isZone ? zoneLbl : (f.score + '/100');
-      html += '<div style="padding:10px 0;border-bottom:1px solid #f1f5f9">';
-      html += '<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:4px">';
-      html += '<div style="min-width:44px;height:22px;border-radius:6px;background:#f0fdf4;font-size:10px;font-weight:800;color:#16a34a;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0 6px;margin-top:1px">' + badgeVal + '</div>';
-      html += '<div style="flex:1"><div style="font-size:13px;font-weight:700;color:#0f172a">' + f.label + '</div>';
-      html += '<div style="font-size:10px;color:#94a3b8;margin-bottom:3px">' + (f.section||'') + '</div>';
-      if (desc) html += '<div style="font-size:12px;color:#475569;line-height:1.6">' + desc + '</div>';
+      var isZone = (f.testId==='disc'||f.testId==='pf16');
+      var zone = f.zone||(f.score>=70?'alto':f.score>=40?'medio':'bajo');
+      var badgeVal = isZone?(zone==='alto'?'Alto':zone==='medio'?'Medio':'Bajo'):(f.score+'%');
+      html += '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f8fafc">';
+      html += '<span style="font-size:10px;font-weight:800;color:#16a34a;background:#f0fdf4;border-radius:4px;padding:1px 6px;white-space:nowrap;flex-shrink:0">' + badgeVal + '</span>';
+      html += '<div>';
+      html += '<div style="font-size:12px;font-weight:600;color:#0f172a">' + f.label + '</div>';
+      html += '<div style="font-size:10px;color:#94a3b8">' + (f.section||'') + '</div>';
       html += '</div></div>';
-      html += '</div>';
     });
   } else {
-    html += '<div style="font-size:13px;color:#94a3b8;padding:12px 0">Sin fortalezas destacadas.</div>';
+    html += '<div style="font-size:12px;color:#94a3b8;padding:6px 0">Sin fortalezas destacadas.</div>';
   }
   html += '</div>';
-
   // Brechas
-  html += '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:18px 20px">';
-  html += '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#dc2626;border-bottom:2px solid #fecaca;padding-bottom:8px;margin-bottom:12px">△ Áreas de Desarrollo</div>';
+  html += '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px 18px">';
+  html += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#dc2626;margin-bottom:10px;padding-bottom:8px;border-bottom:1.5px solid #fecaca">Áreas de Desarrollo</div>';
   if (rpt.brechas.length) {
     rpt.brechas.forEach(function(b) {
-      var desc = dimDesc(b.testId, b.key, b.score);
-      // Badge: para tests de zona (DISC/16PF) mostrar la zona; para aptitud mostrar score bruto
-      var isZone = (b.testId === 'disc' || b.testId === 'pf16');
-      var zone = b.zone || (b.score >= 70 ? 'alto' : b.score >= 40 ? 'medio' : 'bajo');
-      var zoneLbl = zone === 'alto' ? 'Alto' : zone === 'medio' ? 'Medio' : 'Bajo';
-      var badgeVal = isZone ? zoneLbl : (b.score + '/100');
-      // Gap: para zona mostrar zona obtenida vs esperada; para aptitud mostrar brecha numérica
-      var gapHtml = '';
-      if (isZone) {
-        var expZ = b.expected || '—';
-        var expLbl = expZ.charAt(0).toUpperCase() + expZ.slice(1);
-        gapHtml = '<span style="font-size:10px;color:#f97316;font-weight:600">⚠ Zona obtenida: ' + zoneLbl + ' · Esperada: ' + expLbl + '</span>';
-      } else {
-        // req: extraer el mínimo del campo ideal o req
-        var reqMin = null;
+      var isZone = (b.testId==='disc'||b.testId==='pf16');
+      var zone = b.zone||(b.score>=70?'alto':b.score>=40?'medio':'bajo');
+      var badgeVal = isZone?(zone==='alto'?'Alto':zone==='medio'?'Medio':'Bajo'):(b.score+'%');
+      var reqMin = null;
+      if (!isZone) {
         if (b.ideal) reqMin = parseInt(b.ideal.split(/[–\-]/)[0]);
         else if (b.req) reqMin = parseInt(b.req);
-        if (reqMin !== null && b.score < reqMin) {
-          gapHtml = '<span style="font-size:10px;color:#f97316;font-weight:600">⚠ Brecha de ' + (reqMin - b.score) + ' puntos · Mínimo requerido: ' + reqMin + '</span>';
-        }
       }
-      html += '<div style="padding:10px 0;border-bottom:1px solid #f1f5f9">';
-      html += '<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:4px">';
-      // Badge con score/zona real
-      html += '<div style="min-width:44px;height:22px;border-radius:6px;background:#fef2f2;font-size:10px;font-weight:800;color:#dc2626;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0 6px;margin-top:1px">' + badgeVal + '</div>';
-      html += '<div style="flex:1">';
-      html += '<div style="font-size:13px;font-weight:700;color:#0f172a">' + b.label + '</div>';
-      html += '<div style="font-size:10px;color:#94a3b8;margin-bottom:3px">' + (b.section||'') + '</div>';
-      if (gapHtml) html += '<div style="margin-bottom:5px">' + gapHtml + '</div>';
-      if (desc) html += '<div style="font-size:12px;color:#475569;line-height:1.6">' + desc + '</div>';
+      html += '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f8fafc">';
+      html += '<span style="font-size:10px;font-weight:800;color:#dc2626;background:#fef2f2;border-radius:4px;padding:1px 6px;white-space:nowrap;flex-shrink:0">' + badgeVal + '</span>';
+      html += '<div>';
+      html += '<div style="font-size:12px;font-weight:600;color:#0f172a">' + b.label + '</div>';
+      html += '<div style="font-size:10px;color:#94a3b8">' + (b.section||'') + (reqMin!==null&&b.score<reqMin?' · Brecha '+(reqMin-b.score)+' pts':'') + '</div>';
       html += '</div></div>';
-      html += '</div>';
     });
   } else {
-    html += '<div style="font-size:13px;color:#94a3b8;padding:12px 0">No se detectaron brechas significativas.</div>';
+    html += '<div style="font-size:12px;color:#94a3b8;padding:6px 0">Sin brechas significativas.</div>';
   }
   html += '</div>';
-  html += '</div>'; // /grid fortalezas-brechas
+  html += '</div>'; // /grid fort-brechas
 
-  // ── Resultado por Test ────────────────────────────────────────
-  if (rpt && rpt.sections && rpt.sections.length > 0) {
+
+
+  // ── Resultado por Test (removed from Resumen — now in individual tabs) ──
+  if (false && rpt && rpt.sections && rpt.sections.length > 0) {
     html += '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:20px 24px">';
     html += '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#94a3b8;margin-bottom:14px">Resultado por Test</div>';
     html += '<div id="rpt-tooltip" style="display:none;position:fixed;z-index:9999;background:#1e293b;color:#f8fafc;padding:12px 16px;border-radius:10px;font-size:11px;max-width:280px;line-height:1.6;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,.4);border:1px solid #334155"></div>';
