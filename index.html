@@ -7506,62 +7506,56 @@ function buildReportHtml(c, withClose) {
   let html = '<div class="rpt-modal" style="font-family:SF Pro Display,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;display:flex;flex-direction:column;height:100%;min-height:0">';
 
   // ── HEADER — Enterprise Premium ────────────────────────────
-  html += '<div style="background:#0f172a;position:relative;overflow:hidden;flex-shrink:0">';
-  // Subtle accent glow
-  html += '<div style="position:absolute;top:-50%;left:-20%;width:60%;height:200%;background:radial-gradient(ellipse,rgba(99,102,241,.08),transparent 70%);pointer-events:none"></div>';
-  html += '<div style="position:absolute;bottom:-30%;right:-10%;width:40%;height:150%;background:radial-gradient(ellipse,rgba(5,150,105,.06),transparent 70%);pointer-events:none"></div>';
-  // Content
-  html += '<div style="position:relative;padding:28px 32px">';
-  html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap">';
-  // Left: branding + name
-  html += '<div>';
-  html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">';
-  html += '<div style="font-size:14px;font-weight:800;color:#fff;letter-spacing:-.02em">Psico<span style="color:#818cf8">Eval</span></div>';
-  html += '<div style="width:1px;height:14px;background:#334155"></div>';
-  html += '<div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#64748b;font-weight:600">Informe Psicolaboral</div>';
+  // ── HEADER — Propuesta B: franja lateral + fondo claro ────────
+  var _hAccent = verColor; // color del veredicto como acento
+  var _hAccentBg = gLv===5?'#f0fdf4':gLv>=3?'#fffbeb':'#fef2f2';
+  var _hAccentBrd= gLv===5?'#bbf7d0':gLv>=3?'#fde68a':'#fecaca';
+  html += '<div style="background:#fff;border-bottom:1px solid #e2e8f0;flex-shrink:0;display:flex;min-height:0">';
+  // Franja de acento izquierda
+  html += '<div style="width:5px;flex-shrink:0;background:' + _hAccent + ';border-radius:0"></div>';
+  // Contenido
+  html += '<div style="flex:1;padding:16px 20px 14px;min-width:0">';
+  // Fila superior: branding izq + acciones der
+  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">';
+  // Branding
+  html += '<div style="display:flex;align-items:center;gap:8px">';
+  html += '<span style="font-size:12px;font-weight:800;color:#0f172a;letter-spacing:-.02em">Psico<span style="color:#4338ca">Eval</span></span>';
+  html += '<span style="width:1px;height:12px;background:#e2e8f0"></span>';
+  html += '<span style="font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:1.4px;color:#94a3b8">Informe Psicolaboral</span>';
   html += '</div>';
-  html += '<div style="font-size:26px;font-weight:800;color:#fff;letter-spacing:-.03em;margin-bottom:10px">' + htmlEsc(c.nombre) + ' ' + htmlEsc(c.apellido) + '</div>';
-  // Chips — info personal
-  html += '<div style="display:flex;flex-wrap:wrap;gap:6px">';
-  chips.forEach(function(ch) {
-    html += '<span style="padding:3px 10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:100px;font-size:11px;font-weight:500;color:#94a3b8">' + htmlEsc(ch) + '</span>';
-  });
-  // Requisitos del cargo — chips con color
-  if (reqChips.length) {
-    html += '<span style="padding:3px 8px;background:transparent;border:none;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#475569;align-self:center">· Requisitos</span>';
-    reqChips.forEach(function(r) {
-      var icon  = r.na ? '—' : r.ok ? '✓' : '✗';
-      var label = icon + ' ' + r.label;
-      var bg    = r.na ? 'rgba(255,255,255,.05)' : r.ok ? 'rgba(22,163,74,.15)'  : 'rgba(220,38,38,.15)';
-      var brd   = r.na ? 'rgba(255,255,255,.08)' : r.ok ? 'rgba(74,222,128,.3)'  : 'rgba(252,165,165,.3)';
-      var col   = r.na ? '#64748b'               : r.ok ? '#4ade80'              : '#f87171';
-      html += '<span style="padding:3px 10px;background:' + bg + ';border:1px solid ' + brd + ';border-radius:100px;font-size:11px;font-weight:700;color:' + col + '">' + label + '</span>';
-    });
-  }
-  html += '</div>';
-  html += '</div>';
-  // Right: veredicto badge + actions
-  html += '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:10px;flex-shrink:0">';
+  // Acciones
   if (withClose) {
-    html += '<div style="display:flex;gap:8px">';
-    html += '<button onclick="downloadPdfReport(currentReportId)" style="background:#4338ca;border:none;color:#fff;font-size:12px;font-weight:700;padding:8px 16px;border-radius:8px;cursor:pointer;font-family:inherit;transition:background .15s" onmouseover="this.style.background=\'#3730a3\'" onmouseout="this.style.background=\'#4338ca\'">⬇ PDF</button>';
-    html += '<button onclick="printReport()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);color:#94a3b8;font-size:12px;font-weight:600;cursor:pointer;padding:6px 12px;border-radius:8px;transition:background .15s;font-family:inherit" onmouseover="this.style.background=\'rgba(255,255,255,.15)\'" onmouseout="this.style.background=\'rgba(255,255,255,.08)\'">🖨 Imprimir</button>';
-    html += '<button onclick="closeCandModal()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);color:#94a3b8;font-size:16px;cursor:pointer;padding:6px 12px;border-radius:8px;line-height:1;transition:background .15s" onmouseover="this.style.background=\'rgba(255,255,255,.15)\'" onmouseout="this.style.background=\'rgba(255,255,255,.08)\'">✕</button>';
+    html += '<div style="display:flex;gap:6px;align-items:center">';
+    html += '<button onclick="downloadPdfReport(currentReportId)" style="background:#4338ca;border:none;color:#fff;font-size:11px;font-weight:700;padding:6px 13px;border-radius:7px;cursor:pointer;font-family:inherit;transition:background .15s" onmouseover="this.style.background=\'#3730a3\'" onmouseout="this.style.background=\'#4338ca\'">⬇ PDF</button>';
+    html += '<button onclick="printReport()" style="background:#f8fafc;border:1px solid #e2e8f0;color:#64748b;font-size:11px;font-weight:600;cursor:pointer;padding:5px 11px;border-radius:7px;transition:background .15s;font-family:inherit" onmouseover="this.style.background=\'#f1f5f9\'" onmouseout="this.style.background=\'#f8fafc\'">🖨 Imprimir</button>';
+    html += '<button onclick="closeCandModal()" style="background:#f8fafc;border:1px solid #e2e8f0;color:#94a3b8;font-size:15px;cursor:pointer;padding:5px 10px;border-radius:7px;line-height:1;transition:background .15s" onmouseover="this.style.background=\'#f1f5f9\'" onmouseout="this.style.background=\'#f8fafc\'">✕</button>';
     html += '</div>';
   }
-  // Veredicto badge — compact chip
-  var verBorderCol = gLv===5 ? '#059669' : gLv>=3 ? '#d97706' : '#dc2626';
-  html += '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">';
-  html += '<div style="display:flex;align-items:center;gap:8px;padding:7px 14px;border-radius:8px;background:rgba(255,255,255,.06);border:1.5px solid ' + verBorderCol + '50">';
-  html += '<div style="font-size:13px;font-weight:900;color:' + verColor + ';letter-spacing:-.01em">' + veredicto + '</div>';
-  html += '<div style="width:1px;height:14px;background:rgba(255,255,255,.15)"></div>';
-  html += '<div style="font-size:18px;font-weight:900;color:' + verColor + '">' + gFit + '%</div>';
   html += '</div>';
-  html += '<div style="font-size:10px;color:#475569">Evaluado el ' + htmlEsc(c.fecha) + '</div>';
+  // Fila media: veredicto badge + nombre
+  html += '<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:8px">';
+  html += '<span style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:' + _hAccent + ';background:' + _hAccentBg + ';border:1px solid ' + _hAccentBrd + ';border-radius:6px;padding:2px 9px;white-space:nowrap">' + veredicto + ' · ' + gFit + '%</span>';
+  html += '<span style="font-size:20px;font-weight:800;color:#0f172a;letter-spacing:-.03em;line-height:1.2">' + htmlEsc(c.nombre) + ' ' + htmlEsc(c.apellido) + '</span>';
   html += '</div>';
+  // Fila inferior: chips info + requisitos + fecha
+  html += '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:5px">';
+  chips.forEach(function(ch) {
+    html += '<span style="padding:2px 9px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:100px;font-size:10.5px;font-weight:500;color:#64748b">' + htmlEsc(ch) + '</span>';
+  });
+  if (reqChips.length) {
+    html += '<span style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#cbd5e1;padding:0 2px">·</span>';
+    reqChips.forEach(function(r) {
+      var icon  = r.na ? '—' : r.ok ? '✓' : '✗';
+      var col   = r.na ? '#94a3b8' : r.ok ? '#16a34a' : '#dc2626';
+      var bg    = r.na ? '#f8fafc' : r.ok ? '#f0fdf4' : '#fef2f2';
+      var brd   = r.na ? '#e2e8f0' : r.ok ? '#bbf7d0' : '#fecaca';
+      html += '<span style="padding:2px 9px;background:' + bg + ';border:1px solid ' + brd + ';border-radius:100px;font-size:10.5px;font-weight:700;color:' + col + '">' + icon + ' ' + r.label + '</span>';
+    });
+  }
+  html += '<span style="font-size:10px;color:#94a3b8;margin-left:auto">Evaluado el ' + htmlEsc(c.fecha) + '</span>';
   html += '</div>';
-  html += '</div>';
-  html += '</div></div>'; // /content /header
+  html += '</div>'; // /contenido
+  html += '</div>'; // /header
 
   if (isLegacy) {
     html += '<div style="padding:24px"><div style="background:#fffbeb;border:1px solid #e5d4a0;border-radius:8px;padding:14px;font-size:13px;color:#555">⚠ Evaluado con versión anterior. Requiere nueva evaluación.</div></div></div>';
@@ -7833,50 +7827,63 @@ function buildReportHtml(c, withClose) {
     html += '</div>';
   }
 
-  // ── OPCIÓN 5: Ranking de Tests (Talogy style) ─────────────────
+  // ── Fortalezas / Brechas — compact ───────────────────────────
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">';
+  // Fortalezas
+  html += '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px 18px">';
+  html += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#16a34a;margin-bottom:10px;padding-bottom:8px;border-bottom:1.5px solid #bbf7d0">Fortalezas</div>';
+  if (rpt.fortalezas.length) {
+    rpt.fortalezas.forEach(function(f) {
+      var isZone = (f.testId==='disc'||f.testId==='pf16');
+      var zone = f.zone||(f.score>=70?'alto':f.score>=40?'medio':'bajo');
+      var badgeVal = isZone?(zone==='alto'?'Alto':zone==='medio'?'Medio':'Bajo'):(f.score+'%');
+      html += '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f8fafc">';
+      html += '<span style="font-size:10px;font-weight:800;color:#16a34a;background:#f0fdf4;border-radius:4px;padding:1px 6px;white-space:nowrap;flex-shrink:0">' + badgeVal + '</span>';
+      html += '<div>';
+      html += '<div style="font-size:12px;font-weight:600;color:#0f172a">' + f.label + '</div>';
+      html += '<div style="font-size:10px;color:#94a3b8">' + (f.section||'') + '</div>';
+      html += '</div></div>';
+    });
+  } else {
+    html += '<div style="font-size:12px;color:#94a3b8;padding:6px 0">Sin fortalezas destacadas.</div>';
+  }
+  html += '</div>';
+  // Brechas
+  html += '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px 18px">';
+  html += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#dc2626;margin-bottom:10px;padding-bottom:8px;border-bottom:1.5px solid #fecaca">Áreas de Desarrollo</div>';
+  if (rpt.brechas.length) {
+    rpt.brechas.forEach(function(b) {
+      var isZone = (b.testId==='disc'||b.testId==='pf16');
+      var zone = b.zone||(b.score>=70?'alto':b.score>=40?'medio':'bajo');
+      var badgeVal = isZone?(zone==='alto'?'Alto':zone==='medio'?'Medio':'Bajo'):(b.score+'%');
+      var reqMin = null;
+      if (!isZone) {
+        if (b.ideal) reqMin = parseInt(b.ideal.split(/[–\-]/)[0]);
+        else if (b.req) reqMin = parseInt(b.req);
+      }
+      html += '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f8fafc">';
+      html += '<span style="font-size:10px;font-weight:800;color:#dc2626;background:#fef2f2;border-radius:4px;padding:1px 6px;white-space:nowrap;flex-shrink:0">' + badgeVal + '</span>';
+      html += '<div>';
+      html += '<div style="font-size:12px;font-weight:600;color:#0f172a">' + b.label + '</div>';
+      html += '<div style="font-size:10px;color:#94a3b8">' + (b.section||'') + (reqMin!==null&&b.score<reqMin?' · Brecha '+(reqMin-b.score)+' pts':'') + '</div>';
+      html += '</div></div>';
+    });
+  } else {
+    html += '<div style="font-size:12px;color:#94a3b8;padding:6px 0">Sin brechas significativas.</div>';
+  }
+  html += '</div>';
+  html += '</div>'; // /grid fort-brechas
+
+  // ── DISC + 16PF detalle ───────────────────────────────────────
   {
     if (rpt.sections && rpt.sections.length > 0) {
-      var _AREA_LABELS2 = {
-        pai:'Ajuste Psicológico', dc0:'Aptitud Cognitiva', situacional:'Juicio Situacional',
-        vigilancia:'Vigilancia', comprension:'Comprensión', disc:'DISC', pf16:'16PF',
-        game_crisis:'Sala de Crisis', game_dilemas:'Dilemas Supervisión', game_dilemas_op:'Dilemas Operacionales',
-        game_detector:'Detector de Estímulos', game_secuencias:'Secuencias Lógicas', game_impulsos:'Control de Impulsos',
-        game_vigilancia:'Vigilancia Activa', game_memoria:'Memoria Operativa'
-      };
-      // Separate DISC/16PF from the rest; sort others by fit desc
       var _secDisc  = rpt.sections.find(function(s){ return s.id==='disc'; });
       var _secPf16  = rpt.sections.find(function(s){ return s.id==='pf16'; });
-      var _secOthers = rpt.sections.filter(function(s){ return s.id!=='disc'&&s.id!=='pf16'; })
-                        .sort(function(a,b){ return b.secFit - a.secFit; });
 
       var _fitCol = function(v){ return v>=80?'#16a34a':v>=55?'#d97706':'#dc2626'; };
       var _fitBg  = function(v){ return v>=80?'#f0fdf4':v>=55?'#fffbeb':'#fef2f2'; };
       var _fitRing= function(v){ return v>=80?'#bbf7d0':v>=55?'#fde68a':'#fecaca'; };
       var _icon   = function(v){ return v>=80?'✓':v>=55?'⚠':'✗'; };
-
-      html += '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:18px 20px;max-width:600px;margin:0 auto;width:100%">';
-      html += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#94a3b8;margin-bottom:14px">Ranking de ajuste por test</div>';
-
-      // ── Others: 2 per row as compact cards ──────────────────
-      html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">';
-      _secOthers.forEach(function(sec, idx) {
-        var fit = sec.secFit;
-        html += '<div style="background:' + _fitBg(fit) + ';border:1px solid ' + _fitRing(fit) + ';border-radius:10px;padding:10px 12px">';
-        // Top row: label + icon + %
-        html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">';
-        html += '<span style="font-size:10px;font-weight:700;color:#334155;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px">' + (_AREA_LABELS2[sec.id]||sec.id) + '</span>';
-        html += '<div style="display:flex;align-items:center;gap:5px;flex-shrink:0">';
-        html += '<span style="font-size:12px;font-weight:900;color:' + _fitCol(fit) + '">' + fit + '%</span>';
-        html += '<span style="font-size:9px;font-weight:800;color:' + _fitCol(fit) + ';width:16px;height:16px;border-radius:50%;background:' + _fitRing(fit) + ';display:inline-flex;align-items:center;justify-content:center">' + _icon(fit) + '</span>';
-        html += '</div></div>';
-        // Bar
-        html += '<div style="height:4px;background:#e2e8f0;border-radius:2px;overflow:hidden">';
-        html += '<div style="height:100%;width:' + fit + '%;background:' + _fitCol(fit) + ';border-radius:2px"></div>';
-        html += '</div></div>';
-      });
-      html += '</div>';
-
-      html += '</div>'; // end ranking card
 
       // ── DISC — detalle completo ───────────────────────────────
       if (_secDisc) {
@@ -7896,6 +7903,35 @@ function buildReportHtml(c, withClose) {
         var _dsPKey = _dsPKeys.join('');
         var _dsPD = DISC_STYLE_PROFILES[_dsPKey] || DISC_STYLE_PROFILES[_dsPKeys[0]] || { name:'Perfil mixto', tagline:'', fortalezas:[], dificultades:[], motivaciones:[], frustraciones:[], trabajaMejorCon:'' };
         var _liS = function(arr){ return arr.map(function(t){ return '<li style="margin-bottom:3px">'+t+'</li>'; }).join(''); };
+        // ── Dimension mini-grid (compact, before descriptive) ─────
+        var _DISC_DIM_LBL = { D:'Dominancia', I:'Influencia', S:'Estabilidad', C:'Cumplimiento' };
+        html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">';
+        _sd.dims.forEach(function(d) {
+          var _ez = DISC_ZONES[d.expected]||DISC_ZONES.medio;
+          var _inZ = d.zone===d.expected;
+          var _adjZ = !_inZ&&(d.zone==='medio'||d.expected==='medio');
+          var _stC = _inZ?'#16a34a':_adjZ?'#d97706':'#dc2626';
+          var _stB = _inZ?'#f0fdf4':_adjZ?'#fffbeb':'#fef2f2';
+          var _stRing = _inZ?'#bbf7d0':_adjZ?'#fde68a':'#fecaca';
+          var _stL = _inZ?'✓':_adjZ?'≈':'✗';
+          html += '<div style="background:'+_stB+';border:1px solid '+_stRing+';border-radius:10px;padding:9px 12px">';
+          // Label + score + status
+          html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">';
+          html += '<span style="font-size:11px;font-weight:700;color:#0f172a">'+_DISC_DIM_LBL[d.key]+'</span>';
+          html += '<div style="display:flex;align-items:center;gap:5px">';
+          html += '<span style="font-size:10px;color:#64748b">'+d.score+'</span>';
+          html += '<span style="font-size:9px;font-weight:800;color:'+_stC+';background:#fff;border:1px solid '+_stRing+';border-radius:4px;padding:1px 5px">'+_stL+'</span>';
+          html += '</div></div>';
+          // Tri-zone bar
+          html += '<div style="display:flex;height:5px;border-radius:100px;overflow:hidden;margin-bottom:4px">';
+          ['bajo','medio','alto'].forEach(function(z){ var zc=DISC_ZONES[z]; var isC=z===d.zone; var isE=z===d.expected; html += '<div style="flex:1;background:'+(isC?zc.color:'#e2e8f0')+';'+(isE&&!isC?'box-shadow:inset 0 0 0 1.5px '+zc.color+';':'')+' "></div>'; });
+          html += '</div>';
+          html += '<div style="display:flex;justify-content:space-between;font-size:8px;color:#cbd5e1"><span>B</span><span>M</span><span>A</span></div>';
+          html += '</div>';
+        });
+        html += '</div>';
+
+        // ── Perfil descriptivo ────────────────────────────────────
         html += '<div style="border-radius:10px;overflow:hidden;margin-bottom:14px;box-shadow:0 2px 8px rgba(79,70,229,.1)">'
           + '<div style="background:linear-gradient(135deg,#4f46e5,#7c3aed);padding:12px 16px;color:#fff">'
           + '<div style="font-size:9px;opacity:.75;text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px">Perfil conductual obtenido</div>'
@@ -7913,39 +7949,6 @@ function buildReportHtml(c, withClose) {
           + '</div>'
           + '<div style="background:#eff6ff;border-radius:8px;padding:8px 10px"><div style="font-size:9px;font-weight:800;color:#1d4ed8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">Trabaja mejor con</div><div style="font-size:10px;color:#1e293b;line-height:1.6">'+_dsPD.trabajaMejorCon+'</div></div>'
           + '</div></div>';
-        // Dimension cards
-        var _DISC_FD = {
-          D:{ bajo:'Baja orientación dominante. Prefiere ejecutar antes que liderar.',medio:'Orientación a resultados moderada. Toma iniciativa en situaciones familiares.',alto:'Alta orientación a resultados. Enfrenta desafíos de forma directa y asume riesgos calculados.' },
-          I:{ bajo:'Baja orientación social. Prefiere trabajo independiente.',medio:'Influencia social adecuada. Se comunica bien en entornos conocidos.',alto:'Alta capacidad de influencia. Comunicativo, construye relaciones con facilidad.' },
-          S:{ bajo:'Se adapta rápido a cambios, busca variedad y dinamismo.',medio:'Estabilidad moderada. Se adapta razonablemente aunque prefiere la continuidad.',alto:'Alta estabilidad. Valora entornos predecibles y produce resultados sólidos en rutinas.' },
-          C:{ bajo:'Prioriza velocidad sobre procedimientos. Requiere supervisión en tareas de detalle.',medio:'Respeta normas en general con cierta flexibilidad.',alto:'Alta orientación al cumplimiento. Sigue procedimientos con precisión.' }
-        };
-        var _DISC_DIM_LBL = { D:'Dominancia', I:'Influencia', S:'Estabilidad', C:'Cumplimiento' };
-        html += '<div style="display:flex;flex-direction:column;gap:8px">';
-        _sd.dims.forEach(function(d) {
-          var _dz = DISC_ZONES[d.zone]||DISC_ZONES.medio;
-          var _ez = DISC_ZONES[d.expected]||DISC_ZONES.medio;
-          var _inZ = d.zone===d.expected;
-          var _adjZ = !_inZ&&(d.zone==='medio'||d.expected==='medio');
-          var _stC = _inZ?'#16a34a':_adjZ?'#d97706':'#dc2626';
-          var _stB = _inZ?'#f0fdf4':_adjZ?'#fffbeb':'#fef2f2';
-          var _stL = _inZ?'✓ En zona':_adjZ?'≈ Adyacente':'✗ Fuera del perfil';
-          var _dDesc = (_DISC_FD[d.key]||{})[d.zone]||'';
-          html += '<div style="background:#fff;border-radius:10px;border:1.5px solid '+(_inZ?'#bbf7d0':_adjZ?'#fde68a':'#fecaca')+';padding:12px 14px">';
-          html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px">';
-          html += '<div style="font-size:13px;font-weight:700;color:#0f172a">'+_DISC_DIM_LBL[d.key]+'<span style="font-size:10px;font-weight:400;color:#94a3b8;margin-left:6px">'+d.score+'/100</span></div>';
-          html += '<div style="display:flex;gap:6px;align-items:center">';
-          html += '<span style="font-size:9px;padding:2px 8px;border-radius:100px;background:'+_ez.bg+';border:1px solid '+_ez.border+';color:'+_ez.color+'">Esperado: '+_ez.label+'</span>';
-          html += '<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:100px;background:'+_stB+';color:'+_stC+'">'+_stL+'</span>';
-          html += '</div></div>';
-          html += '<div style="display:flex;height:6px;border-radius:100px;overflow:hidden;margin-bottom:6px">';
-          ['bajo','medio','alto'].forEach(function(z){ var zc=DISC_ZONES[z]; var isE=z===d.expected; var isC=z===d.zone; html += '<div style="flex:1;background:'+(isC?zc.color:'#e2e8f0')+';'+(isE?'outline:2px solid '+zc.color+';outline-offset:-2px;':'')+' "></div>'; });
-          html += '</div>';
-          html += '<div style="display:flex;justify-content:space-between;font-size:9px;color:#94a3b8;margin-bottom:6px"><span>Bajo</span><span>Medio</span><span>Alto</span></div>';
-          if (_dDesc) html += '<div style="font-size:11px;line-height:1.6;color:#475569">'+_dDesc+'</div>';
-          html += '</div>';
-        });
-        html += '</div>';
         html += '<div style="font-size:9px;color:#94a3b8;margin-top:10px;font-style:italic">El DISC mide estilo conductual, no aptitud — no hay puntajes buenos o malos.</div>';
         html += '</div>'; // end DISC card
       }
@@ -8085,55 +8088,6 @@ function buildReportHtml(c, withClose) {
       }
     }
   }
-
-  // ── Fortalezas / Brechas — compact ───────────────────────────
-  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">';
-  // Fortalezas
-  html += '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px 18px">';
-  html += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#16a34a;margin-bottom:10px;padding-bottom:8px;border-bottom:1.5px solid #bbf7d0">Fortalezas</div>';
-  if (rpt.fortalezas.length) {
-    rpt.fortalezas.forEach(function(f) {
-      var isZone = (f.testId==='disc'||f.testId==='pf16');
-      var zone = f.zone||(f.score>=70?'alto':f.score>=40?'medio':'bajo');
-      var badgeVal = isZone?(zone==='alto'?'Alto':zone==='medio'?'Medio':'Bajo'):(f.score+'%');
-      html += '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f8fafc">';
-      html += '<span style="font-size:10px;font-weight:800;color:#16a34a;background:#f0fdf4;border-radius:4px;padding:1px 6px;white-space:nowrap;flex-shrink:0">' + badgeVal + '</span>';
-      html += '<div>';
-      html += '<div style="font-size:12px;font-weight:600;color:#0f172a">' + f.label + '</div>';
-      html += '<div style="font-size:10px;color:#94a3b8">' + (f.section||'') + '</div>';
-      html += '</div></div>';
-    });
-  } else {
-    html += '<div style="font-size:12px;color:#94a3b8;padding:6px 0">Sin fortalezas destacadas.</div>';
-  }
-  html += '</div>';
-  // Brechas
-  html += '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px 18px">';
-  html += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#dc2626;margin-bottom:10px;padding-bottom:8px;border-bottom:1.5px solid #fecaca">Áreas de Desarrollo</div>';
-  if (rpt.brechas.length) {
-    rpt.brechas.forEach(function(b) {
-      var isZone = (b.testId==='disc'||b.testId==='pf16');
-      var zone = b.zone||(b.score>=70?'alto':b.score>=40?'medio':'bajo');
-      var badgeVal = isZone?(zone==='alto'?'Alto':zone==='medio'?'Medio':'Bajo'):(b.score+'%');
-      var reqMin = null;
-      if (!isZone) {
-        if (b.ideal) reqMin = parseInt(b.ideal.split(/[–\-]/)[0]);
-        else if (b.req) reqMin = parseInt(b.req);
-      }
-      html += '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f8fafc">';
-      html += '<span style="font-size:10px;font-weight:800;color:#dc2626;background:#fef2f2;border-radius:4px;padding:1px 6px;white-space:nowrap;flex-shrink:0">' + badgeVal + '</span>';
-      html += '<div>';
-      html += '<div style="font-size:12px;font-weight:600;color:#0f172a">' + b.label + '</div>';
-      html += '<div style="font-size:10px;color:#94a3b8">' + (b.section||'') + (reqMin!==null&&b.score<reqMin?' · Brecha '+(reqMin-b.score)+' pts':'') + '</div>';
-      html += '</div></div>';
-    });
-  } else {
-    html += '<div style="font-size:12px;color:#94a3b8;padding:6px 0">Sin brechas significativas.</div>';
-  }
-  html += '</div>';
-  html += '</div>'; // /grid fort-brechas
-
-
 
   // ── Resultado por Test (removed from Resumen — now in individual tabs) ──
   if (false && rpt && rpt.sections && rpt.sections.length > 0) {
