@@ -4370,16 +4370,27 @@ function submitRegister() {
     var el = document.getElementById(id);
     if (el) { el.textContent = msg; el.style.display = msg ? 'block' : 'none'; }
   };
+  // Cuenta letras reales (descarta entradas de solo puntos/signos/números)
+  var _letras = function(s) { return (s.match(/[a-záéíóúüñA-ZÁÉÍÓÚÜÑ]/g) || []).length; };
+  // Verifica que el texto tenga al menos dos palabras con letras
+  var _dosPalabras = function(s) { return s.trim().split(/\s+/).filter(function(w){ return _letras(w)>=2; }).length >= 2; };
   _setRefErr('e-ref-empresa',  '');
   _setRefErr('e-ref-nombre',   '');
   _setRefErr('e-ref-telefono', '');
-  if (!refEmpresa)  { _setRefErr('e-ref-empresa',  'Indica la empresa del referente.'); refOk = false; }
-  if (!refNombre)   { _setRefErr('e-ref-nombre',   'Indica el nombre del referente.'); refOk = false; }
+  if (!refEmpresa || _letras(refEmpresa) < 3) {
+    _setRefErr('e-ref-empresa', !refEmpresa ? 'Indica la empresa del referente.' : 'Ingresa un nombre de empresa válido (sin símbolos ni signos).'); refOk = false;
+  }
+  if (!refNombre || !_dosPalabras(refNombre) || _letras(refNombre) < 4) {
+    _setRefErr('e-ref-nombre', !refNombre ? 'Indica el nombre del referente.' : 'Ingresa nombre y apellido del referente (ej: Juan Pérez).'); refOk = false;
+  }
+  if (refCargo && _letras(refCargo) < 2) {
+    // No hay span de error para cargo en el HTML — lo mostramos como alert
+    toast('El cargo del referente debe contener texto real.', 'er'); refOk = false;
+  }
   if (!refTelefono || refTelefono.replace(/\D/g,'').length < 8) {
     _setRefErr('e-ref-telefono', 'Ingresa un teléfono de contacto válido.'); refOk = false;
   }
   if (!refOk) {
-    // Scroll to reference section
     var refBlock = document.getElementById('r-ref-empresa');
     if (refBlock) refBlock.scrollIntoView({ behavior:'smooth', block:'center' });
     return;
