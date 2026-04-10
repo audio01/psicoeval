@@ -6030,7 +6030,24 @@ async function finishTests() {
   _testInProgress = false;
   clearTestProgress();
   const scores = calcScores(S.answers, S.selectedTests, S.candidate.perfil);
+  // ── Detectar preguntas sin responder dentro de cada bloque ────
+  var _incomp = [];
+  S.testBlocks.forEach(function(block) {
+    var missing = block.qs.filter(function(q){ return S.answers[q.id] === undefined; }).length;
+    if (missing > 0) _incomp.push({ testId: block.testId, missing: missing, total: block.qs.length });
+  });
+  if (_incomp.length) scores._incomplete = _incomp;
   S.candidate.tests = S.selectedTests; S.candidate.scores = scores; S.candidate.estado = 'completed';
+
+  // ── Cachear fit en scores para evitar recálculo en el dashboard ──
+  if (!S.candidate._testMode) {
+    var _rptCache = buildFitReport(S.candidate);
+    if (_rptCache) {
+      scores._globalFit     = _rptCache.globalFit;
+      if (_rptCache.fitCognitivo  !== null) scores._fitCognitivo  = _rptCache.fitCognitivo;
+      if (_rptCache.fitConductual !== null) scores._fitConductual = _rptCache.fitConductual;
+    }
+  }
 
   // ── Test mode: skip save, show results directly ──
   if (S.candidate._testMode) {
@@ -6160,6 +6177,7 @@ async function finishTests() {
 // ═══════════════════════════════════════════════════════════
 const PERFIL_IDEAL = {
   jefatura: {
+    _pesos: { disc: 4, pf16: 4 },
     dc0: {
       V:  { min:60, max:100, peso:2, label:'Verbal',             req:'Comunicación efectiva y comprensión de directrices.' },
       N:  { min:55, max:100, peso:2, label:'Numérico',           req:'Análisis de indicadores y presupuestos.' },
@@ -6172,6 +6190,7 @@ const PERFIL_IDEAL = {
   },
 
   administrativo: {
+    _pesos: { disc: 2, pf16: 3 },
     dc0: {
       V:  { min:60, max:100, peso:3, label:'Verbal',            req:'Redacción y comprensión de documentos.' },
       N:  { min:60, max:100, peso:3, label:'Numérico',          req:'Manejo de cifras, archivos y registros.' },
@@ -6182,6 +6201,7 @@ const PERFIL_IDEAL = {
   },
 
   guardia: {
+    _pesos: { disc: 2, pf16: 4 },
     situacional: { min:70, max:100, peso:5, label:'Juicio Situacional',          req:'Decisiones correctas en incidentes de seguridad.' },
     vigilancia:  { min:65, max:100, peso:5, label:'Apt. Vigilancia',             req:'Atención sostenida y aplicación de protocolos.' },
     comprension: { min:80, max:100, peso:5, label:'Comprensión de Instrucciones', req:'Aplica protocolos de seguridad con precisión; sin ambigüedad ante instrucciones multi-condición.' },
@@ -6189,6 +6209,7 @@ const PERFIL_IDEAL = {
     game_dilemas_op:  { pct:{ min:65, max:100, peso:4, label:'Dilemas Operacionales',   req:'Integridad operacional, criterio de escalación y adherencia a protocolo en ausencia de supervisión directa.' }},
   },
   supervisor: {
+    _pesos: { disc: 3, pf16: 3 },
     dc0: {
       V: { min:60, max:100, peso:3, label:'Verbal',           req:'Comprende y transmite instrucciones operativas con claridad.' },
       N: { min:50, max:100, peso:2, label:'Numérico',         req:'Manejo básico de indicadores de producción y métricas de turno.' },
@@ -6338,11 +6359,19 @@ function pickPf16Zone(perfil, factor, zone) {
 // ═══════════════════════════════════════════════════════════
 function calcFit(score, min, max) {
   if (!min || min === 0) return 100;
-  if (score >= min) return 100; // dentro o sobre el rango ideal
-  // Penalización proporcional: el ancho del rango ideal es la referencia de severidad
-  var gap = min - score;
-  var ref = (max > min) ? (max - min) : min; // ancho ideal; fallback al propio min
-  return Math.max(0, Math.round(100 - (gap / ref) * 100));
+  // Por debajo del mínimo — penalización proporcional hacia abajo
+  if (score < min) {
+    var gap = min - score;
+    var ref = (max > min) ? (max - min) : min;
+    return Math.max(0, Math.round(100 - (gap / ref) * 100));
+  }
+  // Por encima del techo clínico (max < 100 indica rango óptimo real, no solo piso)
+  if (max && max < 100 && score > max) {
+    var gapHi = score - max;
+    var refHi = max > min ? (max - min) : max;
+    return Math.max(0, Math.round(100 - (gapHi / refHi) * 100));
+  }
+  return 100; // dentro del rango ideal
 }
 
 function scoreLevel(v) {
@@ -6458,6 +6487,7 @@ function buildFitReport(c) {
 
   const sections = [];
   let totalPeso = 0, totalFitPeso = 0;
+  var _pesos = ideal._pesos || {};
 
   // ── PAI ──
   if (s.pai && ideal.pai) {
@@ -6473,7 +6503,18 @@ function buildFitReport(c) {
         ideal:`${cfg.min}–${cfg.max}`, gap: scoreToLevel5(score) < minLvP ? 'bajo' : 'ok' });
     });
     const secFit = Math.round(dims.reduce((a,d)=>a+d.fit*d.peso,0)/dims.reduce((a,d)=>a+d.peso,0));
-    sections.push({ id:'pai', icon:'🔎', title:'Ajuste Psicológico (PAI)', dims, secFit,
+    // ── Corrección por deseabilidad social (DS) ───────────────────
+    var _dsFlag = !!(s.pai && s.pai._ds_flag);
+    var _dsMean = (s.pai && s.pai._ds_mean) || 0;
+    var _dsCorr = 0;
+    if (_dsFlag && _dsMean > 3.2) {
+      _dsCorr = Math.min(25, Math.round((_dsMean - 3.2) / 0.8 * 25));
+      var _paiPeso = dims.reduce(function(a,d){ return a + d.peso; }, 0);
+      totalFitPeso -= _dsCorr * _paiPeso; // ajuste retroactivo en totales globales
+    }
+    var secFitAdj = Math.max(0, secFit - _dsCorr);
+    sections.push({ id:'pai', icon:'🔎', title:'Ajuste Psicológico (PAI)', dims, secFit: secFitAdj,
+      dsWarning: _dsFlag, dsCorrection: _dsCorr, dsMean: _dsMean,
       desc:'Evalúa dimensiones de ajuste emocional, normativo y motivacional.' });
   }
 
@@ -6553,9 +6594,10 @@ function buildFitReport(c) {
       discDims.push({ key:k, label:DISC_LABELS[k], score:score, zone:zone, expected:expected, matchScore:matchScore, testId:'disc' });
     });
     var discSecFit = Math.round(discFitSum / 4);
-    totalPeso += 3; totalFitPeso += discSecFit * 3;
+    var _pesoDisc = _pesos.disc || 3;
+    totalPeso += _pesoDisc; totalFitPeso += discSecFit * _pesoDisc;
     sections.push({ id:'disc', icon:'🎭', title:'Estilos Conductuales (DISC-20)',
-      dims: discDims, secFit: discSecFit, isZoneProfile: true, discProfile: discProfile,
+      dims: discDims, secFit: discSecFit, secPeso: _pesoDisc, isZoneProfile: true, discProfile: discProfile,
       desc:'Perfil conductual evaluado por zona de intensidad esperada para el cargo.' });
   }
 
@@ -6575,9 +6617,10 @@ function buildFitReport(c) {
     });
     if (pf16Count > 0) {
       var pf16SecFit = Math.round(pf16FitSum / pf16Count);
-      totalPeso += 3; totalFitPeso += pf16SecFit * 3;
+      var _pesoPf16 = _pesos.pf16 || 3;
+      totalPeso += _pesoPf16; totalFitPeso += pf16SecFit * _pesoPf16;
       sections.push({ id:'pf16', icon:'🧬', title:'Personalidad 16PF',
-        dims: pf16dims2, secFit: pf16SecFit, isZoneProfile: true, pf16Profile: pf16Profile,
+        dims: pf16dims2, secFit: pf16SecFit, secPeso: _pesoPf16, isZoneProfile: true, pf16Profile: pf16Profile,
         desc:'Factores globales de personalidad: evaluados por polo esperado para el cargo.' });
     }
   }
@@ -6609,6 +6652,36 @@ function buildFitReport(c) {
 
   let globalFit = totalPeso > 0 ? Math.round(totalFitPeso / totalPeso) : 0;
 
+  // ── Propuesta B: índices separados Cognitivo / Conductual ──────
+  // Calcular secPeso para secciones que no lo tienen explícito (desde dims)
+  sections.forEach(function(sec) {
+    if (sec.secPeso === undefined) {
+      sec.secPeso = sec.dims && sec.dims.length
+        ? sec.dims.reduce(function(a,d){ return a + (d.peso||1); }, 0)
+        : 1;
+    }
+  });
+  var _COND_IDS = ['pai','disc','pf16'];
+  var _cogSecs  = sections.filter(function(s){ return _COND_IDS.indexOf(s.id) < 0; });
+  var _condSecs = sections.filter(function(s){ return _COND_IDS.indexOf(s.id) >= 0; });
+  var fitCognitivo = null, fitConductual = null;
+  if (_cogSecs.length) {
+    var _cw = _cogSecs.reduce(function(a,s){ return a + s.secPeso; }, 0);
+    fitCognitivo = _cw > 0 ? Math.round(_cogSecs.reduce(function(a,s){ return a + s.secFit * s.secPeso; }, 0) / _cw) : null;
+  }
+  if (_condSecs.length) {
+    var _dw = _condSecs.reduce(function(a,s){ return a + s.secPeso; }, 0);
+    fitConductual = _dw > 0 ? Math.round(_condSecs.reduce(function(a,s){ return a + s.secFit * s.secPeso; }, 0) / _dw) : null;
+  }
+  // globalFit = promedio de ambos índices (evita compensación cruzada cognitivo/conductual)
+  if (fitCognitivo !== null && fitConductual !== null) {
+    globalFit = Math.round((fitCognitivo + fitConductual) / 2);
+  } else if (fitCognitivo !== null) {
+    globalFit = fitCognitivo;
+  } else if (fitConductual !== null) {
+    globalFit = fitConductual;
+  }
+
   // ── Fortalezas y Brechas ──
   const allDims = sections.flatMap(sec => sec.dims.map(d => ({...d, section:sec.title, secIcon:sec.icon})));
   // eFit: métrica unificada — aptitude tests usan d.fit, zone-profile (DISC/16PF) usan d.matchScore
@@ -6623,36 +6696,70 @@ function buildFitReport(c) {
   const brechas    = aptDims.filter(d => d.eFit < 70).sort((a,b) => a.eFit - b.eFit).slice(0, 5);
 
   // ── Preguntas de entrevista según brechas ──
+  // Preguntas diferenciadas por nivel de brecha (lo=severa eFit<40, mid=moderada eFit 40-69)
   const QS_ENTREVISTA = {
-    // PAI
-    EE: 'Cuéntame de una situación de alta presión emocional en el trabajo. ¿Cómo la gestionaste internamente?',
-    AS: '¿Cómo te has adaptado a equipos o culturas organizacionales muy diferentes a lo que esperabas?',
-    ON: '¿Has enfrentado una situación donde el procedimiento correcto era inconveniente? ¿Qué decidiste hacer?',
-    ME: '¿Qué estrategias usas para mantener tu rendimiento cuando acumulas muchas responsabilidades?',
-    IL: 'Cuéntame de una situación donde tuviste que tomar una decisión éticamente difícil en el trabajo.',
-    ML: '¿Cuándo fue la última vez que fuiste más allá de tus funciones formales? ¿Qué te motivó?',
-    // DC0
-    V:  '¿Puedes describir cómo abordas la lectura y comprensión de documentos complejos o normativos?',
-    N:  '¿Cómo manejas situaciones en que debes tomar decisiones rápidas con datos numéricos incompletos?',
-    L:  '¿Puedes darme un ejemplo de un problema complejo que resolviste aplicando un razonamiento paso a paso?',
-    // Situacional / Vigilancia
-    sit:'Ante una situación ambigua en el trabajo donde el protocolo no es claro, ¿cómo decides qué hacer?',
-    vig:'¿Puedes describir una situación en que detectaste algo irregular? ¿Cómo actuaste y qué resultó?',
-    // 16PF
-    EX: '¿Cómo te desenvuelves en un equipo nuevo donde no conoces a nadie? Dame un ejemplo de tu experiencia.',
-    AN: 'Cuéntame de un período de mucha presión laboral. ¿Cómo te afectó emocionalmente y cómo lo manejaste?',
-    DU: '¿Has tenido que tomar una decisión impopular que sabías que era la correcta? ¿Cómo la comunicaste?',
-    AC: '¿Cómo manejas las reglas o procedimientos cuando trabajas sin supervisión directa?',
-    // Juegos conductuales (keyed by testId)
-    game_crisis:      'Cuéntame de una situación real donde tuviste que manejar varias alertas o problemas al mismo tiempo. ¿Cómo priorizaste y qué resultado obtuviste?',
-    game_dilemas:     'Dame un ejemplo de una situación donde hacer lo correcto según el protocolo implicó un costo personal o relacional. ¿Qué decidiste y por qué?',
-    game_dilemas_op:  '¿Has tenido que reportar una irregularidad de un compañero o seguir un procedimiento que te generó conflicto con el equipo? ¿Qué hiciste y cómo lo manejaste?',
+    EE: {
+      lo: 'Los resultados sugieren dificultades importantes en estabilidad emocional. Cuéntame de una situación donde perdiste el control o reaccionaste de forma que luego lamentaste. ¿Qué aprendiste de eso?',
+      mid: 'Cuéntame de una situación de alta presión emocional en el trabajo. ¿Cómo la gestionaste y qué harías diferente hoy?',
+    },
+    AS: {
+      lo: 'Se observa baja adaptación social. Descríbeme una situación donde el clima del equipo fue muy diferente a lo que esperabas. ¿Cómo lo manejaste y cuánto te costó adaptarte?',
+      mid: '¿Cómo te has adaptado a equipos o culturas organizacionales muy diferentes a lo que esperabas? ¿Qué fue lo más difícil?',
+    },
+    ON: {
+      lo: 'Los datos muestran baja orientación normativa. ¿Has estado en situaciones donde saltaste un procedimiento? ¿Qué pasó y cómo lo justificaste?',
+      mid: '¿Has enfrentado una situación donde el procedimiento correcto era inconveniente o impopular? ¿Qué decidiste hacer y por qué?',
+    },
+    ME: {
+      lo: 'Se observa dificultad para manejar el estrés sostenido. ¿Cuándo fue la última vez que el trabajo te sobrepasó? ¿Cómo lo reconociste y qué hiciste al respecto?',
+      mid: '¿Qué estrategias usas cuando acumulas muchas responsabilidades simultáneas? ¿Qué señales te indican que estás cerca de tu límite?',
+    },
+    IL: {
+      lo: 'Se registra baja integridad laboral evaluada. Cuéntame de una situación donde tomaste un atajo o priorizaste el beneficio propio sobre el procedimiento correcto. ¿Qué consecuencias tuvo?',
+      mid: 'Cuéntame de una situación donde tuviste que tomar una decisión éticamente difícil en el trabajo. ¿Qué factores consideraste?',
+    },
+    ML: {
+      lo: 'Los resultados muestran baja motivación laboral. ¿Qué aspectos de un trabajo te generan más desgaste? ¿Cuándo fue la última vez que estuviste verdaderamente motivado en un rol?',
+      mid: '¿Cuándo fue la última vez que fuiste más allá de tus funciones formales sin que te lo pidieran? ¿Qué te motivó a hacerlo?',
+    },
+    V: {
+      lo: 'El razonamiento verbal muestra brechas importantes. Cuéntame de una situación donde tuviste que interpretar un documento o instrucción compleja. ¿Cómo lo abordaste y qué dificultades tuviste?',
+      mid: '¿Cómo abordas la lectura de documentos normativos o procedimientos complejos? ¿Qué estrategia usas para asegurarte de no omitir puntos clave?',
+    },
+    N: {
+      lo: 'Se observan limitaciones en razonamiento numérico. ¿Cómo manejas situaciones donde debes trabajar con cifras, indicadores o datos? ¿Qué tan cómodo/a te sientes con eso?',
+      mid: '¿Cómo manejas situaciones donde debes tomar decisiones con datos numéricos incompletos o bajo presión de tiempo?',
+    },
+    L: {
+      lo: 'El razonamiento lógico muestra brechas relevantes. Cuéntame de un problema operativo complejo que hayas enfrentado. ¿Cómo lo analizaste y qué pasos seguiste para resolverlo?',
+      mid: '¿Puedes darme un ejemplo de un problema complejo que resolviste aplicando un razonamiento paso a paso? ¿Qué obstáculos encontraste?',
+    },
+    sit: {
+      lo: 'El juicio situacional está por debajo del mínimo. Cuéntame de una situación donde tomaste una decisión incorrecta ante un escenario ambiguo. ¿Cómo lo reconociste y qué cambiarías?',
+      mid: 'Ante una situación ambigua donde el protocolo no es claro, ¿cómo decides qué hacer? Dame un ejemplo concreto.',
+    },
+    vig: {
+      lo: 'La aptitud de vigilancia muestra limitaciones. ¿Qué tan cómodo/a te sientes en roles que requieren atención sostenida por períodos largos? ¿Qué estrategias usas para mantener el foco?',
+      mid: '¿Puedes describir una situación en que detectaste algo irregular en tu trabajo? ¿Cómo actuaste y qué resultó?',
+    },
+    comp: {
+      lo: 'La comprensión de instrucciones está por debajo del mínimo. Cuéntame de una situación donde malinterpretaste una instrucción. ¿Qué consecuencias tuvo y cómo lo corregiste?',
+      mid: '¿Cómo te aseguras de aplicar correctamente instrucciones con múltiples condiciones o pasos? ¿Qué haces cuando tienes dudas?',
+    },
+    // Juegos conductuales (string simple, no requieren diferenciación por nivel)
+    game_crisis:     'Cuéntame de una situación real donde tuviste que manejar varias alertas o problemas al mismo tiempo. ¿Cómo priorizaste y qué resultado obtuviste?',
+    game_dilemas:    'Dame un ejemplo de una situación donde hacer lo correcto según el protocolo implicó un costo personal o relacional. ¿Qué decidiste y por qué?',
+    game_dilemas_op: '¿Has tenido que reportar una irregularidad de un compañero o seguir un procedimiento que te generó conflicto con el equipo? ¿Qué hiciste y cómo lo manejaste?',
   };
 
   const entrevista = brechas.map(function(d) {
-    // For game tests, use testId as lookup key (since key='pct' is shared)
-    if (d.testId && d.testId.startsWith('game_')) return QS_ENTREVISTA[d.testId] || QS_ENTREVISTA[d.key];
-    return QS_ENTREVISTA[d.key];
+    if (d.testId && d.testId.startsWith('game_')) return QS_ENTREVISTA[d.testId] || null;
+    var qs = QS_ENTREVISTA[d.key];
+    if (!qs) return null;
+    if (typeof qs === 'string') return qs;
+    // Nivel según severidad de la brecha
+    var nivel = (d.eFit !== undefined ? d.eFit : (d.fit || 0)) < 40 ? 'lo' : 'mid';
+    return qs[nivel] || qs.mid || qs.lo || null;
   }).filter(Boolean);
   if (entrevista.length < 3) {
     entrevista.push('¿Cuál ha sido el mayor desafío en tu historial laboral y cómo lo superaste?');
@@ -6687,7 +6794,7 @@ function buildFitReport(c) {
   }
   resumen += ' <em style="color:var(--ink3);font-size:11px">Este informe es de uso interno RRHH y debe complementarse con una entrevista por competencias.</em>';
 
-  return { globalFit, sections, fortalezas, brechas, entrevista, resumen };
+  return { globalFit, fitCognitivo, fitConductual, sections, fortalezas, brechas, entrevista, resumen };
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -7620,7 +7727,9 @@ function buildReportHtml(c, withClose) {
   });
   var incompleteTests = [];
   emptyTests.forEach(function(t){ if(missingTests.indexOf(t)===-1) incompleteTests.push(t); });
-  var hasIssues = missingTests.length > 0 || incompleteTests.length > 0;
+  // Enriquecer con datos de preguntas faltantes por bloque (guardados en scores._incomplete)
+  var _incompData = (s._incomplete && Array.isArray(s._incomplete)) ? s._incomplete : [];
+  var hasIssues = missingTests.length > 0 || incompleteTests.length > 0 || _incompData.length > 0;
   if (hasIssues) {
     html += '<div style="background:#fffbeb;border:1.5px solid #f59e0b;border-radius:12px;padding:14px 18px;display:flex;gap:14px;align-items:flex-start">';
     html += '<div style="font-size:20px;flex-shrink:0;margin-top:1px">⚠️</div>';
@@ -7636,7 +7745,24 @@ function buildReportHtml(c, withClose) {
       html += incompleteTests.map(function(t){ return TEST_LABELS[t]||t; }).join(', ');
       html += '</div>';
     }
-    html += '<div style="font-size:11px;color:#92400e;margin-top:4px;line-height:1.5">El candidato puede haber abandonado la evaluación o cerrado la sesión antes de completarla. Se recomienda solicitar una nueva evaluación para obtener un análisis completo. El puntaje actual solo refleja las pruebas finalizadas.</div>';
+    if (_incompData.length > 0) {
+      html += '<div style="font-size:12px;color:#78350f;margin-bottom:4px;line-height:1.6"><strong>Preguntas sin responder:</strong> ';
+      html += _incompData.map(function(x){ return (TEST_LABELS[x.testId]||x.testId) + ' (' + x.missing + '/' + x.total + ' sin responder)'; }).join(' · ');
+      html += '</div>';
+    }
+    html += '<div style="font-size:11px;color:#92400e;margin-top:4px;line-height:1.5">El candidato puede haber agotado el tiempo o cerrado la sesión antes de completar todas las preguntas. El puntaje refleja solo lo respondido — las omisiones cuentan como incorrectas. Se recomienda considerar este contexto al interpretar los resultados.</div>';
+    html += '</div></div>';
+  }
+
+  // ── Advertencia de deseabilidad social (DS) ──────────────────
+  var _dsSec = rpt.sections && rpt.sections.find(function(sec){ return sec.id === 'pai' && sec.dsWarning; });
+  if (_dsSec) {
+    var _dsAdjMsg = _dsSec.dsCorrection > 0 ? ' El puntaje PAI fue ajustado en <strong>−' + _dsSec.dsCorrection + ' puntos</strong> para compensar la inflación.' : '';
+    html += '<div style="background:#fef3c7;border:1.5px solid #fbbf24;border-radius:12px;padding:14px 18px;display:flex;gap:12px;align-items:flex-start">';
+    html += '<div style="font-size:20px;flex-shrink:0;margin-top:1px">🎭</div>';
+    html += '<div style="flex:1">';
+    html += '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#92400e;margin-bottom:4px">Sesgo de deseabilidad social detectado — PAI</div>';
+    html += '<div style="font-size:12px;color:#78350f;line-height:1.6">El candidato respondió consistentemente en la escala más favorable (media DS: <strong>' + (_dsSec.dsMean||'—') + '/4.0</strong>). Esto sugiere que el perfil puede reflejar cómo desea ser percibido más que su ajuste real.' + _dsAdjMsg + ' Se recomienda explorar estas dimensiones en entrevista.</div>';
     html += '</div></div>';
   }
 
@@ -7686,8 +7812,8 @@ function buildReportHtml(c, withClose) {
     // 3 mini badges
     html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">';
     var _miniGroups = [
-      { label:'Aptitud', avg: _aptAvg },
-      { label:'Psicológico', avg: _psicAvg },
+      { label:'Cognitivo', avg: rpt.fitCognitivo !== undefined ? rpt.fitCognitivo : _aptAvg },
+      { label:'Conductual', avg: rpt.fitConductual !== undefined ? rpt.fitConductual : _psicAvg },
       { label:'Práctico', avg: _gameAvg }
     ];
     _miniGroups.forEach(function(g) {
