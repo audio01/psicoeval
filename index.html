@@ -1307,7 +1307,11 @@ input,select,textarea{font-family:inherit;outline:none}
           <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#0369a1">📞 Referencia Laboral</div>
           <span style="font-size:10px;font-weight:800;background:#dc2626;color:#fff;padding:2px 8px;border-radius:100px;letter-spacing:.4px;text-transform:uppercase">Obligatorio</span>
         </div>
-        <p style="font-size:12px;color:#475569;margin:0 0 12px;line-height:1.5">Es requisito del proceso indicar una referencia laboral verificable. El equipo de RRHH podrá contactarla durante la selección.</p>
+        <p style="font-size:12px;color:#475569;margin:0 0 10px;line-height:1.5">Es requisito del proceso indicar una referencia laboral verificable. El equipo de RRHH podrá contactarla durante la selección.</p>
+        <div style="background:#fef2f2;border:1.5px solid #fca5a5;border-radius:8px;padding:10px 13px;margin-bottom:12px;display:flex;gap:8px;align-items:flex-start">
+          <span style="font-size:15px;flex-shrink:0;line-height:1.4">⚠️</span>
+          <span style="font-size:12px;color:#991b1b;line-height:1.5"><strong>Esta referencia será contactada y verificada.</strong> Datos falsos, inventados o no verificables invalidan la evaluación.</span>
+        </div>
         <div style="display:flex;flex-direction:column;gap:10px">
           <div class="field">
             <label>Empresa <span style="color:#dc2626">*</span></label>
@@ -1942,14 +1946,16 @@ const TESTS_META = {
   game_crisis:      { name:'Sala de Crisis',                   icon:'⚡', color:'#dc2626', game:true },
   game_dilemas:     { name:'Dilemas de Supervisión',           icon:'🧭', color:'#4f46e5', game:true },
   game_dilemas_op:  { name:'Dilemas Operacionales',            icon:'🔒', color:'#1d4ed8', game:true },
+  normativa_ohs:    { name:'Conocimiento Normativo OHS',       icon:'📐', color:'#0369a1' },
 };
 
 // Default batteries — can be overridden via Baterías
 const PERFIL_TESTS_DEFAULT = {
-  jefatura:      ['game_crisis','game_dilemas','dc0','situacional','comprension','disc','pf16'],
-  administrativo:['game_dilemas','dc0','comprension','disc','pf16'],
-  guardia:       ['game_crisis','game_dilemas_op','situacional','vigilancia','comprension','disc','pf16'],
-  supervisor:    ['game_crisis','game_dilemas','dc0','situacional','comprension','disc','pf16'],
+  jefatura:       ['game_crisis','game_dilemas','dc0','situacional','comprension','disc','pf16'],
+  administrativo: ['game_dilemas','dc0','comprension','disc','pf16'],
+  guardia:        ['game_crisis','game_dilemas_op','situacional','vigilancia','comprension','disc','pf16'],
+  supervisor:     ['game_crisis','game_dilemas','dc0','situacional','comprension','disc','pf16'],
+  prevencionista: ['normativa_ohs','game_crisis','game_dilemas','dc0','situacional','comprension','disc','pf16'],
 };
 
 // All available tests per cargo (max possible)
@@ -2155,10 +2161,11 @@ function renderConfigLog() {
 loadBatteryConfig();
 
 const PERFIL_META = {
-  jefatura:      { label:'Jefatura',            icon:'👔', color:'var(--blue)',  desc:'Evaluación para cargos de liderazgo y gestión de equipos. Incluye aptitud cognitiva, juicio situacional, perfil conductual (DISC/16PF) y juegos de crisis y dilemas éticos.' },
-  administrativo:{ label:'Administrativo',      icon:'💼', color:'var(--green)', desc:'Evaluación para roles administrativos y de soporte. Incluye aptitud cognitiva, perfil conductual (DISC/16PF) y dilemas de normatividad e integridad.' },
-  guardia:       { label:'Guardia de Seguridad',icon:'🛡', color:'var(--ink2)',  desc:'Evaluación para roles de seguridad. Incluye juicio situacional, aptitud de vigilancia, perfil conductual (DISC/16PF) y juegos de crisis e integridad.' },
-  supervisor:    { label:'Supervisor de Seguridad', icon:'⚙️', color:'var(--amber)', desc:'Evaluación para supervisores de turno u operaciones. Incluye aptitud cognitiva, juicio situacional, perfil conductual (DISC/16PF) y juegos conductuales de crisis y dilemas supervisivos.' },
+  jefatura:        { label:'Jefatura',                   icon:'👔', color:'var(--blue)',  desc:'Evaluación para cargos de liderazgo y gestión de equipos. Incluye aptitud cognitiva, juicio situacional, perfil conductual (DISC/16PF) y juegos de crisis y dilemas éticos.' },
+  administrativo:  { label:'Administrativo',             icon:'💼', color:'var(--green)', desc:'Evaluación para roles administrativos y de soporte. Incluye aptitud cognitiva, perfil conductual (DISC/16PF) y dilemas de normatividad e integridad.' },
+  guardia:         { label:'Guardia de Seguridad',       icon:'🛡', color:'var(--ink2)',  desc:'Evaluación para roles de seguridad. Incluye juicio situacional, aptitud de vigilancia, perfil conductual (DISC/16PF) y juegos de crisis e integridad.' },
+  supervisor:      { label:'Supervisor de Seguridad',    icon:'⚙️', color:'var(--amber)', desc:'Evaluación para supervisores de turno u operaciones. Incluye aptitud cognitiva, juicio situacional, perfil conductual (DISC/16PF) y juegos conductuales de crisis y dilemas supervisivos.' },
+  prevencionista:  { label:'Prevencionista de Riesgo',   icon:'🦺', color:'var(--amber)', desc:'Evaluación para profesionales en prevención de riesgos laborales. Incluye aptitud analítica, comprensión de normativas, juicio situacional, perfil conductual (DISC/16PF) y dilemas de integridad técnica.' },
 };
 
 // ── localStorage key constants (centralizadas para evitar typos) ──────────────
@@ -2174,9 +2181,9 @@ const LS_PARAMS            = 'psicoeval_params';
 // ═══════════════════════════════════════════════════════════
 //  CARGOS ACTIVOS / INACTIVOS
 // ═══════════════════════════════════════════════════════════
-var CARGOS_ACTIVE = { jefatura:true, administrativo:true, guardia:true, supervisor:true };
+var CARGOS_ACTIVE = { jefatura:true, administrativo:true, guardia:true, supervisor:true, prevencionista:true };
 var CUSTOM_CARGOS = []; // { key, label, icon, desc }
-var BUILTIN_CARGOS = ['jefatura','administrativo','guardia','supervisor'];
+var BUILTIN_CARGOS = ['jefatura','administrativo','guardia','supervisor','prevencionista'];
 
 function loadCargosConfig() {
   try {
@@ -3179,6 +3186,124 @@ const IWS_ITEMS = [
 
 
 
+// ═══════════════════════════════════════════════════════════
+//  CONOCIMIENTO NORMATIVO OHS — Prevencionista de Riesgo
+//  Normativa vigente a 2025-2026 (DS 44, Ley 16.744, DS 594,
+//  Ley Karin 21.643, SUSESO/ISTAS-21)
+// ═══════════════════════════════════════════════════════════
+const NORMATIVA_OHS_QS = [
+  // ── Bloque 1: DS N°44 ──────────────────────────────────────
+  { id:'ohs1', text:'¿Qué decretos supremos reemplazó el DS N°44, vigente desde el 1 de febrero de 2025?',
+    opts:[
+      { t:'DS 594 y DS 67',      ok:false },
+      { t:'DS 40 y DS 54',       ok:true  },
+      { t:'DS 40 y DS 594',      ok:false },
+      { t:'DS 101 y DS 67',      ok:false },
+    ]},
+  { id:'ohs2', text:'Según el DS N°44, ¿qué es el MIPER?',
+    opts:[
+      { t:'Un registro de accidentes e incidentes de la empresa',                     ok:false },
+      { t:'La Matriz de Identificación de Peligros y Evaluación de Riesgos',          ok:true  },
+      { t:'El Manual Interno de Procedimientos de Emergencia y Respuesta',            ok:false },
+      { t:'El Modelo Integrado de Prevención de Enfermedades Respiratorias',          ok:false },
+    ]},
+  { id:'ohs3', text:'Según el DS N°44, ¿en qué empresas es obligatorio designar un Delegado de Prevención?',
+    opts:[
+      { t:'Empresas con menos de 10 trabajadores',       ok:false },
+      { t:'Empresas entre 10 y 25 trabajadores',         ok:true  },
+      { t:'Empresas entre 25 y 50 trabajadores',         ok:false },
+      { t:'Empresas con más de 100 trabajadores',        ok:false },
+    ]},
+  { id:'ohs4', text:'¿Cuál de los siguientes NO corresponde a uno de los once instrumentos preventivos que establece el DS N°44?',
+    opts:[
+      { t:'Plan de emergencias',                          ok:false },
+      { t:'Mapa de riesgos',                              ok:false },
+      { t:'Programa de prevención de riesgos',            ok:false },
+      { t:'Evaluación psicológica obligatoria de todos los trabajadores', ok:true },
+    ]},
+  // ── Bloque 2: Ley 16.744 ───────────────────────────────────
+  { id:'ohs5', text:'¿Qué establece principalmente la Ley 16.744?',
+    opts:[
+      { t:'Las condiciones sanitarias básicas en los lugares de trabajo',              ok:false },
+      { t:'El seguro obligatorio contra accidentes del trabajo y enfermedades profesionales', ok:true },
+      { t:'El reglamento de gestión preventiva de riesgos laborales',                 ok:false },
+      { t:'Los protocolos de investigación de accidentes graves',                     ok:false },
+    ]},
+  { id:'ohs6', text:'Según la Ley 16.744, ¿cuál de los siguientes es un accidente de trayecto?',
+    opts:[
+      { t:'El que ocurre dentro de las instalaciones de la empresa',                  ok:false },
+      { t:'El que ocurre en el camino directo entre el trabajo y el hogar del trabajador', ok:true },
+      { t:'Cualquier accidente ocurrido fuera del horario de trabajo',                ok:false },
+      { t:'El que ocurre en actividades recreativas organizadas por la empresa',      ok:false },
+    ]},
+  { id:'ohs7', text:'¿Qué organismo supervisa a los organismos administradores del seguro de la Ley 16.744?',
+    opts:[
+      { t:'La Dirección del Trabajo',                                ok:false },
+      { t:'El Ministerio de Salud',                                  ok:false },
+      { t:'La Superintendencia de Seguridad Social (SUSESO)',        ok:true  },
+      { t:'El Instituto de Salud Pública (ISP)',                     ok:false },
+    ]},
+  // ── Bloque 3: DS 594 ───────────────────────────────────────
+  { id:'ohs8', text:'¿Qué materia regula el Decreto Supremo N°594?',
+    opts:[
+      { t:'La gestión preventiva de los riesgos laborales',                            ok:false },
+      { t:'Las condiciones sanitarias y ambientales básicas en los lugares de trabajo', ok:true  },
+      { t:'El seguro de accidentes del trabajo y enfermedades profesionales',          ok:false },
+      { t:'Los protocolos de prevención del acoso laboral',                            ok:false },
+    ]},
+  { id:'ohs9', text:'Según el DS 594, ¿cuál es el nivel máximo de ruido continuo permitido para una jornada laboral de 8 horas?',
+    opts:[
+      { t:'75 dB(A)', ok:false },
+      { t:'80 dB(A)', ok:false },
+      { t:'85 dB(A)', ok:true  },
+      { t:'90 dB(A)', ok:false },
+    ]},
+  { id:'ohs10', text:'¿Cuál es la jerarquía correcta de control de riesgos según la normativa vigente, del más al menos preferible?',
+    opts:[
+      { t:'EPP → control administrativo → ingeniería → eliminación',                         ok:false },
+      { t:'Eliminación → sustitución → control de ingeniería → control administrativo → EPP', ok:true  },
+      { t:'Control administrativo → EPP → sustitución → eliminación',                        ok:false },
+      { t:'Control de ingeniería → eliminación → EPP → control administrativo',              ok:false },
+    ]},
+  // ── Bloque 4: CPHS y estructura preventiva ─────────────────
+  { id:'ohs11', text:'Según el DS N°44, ¿en qué empresas es obligatorio constituir un Comité Paritario de Higiene y Seguridad (CPHS)?',
+    opts:[
+      { t:'Empresas con más de 10 trabajadores', ok:false },
+      { t:'Empresas con más de 15 trabajadores', ok:false },
+      { t:'Empresas con más de 25 trabajadores', ok:true  },
+      { t:'Empresas con más de 50 trabajadores', ok:false },
+    ]},
+  { id:'ohs12', text:'¿Cuántos representantes titulares tiene cada parte en un Comité Paritario?',
+    opts:[
+      { t:'1 titular y 1 suplente por parte', ok:false },
+      { t:'2 titulares y 2 suplentes por parte', ok:false },
+      { t:'3 titulares y 3 suplentes por parte', ok:true  },
+      { t:'4 titulares y 4 suplentes por parte', ok:false },
+    ]},
+  { id:'ohs13', text:'Según el DS N°44, ¿a partir de cuántos trabajadores es obligatorio contar con un Departamento de Prevención de Riesgos?',
+    opts:[
+      { t:'Más de 25 trabajadores',  ok:false },
+      { t:'Más de 50 trabajadores',  ok:false },
+      { t:'Más de 100 trabajadores', ok:true  },
+      { t:'Más de 200 trabajadores', ok:false },
+    ]},
+  // ── Bloque 5: Ley Karin + Psicosocial ──────────────────────
+  { id:'ohs14', text:'¿Cuál es el alcance de la Ley 21.643 "Ley Karin", vigente desde agosto de 2024?',
+    opts:[
+      { t:'Solo regula el acoso sexual entre compañeros de trabajo',                                             ok:false },
+      { t:'Regula el acoso laboral, acoso sexual y violencia en el trabajo, incluyendo violencia de terceros',  ok:true  },
+      { t:'Únicamente las conductas de acoso ejercidas por el empleador directo',                               ok:false },
+      { t:'Solo situaciones ocurridas dentro del horario de trabajo',                                           ok:false },
+    ]},
+  { id:'ohs15', text:'¿Qué instrumento se utiliza en Chile para la vigilancia de riesgos psicosociales en el trabajo?',
+    opts:[
+      { t:'Cuestionario JCQ de Karasek',         ok:false },
+      { t:'Inventario de Burnout de Maslach (MBI)', ok:false },
+      { t:'Cuestionario SUSESO/ISTAS-21',        ok:true  },
+      { t:'Escala GHQ-28 de Goldberg',           ok:false },
+    ]},
+];
+
 function buildQuestions(perfil) {
   const qs = [];
   const add = (arr, testId, type) => arr.forEach(q => qs.push({...q, testId, type}));
@@ -3202,8 +3327,9 @@ function buildQuestions(perfil) {
   if (active.includes('situacional')) add(sitItems, 'situacional', 'situacional');
   if (active.includes('vigilancia'))  add(VIGQ, 'vigilancia', 'choice');
   if (active.includes('comprension')) add(compItems, 'comprension', 'choice');
-  if (active.includes('disc'))        DISC_BLOCKS.forEach(function(b,i){ qs.push({id:'disc_b'+i, testId:'disc', type:'disc_block', dims:b, blockNum:i+1, total:DISC_BLOCKS.length}); });
-  if (active.includes('pf16'))        add(PF16_ITEMS, 'pf16', 'likert');
+  if (active.includes('disc'))          DISC_BLOCKS.forEach(function(b,i){ qs.push({id:'disc_b'+i, testId:'disc', type:'disc_block', dims:b, blockNum:i+1, total:DISC_BLOCKS.length}); });
+  if (active.includes('pf16'))          add(PF16_ITEMS, 'pf16', 'likert');
+  if (active.includes('normativa_ohs')) add(NORMATIVA_OHS_QS, 'normativa_ohs', 'choice');
   // Game tests don't need questions - they render their own UI
   return qs;
 }
@@ -3249,6 +3375,17 @@ function calcScores(answers, selectedTests, perfil) {
     const dsMean = dsVals.length ? dsVals.reduce((a,b)=>a+b,0)/dsVals.length : 2.5;
     scores.pai._ds_mean = Math.round(dsMean * 10) / 10;
     scores.pai._ds_flag = dsMean >= 3.2; // inflated if average ≥ 3.2/4
+
+    // Aquiescencia: baja varianza en respuestas brutas → responde sin discriminar contenido
+    var _paiRaw = allQs.filter(function(q){ return q.testId==='pai'; })
+                       .map(function(q){ return answers[q.id]; })
+                       .filter(function(v){ return v !== undefined; });
+    if (_paiRaw.length >= 10) {
+      var _paiMu = _paiRaw.reduce(function(a,b){ return a+b; }, 0) / _paiRaw.length;
+      var _paiSd = Math.sqrt(_paiRaw.reduce(function(a,v){ return a + Math.pow(v-_paiMu,2); }, 0) / _paiRaw.length);
+      scores.pai._aquiesc_sd   = Math.round(_paiSd * 100) / 100;
+      scores.pai._aquiesc_flag = _paiSd < 0.6; // SD < 0.6 en escala 1-4 = respuesta indiscriminada
+    }
   }
 
   // Juicio Situacional
@@ -3273,6 +3410,14 @@ function calcScores(answers, selectedTests, perfil) {
     let correct = 0;
     qs2.forEach(q => { const idx = answers[q.id]; if (idx!==undefined && q.opts[idx].ok) correct++; });
     scores.comprension = { pct: qs2.length ? Math.round(correct/qs2.length*100) : 0, correct, total: qs2.length };
+  }
+
+  // Conocimiento Normativo OHS
+  if (selectedTests.includes('normativa_ohs')) {
+    const qs2 = allQs.filter(q => q.testId === 'normativa_ohs');
+    let correct = 0;
+    qs2.forEach(q => { const idx = answers[q.id]; if (idx !== undefined && q.opts[idx].ok) correct++; });
+    scores.normativa_ohs = { pct: qs2.length ? Math.round(correct / qs2.length * 100) : 0, correct, total: qs2.length };
   }
 
   // DISC-20
@@ -3530,7 +3675,7 @@ const PAI_COLORS = {EE:'#1c5d8c',AS:'#3a7850',ON:'#a07528',ME:'#c04b1c',IL:'#3a7
 // ═══════════════════════════════════════════════════════════
 //  STATE
 // ═══════════════════════════════════════════════════════════
-let S = { candidate:null, selectedTests:[], allQs:[], answers:{}, testBlocks:[], blockIdx:0, deleteId:null, reevalId:null };
+let S = { candidate:null, selectedTests:[], allQs:[], answers:{}, testBlocks:[], blockIdx:0, deleteId:null, reevalId:null, blockTimes:{}, blockStartTime:null };
 
 // ═══════════════════════════════════════════════════════════
 //  TOAST
@@ -4378,21 +4523,21 @@ function submitRegister() {
   _setRefErr('e-ref-nombre',   '');
   _setRefErr('e-ref-telefono', '');
   if (!refEmpresa || _letras(refEmpresa) < 3) {
-    _setRefErr('e-ref-empresa', !refEmpresa ? 'Indica la empresa del referente.' : 'Ingresa un nombre de empresa válido (sin símbolos ni signos).'); refOk = false;
+    _setRefErr('e-ref-empresa', !refEmpresa ? 'Campo obligatorio.' : 'Ingresa el nombre real de la empresa. Datos no verificables invalidan la evaluación.'); refOk = false;
   }
   if (!refNombre || !_dosPalabras(refNombre) || _letras(refNombre) < 4) {
-    _setRefErr('e-ref-nombre', !refNombre ? 'Indica el nombre del referente.' : 'Ingresa nombre y apellido del referente (ej: Juan Pérez).'); refOk = false;
+    _setRefErr('e-ref-nombre', !refNombre ? 'Campo obligatorio.' : 'Ingresa nombre y apellido del referente (ej: Juan Pérez). Datos no verificables invalidan la evaluación.'); refOk = false;
   }
   if (refCargo && _letras(refCargo) < 2) {
-    // No hay span de error para cargo en el HTML — lo mostramos como alert
     toast('El cargo del referente debe contener texto real.', 'er'); refOk = false;
   }
   if (!refTelefono || refTelefono.replace(/\D/g,'').length < 8) {
-    _setRefErr('e-ref-telefono', 'Ingresa un teléfono de contacto válido.'); refOk = false;
+    _setRefErr('e-ref-telefono', 'Ingresa un número de contacto real y verificable.'); refOk = false;
   }
   if (!refOk) {
     var refBlock = document.getElementById('r-ref-empresa');
     if (refBlock) refBlock.scrollIntoView({ behavior:'smooth', block:'center' });
+    toast('Verifica los datos de la referencia. Esta información será contactada por RRHH.', 'er');
     return;
   }
   // ─────────────────────────────────────────────────────────────
@@ -4569,6 +4714,8 @@ function timeExpired() {
 }
 
 function renderTestBlock() {
+  // Registrar hora de inicio del bloque para medir tiempo por test
+  S.blockStartTime = Date.now();
   const block = S.testBlocks[S.blockIdx];
   const meta  = TESTS_META[block.testId];
   const total = S.testBlocks.length;
@@ -6021,6 +6168,8 @@ function nextTest() {
     if (el){el.style.borderColor='var(--accent)';el.scrollIntoView({behavior:'smooth',block:'center'});}
     toast(`Faltan ${unanswered.length} pregunta(s) por responder.`,'er'); return;
   }
+  // Registrar tiempo invertido en este bloque
+  if (S.blockStartTime) S.blockTimes[block.testId] = Math.round((Date.now() - S.blockStartTime) / 1000);
   if (S.blockIdx===S.testBlocks.length-1) finishTests();
   else { S.blockIdx++; saveTestProgress(); renderTestBlock(); }
 }
@@ -6037,6 +6186,12 @@ async function finishTests() {
     if (missing > 0) _incomp.push({ testId: block.testId, missing: missing, total: block.qs.length });
   });
   if (_incomp.length) scores._incomplete = _incomp;
+
+  // ── Registrar tiempo del último bloque y guardar timings ──────
+  var _lastBlock = S.testBlocks[S.blockIdx];
+  if (_lastBlock && S.blockStartTime) S.blockTimes[_lastBlock.testId] = Math.round((Date.now() - S.blockStartTime) / 1000);
+  if (Object.keys(S.blockTimes).length) scores._timings = S.blockTimes;
+
   S.candidate.tests = S.selectedTests; S.candidate.scores = scores; S.candidate.estado = 'completed';
 
   // ── Cachear fit en scores para evitar recálculo en el dashboard ──
@@ -6221,9 +6376,22 @@ const PERFIL_IDEAL = {
     game_crisis:  { pct:{ min:70, max:100, peso:5, label:'Sala de Crisis',           req:'Toma decisiones correctas bajo alta carga emocional y múltiples alertas simultáneas.' }},
     game_dilemas: { pct:{ min:65, max:100, peso:5, label:'Dilemas de Supervisión',   req:'Aplica criterio ético, normativo y de liderazgo ante situaciones reales del rol supervisor.' }},
   },
+  prevencionista: {
+    _pesos: { disc: 2, pf16: 4 },
+    dc0: {
+      V: { min:65, max:100, peso:3, label:'Verbal',           req:'Redacción de informes técnicos e interpretación de normativas de seguridad.' },
+      N: { min:55, max:100, peso:2, label:'Numérico',         req:'Análisis de estadísticas de accidentabilidad e índices de riesgo.' },
+      L: { min:65, max:100, peso:3, label:'Lógico-Abstracto', req:'Diagnóstico de causas raíz y análisis de escenarios de riesgo.' },
+    },
+    normativa_ohs: { min:70, max:100, peso:6, label:'Conocimiento Normativo OHS', req:'Dominio de la normativa vigente (DS 44, Ley 16.744, DS 594, Ley Karin). Base técnica indispensable para el ejercicio del cargo.' },
+    situacional: { min:72, max:100, peso:5, label:'Juicio Situacional',          req:'Toma decisiones correctas ante escenarios de riesgo e incidentes en terreno.' },
+    comprension: { min:80, max:100, peso:5, label:'Comprensión de Instrucciones', req:'Interpreta y aplica normativas técnicas con precisión. Sin margen de error en la aplicación de protocolos de seguridad.' },
+    game_crisis:  { pct:{ min:65, max:100, peso:4, label:'Sala de Crisis',          req:'Respuesta asertiva ante múltiples alertas de seguridad simultáneas. Mide calma y criterio bajo presión operativa.' }},
+    game_dilemas: { pct:{ min:72, max:100, peso:5, label:'Dilemas de Supervisión',  req:'Criterio ético e integridad ante conflictos entre normativa de seguridad y presión productiva.' }},
+  },
 };
 // ── Shared ideal entries for new tests (all profiles) ───────
-['jefatura','administrativo','guardia','supervisor'].forEach(function(pf) {
+['jefatura','administrativo','guardia','supervisor','prevencionista'].forEach(function(pf) {
   if (!PERFIL_IDEAL[pf]) return;
   if (!PERFIL_IDEAL[pf].disc) PERFIL_IDEAL[pf].disc = {
     D: { min:50, max:90, peso:2, label:'Dominancia (DISC)',   req:'Iniciativa y orientación a resultados.' },
@@ -6259,10 +6427,11 @@ const DISC_ZONES = {
 };
 const DISC_DIM_LABELS = { D:'Dominancia', I:'Influencia', S:'Estabilidad', C:'Cumplimiento' };
 const DISC_CARGO_PROFILE_DEFAULT = {
-  jefatura:      { D:'alto',  I:'medio', S:'medio', C:'medio' },
-  administrativo:{ D:'bajo',  I:'medio', S:'alto',  C:'alto'  },
-  guardia:       { D:'medio', I:'bajo',  S:'alto',  C:'alto'  },
-  supervisor:    { D:'medio', I:'medio', S:'medio', C:'alto'  },
+  jefatura:       { D:'alto',  I:'medio', S:'medio', C:'medio' },
+  administrativo: { D:'bajo',  I:'medio', S:'alto',  C:'alto'  },
+  guardia:        { D:'medio', I:'bajo',  S:'alto',  C:'alto'  },
+  supervisor:     { D:'medio', I:'medio', S:'medio', C:'alto'  },
+  prevencionista: { D:'medio', I:'medio', S:'alto',  C:'alto'  },
 };
 var DISC_CARGO_PROFILE = JSON.parse(JSON.stringify(DISC_CARGO_PROFILE_DEFAULT));
 
@@ -6277,10 +6446,11 @@ const PF16_POLES = {
   AC: { key:'AC', label:'Autocontrol',     lo:'Espontáneo · Flexible · Adaptable',     hi:'Disciplinado · Metódico · Normativo' },
 };
 const PF16_CARGO_PROFILE_DEFAULT = {
-  jefatura:      { EX:'alto',  AN:'alto', DU:'medio', IN:'alto',  AC:'medio' },
-  administrativo:{ EX:'medio', AN:'alto', DU:'medio', IN:'medio', AC:'alto'  },
-  guardia:       { EX:'bajo',  AN:'alto', DU:'alto',  IN:'bajo',  AC:'alto'  },
-  supervisor:    { EX:'medio', AN:'alto', DU:'alto',  IN:'alto',  AC:'alto'  },
+  jefatura:       { EX:'alto',  AN:'alto', DU:'medio', IN:'alto',  AC:'medio' },
+  administrativo: { EX:'medio', AN:'alto', DU:'medio', IN:'medio', AC:'alto'  },
+  guardia:        { EX:'bajo',  AN:'alto', DU:'alto',  IN:'bajo',  AC:'alto'  },
+  supervisor:     { EX:'medio', AN:'alto', DU:'alto',  IN:'alto',  AC:'alto'  },
+  prevencionista: { EX:'medio', AN:'alto', DU:'alto',  IN:'medio', AC:'alto'  },
 };
 var PF16_CARGO_PROFILE = JSON.parse(JSON.stringify(PF16_CARGO_PROFILE_DEFAULT));
 
@@ -6474,8 +6644,8 @@ function buildFitReport(c) {
   const perfil = c.perfil || 'administrativo';
   var ideal = PERFIL_IDEAL[perfil];
   if (!ideal) {
-    // Auto-create for custom cargos
-    PERFIL_IDEAL[perfil] = {};
+    // Auto-create for custom cargos — copia baremos de jefatura y lo marca
+    PERFIL_IDEAL[perfil] = { _inheritedFrom: 'jefatura' };
     var allT = ['pai','dc0','comprension','situacional','vigilancia','disc','pf16','game_detector','game_secuencias','game_impulsos','game_vigilancia','game_memoria'];
     allT.forEach(function(tid) {
       var src = PERFIL_IDEAL['jefatura'] && PERFIL_IDEAL['jefatura'][tid];
@@ -6579,6 +6749,20 @@ function buildFitReport(c) {
       desc:'Capacidad de interpretar y aplicar instrucciones complejas con múltiples condiciones.' });
   }
 
+  // ── Conocimiento Normativo OHS ──
+  if (s.normativa_ohs && ideal.normativa_ohs) {
+    const cfg = ideal.normativa_ohs;
+    const score = s.normativa_ohs.pct;
+    const fit = calcFit(score, cfg.min, cfg.max);
+    totalPeso += cfg.peso;
+    totalFitPeso += fit * cfg.peso;
+    const dim = { key:'normativa_ohs', label:cfg.label, score, fit, peso:cfg.peso, req:cfg.req,
+      ideal:`${cfg.min}–${cfg.max}`, extra:`${s.normativa_ohs.correct}/${s.normativa_ohs.total} correctas`,
+      gap: score < cfg.min ? 'bajo' : 'ok', minLv: cfg.minLv || scoreToLevel5(cfg.min), testId:'normativa_ohs' };
+    sections.push({ id:'normativa_ohs', icon:'📐', title:'Conocimiento Normativo OHS', dims:[dim], secFit:fit,
+      desc:'Dominio de la normativa vigente en prevención de riesgos: DS 44, Ley 16.744, DS 594 y Ley Karin.' });
+  }
+
   // ── DISC-20 — Zone profile matching ──────────────────────────
   if (s.disc) {
     var discProfile = DISC_CARGO_PROFILE[perfil] || DISC_CARGO_PROFILE_DEFAULT[perfil] || { D:'medio', I:'medio', S:'medio', C:'medio' };
@@ -6650,9 +6834,9 @@ function buildFitReport(c) {
     }
   });
 
-  let globalFit = totalPeso > 0 ? Math.round(totalFitPeso / totalPeso) : 0;
+  let globalFit = 0;
 
-  // ── Propuesta B: índices separados Cognitivo / Conductual ──────
+  // ── Índices separados Cognitivo / Conductual ──────
   // Calcular secPeso para secciones que no lo tienen explícito (desde dims)
   sections.forEach(function(sec) {
     if (sec.secPeso === undefined) {
@@ -6794,7 +6978,8 @@ function buildFitReport(c) {
   }
   resumen += ' <em style="color:var(--ink3);font-size:11px">Este informe es de uso interno RRHH y debe complementarse con una entrevista por competencias.</em>';
 
-  return { globalFit, fitCognitivo, fitConductual, sections, fortalezas, brechas, entrevista, resumen };
+  var inheritedFrom = ideal._inheritedFrom || null;
+  return { globalFit, fitCognitivo, fitConductual, sections, fortalezas, brechas, entrevista, resumen, inheritedFrom };
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -7763,6 +7948,27 @@ function buildReportHtml(c, withClose) {
     html += '<div style="flex:1">';
     html += '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#92400e;margin-bottom:4px">Sesgo de deseabilidad social detectado — PAI</div>';
     html += '<div style="font-size:12px;color:#78350f;line-height:1.6">El candidato respondió consistentemente en la escala más favorable (media DS: <strong>' + (_dsSec.dsMean||'—') + '/4.0</strong>). Esto sugiere que el perfil puede reflejar cómo desea ser percibido más que su ajuste real.' + _dsAdjMsg + ' Se recomienda explorar estas dimensiones en entrevista.</div>';
+    html += '</div></div>';
+  }
+
+  // ── Advertencia de aquiescencia (baja varianza PAI) ───────────
+  var _pai = rpt && c.scores && c.scores.pai;
+  if (_pai && _pai._aquiesc_flag) {
+    html += '<div style="background:#fdf4ff;border:1.5px solid #d8b4fe;border-radius:12px;padding:14px 18px;display:flex;gap:12px;align-items:flex-start">';
+    html += '<div style="font-size:20px;flex-shrink:0;margin-top:1px">🔁</div>';
+    html += '<div style="flex:1">';
+    html += '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#6b21a8;margin-bottom:4px">Sesgo de aquiescencia detectado — PAI</div>';
+    html += '<div style="font-size:12px;color:#581c87;line-height:1.6">La varianza de las respuestas PAI es muy baja (SD: <strong>' + (_pai._aquiesc_sd||'—') + '</strong> en escala 1-4). El candidato tendió a responder de manera uniforme sin discriminar el contenido de cada ítem. Los puntajes de personalidad pueden no reflejar el perfil real. Se recomienda verificar en entrevista.</div>';
+    html += '</div></div>';
+  }
+
+  // ── Advertencia: perfil hereda baremos de jefatura ───────────
+  if (rpt.inheritedFrom) {
+    html += '<div style="background:#eff6ff;border:1.5px solid #93c5fd;border-radius:12px;padding:14px 18px;display:flex;gap:12px;align-items:flex-start">';
+    html += '<div style="font-size:20px;flex-shrink:0;margin-top:1px">⚠️</div>';
+    html += '<div style="flex:1">';
+    html += '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#1e40af;margin-bottom:4px">Perfil sin baremo propio — se usaron criterios de Jefatura</div>';
+    html += '<div style="font-size:12px;color:#1e3a8a;line-height:1.6">El cargo <strong>' + (c.perfil || '') + '</strong> no tiene un perfil ideal configurado. Los puntajes de ajuste se calcularon usando los baremos de <strong>Jefatura</strong> como referencia. Los resultados pueden no reflejar con precisión los requisitos reales del puesto. Se recomienda crear un perfil ideal específico para este cargo.</div>';
     html += '</div></div>';
   }
 
@@ -11361,9 +11567,22 @@ async function renderDashboard() {
   const pending  = cands.filter(c => c.estado === 'pending').length;
   const nComp    = completed.length;
 
+  // Usar fit cacheado cuando está disponible; buildFitReport sólo para candidatos antiguos sin caché
   const reports = completed
     .filter(c => c.scores)
-    .map(c => { const r = buildFitReport(c); return r ? { c, r } : null; })
+    .map(c => {
+      if (c.scores._globalFit !== undefined) {
+        // Construir objeto mínimo compatible con el resto del dashboard
+        const r = {
+          globalFit:     c.scores._globalFit,
+          fitCognitivo:  c.scores._fitCognitivo  !== undefined ? c.scores._fitCognitivo  : null,
+          fitConductual: c.scores._fitConductual !== undefined ? c.scores._fitConductual : null,
+          sections: [], fortalezas: [], brechas: [], entrevista: [], resumen: ''
+        };
+        return { c, r };
+      }
+      const r = buildFitReport(c); return r ? { c, r } : null;
+    })
     .filter(Boolean);
 
   const fits   = reports.map(x => x.r.globalFit);
@@ -11790,7 +12009,9 @@ async function exportCSV() {
   const headers = [
     'Nombre','Apellido','Email','Teléfono','RUT','Cargo','Perfil','Fecha',
     'Educación','OS-10','Rubro',
-    'Ajuste Global %',
+    'Ajuste Global %','Ajuste Cognitivo %','Ajuste Conductual %',
+    // Alertas de validez
+    'Sesgo DS (PAI)','Media DS','Aquiescencia (PAI)','SD Respuestas',
     // PAI
     'PAI Est. Emocional (1-5)','PAI Adapt. Social (1-5)','PAI Orient. Normativa (1-5)',
     'PAI Manejo Estrés (1-5)','PAI Integridad (1-5)','PAI Motivación (1-5)',
@@ -11800,6 +12021,8 @@ async function exportCSV() {
     'Juicio Situacional (1-5)','Apt. Vigilancia (1-5)','Comprensión Instrucciones (1-5)',
     // Ajuste por sección
     'Ajuste PAI %','Ajuste DC0 %','Ajuste Situacional %','Ajuste Vigilancia %','Ajuste Comprensión %',
+    // Tiempos por test (segundos)
+    'T. PAI (s)','T. DC0 (s)','T. Situacional (s)','T. Vigilancia (s)','T. Comprensión (s)',
     // Historial
     'Empresa 1','Cargo 1','Duración 1','Salida 1',
     'Empresa 2','Cargo 2','Duración 2','Salida 2',
@@ -11825,11 +12048,22 @@ async function exportCSV() {
     const h1 = historial[0] || {};
     const h2 = historial[1] || {};
 
-    // Build fit report for global + section fits
-    const rpt = buildFitReport(c);
-    const globalFit = rpt ? rpt.globalFit : '';
+    // Usar fit cacheado si disponible; buildFitReport solo como fallback para candidatos sin caché
+    let globalFit = '', fitCog = '', fitCond = '';
     const secFit = {};
-    if (rpt) rpt.sections.forEach(sec => { secFit[sec.id] = sec.secFit; });
+    if (s._globalFit !== undefined) {
+      globalFit = s._globalFit;
+      fitCog    = s._fitCognitivo  !== undefined ? s._fitCognitivo  : '';
+      fitCond   = s._fitConductual !== undefined ? s._fitConductual : '';
+    } else {
+      const rpt = buildFitReport(c);
+      if (rpt) {
+        globalFit = rpt.globalFit;
+        fitCog    = rpt.fitCognitivo  !== null ? rpt.fitCognitivo  : '';
+        fitCond   = rpt.fitConductual !== null ? rpt.fitConductual : '';
+        rpt.sections.forEach(sec => { secFit[sec.id] = sec.secFit; });
+      }
+    }
 
     // Scores as 1-5
     const p  = s.pai     || {};
@@ -11837,6 +12071,7 @@ async function exportCSV() {
     const si = s.situacional || {};
     const vi = s.vigilancia  || {};
     const co = s.comprension || {};
+    const tm = s._timings   || {};
 
     const esc = v => v !== undefined && v !== null ? pctToLv(v) : '';
 
@@ -11848,7 +12083,10 @@ async function exportCSV() {
       EDU_LABELS[educacion] || educacion,
       os10 === 'si' ? 'Sí' : os10 === 'no' ? 'No' : '',
       rubro,
-      globalFit,
+      globalFit, fitCog, fitCond,
+      // Alertas de validez
+      p._ds_flag ? 'Sí' : 'No', p._ds_mean || '',
+      p._aquiesc_flag ? 'Sí' : 'No', p._aquiesc_sd !== undefined ? p._aquiesc_sd : '',
       // PAI
       esc(p.EE), esc(p.AS), esc(p.ON), esc(p.ME), esc(p.IL), esc(p.ML),
       // DC-0
@@ -11860,6 +12098,8 @@ async function exportCSV() {
       // Section fits
       secFit.pai || '', secFit.dc0 || '',
       secFit.situacional || '', secFit.vigilancia || '', secFit.comprension || '',
+      // Tiempos por test
+      tm.pai || '', tm.dc0 || '', tm.situacional || '', tm.vigilancia || '', tm.comprension || '',
       // Historial
       h1.empresa || '', h1.cargo || '', h1.duracion_label || '', h1.salida_label || '',
       h2.empresa || '', h2.cargo || '', h2.duracion_label || '', h2.salida_label || '',
