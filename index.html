@@ -1959,7 +1959,7 @@ const PERFIL_TESTS_DEFAULT = {
 };
 
 // All available tests per cargo (max possible)
-const ALL_TESTS_AVAILABLE = ['dc0','situacional','vigilancia','comprension','disc','pf16','game_crisis','game_dilemas','game_dilemas_op','game_detector','game_secuencias','game_impulsos','game_vigilancia','game_memoria'];
+const ALL_TESTS_AVAILABLE = ['dc0','situacional','vigilancia','comprension','normativa_ohs','disc','pf16','game_crisis','game_dilemas','game_dilemas_op','game_detector','game_secuencias','game_impulsos','game_vigilancia','game_memoria'];
 
 // Active batteries (loaded from localStorage, falls back to default)
 var PERFIL_TESTS = Object.assign({}, PERFIL_TESTS_DEFAULT);
@@ -10294,6 +10294,7 @@ function renderBateriaTab() {
   var TEST_GROUPS = {
     '📊 Aptitud Cognitiva':           ['dc0','comprension'],
     '💡 Evaluación Situacional':       ['situacional','vigilancia'],
+    '📐 Conocimiento Técnico':         ['normativa_ohs'],
     '🎭 Perfil Conductual — Radar':    ['disc','pf16'],
     '🎮 Juegos Conductuales':          ['game_crisis','game_dilemas','game_dilemas_op'],
     '⏸ Juegos Cognitivos (en pausa)': ['game_detector','game_secuencias','game_impulsos','game_vigilancia','game_memoria'],
@@ -10302,6 +10303,7 @@ function renderBateriaTab() {
   var TEST_GROUP_DESC = {
     '📊 Aptitud Cognitiva':           'Miden capacidad de razonamiento. Se puntúan de 0–100 por porcentaje de respuestas correctas.',
     '💡 Evaluación Situacional':       'Escenarios laborales y protocolos. Evalúan criterio ante situaciones reales del cargo.',
+    '📐 Conocimiento Técnico':         'Evalúa dominio de normativa y conocimiento especializado del cargo. Disponible solo para perfiles que lo requieran. Actualmente: Prevencionista de Riesgo.',
     '🎭 Perfil Conductual — Radar':    'No se puntúan de 0–100. Se evalúan por zona de intensidad esperada (bajo/medio/alto). Se muestran como gráfico de radar.',
     '🎮 Juegos Conductuales':          'Simulaciones conductuales que miden estabilidad emocional, normatividad e integridad sin riesgo de deseabilidad social. · ⚡ Sala de Crisis: respuesta ante múltiples alertas simultáneas y presión temporal. · 🧭 Dilemas de Supervisión: criterio ético, liderazgo e integridad ante situaciones reales del cargo.',
     '⏸ Juegos Cognitivos (en pausa)': 'Juegos disponibles pero desactivados temporalmente. Se pueden activar para perfiles que los requieran.',
@@ -10310,6 +10312,7 @@ function renderBateriaTab() {
   var TEST_SHORT_DESC = {
     dc0:'Razonamiento verbal, numérico y lógico-abstracto.',
     comprension:'Interpretar instrucciones multi-condición.',
+    normativa_ohs:'15 preguntas sobre DS 44, Ley 16.744, DS 594 y Ley Karin. Recomendado para Prevencionista de Riesgo.',
     pai:'⚠ Reemplazado por juegos conductuales en Supervisor. Disponible para otros perfiles.',
     disc:'Dominancia, Influencia, Estabilidad, Cumplimiento.',
     pf16:'Extraversión, ajuste emocional, dureza, independencia y autocontrol.',
@@ -10331,6 +10334,7 @@ function renderBateriaTab() {
   var GROUP_COLORS = {
     '📊 Aptitud Cognitiva':           { accent:'#0369a1', bg:'#f0f9ff', border:'#bae6fd' },
     '💡 Evaluación Situacional':       { accent:'#d97706', bg:'#fffbeb', border:'#fde68a' },
+    '📐 Conocimiento Técnico':         { accent:'#0f766e', bg:'#f0fdfa', border:'#99f6e4' },
     '🎭 Perfil Conductual — Radar':    { accent:'#0891b2', bg:'#ecfeff', border:'#a5f3fc' },
     '🎮 Juegos Conductuales':          { accent:'#dc2626', bg:'#fef2f2', border:'#fecaca' },
     '⏸ Juegos Cognitivos (en pausa)': { accent:'#94a3b8', bg:'#f8fafc', border:'#e2e8f0' },
