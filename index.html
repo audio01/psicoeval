@@ -1956,6 +1956,7 @@ const PERFIL_TESTS_DEFAULT = {
   guardia:        ['game_crisis','game_dilemas_op','situacional','vigilancia','comprension','disc','pf16'],
   supervisor:     ['game_crisis','game_dilemas','dc0','situacional','comprension','disc','pf16'],
   prevencionista: ['normativa_ohs','game_crisis','game_dilemas','dc0','situacional','comprension','disc','pf16'],
+  conductor:      ['pai','vigilancia','comprension','disc','pf16','game_crisis','game_dilemas_op'],
 };
 
 // All available tests per cargo (max possible)
@@ -2166,6 +2167,7 @@ const PERFIL_META = {
   guardia:         { label:'Guardia de Seguridad',       icon:'🛡', color:'var(--ink2)',  desc:'Evaluación para roles de seguridad. Incluye juicio situacional, aptitud de vigilancia, perfil conductual (DISC/16PF) y juegos de crisis e integridad.' },
   supervisor:      { label:'Supervisor de Seguridad',    icon:'⚙️', color:'var(--amber)', desc:'Evaluación para supervisores de turno u operaciones. Incluye aptitud cognitiva, juicio situacional, perfil conductual (DISC/16PF) y juegos conductuales de crisis y dilemas supervisivos.' },
   prevencionista:  { label:'Prevencionista de Riesgo',   icon:'🦺', color:'var(--amber)', desc:'Evaluación para profesionales en prevención de riesgos laborales. Incluye aptitud analítica, comprensión de normativas, juicio situacional, perfil conductual (DISC/16PF) y dilemas de integridad técnica.' },
+  conductor:       { label:'Conductor',                  icon:'🚗', color:'#0891b2',      desc:'Evaluación para conductores profesionales. Incluye ajuste psicológico, aptitud de vigilancia, comprensión de instrucciones, perfil conductual (DISC/16PF) y juegos de respuesta ante emergencias e integridad operacional.' },
 };
 
 // ── localStorage key constants (centralizadas para evitar typos) ──────────────
@@ -2181,9 +2183,9 @@ const LS_PARAMS            = 'psicoeval_params';
 // ═══════════════════════════════════════════════════════════
 //  CARGOS ACTIVOS / INACTIVOS
 // ═══════════════════════════════════════════════════════════
-var CARGOS_ACTIVE = { jefatura:true, administrativo:true, guardia:true, supervisor:true, prevencionista:true };
+var CARGOS_ACTIVE = { jefatura:true, administrativo:true, guardia:true, supervisor:true, prevencionista:true, conductor:true };
 var CUSTOM_CARGOS = []; // { key, label, icon, desc }
-var BUILTIN_CARGOS = ['jefatura','administrativo','guardia','supervisor','prevencionista'];
+var BUILTIN_CARGOS = ['jefatura','administrativo','guardia','supervisor','prevencionista','conductor'];
 
 function loadCargosConfig() {
   try {
@@ -2242,12 +2244,16 @@ function registerCustomCargo(c, skipSave) {
     PERFIL_META[key] = { label: c.label, icon: c.icon, color: 'var(--accent)', desc: c.desc };
   }
   if (CARGOS_ACTIVE[key] === undefined) CARGOS_ACTIVE[key] = true;
-  if (!PERFIL_TESTS_DEFAULT[key]) {
-    PERFIL_TESTS_DEFAULT[key] = [];
+
+  // ── Batería por defecto: nunca vacía para que el link sea siempre funcional ──
+  var _DEFAULT_CUSTOM_BATTERY = ['pai','dc0','comprension','disc','pf16','game_dilemas'];
+  if (!PERFIL_TESTS_DEFAULT[key] || PERFIL_TESTS_DEFAULT[key].length === 0) {
+    PERFIL_TESTS_DEFAULT[key] = _DEFAULT_CUSTOM_BATTERY.slice();
   }
-  if (!PERFIL_TESTS[key]) {
-    PERFIL_TESTS[key] = [];
+  if (!PERFIL_TESTS[key] || PERFIL_TESTS[key].length === 0) {
+    PERFIL_TESTS[key] = (PERFIL_TESTS_DEFAULT[key] || _DEFAULT_CUSTOM_BATTERY).slice();
   }
+
   // Create PERFIL_IDEAL with sensible defaults
   if (!PERFIL_IDEAL[key]) {
     PERFIL_IDEAL[key] = {
@@ -2267,11 +2273,12 @@ function registerCustomCargo(c, skipSave) {
       comprension: { min:70, max:100, peso:4, label:'Comprensión de Instrucciones', req:'Sigue instrucciones con precisión.' },
     };
   }
-  // Ensure shared tests exist for this profile
-  ['disc','pf16','game_detector','game_secuencias','game_impulsos','game_vigilancia','game_memoria'].forEach(function(tid) {
+  // Copiar configuración de todos los tests compartidos desde jefatura (incluye juegos conductuales)
+  ['disc','pf16','situacional','vigilancia',
+   'game_crisis','game_dilemas','game_dilemas_op',
+   'game_detector','game_secuencias','game_impulsos','game_vigilancia','game_memoria'].forEach(function(tid) {
     if (!PERFIL_IDEAL[key][tid]) {
-      // Copy from jefatura defaults
-      var src = PERFIL_IDEAL['jefatura'][tid];
+      var src = PERFIL_IDEAL['jefatura'] && PERFIL_IDEAL['jefatura'][tid];
       if (src) PERFIL_IDEAL[key][tid] = JSON.parse(JSON.stringify(src));
     }
   });
@@ -6389,9 +6396,24 @@ const PERFIL_IDEAL = {
     game_crisis:  { pct:{ min:65, max:100, peso:4, label:'Sala de Crisis',          req:'Respuesta asertiva ante múltiples alertas de seguridad simultáneas. Mide calma y criterio bajo presión operativa.' }},
     game_dilemas: { pct:{ min:72, max:100, peso:5, label:'Dilemas de Supervisión',  req:'Criterio ético e integridad ante conflictos entre normativa de seguridad y presión productiva.' }},
   },
+  conductor: {
+    _pesos: { disc: 2, pf16: 4 },
+    pai: {
+      EE: { min:65, max:100, peso:4, label:'Estabilidad Emocional', req:'Calma y control emocional ante situaciones de tráfico de alta tensión o incidentes en ruta.' },
+      AS: { min:50, max:100, peso:2, label:'Adaptación Social',     req:'Relación adecuada con pasajeros, custodios y supervisores durante la jornada.' },
+      ON: { min:70, max:100, peso:4, label:'Orient. Normativa',     req:'Respeto estricto a normas de tránsito y protocolos internos de la empresa.' },
+      ME: { min:65, max:100, peso:4, label:'Manejo del Estrés',     req:'Conducción segura bajo tráfico adverso, rutas de alta presión o condiciones climáticas difíciles.' },
+      IL: { min:65, max:100, peso:4, label:'Integridad Laboral',    req:'Responsabilidad sobre vehículos, pasajeros, carga o materiales de valor.' },
+      ML: { min:55, max:100, peso:2, label:'Motivación Laboral',    req:'Compromiso con puntualidad, continuidad y cuidado del vehículo asignado.' },
+    },
+    vigilancia:      { min:72, max:100, peso:6, label:'Apt. Vigilancia',             req:'Atención sostenida y detección de anomalías durante la conducción. Indicador principal del cargo.' },
+    comprension:     { min:70, max:100, peso:4, label:'Comprensión de Instrucciones', req:'Aplica correctamente rutas, protocolos de acceso y procedimientos ante incidentes.' },
+    game_crisis:     { pct:{ min:60, max:100, peso:4, label:'Sala de Crisis',         req:'Respuesta asertiva ante emergencias viales o incidentes durante la ruta.' }},
+    game_dilemas_op: { pct:{ min:65, max:100, peso:4, label:'Dilemas Operacionales',  req:'Integridad operacional: negativa a conducción insegura o transporte irregular bajo presión.' }},
+  },
 };
 // ── Shared ideal entries for new tests (all profiles) ───────
-['jefatura','administrativo','guardia','supervisor','prevencionista'].forEach(function(pf) {
+['jefatura','administrativo','guardia','supervisor','prevencionista','conductor'].forEach(function(pf) {
   if (!PERFIL_IDEAL[pf]) return;
   if (!PERFIL_IDEAL[pf].disc) PERFIL_IDEAL[pf].disc = {
     D: { min:50, max:90, peso:2, label:'Dominancia (DISC)',   req:'Iniciativa y orientación a resultados.' },
@@ -6432,6 +6454,7 @@ const DISC_CARGO_PROFILE_DEFAULT = {
   guardia:        { D:'medio', I:'bajo',  S:'alto',  C:'alto'  },
   supervisor:     { D:'medio', I:'medio', S:'medio', C:'alto'  },
   prevencionista: { D:'medio', I:'medio', S:'alto',  C:'alto'  },
+  conductor:      { D:'bajo',  I:'bajo',  S:'alto',  C:'alto'  },
 };
 var DISC_CARGO_PROFILE = JSON.parse(JSON.stringify(DISC_CARGO_PROFILE_DEFAULT));
 
@@ -6451,6 +6474,7 @@ const PF16_CARGO_PROFILE_DEFAULT = {
   guardia:        { EX:'bajo',  AN:'alto', DU:'alto',  IN:'bajo',  AC:'alto'  },
   supervisor:     { EX:'medio', AN:'alto', DU:'alto',  IN:'alto',  AC:'alto'  },
   prevencionista: { EX:'medio', AN:'alto', DU:'alto',  IN:'medio', AC:'alto'  },
+  conductor:      { EX:'bajo',  AN:'alto', DU:'alto',  IN:'bajo',  AC:'alto'  },
 };
 var PF16_CARGO_PROFILE = JSON.parse(JSON.stringify(PF16_CARGO_PROFILE_DEFAULT));
 
@@ -12722,7 +12746,7 @@ function applyRoleRestrictions() {
 
 // ── URL Config Sharing (Compact) ──
 // Uses short aliases and compact format to keep URLs short
-var _TEST_ALIAS = {dc0:'D',pai:'P',situacional:'S',vigilancia:'V',comprension:'C',disc:'I',pf16:'X',game_detector:'g1',game_secuencias:'g2',game_impulsos:'g4',game_vigilancia:'g5',game_memoria:'g7'};
+var _TEST_ALIAS = {dc0:'D',pai:'P',situacional:'S',vigilancia:'V',comprension:'C',disc:'I',pf16:'X',normativa_ohs:'no',game_crisis:'gc',game_dilemas:'gd',game_dilemas_op:'go',game_detector:'g1',game_secuencias:'g2',game_impulsos:'g4',game_vigilancia:'g5',game_memoria:'g7'};
 var _ALIAS_TEST = {};
 Object.keys(_TEST_ALIAS).forEach(function(k){ _ALIAS_TEST[_TEST_ALIAS[k]] = k; });
 
@@ -12732,14 +12756,13 @@ function generateCandidateLink() {
     // a = active cargos
     var ac = getActiveCargos();
     parts.push('a=' + ac.join(','));
-    // b = batteries per cargo (short aliases)
+    // b = batteries per cargo (short aliases) — siempre incluida para que el link sea autosuficiente
     var bParts = [];
     ac.forEach(function(k) {
-      var tests = PERFIL_TESTS[k] || [];
-      if (tests.length) {
-        var short = tests.map(function(t){ return _TEST_ALIAS[t] || t; }).join('.');
-        bParts.push(k + '~' + short);
-      }
+      var tests = PERFIL_TESTS[k] || PERFIL_TESTS_DEFAULT[k] || [];
+      if (!tests.length) tests = ['pai','dc0','comprension','disc','pf16']; // mínimo absoluto de seguridad
+      var short = tests.map(function(t){ return _TEST_ALIAS[t] || t; }).join('.');
+      bParts.push(k + '~' + short);
     });
     if (bParts.length) parts.push('b=' + bParts.join('|'));
     // c = custom cargos (minimal)
@@ -12811,12 +12834,21 @@ function applyCandidateConfig() {
       pairs.c.split('|').forEach(function(entry) {
         var p = entry.split('~');
         if (p.length >= 3) {
-          var cc = { key:p[0], label:p[1], icon:p[2], desc:p[3]||'' };
+          // desc puede contener '~' — reunir todo lo que venga después del ícono
+          var cc = { key:p[0], label:p[1], icon:p[2], desc:p.slice(3).join('~') || '' };
           if (!CUSTOM_CARGOS.some(function(x){ return x.key === cc.key; })) {
             CUSTOM_CARGOS.push(cc);
           }
           registerCustomCargo(cc, true);
           CARGOS_ACTIVE[cc.key] = true;
+          // Si hay batería guardada en localStorage para este cargo, restaurarla
+          try {
+            var _savedB = localStorage.getItem(LS_BATTERIES);
+            if (_savedB) {
+              var _parsedB = JSON.parse(_savedB);
+              if (_parsedB[cc.key] && _parsedB[cc.key].length) PERFIL_TESTS[cc.key] = _parsedB[cc.key];
+            }
+          } catch(e) {}
         }
       });
     }
@@ -12868,11 +12900,10 @@ function shareCargoLink(cargoKey) {
     // Only this cargo active
     parts.push('a=' + cargoKey);
     // Battery for this cargo
-    var _TA = {dc0:'D',pai:'P',situacional:'S',vigilancia:'V',comprension:'C',disc:'I',pf16:'X',game_detector:'g1',game_secuencias:'g2',game_impulsos:'g4',game_vigilancia:'g5',game_memoria:'g7'};
-    if (tests.length) {
-      var short = tests.map(function(t){ return _TA[t] || t; }).join('.');
-      parts.push('b=' + cargoKey + '~' + short);
-    }
+    var _TA = {dc0:'D',pai:'P',situacional:'S',vigilancia:'V',comprension:'C',disc:'I',pf16:'X',normativa_ohs:'no',game_crisis:'gc',game_dilemas:'gd',game_dilemas_op:'go',game_detector:'g1',game_secuencias:'g2',game_impulsos:'g4',game_vigilancia:'g5',game_memoria:'g7'};
+    if (!tests.length) tests = PERFIL_TESTS_DEFAULT[cargoKey] || ['pai','dc0','comprension','disc','pf16'];
+    var short = tests.map(function(t){ return _TA[t] || t; }).join('.');
+    parts.push('b=' + cargoKey + '~' + short);
     // Custom cargo descriptor if needed
     var cc = CUSTOM_CARGOS ? CUSTOM_CARGOS.filter(function(c){ return c.key === cargoKey; }) : [];
     if (cc.length) parts.push('c=' + cc[0].key + '~' + cc[0].label + '~' + cc[0].icon + '~' + (cc[0].desc||'').substring(0,60));
