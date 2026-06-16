@@ -2178,7 +2178,36 @@ const LS_CUSTOM_CARGOS     = 'psicoeval_custom_cargos';
 const LS_DISC_PROFILE      = 'psicoeval_disc_profile';
 const LS_PF16_PROFILE      = 'psicoeval_pf16_profile';
 const LS_PARAMS            = 'psicoeval_params';
+const LS_TM_MINS           = 'psicoeval_tm_mins';
 // ─────────────────────────────────────────────────────────────────────────────
+
+var TM_MINS_DEFAULTS = { dc0:6, pai:5, situacional:5, vigilancia:3, comprension:4, disc:3, pf16:4, normativa_ohs:6, game_detector:2, game_secuencias:2, game_impulsos:2, game_vigilancia:2, game_memoria:2, game_crisis:4, game_dilemas:3, game_dilemas_op:3 };
+var TM_MINS_CONFIG = (function(){
+  try {
+    var saved = localStorage.getItem('psicoeval_tm_mins');
+    if (saved) { var parsed = JSON.parse(saved); return Object.assign({}, TM_MINS_DEFAULTS, parsed); }
+  } catch(e) {}
+  return Object.assign({}, TM_MINS_DEFAULTS);
+})();
+
+function saveTmMins() {
+  try { localStorage.setItem(LS_TM_MINS, JSON.stringify(TM_MINS_CONFIG)); } catch(e) {}
+}
+
+function updateTmMin(tid, val) {
+  var v = parseInt(val, 10);
+  if (isNaN(v) || v < 1) v = 1;
+  if (v > 60) v = 60;
+  TM_MINS_CONFIG[tid] = v;
+  saveTmMins();
+  var el = document.getElementById('tm_display_' + tid);
+  if (el) el.textContent = v + ' min';
+  var tot = document.getElementById('tm_total_display');
+  if (tot) {
+    var total = Object.keys(TM_MINS_DEFAULTS).reduce(function(a,k){ return a + (TM_MINS_CONFIG[k]||0); }, 0) + 2;
+    tot.textContent = total + ' min';
+  }
+}
 
 // ═══════════════════════════════════════════════════════════
 //  CARGOS ACTIVOS / INACTIVOS
@@ -2362,8 +2391,7 @@ function renderCargosTab() {
 
     // Info row with test chips + "Configurar batería" hint
     if (isOn) {
-      var TM = { dc0:6, pai:5, situacional:5, vigilancia:3, comprension:4, disc:3, pf16:4, game_detector:2, game_secuencias:2, game_impulsos:2, game_vigilancia:2, game_memoria:2, game_crisis:4, game_dilemas:3, game_dilemas_op:3 };
-      var totalMin = tests.reduce(function(a,t){ return a + (TM[t]||0); }, 0) + 2;
+      var totalMin = tests.reduce(function(a,t){ return a + (TM_MINS_CONFIG[t]||0); }, 0) + 2;
       h += '<div style="border-top:1px solid #f1f5f9;padding:14px 22px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">';
       h += '<div onclick="openCargoBattery(\'' + key + '\')" style="flex:1;display:flex;align-items:center;gap:16px;flex-wrap:wrap;cursor:pointer;transition:background .15s">';
       h += '<div style="font-size:11px;color:var(--ink3)"><strong style="color:var(--ink2)">' + tests.length + '</strong> tests asignados</div>';
@@ -3538,7 +3566,7 @@ function checkTestModePwd() {
 }
 
 function startTestMode() {
-  var TM_MINS = { dc0:6, pai:5, situacional:5, vigilancia:3, comprension:4, disc:3, pf16:4, game_detector:2, game_secuencias:2, game_impulsos:2, game_vigilancia:2, game_memoria:2, game_crisis:4, game_dilemas:3, game_dilemas_op:3 };
+  var TM_MINS = TM_MINS_CONFIG;
   var GROUPS = {
     '🧠 Cognitivos':        ['dc0','comprension'],
     '🧬 Personalidad':      ['pai','disc','pf16'],
@@ -3641,7 +3669,7 @@ function launchTestMode(perfil) {
   var tests = PERFIL_TESTS[perfil] || [];
   if (!tests.length) { toast('Este cargo no tiene tests asignados', 'er'); return; }
 
-  var TM_MINS = { dc0:6, pai:5, situacional:5, vigilancia:3, comprension:4, disc:3, pf16:4, game_detector:2, game_secuencias:2, game_impulsos:2, game_vigilancia:2, game_memoria:2, game_crisis:4, game_dilemas:3, game_dilemas_op:3 };
+  var TM_MINS = TM_MINS_CONFIG;
 
   S.candidate = {
     id: 'test_' + Date.now(),
@@ -4581,12 +4609,7 @@ function submitRegister() {
   banner.style.background = pm.color + '10'; banner.style.borderColor = pm.color + '40';
   banner.innerHTML = '<span style="font-size:24px">' + pm.icon + '</span><div style="margin-top:8px"><strong style="font-size:15px">' + pm.label + '</strong><div style="font-size:13px;color:var(--ink3);margin-top:3px">' + pm.desc + '</div></div>';
   const tests = PERFIL_TESTS[perfil];
-  const TEST_TIME_MINUTES = {
-    dc0:6, pai:5, situacional:5, vigilancia:3,
-    comprension:4, disc:3, pf16:4,
-    game_detector:2, game_secuencias:2, game_impulsos:2, game_vigilancia:2, game_memoria:2, game_crisis:4, game_dilemas:3
-  };
-  var totalMin = tests.reduce(function(a,t){ return a + (TEST_TIME_MINUTES[t]||0); }, 0) + 2;
+  var totalMin = tests.reduce(function(a,t){ return a + (TM_MINS_CONFIG[t]||0); }, 0) + 2;
   S._testTotalMinutes = totalMin;
   var disclaimerTimeEl = document.getElementById('disclaimer-time-value');
   if (disclaimerTimeEl) disclaimerTimeEl.textContent = totalMin + ' min';
@@ -4629,6 +4652,7 @@ var _testInProgress = false;
 var _timerSeconds = 40 * 60;
 var _timerInterval = null;
 var _tabHidden = false;
+var _timerPaused = false;
 
 function startTestTimer() {
   var mins = S._testTotalMinutes || 40;
@@ -4636,6 +4660,10 @@ function startTestTimer() {
   updateTimerDisplay();
   if (_timerInterval) clearInterval(_timerInterval);
   _timerInterval = setInterval(function() {
+    // Skip if timer is paused (e.g., during personality tests)
+    if (_timerPaused) {
+      return;
+    }
     // Deduct 1s normally, 2s if tab is hidden (double speed)
     _timerSeconds -= _tabHidden ? 2 : 1;
     if (_timerSeconds <= 0) {
@@ -4726,6 +4754,9 @@ function renderTestBlock() {
   const block = S.testBlocks[S.blockIdx];
   const meta  = TESTS_META[block.testId];
   const total = S.testBlocks.length;
+
+  // Pause timer for personality tests (pf16, disc), resume for others
+  _timerPaused = (block.testId === 'pf16' || block.testId === 'disc');
 
   // Skip empty non-game blocks
   if (!meta.game && block.qs.length === 0) {
@@ -4911,10 +4942,14 @@ function renderTestBlock() {
   }).join('');
 
   var pruebaN2 = 'Prueba ' + (S.blockIdx + 1);
+  var noTimeWarning = (block.testId === 'pf16' || block.testId === 'disc')
+    ? '<div style="background:#ecfdf5;border:1px solid #86efac;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#047857"><strong>✓ Sin límite de tiempo:</strong> Esta prueba no tiene tiempo cronometrado. Responde con tranquilidad.</div>'
+    : '';
   document.getElementById('test-body').innerHTML = `
     <div style="display:inline-flex;align-items:center;gap:8px;padding:5px 14px;border-radius:100px;font-size:12px;font-weight:700;background:${meta.color}15;border:1px solid ${meta.color}30;color:${meta.color};margin-bottom:16px">📝 ${pruebaN2}</div>
     <h2 style="font-size:20px;font-weight:800;margin-bottom:4px;line-height:1.2">${pruebaN2}</h2>
     <p style="font-size:13px;color:var(--ink3);margin-bottom:14px">${block.qs.length} preguntas · Responde todas antes de continuar</p>
+    ${noTimeWarning}
     ${instrHtml}
     <div style="height:1px;background:var(--border);margin:14px 0 18px"></div>
     <div>${questionsHtml}</div>`;
@@ -10565,7 +10600,75 @@ function renderBateriaTab() {
     out += '</div></div>'; // card + group
   });
 
+  // ── Sección de tiempos configurables ──
+  var TM_TEST_ORDER = [
+    { id:'dc0',          label:'Aptitud Cognitiva (DC0)', icon:'🧠' },
+    { id:'comprension',  label:'Comprensión Lectora',     icon:'📖' },
+    { id:'pai',          label:'Inventario de Personalidad (PAI)', icon:'🧬' },
+    { id:'situacional',  label:'Evaluación Situacional',  icon:'💡' },
+    { id:'vigilancia',   label:'Vigilancia y Protocolos', icon:'👁' },
+    { id:'normativa_ohs',label:'Conocimiento Normativo OHS', icon:'📐' },
+    { id:'disc',         label:'Perfil DISC',             icon:'🎯' },
+    { id:'pf16',         label:'16PF Abreviado',          icon:'🧬' },
+    { id:'game_crisis',  label:'Sala de Crisis',          icon:'⚡' },
+    { id:'game_dilemas', label:'Dilemas de Supervisión',  icon:'🧭' },
+    { id:'game_dilemas_op', label:'Dilemas Operacionales', icon:'🧭' },
+    { id:'game_detector',label:'Detector Visual',         icon:'🎮' },
+    { id:'game_secuencias', label:'Secuencias',           icon:'🎮' },
+    { id:'game_impulsos',label:'Control de Impulsos',     icon:'🎮' },
+    { id:'game_vigilancia', label:'Vigilancia Visual',    icon:'🎮' },
+    { id:'game_memoria', label:'Memoria de Trabajo',      icon:'🎮' },
+  ];
+  var tmTotal = TM_TEST_ORDER.reduce(function(a, t){ return a + (TM_MINS_CONFIG[t.id] || TM_MINS_DEFAULTS[t.id] || 4); }, 0) + 2;
+
+  out += '<div style="margin-top:32px;border-top:2px solid var(--border);padding-top:28px">';
+  out += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">';
+  out += '<div>';
+  out += '<div style="font-size:16px;font-weight:700;color:var(--ink)">⏱ Tiempos por Test</div>';
+  out += '<div style="font-size:12px;color:var(--ink3);margin-top:2px">Duración máxima por instrumento. Se aplica a todos los cargos.</div>';
+  out += '</div>';
+  out += '<div style="text-align:right;flex-shrink:0">';
+  out += '<div style="font-size:11px;color:var(--ink4);margin-bottom:2px">Total estimado</div>';
+  out += '<div style="font-size:18px;font-weight:700;color:var(--accent)" id="tm_total_display">' + tmTotal + ' min</div>';
+  out += '</div>';
+  out += '</div>';
+
+  out += '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;margin-bottom:12px">';
+  TM_TEST_ORDER.forEach(function(t, i) {
+    var cur = TM_MINS_CONFIG[t.id] || TM_MINS_DEFAULTS[t.id] || 4;
+    var def = TM_MINS_DEFAULTS[t.id] || 4;
+    var isModified = cur !== def;
+    var border = i < TM_TEST_ORDER.length - 1 ? '1px solid #f1f5f9' : 'none';
+    out += '<div style="display:flex;align-items:center;gap:12px;padding:11px 16px;border-bottom:' + border + ';background:#fff">';
+    out += '<span style="font-size:18px;flex-shrink:0">' + t.icon + '</span>';
+    out += '<div style="flex:1;min-width:0">';
+    out += '<div style="font-size:13px;font-weight:600;color:var(--ink)">' + t.label + '</div>';
+    out += '<div style="font-size:10px;color:var(--ink4)">Default: ' + def + ' min</div>';
+    out += '</div>';
+    out += '<span id="tm_display_' + t.id + '" style="font-size:12px;font-weight:600;color:' + (isModified ? 'var(--accent)' : 'var(--ink3)') + ';min-width:42px;text-align:right">' + cur + ' min</span>';
+    out += '<input type="number" min="1" max="60" value="' + cur + '" '
+         + 'style="width:60px;padding:5px 7px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;text-align:center;color:var(--ink);background:var(--surface)" '
+         + 'oninput="updateTmMin(\'' + t.id + '\',this.value)" '
+         + 'onchange="updateTmMin(\'' + t.id + '\',this.value)">';
+    out += '</div>';
+  });
+  out += '</div>';
+
+  out += '<div style="display:flex;justify-content:flex-end">';
+  out += '<button onclick="resetTmMins()" style="font-size:12px;color:var(--ink3);background:none;border:1px solid var(--border);border-radius:8px;padding:6px 14px;cursor:pointer;font-family:inherit" '
+       + 'onmouseover="this.style.borderColor=\'var(--accent)\';this.style.color=\'var(--accent)\'" '
+       + 'onmouseout="this.style.borderColor=\'var(--border)\';this.style.color=\'var(--ink3)\'">↺ Restaurar valores por defecto</button>';
+  out += '</div>';
+  out += '</div>';
+
   document.getElementById('bateria-content').innerHTML = out;
+}
+
+function resetTmMins() {
+  Object.assign(TM_MINS_CONFIG, TM_MINS_DEFAULTS);
+  saveTmMins();
+  renderBateriaTab();
+  toast('✓ Tiempos restaurados a valores por defecto', 'ok');
 }
 
 // ── Template presets ──
