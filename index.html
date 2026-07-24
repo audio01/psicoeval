@@ -1947,7 +1947,7 @@ const PERFIL_TESTS_DEFAULT = {
   administrativo: ['dc0','comprension','disc','pf16'],
   guardia:        ['situacional','vigilancia','comprension','disc','pf16'],
   supervisor:     ['dc0','situacional','comprension','disc','pf16'],
-  prevencionista: ['normativa_ohs','dc0','situacional','comprension','disc','pf16'],
+  prevencionista: ['dc0','situacional','comprension','disc','pf16'],
   conductor:      ['pai','vigilancia','comprension','disc','pf16'],
 };
 
@@ -8808,6 +8808,13 @@ function applyCandidateConfig() {
     saveCargosConfig();
     saveBatteryConfig();
     persistParams();
+    // Remove ?c= from address bar so a page reload doesn't re-apply the link
+    // and overwrite any cargo changes the admin makes afterwards
+    try {
+      if (window.history && window.history.replaceState) {
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+    } catch(e2) {}
     // Signal to restoreSession that this is a candidate link — show landing
     sessionStorage.setItem('psicoeval_candidate_link', '1');
     return true;
