@@ -2092,7 +2092,7 @@ const PERFIL_TESTS_DEFAULT = {
   guardia:        ['situacional','vigilancia','comprension','disc','pf16'],
   supervisor:     ['dc0','situacional','comprension','disc','pf16'],
   prevencionista: ['dc0','situacional','comprension','disc','pf16'],
-  conductor:      ['pai','vigilancia','comprension','disc','pf16'],
+  conductor:      ['pai','dc0','vigilancia','comprension','disc','pf16'],
   auxiliar_aseo:  ['pai','comprension','disc','pf16'],
 };
 
@@ -5348,6 +5348,7 @@ const PERFIL_IDEAL = {
       IL: { min:65, max:100, peso:4, label:'Integridad Laboral',    req:'Responsabilidad sobre vehículos, pasajeros, carga o materiales de valor.' },
       ML: { min:55, max:100, peso:2, label:'Motivación Laboral',    req:'Compromiso con puntualidad, continuidad y cuidado del vehículo asignado.' },
     },
+    dc0:            { min:55, max:100, peso:3, label:'Aptitud Cognitiva',             req:'Procesamiento de información, lectura de guías de ruta, reportes de incidentes y cumplimiento de protocolos escritos.' },
     vigilancia:      { min:72, max:100, peso:6, label:'Apt. Vigilancia',             req:'Atención sostenida y detección de anomalías durante la conducción. Indicador principal del cargo.' },
     comprension:     { min:70, max:100, peso:4, label:'Comprensión de Instrucciones', req:'Aplica correctamente rutas, protocolos de acceso y procedimientos ante incidentes.' },
   },
