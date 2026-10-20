@@ -827,6 +827,20 @@ input,select,textarea{font-family:inherit;outline:none}
 /* ── ATS: Interview card ───────────────────────────────── */
 .ev-card{background:var(--surface);border:1.5px solid var(--border);border-radius:11px;padding:13px 15px;margin-bottom:10px}
 
+
+/* ── Integridad durante la evaluación (body.exam-mode mientras corre el test) ── */
+body.exam-mode #view-test,
+body.exam-mode #view-test *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+body.exam-mode #view-test img{-webkit-user-drag:none;pointer-events:none}
+#exam-watermark{position:fixed;inset:0;z-index:9000;pointer-events:none;background-repeat:repeat;opacity:.09}
+#exam-shield{position:fixed;inset:0;z-index:10000;display:none;align-items:center;justify-content:center;padding:24px;
+  background:var(--bg);text-align:center}
+body.exam-away #exam-shield{display:flex}
+@media print{
+  body.exam-mode *{visibility:hidden!important}
+  body.exam-mode::before{visibility:visible!important;content:"La impresión no está permitida durante la evaluación.";
+    display:block;padding:40px;font:600 18px -apple-system,Segoe UI,sans-serif;color:#000}
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 </head>
@@ -1452,6 +1466,9 @@ input,select,textarea{font-family:inherit;outline:none}
         <ul style="font-size:12.5px;color:#9f1239;line-height:1.8;padding-left:16px;margin:0">
           <li><strong>Una vez que presiones "Comenzar", el tiempo no se detiene.</strong></li>
           <li>Si cambias de pestaña o app, <strong>el tiempo contará el doble</strong> hasta que regreses.</li>
+          <li>Si sales de esta ventana, <strong>las preguntas se ocultan y la salida queda registrada</strong> en tu evaluación.</li>
+          <li>No se permite copiar, imprimir ni capturar las preguntas. Cada intento queda registrado.</li>
+          <li>Las preguntas llevan una marca con tu nombre y RUT.</li>
           <li>Al agotarse el tiempo, tus respuestas se enviarán automáticamente.</li>
           <li>Responde con honestidad y de forma autónoma.</li>
         </ul>
@@ -1893,7 +1910,7 @@ input,select,textarea{font-family:inherit;outline:none}
       </div>
       <div>
         <label style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:5px">Contraseña</label>
-        <input id="nu-pass" type="password" placeholder="Mínimo 6 caracteres" style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;font-family:inherit">
+        <input id="nu-pass" type="password" placeholder="Mínimo 8 caracteres" style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;font-family:inherit">
       </div>
       <div>
         <label style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:5px">Rol</label>
@@ -2126,6 +2143,7 @@ function loadBatteryConfig() {
 
 function saveBatteryConfig() {
   try { localStorage.setItem(LS_BATTERIES, JSON.stringify(PERFIL_TESTS)); } catch(e) {}
+  _cfgPush('batteries');
 }
 
 // ── Webhook configurable ─────────────────────────────────────────────────────
@@ -2139,6 +2157,7 @@ function saveWebhookUrl(url) {
     if (url) localStorage.setItem(_WEBHOOK_KEY, url);
     else localStorage.removeItem(_WEBHOOK_KEY);
   } catch(e) {}
+  _cfgPush('webhook_url');
 }
 
 // ── Resend email notification ─────────────────────────────────────────────────
@@ -2253,12 +2272,15 @@ function _logConfigChange(action, details) {
   try {
     let log = [];
     try { log = JSON.parse(localStorage.getItem(_CONFIG_LOG_KEY) || '[]'); } catch(e) {}
-    const user = (window.S && S.userEmail) ? S.userEmail : 'desconocido';
+    // S se declara con let: no está en window
+    let user = 'desconocido';
+    try { if (S && S.userEmail) user = S.userEmail; } catch(e) {}
     log.unshift({ ts: Date.now(), action: action, details: details, user: user });
     if (log.length > _CONFIG_LOG_MAX) log = log.slice(0, _CONFIG_LOG_MAX);
     localStorage.setItem(_CONFIG_LOG_KEY, JSON.stringify(log));
     renderConfigLog();
   } catch(e) {}
+  _cfgPush('config_log');
 }
 
 function getConfigLog() {
@@ -2267,7 +2289,8 @@ function getConfigLog() {
 
 async function clearConfigLog() {
   if (!(await appConfirm('¿Borrar todo el historial de cambios?'))) return;
-  localStorage.removeItem(_CONFIG_LOG_KEY);
+  localStorage.setItem(_CONFIG_LOG_KEY, '[]');
+  _cfgPush('config_log');
   renderConfigLog();
   toast('Historial borrado', 'ok');
 }
@@ -2318,6 +2341,153 @@ const LS_PARAMS            = 'psicoeval_params';
 const LS_TM_MINS           = 'psicoeval_tm_mins';
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ═══════════════════════════════════════════════════════════
+//  CONFIGURACIÓN COMPARTIDA (Supabase: tabla psicoeval_config)
+//  La fuente de verdad es el servidor; localStorage queda como copia local
+//  para que la página abra al instante. Al cargar se descarga la configuración,
+//  se escribe en la copia local y se vuelven a ejecutar los load*() de siempre.
+//  Los save*() suben el cambio al servidor cuando hay sesión de admin.
+// ═══════════════════════════════════════════════════════════
+var _CFG_KEYS = {
+  batteries:     LS_BATTERIES,      // ┐
+  cargos:        LS_CARGOS,         // │ el candidato las lee
+  custom_cargos: LS_CUSTOM_CARGOS,  // │
+  tm_mins:       LS_TM_MINS,        // ┘
+  params:        LS_PARAMS,         // ┐
+  disc_profile:  LS_DISC_PROFILE,   // │ solo panel (el candidato no las ve:
+  pf16_profile:  LS_PF16_PROFILE,   // │ le servirían para acomodar respuestas)
+  webhook_url:   _WEBHOOK_KEY,      // │
+  config_log:    _CONFIG_LOG_KEY    // ┘
+};
+var _cfgLoaded = false;
+var _cfgReady  = null;   // promesa de la primera descarga
+var _cfgTimers = {};
+
+function _cfgIsAdmin() {
+  try { return !!(S && S.authToken && S.role === 'admin'); } catch(e) { return false; }
+}
+function _cfgHeaders() {
+  var token = null;
+  try { token = S && S.authToken; } catch(e) {}
+  return { 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + (token || SUPA_KEY) };
+}
+// El webhook se guarda en localStorage como texto plano; el resto como JSON
+function _cfgLocalValue(key) {
+  var raw = null;
+  try { raw = localStorage.getItem(_CFG_KEYS[key]); } catch(e) {}
+  if (raw === null) return undefined;
+  if (key === 'webhook_url') return raw;
+  try { return JSON.parse(raw); } catch(e) { return undefined; }
+}
+function _cfgSetLocal(key, value) {
+  try {
+    if (key === 'webhook_url') {
+      if (value) localStorage.setItem(_CFG_KEYS[key], String(value));
+      else localStorage.removeItem(_CFG_KEYS[key]);
+    } else {
+      localStorage.setItem(_CFG_KEYS[key], JSON.stringify(value));
+    }
+  } catch(e) {}
+}
+
+async function _cfgUpload(key) {
+  var value = _cfgLocalValue(key);
+  if (value === undefined) value = (key === 'webhook_url') ? '' : null;
+  if (value === null) return;
+  var userEmail = '';
+  try { userEmail = S.userEmail || ''; } catch(e) {}
+  const r = await fetch(`${SUPA_URL}/rest/v1/psicoeval_config?on_conflict=key`, {
+    method:  'POST',
+    headers: Object.assign(_cfgHeaders(), { 'Prefer': 'resolution=merge-duplicates,return=representation' }),
+    body:    JSON.stringify({ key: key, value: value, updated_at: new Date().toISOString(), updated_by: userEmail })
+  });
+  if (!r.ok) throw new Error('HTTP ' + r.status + ': ' + (await r.text()).slice(0, 120));
+  // Si RLS lo bloquea, Supabase responde 200/201 sin filas
+  var rows = await r.json().catch(function(){ return []; });
+  if (!Array.isArray(rows) || !rows.length) throw new Error('sin permisos para guardar');
+}
+
+// Llamada desde cada save*(): sube el cambio (agrupando cambios seguidos)
+function _cfgPush(key) {
+  if (!_cfgIsAdmin() || !_CFG_KEYS[key]) return;
+  clearTimeout(_cfgTimers[key]);
+  _cfgTimers[key] = setTimeout(function() {
+    _cfgUpload(key).catch(function(e) {
+      console.error('No se pudo guardar la configuración', key, e);
+      toast('⚠ No se pudo guardar el cambio en el servidor (' + e.message + '). Revisa tu conexión e inténtalo de nuevo.', 'er');
+    });
+  }, 600);
+}
+
+// Descarga la configuración y la aplica. Sin sesión, el servidor solo
+// entrega las claves públicas. Un admin sube las claves que aún no existen
+// en el servidor (migración desde su navegador la primera vez).
+async function _cfgPull() {
+  var rows;
+  // En el panel manda la configuración compartida: se descarta un link de
+  // candidato abierto en esta pestaña para no guardarlo sin querer para todos
+  if (_cfgIsAdmin() && _linkPairs) {
+    _linkPairs = null;
+    try { sessionStorage.removeItem(_LINK_SESSION_KEY); } catch(e) {}
+  }
+  try {
+    var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    var to = ctrl ? setTimeout(function(){ ctrl.abort(); }, 8000) : null;
+    const r = await fetch(`${SUPA_URL}/rest/v1/psicoeval_config?select=key,value`, { headers: _cfgHeaders(), signal: ctrl ? ctrl.signal : undefined });
+    if (to) clearTimeout(to);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    rows = await r.json();
+  } catch(e) {
+    console.warn('Configuración del servidor no disponible; se usa la copia local.', e.message || e);
+    _cfgLoaded = true;
+    return;
+  }
+  var onServer = {};
+  rows.forEach(function(row) {
+    if (!_CFG_KEYS[row.key]) return;
+    onServer[row.key] = true;
+    _cfgSetLocal(row.key, row.value);
+  });
+  _cfgReloadAll();
+  _cfgLoaded = true;
+
+  if (_cfgIsAdmin()) {
+    // La batería vigente siempre se sube (aunque nunca se haya personalizado):
+    // el servidor la usa para verificar que el candidato rindió todas las pruebas
+    if (!onServer.batteries && _cfgLocalValue('batteries') === undefined) {
+      try { localStorage.setItem(LS_BATTERIES, JSON.stringify(PERFIL_TESTS)); } catch(e) {}
+    }
+    var missing = Object.keys(_CFG_KEYS).filter(function(k){ return !onServer[k] && _cfgLocalValue(k) !== undefined; });
+    if (missing.length) {
+      try {
+        for (var i = 0; i < missing.length; i++) await _cfgUpload(missing[i]);
+        toast('✓ Tu configuración se subió al servidor: ahora la comparten todos los admins y candidatos', 'ok');
+      } catch(e) {
+        console.error('Migración de configuración incompleta', e);
+        toast('⚠ No se pudo subir tu configuración al servidor (' + e.message + ')', 'er');
+      }
+    }
+  }
+}
+
+// Vuelve a aplicar la copia local (ya actualizada desde el servidor)
+function _cfgReloadAll() {
+  loadCargosConfig();
+  loadBatteryConfig();
+  loadProfileConfig();
+  loadTmMins();
+  restoreParams();
+  if (_linkPairs) _applyLinkPairs(_linkPairs);   // un link de candidato manda en esa pestaña
+  applyCargoVisibility();
+  try {
+    if (S.currentView === 'admin' && S.currentAdminTab) {
+      var navBtn = document.getElementById('nav-' + S.currentAdminTab);
+      adminTab(S.currentAdminTab, navBtn || undefined);
+    }
+    renderConfigLog();
+  } catch(e) {}
+}
+
 var TM_MINS_DEFAULTS = { dc0:6, pai:5, situacional:5, vigilancia:3, comprension:4, disc:3, pf16:4, normativa_ohs:6, juego_semaforo:4, juego_globos:5, juego_memoria:5 };
 var TM_MINS_CONFIG = (function(){
   try {
@@ -2329,6 +2499,14 @@ var TM_MINS_CONFIG = (function(){
 
 function saveTmMins() {
   try { localStorage.setItem(LS_TM_MINS, JSON.stringify(TM_MINS_CONFIG)); } catch(e) {}
+  _cfgPush('tm_mins');
+}
+
+function loadTmMins() {
+  try {
+    var saved = localStorage.getItem(LS_TM_MINS);
+    if (saved) Object.assign(TM_MINS_CONFIG, TM_MINS_DEFAULTS, JSON.parse(saved));
+  } catch(e) {}
 }
 
 function updateTmMin(tid, val) {
@@ -2385,6 +2563,8 @@ function saveCargosConfig() {
     localStorage.setItem(LS_CARGOS, JSON.stringify(CARGOS_ACTIVE));
     localStorage.setItem(LS_CUSTOM_CARGOS, JSON.stringify(CUSTOM_CARGOS));
   } catch(e) {}
+  _cfgPush('cargos');
+  _cfgPush('custom_cargos');
 }
 loadCargosConfig();
 // Re-load battery config AFTER custom cargos exist so their saved batteries are restored
@@ -3528,6 +3708,18 @@ function showView(id) {
 }
 function gotoLanding()    { showView('landing'); }
 function gotoRegister() {
+  // Esperar la configuración compartida (cargos y baterías vigentes); si el
+  // servidor no responde, _cfgPull termina igual y se usa la copia local
+  if (!_cfgLoaded && _cfgReady) {
+    var b = document.querySelector('#view-landing .btn-primary');
+    var label = b ? b.innerHTML : '';
+    if (b) { b.disabled = true; b.textContent = 'Cargando…'; }
+    _cfgReady.then(function(){
+      if (b) { b.disabled = false; b.innerHTML = label; }
+      gotoRegister();
+    });
+    return;
+  }
   applyCargoVisibility();
   showView('register');
   regSetStep(0);
@@ -3683,6 +3875,7 @@ function launchSingleTest(testId) {
   S.answers = {};
   S.gameResults = {};
   S.blockTimes = {};
+  S.integrity = null;
   S.testBlocks = [{ testId: testId, qs: S.allQs.filter(function(q){ return q.testId === testId; }) }];
   S.blockIdx = 0;
   renderTestBlock();
@@ -3782,10 +3975,8 @@ function genUUID() {
 }
 const SUPA_URL = 'https://refjkmmlivssauxdnflf.supabase.co';
 const SUPA_KEY = 'sb_publishable_iiS3T7VOXatZ3GQDPI1qhQ_P6YbASUh';
-// ⚠️ Service Role Key — NUNCA incluir en código público ni subir a GitHub.
-// Si necesitas gestión de usuarios desde la app, configúrala solo en un entorno privado.
-// Supabase Dashboard → Project Settings → API → service_role
-const SUPA_SERVICE_KEY = ''; // ← dejar vacío en producción pública
+// La clave service_role NUNCA va en esta página: la gestión de usuarios la hace
+// la Edge Function "psicoeval-usuarios" (supabase/functions/), que la tiene en el servidor.
 // Resend API key para notificaciones por email al admin cuando un candidato termina.
 // Obtén una gratuita en https://resend.com — plan free incluye 3,000 emails/mes.
 const RESEND_API_KEY  = '';    // pega aquí tu API key de Resend (empieza con "re_")
@@ -3863,49 +4054,23 @@ async function _supaUpdatePassword(newPass) {
   return data;
 }
 
-// ── Supabase Admin API (requiere SUPA_SERVICE_KEY) ────────────────────────────
-function _adminHeaders() {
-  return {
-    'Content-Type':  'application/json',
-    'apikey':        SUPA_SERVICE_KEY,
-    'Authorization': 'Bearer ' + SUPA_SERVICE_KEY
-  };
-}
-
-async function _supaListUsers() {
-  const r = await fetch(`${SUPA_URL}/auth/v1/admin/users?per_page=200`, { headers: _adminHeaders() });
-  const data = await r.json();
-  if (!r.ok) throw new Error(data.message || data.msg || 'Error al listar usuarios');
-  // data puede ser { users: [...] } o directamente un array
-  return Array.isArray(data) ? data : (data.users || []);
-}
-
-async function _supaCreateUser(email, pass, role) {
-  const r = await fetch(`${SUPA_URL}/auth/v1/admin/users`, {
+// ── Gestión de usuarios (Edge Function psicoeval-usuarios) ───────────────────
+// La función verifica en el servidor que quien llama sea admin.
+async function _usersFn(action, payload) {
+  const r = await fetch(`${SUPA_URL}/functions/v1/psicoeval-usuarios`, {
     method:  'POST',
-    headers: _adminHeaders(),
-    body:    JSON.stringify({
-      email,
-      password:      pass,
-      email_confirm: true,          // confirmar email automáticamente
-      app_metadata:  { role: role || 'viewer' },  // el que leen el login y RLS
-      user_metadata: { role: role || 'viewer' }   // solo informativo
-    })
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + (S.authToken || '') },
+    body:    JSON.stringify(Object.assign({ action: action }, payload || {}))
   });
-  const data = await r.json();
-  if (!r.ok) throw new Error(data.message || data.msg || data.error_description || 'Error al crear usuario');
-  return data;
-}
-
-async function _supaDeleteUser(userId) {
-  const r = await fetch(`${SUPA_URL}/auth/v1/admin/users/${encodeURIComponent(userId)}`, {
-    method:  'DELETE',
-    headers: _adminHeaders()
-  });
+  const data = await r.json().catch(function(){ return {}; });
   if (!r.ok) {
-    const data = await r.json().catch(() => ({}));
-    throw new Error(data.message || data.msg || 'Error al eliminar usuario');
+    const err = new Error(data.error || data.message || data.msg || ('HTTP ' + r.status));
+    err.status = r.status;
+    // 404 = la función aún no está instalada en Supabase
+    err.notInstalled = r.status === 404 && !data.error;
+    throw err;
   }
+  return data;
 }
 
 // Auto-renovar token 5 minutos antes de que expire
@@ -4768,6 +4933,7 @@ function startTests() {
   S.answers = {};
   S.gameResults = {};
   S.blockTimes = {};
+  S.integrity = null;
   S.testBlocks = S.selectedTests.map(tid => ({ testId:tid, qs:S.allQs.filter(q=>q.testId===tid) }));
   S.blockIdx = 0;
   renderTestBlock();
@@ -4818,11 +4984,13 @@ function startTestTimer() {
 
   // Tab visibility detection
   document.addEventListener('visibilitychange', onVisibilityChange);
+  _integStart();
 }
 
 function stopTestTimer() {
   if (_timerInterval) { clearInterval(_timerInterval); _timerInterval = null; }
   document.removeEventListener('visibilitychange', onVisibilityChange);
+  _integStop();
 }
 
 function onVisibilityChange() {
@@ -4840,6 +5008,134 @@ function onVisibilityChange() {
     updateTimerDisplay(); // restore color
   }
 }
+
+// ═══════════════════════════════════════════════════════════
+//  INTEGRIDAD DURANTE LA EVALUACIÓN
+//  Una página web no puede impedir una foto con el celular ni bloquear del todo
+//  la captura del sistema operativo. Lo que sí hace: impide copiar/seleccionar/
+//  imprimir, oculta las preguntas cuando el candidato sale de la ventana (otra
+//  pestaña, otra app, la mayoría de las herramientas de captura), pone una marca
+//  de agua con su nombre y RUT (disuade de fotografiar) y registra cada incidente
+//  en S.integrity, que viaja con la evaluación como scores._integridad.
+// ═══════════════════════════════════════════════════════════
+var _integOn = false;
+var _integAwaySince = 0;
+var _integToastTs = 0;
+
+function _integStart() {
+  if (!S.integrity) S.integrity = { salidas: 0, segundos_fuera: 0, copiar: 0, imprimir: 0, captura: 0 };
+  _integOn = true;
+  _integAwaySince = 0;
+  document.body.classList.add('exam-mode');
+  _integWatermark();
+  if (!document.getElementById('exam-shield')) {
+    var sh = document.createElement('div');
+    sh.id = 'exam-shield';
+    sh.innerHTML = '<div style="max-width:360px">'
+      + '<div style="font-size:40px;margin-bottom:10px">🔒</div>'
+      + '<div style="font-size:18px;font-weight:800;color:var(--ink);margin-bottom:6px">Evaluación oculta</div>'
+      + '<div style="font-size:14px;color:var(--ink3);line-height:1.6">Saliste de la ventana de la evaluación. Haz clic aquí para continuar.<br>La salida quedó registrada.</div>'
+      + '</div>';
+    document.body.appendChild(sh);
+  }
+}
+
+function _integStop() {
+  if (_integAwaySince) _integBack();
+  _integOn = false;
+  document.body.classList.remove('exam-mode', 'exam-away');
+  var wm = document.getElementById('exam-watermark');
+  if (wm) wm.remove();
+}
+
+// Marca de agua repetida con nombre, RUT y fecha (o "MODO PRUEBA")
+function _integWatermark() {
+  var c = S.candidate || {};
+  var txt = c._testMode ? 'MODO PRUEBA'
+    : [((c.nombre || '') + ' ' + (c.apellido || '')).trim(), c.rut, new Date().toLocaleDateString('es-CL')].filter(Boolean).join(' · ');
+  var esc = String(txt).replace(/[&<>"']/g, function(ch){ return '&#' + ch.charCodeAt(0) + ';'; });
+  var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="420" height="220">'
+    + '<text x="20" y="130" transform="rotate(-24 210 110)" font-family="-apple-system,Segoe UI,sans-serif" '
+    + 'font-size="17" font-weight="700" fill="#64748b">' + esc + '</text></svg>';
+  var wm = document.getElementById('exam-watermark');
+  if (!wm) { wm = document.createElement('div'); wm.id = 'exam-watermark'; document.body.appendChild(wm); }
+  wm.style.backgroundImage = 'url("data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg) + '")';
+}
+
+function _integWarn(msg) {
+  // Evita una lluvia de avisos si mantiene presionado un atajo
+  if (Date.now() - _integToastTs < 1500) return;
+  _integToastTs = Date.now();
+  toast(msg, 'er');
+}
+
+function _integAway() {
+  if (!_integOn || _integAwaySince) return;
+  _integAwaySince = Date.now();
+  S.integrity.salidas++;
+  document.body.classList.add('exam-away');
+  saveTestProgress();
+}
+
+function _integBack() {
+  if (!_integAwaySince) return;
+  S.integrity.segundos_fuera += Math.round((Date.now() - _integAwaySince) / 1000);
+  _integAwaySince = 0;
+  document.body.classList.remove('exam-away');
+  saveTestProgress();
+}
+
+// Escuchas globales: solo actúan mientras hay una evaluación en curso
+(function() {
+  function block(e, kind, msg) {
+    if (!_integOn) return;
+    e.preventDefault();
+    if (kind) { S.integrity[kind]++; saveTestProgress(); }
+    if (msg) _integWarn(msg);
+  }
+  document.addEventListener('copy',        function(e){ block(e, 'copiar', 'Copiar no está permitido durante la evaluación'); });
+  document.addEventListener('cut',         function(e){ block(e, 'copiar', 'Copiar no está permitido durante la evaluación'); });
+  document.addEventListener('contextmenu', function(e){ block(e, null, null); });
+  document.addEventListener('selectstart', function(e){ block(e, null, null); });
+  document.addEventListener('dragstart',   function(e){ block(e, null, null); });
+  document.addEventListener('keydown', function(e) {
+    if (!_integOn) return;
+    var k = (e.key || '').toLowerCase();
+    var mod = e.ctrlKey || e.metaKey;
+    if (k === 'printscreen') {
+      S.integrity.captura++; saveTestProgress();
+      // Windows: la tecla ya copió la pantalla; se intenta vaciar el portapapeles
+      try { navigator.clipboard && navigator.clipboard.writeText(''); } catch(err) {}
+      document.body.classList.add('exam-away');
+      setTimeout(function(){ if (!_integAwaySince) document.body.classList.remove('exam-away'); }, 1500);
+      _integWarn('Las capturas de pantalla no están permitidas. Quedó registrado.');
+      return;
+    }
+    // macOS: ⌘⇧3 / ⌘⇧4 / ⌘⇧5 (el sistema puede tomarla igual; queda registrado)
+    if (e.metaKey && e.shiftKey && (k === '3' || k === '4' || k === '5')) {
+      S.integrity.captura++; saveTestProgress();
+      document.body.classList.add('exam-away');
+      setTimeout(function(){ if (!_integAwaySince) document.body.classList.remove('exam-away'); }, 1500);
+      _integWarn('Las capturas de pantalla no están permitidas. Quedó registrado.');
+      return;
+    }
+    if (mod && (k === 'c' || k === 'x')) { block(e, 'copiar', 'Copiar no está permitido durante la evaluación'); return; }
+    if (mod && k === 'p')                { block(e, 'imprimir', 'Imprimir no está permitido durante la evaluación'); return; }
+    if (mod && (k === 'a' || k === 's' || k === 'u')) { block(e, null, null); return; }
+  });
+  window.addEventListener('beforeprint', function() {
+    if (!_integOn) return;
+    S.integrity.imprimir++; saveTestProgress();
+  });
+  // Salir de la ventana: otra pestaña (visibilitychange) u otra app / herramienta de captura (blur)
+  document.addEventListener('visibilitychange', function(){ if (document.hidden) _integAway(); else if (document.hasFocus()) _integBack(); });
+  window.addEventListener('blur',  function(){ _integAway(); });
+  window.addEventListener('focus', function(){ if (!document.hidden) _integBack(); });
+  document.addEventListener('pointerdown', function(e){
+    // Clic sobre el aviso de "Evaluación oculta" para volver
+    if (_integAwaySince && document.hasFocus()) _integBack();
+  }, true);
+})();
 
 function updateTimerDisplay() {
   var el = document.getElementById('test-timer-display');
@@ -5579,6 +5875,7 @@ async function finishTests() {
   // de las respuestas; aquí solo van datos auxiliares.
   const scores = {};
   if (Object.keys(S.blockTimes).length) scores._timings = S.blockTimes;
+  if (S.integrity) scores._integridad = S.integrity;
 
   S.candidate.tests   = S.selectedTests;
   S.candidate.answers = S.answers;
@@ -5864,6 +6161,8 @@ function saveProfileConfig() {
     localStorage.setItem(LS_DISC_PROFILE, JSON.stringify(DISC_CARGO_PROFILE));
     localStorage.setItem(LS_PF16_PROFILE, JSON.stringify(PF16_CARGO_PROFILE));
   } catch(e) {}
+  _cfgPush('disc_profile');
+  _cfgPush('pf16_profile');
 }
 function pickDiscZone(perfil, dim, zone) {
   if (!DISC_CARGO_PROFILE[perfil]) DISC_CARGO_PROFILE[perfil] = { D:'medio', I:'medio', S:'medio', C:'medio' };
@@ -6337,6 +6636,78 @@ function _reqNote(req) {
     +htmlEsc(req)+'</div>';
 }
 
+// Aviso de integridad para el panel (scores._integridad, registrado durante la evaluación).
+// Evaluaciones anteriores a esta función no lo tienen: no se muestra nada.
+// Nivel de los incidentes: null (sin registro), 'none', 'leve' o 'grave'.
+// Grave: varias salidas, más de un minuto fuera, o intentos de copiar / capturar
+function _integLevel(s) {
+  var ig = s && s._integridad;
+  if (!ig || typeof ig !== 'object') return null;
+  if (!ig.salidas && !ig.copiar && !ig.captura && !ig.imprimir) return 'none';
+  return (ig.salidas >= 3 || (ig.segundos_fuera || 0) >= 60 || ig.copiar > 0 || ig.captura > 0) ? 'grave' : 'leve';
+}
+
+// Distintivos de alerta para la lista de candidatos
+function _alertBadgesHtml(s) {
+  var h = '';
+  var lv = _integLevel(s);
+  if (lv === 'grave' || lv === 'leve') {
+    var ig = s._integridad;
+    var tip = 'Integridad: ' + (ig.salidas || 0) + ' salida(s) de la ventana, ' + (ig.segundos_fuera || 0) + ' s fuera, '
+      + (ig.copiar || 0) + ' intento(s) de copiar, ' + (ig.captura || 0) + ' de captura';
+    h += '<span title="' + htmlEsc(tip) + '" style="display:inline-block;margin-left:6px;padding:1px 7px;border-radius:100px;font-size:10px;font-weight:700;vertical-align:1px;'
+      + (lv === 'grave' ? 'background:#fff1f2;color:#be123c;border:1px solid #fecdd3' : 'background:#fffbeb;color:#92400e;border:1px solid #fde68a')
+      + '">⚠ ' + (lv === 'grave' ? 'Integridad' : 'Salida') + '</span>';
+  }
+  var bt = s && s._bateria;
+  if (bt && bt.faltantes && bt.faltantes.length) {
+    h += '<span title="' + htmlEsc('No rindió: ' + _testNames(bt.faltantes)) + '" style="display:inline-block;margin-left:6px;padding:1px 7px;border-radius:100px;font-size:10px;font-weight:700;vertical-align:1px;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe">⚠ Batería</span>';
+  }
+  return h;
+}
+
+function _testNames(ids) {
+  return (ids || []).map(function(t){ var m = TESTS_META[t]; return m ? m.name : t; }).join(', ');
+}
+
+// Aviso si rindió una batería distinta a la configurada para su cargo (scores._bateria)
+function _bateriaHtml(s) {
+  var bt = s && s._bateria;
+  if (!bt || typeof bt !== 'object') return '';
+  var parts = [];
+  if (bt.faltantes && bt.faltantes.length)   parts.push('<strong>No rindió:</strong> ' + htmlEsc(_testNames(bt.faltantes)));
+  if (bt.adicionales && bt.adicionales.length) parts.push('<strong>Rindió además:</strong> ' + htmlEsc(_testNames(bt.adicionales)));
+  if (!parts.length) return '';
+  return '<div style="padding:11px 14px;border-radius:10px;background:#eff6ff;border:1.5px solid #bfdbfe;color:#1e3a8a;font-size:12.5px;line-height:1.6">'
+    + '<div style="font-weight:800;margin-bottom:3px">⚠️ Batería distinta a la configurada para el cargo</div>'
+    + parts.join(' · ')
+    + '<div style="font-size:11.5px;opacity:.85;margin-top:4px">Puede deberse a un link generado antes de cambiar la batería, o a una manipulación de la página. Las pruebas no rendidas no tienen puntaje.</div>'
+    + '</div>';
+}
+
+function _integSummaryHtml(s) {
+  var ig = s && s._integridad;
+  if (!ig || typeof ig !== 'object') return '';
+  var items = [];
+  var fuera = ig.segundos_fuera || 0;
+  var fueraTxt = fuera >= 60 ? Math.floor(fuera / 60) + ' min ' + (fuera % 60) + ' s' : fuera + ' s';
+  if (ig.salidas)  items.push('Salió de la ventana <strong>' + ig.salidas + ' ' + (ig.salidas === 1 ? 'vez' : 'veces') + '</strong> (' + fueraTxt + ' fuera)');
+  if (ig.copiar)   items.push('<strong>' + ig.copiar + '</strong> ' + (ig.copiar === 1 ? 'intento' : 'intentos') + ' de copiar');
+  if (ig.captura)  items.push('<strong>' + ig.captura + '</strong> ' + (ig.captura === 1 ? 'intento' : 'intentos') + ' de captura de pantalla');
+  if (ig.imprimir) items.push('<strong>' + ig.imprimir + '</strong> ' + (ig.imprimir === 1 ? 'intento' : 'intentos') + ' de imprimir');
+  if (!items.length) {
+    return '<div style="display:flex;align-items:center;gap:8px;padding:9px 14px;border-radius:10px;background:#f0fdf4;border:1px solid #bbf7d0;font-size:12.5px;color:#166534">'
+      + '<span>🛡</span><span><strong>Integridad:</strong> sin incidentes durante la evaluación.</span></div>';
+  }
+  var grave = _integLevel(s) === 'grave';
+  var col = grave ? { bg:'#fff1f2', bd:'#fecdd3', tx:'#9f1239' } : { bg:'#fffbeb', bd:'#fde68a', tx:'#92400e' };
+  return '<div style="padding:11px 14px;border-radius:10px;background:' + col.bg + ';border:1.5px solid ' + col.bd + ';color:' + col.tx + ';font-size:12.5px;line-height:1.6">'
+    + '<div style="font-weight:800;margin-bottom:3px">⚠️ Incidentes de integridad durante la evaluación</div>'
+    + items.join(' · ')
+    + '<div style="font-size:11.5px;opacity:.85;margin-top:4px">Puede indicar búsqueda de ayuda externa. Una salida breve también puede deberse a una notificación o a un clic fuera de la ventana; contrástelo en la entrevista.</div>'
+    + '</div>';
+}
+
 function buildReportHtml(c, withClose) {
   var s = c.scores || {};
   var nombre = htmlEsc(((c.nombre||'') + ' ' + (c.apellido||'')).trim()) || '—';
@@ -6468,6 +6839,10 @@ function buildReportHtml(c, withClose) {
     html += '</div>';
   }
   html += '</div>';
+
+  // ── Integridad (visible en todas las pestañas) ──
+  var _integHtml = _integSummaryHtml(s) + _bateriaHtml(s);
+  if (_integHtml) html += '<div style="padding:12px 24px 0;background:#fff;flex-shrink:0;display:flex;flex-direction:column;gap:8px">' + _integHtml + '</div>';
 
   // ── Tab bar ──
   html += '<div style="background:#fff;border-bottom:1px solid #e2e8f0;display:flex;overflow-x:auto;flex-shrink:0;padding:0 20px">';
@@ -7633,6 +8008,7 @@ function persistParams() {
     });
     localStorage.setItem(LS_PARAMS, JSON.stringify(snapshot));
   } catch(e) { console.warn('persistParams error', e); }
+  _cfgPush('params');
 }
 
 // Restore PERFIL_IDEAL from localStorage
@@ -8154,6 +8530,7 @@ async function adminLogin() {
     applyRoleRestrictions();
     renderAdmin();
     _startInactivityTimer();
+    _cfgPull();  // configuración completa del panel (y migración la primera vez)
 
   } catch(err) {
     if (err.noRole) {
@@ -9004,7 +9381,7 @@ async function renderCandidatesTable() {
     <tr data-id="${id}">
       <td><input type="checkbox" class="row-chk" data-id="${id}" onchange="updateBulkBar()" style="cursor:pointer;width:16px;height:16px"></td>
       <td>
-        <strong>${nom} ${ape}</strong>
+        <strong>${nom} ${ape}</strong>${_alertBadgesHtml(c.scores)}
         <br><span style="color:var(--ink3);font-size:11px">${eml}</span>
         ${edad  ? `<br><span style="color:var(--ink4);font-size:10px">🎂 ${edad} años</span>` : ''}
         ${tel   ? `<br><span style="color:var(--ink4);font-size:10px">📞 +56 ${tel}</span>` : ''}
@@ -9109,21 +9486,16 @@ function renderUsersTab() {
   var wbLabel = document.getElementById('webhook-btn-label');
   if (wbLabel) wbLabel.textContent = getWebhookUrl() ? '🟢 Webhook activo — editar' : 'Configurar webhook';
 
-  if (SUPA_SERVICE_KEY) {
-    // ── Modo completo: cargar lista de usuarios desde Supabase Admin API ──
-    el.innerHTML = '<div style="text-align:center;padding:32px;color:#94a3b8;font-size:13px">Cargando usuarios…</div>';
-    _supaListUsers().then(function(users) {
-      _renderUsersList(el, users);
-    }).catch(function(err) {
-      el.innerHTML = '<div style="text-align:center;padding:32px;color:#ef4444;font-size:13px">Error al cargar usuarios: ' + htmlEsc(err.message) + '</div>';
-    });
-  } else {
-    // ── Modo básico: sin service key, solo muestra usuario activo ──────────
-    _renderUsersList(el, null);
-  }
+  el.innerHTML = '<div style="text-align:center;padding:32px;color:#94a3b8;font-size:13px">Cargando usuarios…</div>';
+  _usersFn('list').then(function(data) {
+    _renderUsersList(el, data.users || [], data.me);
+  }).catch(function(err) {
+    if (err.notInstalled) { _renderUsersList(el, null); return; }
+    el.innerHTML = '<div style="text-align:center;padding:32px;color:#ef4444;font-size:13px">Error al cargar usuarios: ' + htmlEsc(err.message) + '</div>';
+  });
 }
 
-function _renderUsersList(el, users) {
+function _renderUsersList(el, users, meId) {
   const ROLE_LABEL = { admin:'Administrador', viewer:'Visor' };
   const ROLE_COLOR = { admin:'#10b981', viewer:'#f59e0b' };
   const myEmail    = S.userEmail || '';
@@ -9135,8 +9507,8 @@ function _renderUsersList(el, users) {
     html += '<div style="background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(15,45,82,.06);overflow:hidden;margin-bottom:16px">';
     users.forEach(function(u, i) {
       const uEmail   = u.email || '';
-      const uRole    = (u.app_metadata && u.app_metadata.role) || 'sin rol';
-      const isSelf   = uEmail === myEmail;
+      const uRole    = u.role || 'sin rol';
+      const isSelf   = meId ? u.id === meId : uEmail === myEmail;
       const isLast   = (i === users.length - 1);
       const rColor   = ROLE_COLOR[uRole] || '#94a3b8';
       const rLabel   = ROLE_LABEL[uRole] || uRole;
@@ -9147,10 +9519,16 @@ function _renderUsersList(el, users) {
         + '<div style="flex:1;min-width:0">'
         + '<div style="font-size:13px;font-weight:600;color:#0f172a">' + htmlEsc(uEmail)
         + (isSelf ? ' <span style="font-size:10px;color:#94a3b8">(tú)</span>' : '') + '</div>'
-        + '<div style="font-size:11px;color:#94a3b8">' + (u.confirmed_at ? 'Confirmado' : 'Pendiente confirmación') + '</div>'
+        + '<div style="font-size:11px;color:#94a3b8">' + (u.last_sign_in_at ? 'Último ingreso: ' + htmlEsc(new Date(u.last_sign_in_at).toLocaleDateString('es-CL')) : (u.confirmed ? 'Nunca ha ingresado' : 'Pendiente confirmación')) + '</div>'
         + '</div>'
-        + '<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:100px;background:' + rColor + '20;color:' + rColor + '">'
-        + htmlEsc(rLabel) + '</span>'
+        + (isSelf
+          ? '<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:100px;background:' + rColor + '20;color:' + rColor + '">' + htmlEsc(rLabel) + '</span>'
+          : '<select data-uid="' + htmlEsc(u.id) + '" data-em="' + htmlEsc(uEmail) + '" onchange="setUserRole(this)" title="Cambiar rol" '
+            + 'style="font-size:11px;font-weight:700;padding:4px 8px;border-radius:100px;border:1.5px solid ' + rColor + '60;background:' + rColor + '14;color:' + rColor + ';cursor:pointer;font-family:inherit">'
+            + '<option value="admin"'  + (u.role === 'admin'  ? ' selected' : '') + '>Administrador</option>'
+            + '<option value="viewer"' + (u.role === 'viewer' ? ' selected' : '') + '>Visor</option>'
+            + '<option value=""'       + (!u.role             ? ' selected' : '') + '>Sin acceso</option>'
+            + '</select>')
         + (isSelf
           ? '<button onclick="openChangePasswordModal()" style="background:none;border:1.5px solid #e2e8f0;color:#64748b;cursor:pointer;font-size:11px;font-weight:600;padding:5px 10px;border-radius:7px;flex-shrink:0;font-family:inherit">🔑 Contraseña</button>'
           : '<button data-uid="' + htmlEsc(u.id) + '" data-em="' + htmlEsc(uEmail) + '" onclick="deleteUser(this.dataset.uid, this.dataset.em)" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:18px;padding:4px 8px;border-radius:6px;flex-shrink:0" title="Eliminar usuario">×</button>')
@@ -9173,8 +9551,8 @@ function _renderUsersList(el, users) {
       + '<button onclick="openChangePasswordModal()" style="background:none;border:1.5px solid #e2e8f0;color:#64748b;cursor:pointer;font-size:11px;font-weight:600;padding:5px 10px;border-radius:7px;flex-shrink:0;font-family:inherit">🔑 Contraseña</button>'
       + '</div></div>'
       + '<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:16px 20px;font-size:12px;color:#92400e;line-height:1.6">'
-      + '⚙️ Para gestionar múltiples usuarios, agrega tu <strong>SUPA_SERVICE_KEY</strong> en el código (línea ~3417). '
-      + 'Encuéntrala en Supabase Dashboard → Project Settings → API → <em>service_role</em>.</div>';
+      + '⚙️ Para crear usuarios y cambiar roles desde aquí falta instalar la función <strong>psicoeval-usuarios</strong> en Supabase '
+      + '(Edge Functions → Deploy a new function). Los pasos están en <em>supabase/COMO_APLICAR.md</em>.</div>';
   }
 
   el.innerHTML = html;
@@ -9182,10 +9560,6 @@ function _renderUsersList(el, users) {
 
 function openAddUserModal() {
   if (S.role !== 'admin') { toast('Solo el administrador puede añadir usuarios', 'er'); return; }
-  if (!SUPA_SERVICE_KEY) {
-    toast('Para crear usuarios desde la app necesitas configurar SUPA_SERVICE_KEY en el código.', 'er');
-    return;
-  }
   document.getElementById('nu-email').value = '';
   document.getElementById('nu-pass').value = '';
   document.getElementById('nu-role').value = 'viewer';
@@ -9195,10 +9569,6 @@ function openAddUserModal() {
 
 async function addUser() {
   if (S.role !== 'admin') { toast('Solo el administrador puede añadir usuarios', 'er'); return; }
-  if (!SUPA_SERVICE_KEY) {
-    toast('Agrega SUPA_SERVICE_KEY en el código para crear usuarios desde la app.', 'er');
-    return;
-  }
 
   const email = document.getElementById('nu-email').value.trim().toLowerCase();
   const pass  = document.getElementById('nu-pass').value;
@@ -9209,38 +9579,53 @@ async function addUser() {
   function showErr(msg) { errEl.textContent = msg; errEl.style.display = 'block'; }
 
   if (!email || !pass) { showErr('Completa correo y contraseña.'); return; }
-  if (pass.length < 6) { showErr('La contraseña debe tener al menos 6 caracteres.'); return; }
+  if (pass.length < 8) { showErr('La contraseña debe tener al menos 8 caracteres.'); return; }
 
   if (btnEl) { btnEl.disabled = true; btnEl.textContent = 'Creando…'; }
   errEl.style.display = 'none';
 
   try {
-    await _supaCreateUser(email, pass, role);
+    await _usersFn('create', { email: email, password: pass, role: role });
     document.getElementById('add-user-modal').style.display = 'none';
     toast('Usuario ' + email + ' creado correctamente.', 'ok');
     renderUsersTab(); // recargar lista
   } catch(err) {
-    showErr(err.message || 'Error al crear usuario.');
+    showErr(err.notInstalled ? 'Falta instalar la función psicoeval-usuarios en Supabase (ver supabase/COMO_APLICAR.md).' : (err.message || 'Error al crear usuario.'));
   } finally {
     if (btnEl) { btnEl.disabled = false; btnEl.textContent = 'Crear usuario'; }
   }
 }
 
 async function deleteUser(userId, email) {
-  if (!SUPA_SERVICE_KEY) {
-    toast('Agrega SUPA_SERVICE_KEY en el código para eliminar usuarios desde la app.', 'er');
-    return;
-  }
   if (email === S.userEmail) { toast('No puedes eliminarte a ti mismo/a.', 'er'); return; }
   if (!(await appConfirm('¿Eliminar al usuario ' + email + '?'))) return;
 
   try {
-    await _supaDeleteUser(userId);
+    await _usersFn('delete', { user_id: userId });
     toast('Usuario ' + email + ' eliminado.', 'ok');
     renderUsersTab();
   } catch(err) {
     toast('Error al eliminar: ' + err.message, 'er');
   }
+}
+
+async function setUserRole(sel) {
+  var labels = { admin: 'Administrador', viewer: 'Visor', '': 'Sin acceso' };
+  var role = sel.value;
+  if (!(await appConfirm('¿Cambiar el rol de ' + sel.dataset.em + ' a "' + labels[role] + '"?'
+      + (role === '' ? ' Ya no podrá entrar al panel.' : '') + ' El cambio rige desde su próximo inicio de sesión.'))) {
+    renderUsersTab();
+    return;
+  }
+  sel.disabled = true;
+  try {
+    await _usersFn('set_role', { user_id: sel.dataset.uid, role: role || null });
+    _logConfigChange('Rol de usuario cambiado', sel.dataset.em + ' → ' + labels[role]);
+    toast('Rol actualizado: ' + sel.dataset.em + ' → ' + labels[role], 'ok');
+  } catch(err) {
+    toast('No se pudo cambiar el rol: ' + err.message, 'er');
+  }
+  renderUsersTab();
 }
 
 function openChangePasswordModal() {
@@ -9331,6 +9716,7 @@ function restoreSession() {
             const navBtn = document.getElementById('nav-' + S.currentAdminTab);
             if (navBtn) adminTab(S.currentAdminTab, navBtn); else renderAdmin();
             _startInactivityTimer();
+            _cfgPull();
           }).catch(function() {
             // Refresh fallido → ir a login
             try { localStorage.removeItem(SESSION_KEY); } catch(e) {}
@@ -9379,6 +9765,7 @@ function saveTestProgress() {
       totalMinutes: S._testTotalMinutes || 30,
       gameResults:  S.gameResults || {},
       blockTimes:   S.blockTimes || {},
+      integrity:    S.integrity || null,
       savedAt:      Date.now(),
     }));
   } catch(e) { console.warn('saveTestProgress failed:', e.message); }
@@ -9412,6 +9799,7 @@ function resumeTestProgress() {
   S._testTotalMinutes = p.totalMinutes || 30;
   S.gameResults   = p.gameResults || {};
   S.blockTimes    = p.blockTimes || {};
+  S.integrity     = p.integrity || null;
   S.allQs         = buildQuestions(S.candidate.perfil);
   S.testBlocks    = S.selectedTests.map(function(tid) {
     return { testId: tid, qs: S.allQs.filter(function(q){ return q.testId === tid; }) };
@@ -9549,11 +9937,23 @@ function generateCandidateLink() {
 
 var _shareLinkExpDays = 30; // días de vigencia por defecto al generar links
 
+// Config de un link de candidato (?c=…) aplicada en esta pestaña. Solo vive en
+// memoria y en sessionStorage: nunca se guarda en la configuración compartida
+// (si un admin abriera un link, no debe cambiarle la configuración a todos).
+var _linkPairs = null;
+var _LINK_SESSION_KEY = 'psicoeval_link_cfg';
+
 function applyCandidateConfig() {
   try {
     var params = new URLSearchParams(window.location.search);
     var cfgStr = params.get('c');
-    if (!cfgStr) return false;
+    if (!cfgStr) {
+      // Recarga de la misma pestaña: el link ya se quitó de la barra de direcciones
+      var kept = null;
+      try { kept = JSON.parse(sessionStorage.getItem(_LINK_SESSION_KEY) || 'null'); } catch(e) {}
+      if (kept) { _linkPairs = kept; _applyLinkPairs(kept); }
+      return false;
+    }
     // URLSearchParams convierte '+' en espacio: los links antiguos (sin codificar) perdían sus '+' de base64
     cfgStr = cfgStr.replace(/ /g, '+');
     var compact = decodeURIComponent(escape(atob(cfgStr)));
@@ -9574,6 +9974,25 @@ function applyCandidateConfig() {
     }
     // ──────────────────────────────────────────────────────────────────────
 
+    _linkPairs = pairs;
+    try { sessionStorage.setItem(_LINK_SESSION_KEY, JSON.stringify(pairs)); } catch(e) {}
+    _applyLinkPairs(pairs);
+
+    // Remove ?c= from address bar so a page reload doesn't re-apply the link
+    // and overwrite any cargo changes the admin makes afterwards
+    try {
+      if (window.history && window.history.replaceState) {
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+    } catch(e2) {}
+    // Signal to restoreSession that this is a candidate link — show landing
+    sessionStorage.setItem('psicoeval_candidate_link', '1');
+    return true;
+  } catch(e) { console.warn('Error loading URL config:', e); return false; }
+}
+
+function _applyLinkPairs(pairs) {
+  try {
     // a = active cargos
     if (pairs.a) {
       var activeCargos = pairs.a.split(',').map(_lnkDec);
@@ -9617,22 +10036,7 @@ function applyCandidateConfig() {
         }
       });
     }
-
-    // Persist to localStorage so config survives reloads
-    saveCargosConfig();
-    saveBatteryConfig();
-    persistParams();
-    // Remove ?c= from address bar so a page reload doesn't re-apply the link
-    // and overwrite any cargo changes the admin makes afterwards
-    try {
-      if (window.history && window.history.replaceState) {
-        window.history.replaceState(null, '', window.location.pathname);
-      }
-    } catch(e2) {}
-    // Signal to restoreSession that this is a candidate link — show landing
-    sessionStorage.setItem('psicoeval_candidate_link', '1');
-    return true;
-  } catch(e) { console.warn('Error loading URL config:', e); return false; }
+  } catch(e) { console.warn('Error applying link config:', e); }
 }
 
 function shareCargoLink(cargoKey) {
@@ -9764,6 +10168,8 @@ if (_urlConfigApplied && sessionStorage.getItem('psicoeval_candidate_link')) {
   restoreSession();
 }
 applyCargoVisibility();
+// Configuración compartida (con la sesión de admin restaurada, si la hay)
+_cfgReady = _cfgPull();
 
 // ── Mostrar aviso si el link de evaluación ha expirado ────────────────────
 if (sessionStorage.getItem('psicoeval_link_expired')) {
@@ -10338,6 +10744,8 @@ function _tabResumen(c) {
     ['Fecha evaluación', c.fecha ? c.fecha.substring(0,10) : '—'],
   ];
   var h = '<div style="display:flex;flex-direction:column;gap:13px">';
+  var _integH = _integSummaryHtml(sc) + _bateriaHtml(sc);
+  if (_integH) h += _integH;
   // Contact card
   h += '<div style="background:var(--surface);border-radius:11px;border:1px solid var(--border);overflow:hidden">';
   h += '<div style="padding:9px 13px;border-bottom:1px solid var(--border);font-size:10.5px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px">Datos del candidato</div>';
