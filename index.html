@@ -2792,115 +2792,118 @@ function renderCandidateCargoTabs() {
 //  Mide: Razonamiento Verbal, Numérico, Lógico-Abstracto
 //  ~25 ítems con tiempo implícito. Respuesta correcta puntúa 1.
 // ═══════════════════════════════════════════════════════════
+// Las claves de corrección (opción correcta, ítems invertidos, dimensiones) NO
+// están en la página: viven en Supabase (supabase/01_claves_y_puntajes.sql) y
+// el puntaje se calcula en el servidor. Aquí solo va el texto que se muestra.
 const DC0_BASE = [
   // ── Verbal ──
   {id:'dc1', area:'V', text:'"Ágil" es a "lento" como "generoso" es a…', opts:[
-    {t:'amable',ok:false},{t:'avaro',ok:true},{t:'bondadoso',ok:false},{t:'rápido',ok:false}]},
+    {t:'amable'},{t:'avaro'},{t:'bondadoso'},{t:'rápido'}]},
   {id:'dc2', area:'V', text:'¿Qué palabra NO pertenece al grupo? Supervisor, Jefe, Colaborador, Gerente, Director', opts:[
-    {t:'Colaborador',ok:true},{t:'Supervisor',ok:false},{t:'Gerente',ok:false},{t:'Director',ok:false}]},
+    {t:'Colaborador'},{t:'Supervisor'},{t:'Gerente'},{t:'Director'}]},
   {id:'dc3', area:'V', text:'Si todos los contratos requieren firma y este documento no tiene firma, entonces…', opts:[
-    {t:'Es un contrato válido igualmente.',ok:false},
-    {t:'No cumple el requisito de contrato.',ok:true},
-    {t:'Depende del tipo de contrato.',ok:false},
-    {t:'No se puede concluir nada.',ok:false}]},
+    {t:'Es un contrato válido igualmente.'},
+    {t:'No cumple el requisito de contrato.'},
+    {t:'Depende del tipo de contrato.'},
+    {t:'No se puede concluir nada.'}]},
   {id:'dc4', area:'V', text:'"Confidencial" significa principalmente…', opts:[
-    {t:'Información pública de libre acceso.',ok:false},
-    {t:'Información reservada que no debe divulgarse.',ok:true},
-    {t:'Información incorrecta que debe corregirse.',ok:false},
-    {t:'Información urgente que debe procesarse de inmediato.',ok:false}]},
+    {t:'Información pública de libre acceso.'},
+    {t:'Información reservada que no debe divulgarse.'},
+    {t:'Información incorrecta que debe corregirse.'},
+    {t:'Información urgente que debe procesarse de inmediato.'}]},
   {id:'dc5', area:'V', text:'El reglamento dice: "Los equipos deben revisarse cada 30 días". Si hoy es el día 30 desde la última revisión…', opts:[
-    {t:'Aún no corresponde revisar.',ok:false},
-    {t:'La revisión es hoy.',ok:true},
-    {t:'La revisión debió hacerse ayer.',ok:false},
-    {t:'No hay suficiente información.',ok:false}]},
+    {t:'Aún no corresponde revisar.'},
+    {t:'La revisión es hoy.'},
+    {t:'La revisión debió hacerse ayer.'},
+    {t:'No hay suficiente información.'}]},
   {id:'dc6', area:'V', text:'¿Cuál de estas palabras es sinónimo de "conciso"?', opts:[
-    {t:'Extenso',ok:false},{t:'Breve',ok:true},{t:'Confuso',ok:false},{t:'Detallado',ok:false}]},
+    {t:'Extenso'},{t:'Breve'},{t:'Confuso'},{t:'Detallado'}]},
   {id:'dc7', area:'V', text:'Un informe dice: "Los resultados son consistentes con la hipótesis planteada". ¿Qué significa esto?', opts:[
-    {t:'Los resultados contradicen la hipótesis.',ok:false},
-    {t:'Los resultados apoyan lo que se esperaba.',ok:true},
-    {t:'Los resultados son definitivos.',ok:false},
-    {t:'La hipótesis fue incorrecta.',ok:false}]},
+    {t:'Los resultados contradicen la hipótesis.'},
+    {t:'Los resultados apoyan lo que se esperaba.'},
+    {t:'Los resultados son definitivos.'},
+    {t:'La hipótesis fue incorrecta.'}]},
   // ── Numérico ──
   {id:'dc8', area:'N', text:'Un departamento tiene presupuesto de $1.200.000. Gastó el 35%. ¿Cuánto queda disponible?', opts:[
-    {t:'$780.000',ok:true},{t:'$820.000',ok:false},{t:'$420.000',ok:false},{t:'$860.000',ok:false}]},
+    {t:'$780.000'},{t:'$820.000'},{t:'$420.000'},{t:'$860.000'}]},
   {id:'dc9', area:'N', text:'Si un empleado trabaja 8 horas diarias y completa 24 tareas en 3 días, ¿cuántas tareas completa por hora?', opts:[
-    {t:'0,75',ok:false},{t:'1',ok:true},{t:'1,25',ok:false},{t:'1,5',ok:false}]},
+    {t:'0,75'},{t:'1'},{t:'1,25'},{t:'1,5'}]},
   {id:'dc10',area:'N', text:'¿Cuál es el siguiente número en la serie: 2, 5, 10, 17, 26, ___?', opts:[
-    {t:'35',ok:false},{t:'37',ok:true},{t:'38',ok:false},{t:'36',ok:false}]},
+    {t:'35'},{t:'37'},{t:'38'},{t:'36'}]},
   {id:'dc11',area:'N', text:'Si el precio de un servicio aumentó un 15% y ahora cuesta $230.000, ¿cuál era el precio original?', opts:[
-    {t:'$195.652',ok:false},{t:'$200.000',ok:true},{t:'$185.000',ok:false},{t:'$210.000',ok:false}]},
+    {t:'$195.652'},{t:'$200.000'},{t:'$185.000'},{t:'$210.000'}]},
   {id:'dc12',area:'N', text:'Un archivo tiene 480 páginas. Si se escanean a razón de 40 páginas por hora, ¿cuántas horas tomará el proceso?', opts:[
-    {t:'10',ok:false},{t:'12',ok:true},{t:'14',ok:false},{t:'16',ok:false}]},
+    {t:'10'},{t:'12'},{t:'14'},{t:'16'}]},
   {id:'dc13',area:'N', text:'En una oficina hay 5 computadores. Cada uno requiere mantención cada 6 meses. ¿Cuántas mantenciones anuales hay en total?', opts:[
-    {t:'5',ok:false},{t:'8',ok:false},{t:'10',ok:true},{t:'12',ok:false}]},
+    {t:'5'},{t:'8'},{t:'10'},{t:'12'}]},
   // ── Lógico-Abstracto ──
   {id:'dc14',area:'L', text:'Todos los documentos urgentes se tramitan ese día. Este documento es urgente. ¿Qué se puede concluir?', opts:[
-    {t:'Quizás se tramite hoy.',ok:false},
-    {t:'Se tramita hoy.',ok:true},
-    {t:'Depende de la carga de trabajo.',ok:false},
-    {t:'Se tramita mañana.',ok:false}]},
+    {t:'Quizás se tramite hoy.'},
+    {t:'Se tramita hoy.'},
+    {t:'Depende de la carga de trabajo.'},
+    {t:'Se tramita mañana.'}]},
   {id:'dc15',area:'L', text:'María llega antes que Pedro. Pedro llega antes que Luis. Juan llega después de Luis. ¿Quién llega último?', opts:[
-    {t:'Pedro',ok:false},{t:'Luis',ok:false},{t:'Juan',ok:true},{t:'María',ok:false}]},
+    {t:'Pedro'},{t:'Luis'},{t:'Juan'},{t:'María'}]},
   {id:'dc16',area:'L', text:'Si aumentar la capacitación mejora el desempeño, y mejorar el desempeño reduce los errores, entonces…', opts:[
-    {t:'Capacitar no reduce los errores.',ok:false},
-    {t:'Capacitar puede reducir los errores.',ok:true},
-    {t:'Reducir errores aumenta la capacitación.',ok:false},
-    {t:'No se puede concluir nada.',ok:false}]},
+    {t:'Capacitar no reduce los errores.'},
+    {t:'Capacitar puede reducir los errores.'},
+    {t:'Reducir errores aumenta la capacitación.'},
+    {t:'No se puede concluir nada.'}]},
   {id:'dc17',area:'L', text:'Solo los empleados con más de 1 año pueden acceder al bono. Carlos lleva 8 meses. ¿Puede acceder al bono?', opts:[
-    {t:'Sí, si su jefe lo autoriza.',ok:false},
-    {t:'No, porque no cumple el requisito.',ok:true},
-    {t:'Sí, porque está cerca del año.',ok:false},
-    {t:'No hay suficiente información.',ok:false}]},
+    {t:'Sí, si su jefe lo autoriza.'},
+    {t:'No, porque no cumple el requisito.'},
+    {t:'Sí, porque está cerca del año.'},
+    {t:'No hay suficiente información.'}]},
   {id:'dc18',area:'L', text:'¿Cuál figura continúa la secuencia: Círculo, Triángulo, Cuadrado, Círculo, Triángulo, ___?', opts:[
-    {t:'Círculo',ok:false},{t:'Triángulo',ok:false},{t:'Cuadrado',ok:true},{t:'Pentágono',ok:false}]},
+    {t:'Círculo'},{t:'Triángulo'},{t:'Cuadrado'},{t:'Pentágono'}]},
 ];
 
 const DC0_JEFATURA = [
   {id:'dcj1',area:'L', text:'Un proyecto tiene 3 etapas. La primera toma el doble que la segunda y la tercera toma la mitad de la primera. Si la segunda dura 4 semanas, ¿cuánto dura el proyecto en total?', opts:[
-    {t:'14 semanas',ok:false},{t:'16 semanas',ok:true},{t:'18 semanas',ok:false},{t:'12 semanas',ok:false}]},
+    {t:'14 semanas'},{t:'16 semanas'},{t:'18 semanas'},{t:'12 semanas'}]},
   {id:'dcj2',area:'V', text:'¿Cuál de los siguientes describe mejor el concepto de "delegación efectiva"?', opts:[
-    {t:'Transferir toda la responsabilidad a un subordinado.',ok:false},
-    {t:'Asignar tareas con claridad, recursos y seguimiento manteniendo la responsabilidad final.',ok:true},
-    {t:'Hacer una tarea uno mismo para garantizar calidad.',ok:false},
-    {t:'Repartir el trabajo entre todos por igual.',ok:false}]},
+    {t:'Transferir toda la responsabilidad a un subordinado.'},
+    {t:'Asignar tareas con claridad, recursos y seguimiento manteniendo la responsabilidad final.'},
+    {t:'Hacer una tarea uno mismo para garantizar calidad.'},
+    {t:'Repartir el trabajo entre todos por igual.'}]},
   {id:'dcj3',area:'N', text:'Tu equipo de 6 personas debe completar 120 informes en 5 días hábiles. ¿Cuántos informes debe hacer cada persona por día?', opts:[
-    {t:'3',ok:false},{t:'4',ok:true},{t:'5',ok:false},{t:'6',ok:false}]},
+    {t:'3'},{t:'4'},{t:'5'},{t:'6'}]},
   {id:'dcj4',area:'L', text:'Premisa 1: Si un empleado incumple el reglamento, recibe una amonestación. Premisa 2: Juan recibió una amonestación. ¿Qué se puede concluir?', opts:[
-    {t:'Juan incumplió el reglamento.',ok:false},
-    {t:'Juan pudo haber incumplido el reglamento.',ok:true},
-    {t:'Juan no incumplió el reglamento.',ok:false},
-    {t:'No hay relación entre ambas premisas.',ok:false}]},
+    {t:'Juan incumplió el reglamento.'},
+    {t:'Juan pudo haber incumplido el reglamento.'},
+    {t:'Juan no incumplió el reglamento.'},
+    {t:'No hay relación entre ambas premisas.'}]},
   {id:'dcj5',area:'N', text:'Un área redujo sus errores de 40 a 28 por mes. ¿Qué porcentaje de reducción logró?', opts:[
-    {t:'25%',ok:false},{t:'28%',ok:false},{t:'30%',ok:true},{t:'32%',ok:false}]},
+    {t:'25%'},{t:'28%'},{t:'30%'},{t:'32%'}]},
   {id:'dcj6',area:'V', text:'Un colega usa el término "KPI" en una reunión. ¿Cuál es la definición más precisa?', opts:[
-    {t:'Una herramienta de software para gestión de proyectos.',ok:false},
-    {t:'Un indicador clave de rendimiento para medir el logro de objetivos.',ok:true},
-    {t:'Un tipo de reunión de seguimiento semanal.',ok:false},
-    {t:'Un protocolo de comunicación interna.',ok:false}]},
+    {t:'Una herramienta de software para gestión de proyectos.'},
+    {t:'Un indicador clave de rendimiento para medir el logro de objetivos.'},
+    {t:'Un tipo de reunión de seguimiento semanal.'},
+    {t:'Un protocolo de comunicación interna.'}]},
 ];
 
 const DC0_ADMIN = [
   {id:'dca1',area:'N', text:'Debes archivar 360 documentos en carpetas de 30 páginas cada una. ¿Cuántas carpetas necesitas?', opts:[
-    {t:'10',ok:false},{t:'12',ok:true},{t:'15',ok:false},{t:'8',ok:false}]},
+    {t:'10'},{t:'12'},{t:'15'},{t:'8'}]},
   {id:'dca2',area:'V', text:'Un correo dice: "La reunión ha sido postergada sine die". ¿Qué significa "sine die"?', opts:[
-    {t:'Para el día siguiente.',ok:false},
-    {t:'Sin fecha definida.',ok:true},
-    {t:'Con urgencia.',ok:false},
-    {t:'En forma definitiva.',ok:false}]},
+    {t:'Para el día siguiente.'},
+    {t:'Sin fecha definida.'},
+    {t:'Con urgencia.'},
+    {t:'En forma definitiva.'}]},
   {id:'dca3',area:'L', text:'El procedimiento indica: primero se recibe la solicitud, luego se verifica, luego se aprueba o rechaza. Llega una solicitud sin verificar pero ya aprobada. ¿Qué corresponde?', opts:[
-    {t:'Aceptarla porque ya fue aprobada.',ok:false},
-    {t:'Devolverla al paso de verificación por no cumplir el procedimiento.',ok:true},
-    {t:'Ignorarla y esperar instrucciones.',ok:false},
-    {t:'Aprobarla de todas formas para no retrasar el proceso.',ok:false}]},
+    {t:'Aceptarla porque ya fue aprobada.'},
+    {t:'Devolverla al paso de verificación por no cumplir el procedimiento.'},
+    {t:'Ignorarla y esperar instrucciones.'},
+    {t:'Aprobarla de todas formas para no retrasar el proceso.'}]},
   {id:'dca4',area:'N', text:'Si una oficina usa 4 resmas de papel a la semana, ¿cuántas resmas consume en un trimestre (13 semanas)?', opts:[
-    {t:'48',ok:false},{t:'52',ok:true},{t:'56',ok:false},{t:'44',ok:false}]},
+    {t:'48'},{t:'52'},{t:'56'},{t:'44'}]},
   {id:'dca5',area:'V', text:'¿Cuál de las siguientes palabras describe mejor el acto de "ratificar" un acuerdo?', opts:[
-    {t:'Cancelarlo.',ok:false},{t:'Modificarlo parcialmente.',ok:false},{t:'Confirmarlo y darle validez oficial.',ok:true},{t:'Revisarlo sin tomar decisión.',ok:false}]},
+    {t:'Cancelarlo.'},{t:'Modificarlo parcialmente.'},{t:'Confirmarlo y darle validez oficial.'},{t:'Revisarlo sin tomar decisión.'}]},
   {id:'dca6',area:'L', text:'Todos los pagos sobre $500.000 requieren doble firma. El pago es de $480.000. ¿Requiere doble firma?', opts:[
-    {t:'Sí, para mayor seguridad.',ok:false},
-    {t:'No, porque no supera el límite establecido.',ok:true},
-    {t:'Depende del proveedor.',ok:false},
-    {t:'Solo si el jefe lo solicita.',ok:false}]},
+    {t:'Sí, para mayor seguridad.'},
+    {t:'No, porque no supera el límite establecido.'},
+    {t:'Depende del proveedor.'},
+    {t:'Solo si el jefe lo solicita.'}]},
 ];
 
 // ═══════════════════════════════════════════════════════════
@@ -2911,46 +2914,46 @@ const DC0_ADMIN = [
 // ═══════════════════════════════════════════════════════════
 const PAI_BASE = [
   // Estabilidad Emocional (EE)
-  {id:'ai1', dim:'EE', r:true,  text:'Me siento abrumado/a por mis responsabilidades laborales.'},
-  {id:'ai2', dim:'EE', r:false, text:'Soy capaz de separar mis problemas personales de mi desempeño laboral.'},
-  {id:'ai3', dim:'EE', r:true,  text:'Experimento cambios bruscos de humor a lo largo de la jornada.'},
-  {id:'ai4', dim:'EE', r:false, text:'Mantengo la compostura incluso en situaciones de alta tensión en el trabajo.'},
-  {id:'ai5', dim:'EE', r:true,  text:'Pequeños errores me generan una preocupación excesiva.'},
+  {id:'ai1', text:'Me siento abrumado/a por mis responsabilidades laborales.'},
+  {id:'ai2', text:'Soy capaz de separar mis problemas personales de mi desempeño laboral.'},
+  {id:'ai3', text:'Experimento cambios bruscos de humor a lo largo de la jornada.'},
+  {id:'ai4', text:'Mantengo la compostura incluso en situaciones de alta tensión en el trabajo.'},
+  {id:'ai5', text:'Pequeños errores me generan una preocupación excesiva.'},
   // Adaptación Social (AS)
-  {id:'ai6', dim:'AS', r:false, text:'Me integro con facilidad a equipos de trabajo nuevos.'},
-  {id:'ai7', dim:'AS', r:false, text:'Resuelvo conflictos interpersonales de forma constructiva.'},
-  {id:'ai8', dim:'AS', r:true,  text:'Tengo dificultades para relacionarme con personas que piensan diferente a mí.'},
-  {id:'ai9', dim:'AS', r:false, text:'Soy capaz de pedir ayuda cuando la necesito sin sentirme mal por ello.'},
+  {id:'ai6', text:'Me integro con facilidad a equipos de trabajo nuevos.'},
+  {id:'ai7', text:'Resuelvo conflictos interpersonales de forma constructiva.'},
+  {id:'ai8', text:'Tengo dificultades para relacionarme con personas que piensan diferente a mí.'},
+  {id:'ai9', text:'Soy capaz de pedir ayuda cuando la necesito sin sentirme mal por ello.'},
   // Orientación Normativa (ON)
-  {id:'ai10',dim:'ON', r:false, text:'Cumplo las normas y procedimientos aunque nadie me esté supervisando.'},
-  {id:'ai11',dim:'ON', r:true,  text:'Considero que algunas reglas pueden ignorarse si los resultados son buenos.'},
-  {id:'ai12',dim:'ON', r:false, text:'Reporto situaciones irregulares aunque sea incómodo hacerlo.'},
+  {id:'ai10',text:'Cumplo las normas y procedimientos aunque nadie me esté supervisando.'},
+  {id:'ai11',text:'Considero que algunas reglas pueden ignorarse si los resultados son buenos.'},
+  {id:'ai12',text:'Reporto situaciones irregulares aunque sea incómodo hacerlo.'},
   // Manejo del Estrés (ME)
-  {id:'ai13',dim:'ME', r:true,  text:'Bajo presión, tiendo a cometer más errores de lo habitual.'},
-  {id:'ai14',dim:'ME', r:false, text:'Identifico cuándo estoy estresado/a y tomo medidas para manejarlo.'},
-  {id:'ai15',dim:'ME', r:true,  text:'Los plazos ajustados me generan ansiedad que afecta mi trabajo.'},
-  {id:'ai16',dim:'ME', r:false, text:'Puedo trabajar eficientemente incluso cuando hay cambios inesperados.'},
+  {id:'ai13',text:'Bajo presión, tiendo a cometer más errores de lo habitual.'},
+  {id:'ai14',text:'Identifico cuándo estoy estresado/a y tomo medidas para manejarlo.'},
+  {id:'ai15',text:'Los plazos ajustados me generan ansiedad que afecta mi trabajo.'},
+  {id:'ai16',text:'Puedo trabajar eficientemente incluso cuando hay cambios inesperados.'},
   // Integridad Laboral (IL)
-  {id:'ai17',dim:'IL', r:false, text:'Actúo con honestidad incluso cuando nadie me observa.'},
-  {id:'ai18',dim:'IL', r:true,  text:'He exagerado mis logros o habilidades para quedar bien con otros.'},
-  {id:'ai19',dim:'IL', r:false, text:'Asumo la responsabilidad de mis errores sin buscar culpables externos.'},
-  {id:'ai20',dim:'IL', r:false, text:'Trato los recursos y bienes de la organización con el mismo cuidado que los propios.'},
+  {id:'ai17',text:'Actúo con honestidad incluso cuando nadie me observa.'},
+  {id:'ai18',text:'He exagerado mis logros o habilidades para quedar bien con otros.'},
+  {id:'ai19',text:'Asumo la responsabilidad de mis errores sin buscar culpables externos.'},
+  {id:'ai20',text:'Trato los recursos y bienes de la organización con el mismo cuidado que los propios.'},
   // Motivación Laboral (ML)
-  {id:'ai21',dim:'ML', r:false, text:'Busco activamente maneras de mejorar en mi puesto de trabajo.'},
-  {id:'ai22',dim:'ML', r:true,  text:'Hago solo lo mínimo necesario para cumplir con mis funciones.'},
-  {id:'ai23',dim:'ML', r:false, text:'Me esfuerzo más allá de lo requerido cuando creo en el proyecto.'},
-  {id:'ai24',dim:'ML', r:true,  text:'Raramente encuentro motivación en las tareas que me asignan.'},
-  {id:'ai25',dim:'ML', r:false, text:'Mantengo una actitud positiva incluso cuando el trabajo es rutinario.'},
+  {id:'ai21',text:'Busco activamente maneras de mejorar en mi puesto de trabajo.'},
+  {id:'ai22',text:'Hago solo lo mínimo necesario para cumplir con mis funciones.'},
+  {id:'ai23',text:'Me esfuerzo más allá de lo requerido cuando creo en el proyecto.'},
+  {id:'ai24',text:'Raramente encuentro motivación en las tareas que me asignan.'},
+  {id:'ai25',text:'Mantengo una actitud positiva incluso cuando el trabajo es rutinario.'},
   // ── Escala de Deseabilidad Social (DS-8) — ítems trampa ──
   // Nadie honesto responde 4 en todos. Sirve para detectar respuesta inflada.
-  {id:'ds1', dim:'DS', r:false, text:'Nunca me he quedado callado/a cuando debería haber dicho algo incómodo.'},
-  {id:'ds2', dim:'DS', r:false, text:'Siempre cumplo mis promesas, sin excepción.'},
-  {id:'ds3', dim:'DS', r:false, text:'Nunca he llegado tarde a una reunión de trabajo.'},
-  {id:'ds4', dim:'DS', r:false, text:'Jamás he actuado de forma deshonesta, ni en situaciones menores.'},
-  {id:'ds5', dim:'DS', r:false, text:'Nunca he tenido un mal día que afecte mi trato con los demás.'},
-  {id:'ds6', dim:'DS', r:false, text:'Siempre me hago responsable de mis errores sin justificarlos de ninguna forma.'},
-  {id:'ds7', dim:'DS', r:false, text:'Nunca he exagerado algo para que me vean mejor ante otros.'},
-  {id:'ds8', dim:'DS', r:false, text:'Siempre digo exactamente lo que pienso, sin importar las consecuencias.'},
+  {id:'ds1', text:'Nunca me he quedado callado/a cuando debería haber dicho algo incómodo.'},
+  {id:'ds2', text:'Siempre cumplo mis promesas, sin excepción.'},
+  {id:'ds3', text:'Nunca he llegado tarde a una reunión de trabajo.'},
+  {id:'ds4', text:'Jamás he actuado de forma deshonesta, ni en situaciones menores.'},
+  {id:'ds5', text:'Nunca he tenido un mal día que afecte mi trato con los demás.'},
+  {id:'ds6', text:'Siempre me hago responsable de mis errores sin justificarlos de ninguna forma.'},
+  {id:'ds7', text:'Nunca he exagerado algo para que me vean mejor ante otros.'},
+  {id:'ds8', text:'Siempre digo exactamente lo que pienso, sin importar las consecuencias.'},
 ];
 
 // ═══════════════════════════════════════════════════════════
@@ -2958,58 +2961,58 @@ const PAI_BASE = [
 // ═══════════════════════════════════════════════════════════
 const SIT_JEFATURA = [
   {id:'sj1', text:'Dos colaboradores de tu equipo tienen un conflicto que está afectando la productividad. ¿Qué haces primero?', opts:[
-    {t:'Llamas a cada uno por separado para escuchar su versión antes de actuar.',ok:true},
-    {t:'Los reúnes de inmediato y les exiges resolver el problema entre ellos.',ok:false},
-    {t:'Ignoras el conflicto esperando que se resuelva solo.',ok:false},
-    {t:'Reportas la situación a RRHH sin involucrarte.',ok:false}]},
+    {t:'Llamas a cada uno por separado para escuchar su versión antes de actuar.'},
+    {t:'Los reúnes de inmediato y les exiges resolver el problema entre ellos.'},
+    {t:'Ignoras el conflicto esperando que se resuelva solo.'},
+    {t:'Reportas la situación a RRHH sin involucrarte.'}]},
   {id:'sj2', text:'Tu jefe te pide un informe en 2 horas, pero los datos que necesitas están incompletos. ¿Qué haces?', opts:[
-    {t:'Notificas a tu jefe el problema y propones alternativas viables.',ok:true},
-    {t:'Entregas el informe con los datos disponibles sin mencionar las limitaciones.',ok:false},
-    {t:'Pides extensión de plazo sin proponer soluciones.',ok:false},
-    {t:'Esperas a tener todos los datos aunque se tarde más.',ok:false}]},
+    {t:'Notificas a tu jefe el problema y propones alternativas viables.'},
+    {t:'Entregas el informe con los datos disponibles sin mencionar las limitaciones.'},
+    {t:'Pides extensión de plazo sin proponer soluciones.'},
+    {t:'Esperas a tener todos los datos aunque se tarde más.'}]},
   {id:'sj3', text:'Detectas que un colaborador está cometiendo un error sistemático. ¿Cuál es tu primera acción?', opts:[
-    {t:'Retroalimentas de forma directa y privada, y acuerdan un plan de mejora.',ok:true},
-    {t:'Lo corriges delante del equipo para que todos aprendan.',ok:false},
-    {t:'Esperas a la evaluación de desempeño para mencionarlo.',ok:false},
-    {t:'Asumes su trabajo para evitar que el error impacte los resultados.',ok:false}]},
+    {t:'Retroalimentas de forma directa y privada, y acuerdan un plan de mejora.'},
+    {t:'Lo corriges delante del equipo para que todos aprendan.'},
+    {t:'Esperas a la evaluación de desempeño para mencionarlo.'},
+    {t:'Asumes su trabajo para evitar que el error impacte los resultados.'}]},
   {id:'sj4', text:'Un cliente interno se queja de un servicio que no es de tu área. ¿Cómo reaccionas?', opts:[
-    {t:'Escuchas, lo orientas a quien corresponde y haces seguimiento.',ok:true},
-    {t:'Le dices que no es tu problema y lo rediriges sin más.',ok:false},
-    {t:'Resuelves el problema aunque no sea tu responsabilidad.',ok:false},
-    {t:'Registras la queja y no haces nada más.',ok:false}]},
+    {t:'Escuchas, lo orientas a quien corresponde y haces seguimiento.'},
+    {t:'Le dices que no es tu problema y lo rediriges sin más.'},
+    {t:'Resuelves el problema aunque no sea tu responsabilidad.'},
+    {t:'Registras la queja y no haces nada más.'}]},
   {id:'sj5', text:'Tu equipo propone una solución que técnicamente es correcta pero va contra la política de la empresa. ¿Qué haces?', opts:[
-    {t:'Explicas la restricción y buscan juntos una solución que cumpla la política.',ok:true},
-    {t:'Implementas la solución porque técnicamente es mejor.',ok:false},
-    {t:'Bloqueas la propuesta sin dar explicaciones.',ok:false},
-    {t:'Escalas de inmediato sin explorar alternativas.',ok:false}]},
+    {t:'Explicas la restricción y buscan juntos una solución que cumpla la política.'},
+    {t:'Implementas la solución porque técnicamente es mejor.'},
+    {t:'Bloqueas la propuesta sin dar explicaciones.'},
+    {t:'Escalas de inmediato sin explorar alternativas.'}]},
 ];
 
 const SIT_GUARDIA = [
   {id:'sg1', text:'Durante tu turno nocturno detectas una puerta de acceso restringido abierta sin autorización. ¿Qué haces?', opts:[
-    {t:'Verificas el área, cierras la puerta y reportas el incidente en la bitácora.',ok:true},
-    {t:'Cierras la puerta y no lo reportas para no generar alarma.',ok:false},
-    {t:'Esperas a que llegue el próximo turno para informar.',ok:false},
-    {t:'Llamas a la policía de inmediato sin verificar la situación.',ok:false}]},
+    {t:'Verificas el área, cierras la puerta y reportas el incidente en la bitácora.'},
+    {t:'Cierras la puerta y no lo reportas para no generar alarma.'},
+    {t:'Esperas a que llegue el próximo turno para informar.'},
+    {t:'Llamas a la policía de inmediato sin verificar la situación.'}]},
   {id:'sg2', text:'Una persona insiste en ingresar al edificio sin identificación y se pone agresiva. ¿Cómo actúas?', opts:[
-    {t:'Mantienes la calma, explicas el protocolo firmemente y solicitas apoyo si es necesario.',ok:true},
-    {t:'Cedes ante la presión para evitar el conflicto.',ok:false},
-    {t:'Respondes de forma agresiva para establecer autoridad.',ok:false},
-    {t:'Te retiras del lugar para evitar el enfrentamiento.',ok:false}]},
+    {t:'Mantienes la calma, explicas el protocolo firmemente y solicitas apoyo si es necesario.'},
+    {t:'Cedes ante la presión para evitar el conflicto.'},
+    {t:'Respondes de forma agresiva para establecer autoridad.'},
+    {t:'Te retiras del lugar para evitar el enfrentamiento.'}]},
   {id:'sg3', text:'Detectas humo en un sector del edificio durante tu ronda. ¿Cuál es tu primera acción?', opts:[
-    {t:'Activas la alarma, evalúas el origen y sigues el protocolo de emergencia.',ok:true},
-    {t:'Buscas el origen del humo solo antes de dar aviso.',ok:false},
-    {t:'Esperas para ver si el humo aumenta antes de actuar.',ok:false},
-    {t:'Evacúas el edificio sin dar aviso a nadie más.',ok:false}]},
+    {t:'Activas la alarma, evalúas el origen y sigues el protocolo de emergencia.'},
+    {t:'Buscas el origen del humo solo antes de dar aviso.'},
+    {t:'Esperas para ver si el humo aumenta antes de actuar.'},
+    {t:'Evacúas el edificio sin dar aviso a nadie más.'}]},
   {id:'sg4', text:'Un visitante te pide que no registres su ingreso "solo por esta vez". ¿Qué haces?', opts:[
-    {t:'Explicas que el registro es obligatorio por protocolo y lo realizas igual.',ok:true},
-    {t:'Accedes si la persona parece confiable.',ok:false},
-    {t:'Consultas con tu supervisor si puedes hacer una excepción.',ok:false},
-    {t:'Lo dejas entrar pero anotas la situación en forma privada.',ok:false}]},
+    {t:'Explicas que el registro es obligatorio por protocolo y lo realizas igual.'},
+    {t:'Accedes si la persona parece confiable.'},
+    {t:'Consultas con tu supervisor si puedes hacer una excepción.'},
+    {t:'Lo dejas entrar pero anotas la situación en forma privada.'}]},
   {id:'sg5', text:'Tu turno termina en 10 minutos, hay una situación pendiente y tu reemplazo no ha llegado. ¿Qué haces?', opts:[
-    {t:'Permaneces en el puesto, gestionas la situación y haces traspaso formal al llegar el reemplazo.',ok:true},
-    {t:'Te retiras a la hora acordada, es responsabilidad del siguiente turno.',ok:false},
-    {t:'Llamas a tu supervisor para que decida si puedes irte.',ok:false},
-    {t:'Resuelves la situación solo lo más rápido posible para poder irte.',ok:false}]},
+    {t:'Permaneces en el puesto, gestionas la situación y haces traspaso formal al llegar el reemplazo.'},
+    {t:'Te retiras a la hora acordada, es responsabilidad del siguiente turno.'},
+    {t:'Llamas a tu supervisor para que decida si puedes irte.'},
+    {t:'Resuelves la situación solo lo más rápido posible para poder irte.'}]},
 ];
 
 // ═══════════════════════════════════════════════════════════
@@ -3017,29 +3020,29 @@ const SIT_GUARDIA = [
 // ═══════════════════════════════════════════════════════════
 const VIGQ = [
   {id:'v1', area:'atencion', text:'En 3 horas de turno anotaste 6 novedades en la primera hora, 3 en la segunda y el doble de la primera en la tercera. ¿Cuántas novedades en total?', opts:[
-    {t:'18',ok:false},{t:'21',ok:true},{t:'15',ok:false},{t:'24',ok:false}]},
+    {t:'18'},{t:'21'},{t:'15'},{t:'24'}]},
   {id:'v2', area:'protocolo', text:'El protocolo indica reportar todo vehículo no autorizado en zona restringida. Ves un auto desconocido estacionado allí. ¿Qué haces primero?', opts:[
-    {t:'Lo ignoras, probablemente sea de alguien de la empresa.',ok:false},
-    {t:'Verificas la patente, intentas identificar al dueño y reportas el hallazgo.',ok:true},
-    {t:'Llamas a la policía de inmediato.',ok:false},
-    {t:'Esperas 30 minutos para ver si el dueño aparece.',ok:false}]},
+    {t:'Lo ignoras, probablemente sea de alguien de la empresa.'},
+    {t:'Verificas la patente, intentas identificar al dueño y reportas el hallazgo.'},
+    {t:'Llamas a la policía de inmediato.'},
+    {t:'Esperas 30 minutos para ver si el dueño aparece.'}]},
   {id:'v3', area:'atencion', text:'Monitoreas 6 cámaras en rotación de 2 minutos cada una. ¿Cuántas veces revisas cada cámara en 1 hora?', opts:[
-    {t:'5',ok:true},{t:'6',ok:false},{t:'10',ok:false},{t:'12',ok:false}]},
+    {t:'5'},{t:'6'},{t:'10'},{t:'12'}]},
   {id:'v4', area:'protocolo', text:'Encuentras un paquete sin identificación en una zona de acceso restringido. ¿Cuál es el protocolo correcto?', opts:[
-    {t:'Lo abres para identificar su contenido.',ok:false},
-    {t:'No lo tocas, acota el área y reportas de inmediato a tu superior.',ok:true},
-    {t:'Lo llevas a la recepción sin reportar.',ok:false},
-    {t:'Lo dejas en el lugar y continúas tu ronda.',ok:false}]},
+    {t:'Lo abres para identificar su contenido.'},
+    {t:'No lo tocas, acota el área y reportas de inmediato a tu superior.'},
+    {t:'Lo llevas a la recepción sin reportar.'},
+    {t:'Lo dejas en el lugar y continúas tu ronda.'}]},
   {id:'v5', area:'atencion', text:'Observas a una persona que en 20 minutos ha dado 3 vueltas por el mismo sector sin ingresar a ningún lugar. ¿Cómo calificas esta situación?', opts:[
-    {t:'Normal, probablemente espera a alguien.',ok:false},
-    {t:'Sospechosa: la registras, la observas con atención y evalúas si intervenir.',ok:true},
-    {t:'Sin importancia, no es tu función juzgar comportamientos.',ok:false},
-    {t:'Emergencia: llamas a la policía de inmediato.',ok:false}]},
+    {t:'Normal, probablemente espera a alguien.'},
+    {t:'Sospechosa: la registras, la observas con atención y evalúas si intervenir.'},
+    {t:'Sin importancia, no es tu función juzgar comportamientos.'},
+    {t:'Emergencia: llamas a la policía de inmediato.'}]},
   {id:'v6', area:'protocolo', text:'Debes entregar el turno y el libro de novedades tiene anotaciones incompletas de tu turno. ¿Qué corresponde?', opts:[
-    {t:'Entregar el turno y completar el libro en el próximo turno.',ok:false},
-    {t:'Completar todas las anotaciones antes de hacer el traspaso.',ok:true},
-    {t:'Entregar el turno y avisar verbalmente al reemplazo.',ok:false},
-    {t:'Dejar las anotaciones incompletas si los hechos fueron menores.',ok:false}]},
+    {t:'Entregar el turno y completar el libro en el próximo turno.'},
+    {t:'Completar todas las anotaciones antes de hacer el traspaso.'},
+    {t:'Entregar el turno y avisar verbalmente al reemplazo.'},
+    {t:'Dejar las anotaciones incompletas si los hechos fueron menores.'}]},
 ];
 
 // ═══════════════════════════════════════════════════════════
@@ -3051,59 +3054,59 @@ const COMP_JEFATURA = [
   { id:'cj1',
     text:'Protocolo de aprobación de gastos: los gastos hasta $50.000 los aprueba el jefe directo. Los gastos entre $50.001 y $200.000 requieren aprobación del jefe directo Y del área de finanzas. Los gastos sobre $200.000 requieren además la firma de gerencia. Un colaborador solicita $180.000 para materiales de capacitación. ¿Quién debe aprobar?',
     opts:[
-      {t:'Solo el jefe directo.',ok:false},
-      {t:'El jefe directo y finanzas.',ok:true},
-      {t:'El jefe directo, finanzas y gerencia.',ok:false},
-      {t:'Solo el área de finanzas.',ok:false}]},
+      {t:'Solo el jefe directo.'},
+      {t:'El jefe directo y finanzas.'},
+      {t:'El jefe directo, finanzas y gerencia.'},
+      {t:'Solo el área de finanzas.'}]},
   { id:'cj2',
     text:'Política de licencias: si un trabajador lleva menos de 6 meses en la empresa, solo puede tomar licencias médicas. Si lleva entre 6 y 12 meses, puede tomar licencias médicas y 3 días de permiso administrativo al año. Si lleva más de 12 meses, tiene además derecho a vacaciones proporcionales. María lleva 8 meses. ¿A qué tiene derecho?',
     opts:[
-      {t:'Solo licencias médicas.',ok:false},
-      {t:'Licencias médicas y 3 días de permiso administrativo.',ok:true},
-      {t:'Licencias médicas, permiso administrativo y vacaciones.',ok:false},
-      {t:'Ningún beneficio aún.',ok:false}]},
+      {t:'Solo licencias médicas.'},
+      {t:'Licencias médicas y 3 días de permiso administrativo.'},
+      {t:'Licencias médicas, permiso administrativo y vacaciones.'},
+      {t:'Ningún beneficio aún.'}]},
   { id:'cj3',
     text:'Procedimiento de reuniones de equipo: si el quórum es inferior al 60% del equipo, la reunión se pospone. Si el quórum está entre 60% y 79%, se puede sesionar pero no se toman acuerdos vinculantes. Con 80% o más, la reunión es plena y los acuerdos son vinculantes. Asisten 7 de 10 personas. ¿Qué corresponde?',
     opts:[
-      {t:'Posponer la reunión.',ok:false},
-      {t:'Sesionar sin tomar acuerdos vinculantes.',ok:false},
-      {t:'Sesionar con plenas facultades para tomar acuerdos.',ok:true},
-      {t:'Sesionar solo para temas informativos.',ok:false}]},
+      {t:'Posponer la reunión.'},
+      {t:'Sesionar sin tomar acuerdos vinculantes.'},
+      {t:'Sesionar con plenas facultades para tomar acuerdos.'},
+      {t:'Sesionar solo para temas informativos.'}]},
   { id:'cj4',
     text:'Escala de urgencia para escalar problemas: los problemas que afectan a 1 persona deben resolverse en 48 horas. Si afectan a más de 1 persona pero menos de 5, en 24 horas. Si afectan a 5 o más personas O implican riesgo legal, se escala inmediatamente a gerencia. Se detecta un error en nóminas que afecta a 6 personas. ¿Qué corresponde?',
     opts:[
-      {t:'Resolverlo en 48 horas.',ok:false},
-      {t:'Resolverlo en 24 horas.',ok:false},
-      {t:'Escalar inmediatamente a gerencia.',ok:true},
-      {t:'Informar solo a las personas afectadas.',ok:false}]},
+      {t:'Resolverlo en 48 horas.'},
+      {t:'Resolverlo en 24 horas.'},
+      {t:'Escalar inmediatamente a gerencia.'},
+      {t:'Informar solo a las personas afectadas.'}]},
   { id:'cj5',
     text:'Política de feedback: el feedback correctivo debe darse siempre en privado. El feedback positivo puede darse en público o en privado según criterio del jefe. Si el colaborador tiene menos de 3 meses, todo feedback debe acompañarse de un plan de acción escrito. Pedro lleva 2 meses y cometió un error grave. ¿Cómo procedes?',
     opts:[
-      {t:'Feedback correctivo en público con plan de acción escrito.',ok:false},
-      {t:'Feedback correctivo en privado con plan de acción escrito.',ok:true},
-      {t:'Feedback correctivo en privado, sin necesidad de escrito aún.',ok:false},
-      {t:'Derivarlo directamente a RRHH.',ok:false}]},
+      {t:'Feedback correctivo en público con plan de acción escrito.'},
+      {t:'Feedback correctivo en privado con plan de acción escrito.'},
+      {t:'Feedback correctivo en privado, sin necesidad de escrito aún.'},
+      {t:'Derivarlo directamente a RRHH.'}]},
   { id:'cj6',
     text:'Protocolo de contratación de reemplazos: si la ausencia es de hasta 5 días, el trabajo se redistribuye internamente. Si es entre 6 y 15 días, se puede contratar un reemplazo temporal con autorización del jefe directo. Si supera los 15 días, se requiere autorización del jefe directo y RRHH. Un trabajador se ausentará 12 días. ¿Qué procede?',
     opts:[
-      {t:'Redistribuir el trabajo internamente.',ok:false},
-      {t:'Contratar reemplazo con autorización solo del jefe directo.',ok:true},
-      {t:'Contratar reemplazo con autorización del jefe directo y RRHH.',ok:false},
-      {t:'No se puede contratar reemplazo en ningún caso.',ok:false}]},
+      {t:'Redistribuir el trabajo internamente.'},
+      {t:'Contratar reemplazo con autorización solo del jefe directo.'},
+      {t:'Contratar reemplazo con autorización del jefe directo y RRHH.'},
+      {t:'No se puede contratar reemplazo en ningún caso.'}]},
   { id:'cj7',
     text:'Regla de comunicación de resultados: los resultados negativos del área deben informarse primero a gerencia y luego al equipo, en ese orden. Los resultados positivos pueden comunicarse al equipo directamente. Si los resultados implican reestructuración, la comunicación al equipo debe hacerse en conjunto con RRHH. Hay resultados negativos que implicarán reestructuración. ¿Cómo comunicas?',
     opts:[
-      {t:'Informar primero al equipo y luego a gerencia.',ok:false},
-      {t:'Informar primero a gerencia, luego al equipo junto a RRHH.',ok:true},
-      {t:'Informar directamente al equipo junto a RRHH.',ok:false},
-      {t:'Informar solo a gerencia, el equipo no necesita saber.',ok:false}]},
+      {t:'Informar primero al equipo y luego a gerencia.'},
+      {t:'Informar primero a gerencia, luego al equipo junto a RRHH.'},
+      {t:'Informar directamente al equipo junto a RRHH.'},
+      {t:'Informar solo a gerencia, el equipo no necesita saber.'}]},
   { id:'cj8',
     text:'Política de evaluación de desempeño: si el puntaje es 1–2, se abre un plan de mejora obligatorio de 60 días. Si es 3, se agenda una reunión de retroalimentación. Si es 4–5, se registra como candidato a promoción. Si el trabajador ya tuvo un plan de mejora en los últimos 12 meses y vuelve a obtener 1–2, corresponde iniciar proceso disciplinario. Carlos obtuvo 2 puntos y tuvo un plan de mejora hace 8 meses. ¿Qué corresponde?',
     opts:[
-      {t:'Abrir un nuevo plan de mejora de 60 días.',ok:false},
-      {t:'Agendar solo una reunión de retroalimentación.',ok:false},
-      {t:'Iniciar proceso disciplinario.',ok:true},
-      {t:'Registrarlo como candidato a promoción.',ok:false}]},
+      {t:'Abrir un nuevo plan de mejora de 60 días.'},
+      {t:'Agendar solo una reunión de retroalimentación.'},
+      {t:'Iniciar proceso disciplinario.'},
+      {t:'Registrarlo como candidato a promoción.'}]},
 ];
 
 // ── ADMINISTRATIVO: instrucciones de procesos documentales y autorizaciones ──
@@ -3111,59 +3114,59 @@ const COMP_ADMIN = [
   { id:'ca1',
     text:'Procedimiento de recepción de documentos: los documentos recibidos antes de las 15:00 se procesan el mismo día. Los recibidos después de las 15:00 se procesan al día hábil siguiente. Si el documento está marcado como "urgente", se procesa dentro de las 2 horas siguientes sin importar la hora. Llega un documento urgente a las 16:30. ¿Cuándo se procesa?',
     opts:[
-      {t:'Al día hábil siguiente.',ok:false},
-      {t:'El mismo día antes de las 18:00.',ok:false},
-      {t:'Dentro de las 2 horas siguientes.',ok:true},
-      {t:'A primera hora del día siguiente.',ok:false}]},
+      {t:'Al día hábil siguiente.'},
+      {t:'El mismo día antes de las 18:00.'},
+      {t:'Dentro de las 2 horas siguientes.'},
+      {t:'A primera hora del día siguiente.'}]},
   { id:'ca2',
     text:'Política de archivo: los documentos originales se archivan en la carpeta física. Las copias digitales se suben al sistema. Si el documento contiene datos personales, debe además registrarse en el libro de datos sensibles. Si es un contrato, requiere adicionalmente firma del jefe de área. Recibes un contrato con datos personales. ¿Qué pasos debes seguir?',
     opts:[
-      {t:'Archivar el original y subir copia digital.',ok:false},
-      {t:'Archivar original, subir copia digital y registrar en libro de datos sensibles.',ok:false},
-      {t:'Archivar original, subir copia digital, registrar en libro de datos sensibles y obtener firma del jefe de área.',ok:true},
-      {t:'Solo subir al sistema y pedir firma del jefe.',ok:false}]},
+      {t:'Archivar el original y subir copia digital.'},
+      {t:'Archivar original, subir copia digital y registrar en libro de datos sensibles.'},
+      {t:'Archivar original, subir copia digital, registrar en libro de datos sensibles y obtener firma del jefe de área.'},
+      {t:'Solo subir al sistema y pedir firma del jefe.'}]},
   { id:'ca3',
     text:'Regla de despacho de materiales: los materiales de oficina se despachan con la solicitud firmada por el solicitante. Si el valor es mayor a $20.000, se requiere además firma del supervisor. Si el material no está en stock, se genera una orden de compra y el plazo de entrega es 5 días hábiles. Llega una solicitud por $25.000 de material que no está en stock. ¿Qué haces?',
     opts:[
-      {t:'Despachar con solo la firma del solicitante.',ok:false},
-      {t:'Solicitar firma del supervisor y generar orden de compra.',ok:true},
-      {t:'Generar orden de compra sin necesidad de firmas.',ok:false},
-      {t:'Rechazar la solicitud por no haber stock.',ok:false}]},
+      {t:'Despachar con solo la firma del solicitante.'},
+      {t:'Solicitar firma del supervisor y generar orden de compra.'},
+      {t:'Generar orden de compra sin necesidad de firmas.'},
+      {t:'Rechazar la solicitud por no haber stock.'}]},
   { id:'ca4',
     text:'Manejo de llamadas entrantes: las llamadas para el gerente se derivan directamente si él está disponible. Si no está disponible, se toma el mensaje y se informa en un plazo máximo de 30 minutos. Si la llamada es de un cliente con reclamo activo, se transfiere al área de atención al cliente sin importar la disponibilidad del gerente. Llama un cliente con un reclamo activo mientras el gerente está en reunión. ¿Qué haces?',
     opts:[
-      {t:'Tomar el mensaje y avisar al gerente en 30 minutos.',ok:false},
-      {t:'Interrumpir la reunión del gerente.',ok:false},
-      {t:'Transferir al área de atención al cliente.',ok:true},
-      {t:'Pedir al cliente que llame más tarde.',ok:false}]},
+      {t:'Tomar el mensaje y avisar al gerente en 30 minutos.'},
+      {t:'Interrumpir la reunión del gerente.'},
+      {t:'Transferir al área de atención al cliente.'},
+      {t:'Pedir al cliente que llame más tarde.'}]},
   { id:'ca5',
     text:'Política de uso de caja chica: montos hasta $5.000 se pueden usar sin formulario. Entre $5.001 y $15.000 requieren formulario y recibo. Sobre $15.000 requieren formulario, recibo y autorización previa escrita del jefe. Todos los gastos deben rendirse dentro de 48 horas. Se gasta $12.000 en materiales de emergencia. ¿Qué se debe presentar al rendir?',
     opts:[
-      {t:'Solo el recibo.',ok:false},
-      {t:'Formulario y recibo.',ok:true},
-      {t:'Formulario, recibo y autorización escrita del jefe.',ok:false},
-      {t:'Nada, es un gasto de emergencia.',ok:false}]},
+      {t:'Solo el recibo.'},
+      {t:'Formulario y recibo.'},
+      {t:'Formulario, recibo y autorización escrita del jefe.'},
+      {t:'Nada, es un gasto de emergencia.'}]},
   { id:'ca6',
     text:'Protocolo de errores en documentos oficiales: si el error es tipográfico, se corrige directamente y se inicia con las iniciales de quien corrigió. Si el error afecta datos numéricos o nombres propios, se anula el documento y se emite uno nuevo. Si el documento ya fue firmado por dos o más partes, cualquier corrección requiere notificación a todas las partes. Detectas un error en un nombre en un documento ya firmado por dos personas. ¿Qué haces?',
     opts:[
-      {t:'Corregir directamente e inicializar la corrección.',ok:false},
-      {t:'Anular el documento y emitir uno nuevo.',ok:false},
-      {t:'Anular el documento, emitir uno nuevo y notificar a ambas partes.',ok:true},
-      {t:'Dejar el error y anotar una observación al margen.',ok:false}]},
+      {t:'Corregir directamente e inicializar la corrección.'},
+      {t:'Anular el documento y emitir uno nuevo.'},
+      {t:'Anular el documento, emitir uno nuevo y notificar a ambas partes.'},
+      {t:'Dejar el error y anotar una observación al margen.'}]},
   { id:'ca7',
     text:'Regla de priorización de tareas: las tareas con fecha límite hoy tienen máxima prioridad. Las tareas urgentes sin fecha específica son segunda prioridad. Las tareas de rutina diaria son tercera prioridad. Si dos tareas tienen la misma prioridad, se atiende primero la que llegó antes. Tienes: una tarea urgente sin fecha (llegó a las 9:00), una tarea con fecha límite hoy (llegó a las 10:00) y una rutina (llegó a las 8:00). ¿En qué orden trabajas?',
     opts:[
-      {t:'Rutina → urgente → fecha límite hoy.',ok:false},
-      {t:'Urgente → fecha límite hoy → rutina.',ok:false},
-      {t:'Fecha límite hoy → urgente → rutina.',ok:true},
-      {t:'La que llegó primero: rutina → urgente → fecha límite.',ok:false}]},
+      {t:'Rutina → urgente → fecha límite hoy.'},
+      {t:'Urgente → fecha límite hoy → rutina.'},
+      {t:'Fecha límite hoy → urgente → rutina.'},
+      {t:'La que llegó primero: rutina → urgente → fecha límite.'}]},
   { id:'ca8',
     text:'Procedimiento de permisos de ausencia: los permisos de hasta 2 horas los autoriza el supervisor directo. Los permisos de medio día o más requieren autorización del supervisor y registro en RRHH. Si el permiso es por razones médicas, siempre se requiere certificado, independiente de la duración. Un colaborador pide 1 hora de permiso por control médico. ¿Qué se necesita?',
     opts:[
-      {t:'Solo la autorización del supervisor.',ok:false},
-      {t:'Autorización del supervisor y registro en RRHH.',ok:false},
-      {t:'Autorización del supervisor y certificado médico.',ok:true},
-      {t:'Solo el certificado médico.',ok:false}]},
+      {t:'Solo la autorización del supervisor.'},
+      {t:'Autorización del supervisor y registro en RRHH.'},
+      {t:'Autorización del supervisor y certificado médico.'},
+      {t:'Solo el certificado médico.'}]},
 ];
 
 // ── GUARDIA: instrucciones de protocolos de seguridad y acceso ──
@@ -3171,59 +3174,59 @@ const COMP_GUARDIA = [
   { id:'cg1',
     text:'Protocolo de acceso de visitas: los visitantes con cita previa registrada deben ser anunciados al área correspondiente antes de ingresar. Los visitantes sin cita deben esperar en recepción mientras se consulta al área si los recibirán. Si el área no confirma en 10 minutos, el visitante debe retirarse. Si el visitante tiene identificación de empresa proveedora habitual, puede ingresar directo a bodega sin anuncio previo. Llega un visitante con cita previa. ¿Qué haces?',
     opts:[
-      {t:'Dejarlo ingresar directamente sin anuncio.',ok:false},
-      {t:'Anunciarlo al área correspondiente y luego dejarlo ingresar.',ok:true},
-      {t:'Pedirle que espere 10 minutos en recepción.',ok:false},
-      {t:'Solicitar su identificación y dejarlo pasar.',ok:false}]},
+      {t:'Dejarlo ingresar directamente sin anuncio.'},
+      {t:'Anunciarlo al área correspondiente y luego dejarlo ingresar.'},
+      {t:'Pedirle que espere 10 minutos en recepción.'},
+      {t:'Solicitar su identificación y dejarlo pasar.'}]},
   { id:'cg2',
     text:'Regla de zonas restringidas: la zona A es de libre acceso con credencial de empleado. La zona B requiere credencial de empleado MÁS autorización escrita del jefe de área. La zona C solo es accesible para personal autorizado en lista oficial, sin excepciones. Un empleado con credencial vigente solicita acceso a zona B diciendo que su jefe lo autorizó verbalmente. ¿Qué haces?',
     opts:[
-      {t:'Dejarlo pasar porque tiene credencial vigente.',ok:false},
-      {t:'Dejarlo pasar porque el jefe lo autorizó.',ok:false},
-      {t:'Solicitar la autorización escrita del jefe antes de permitir el acceso.',ok:true},
-      {t:'Llamar al jefe para confirmar la autorización verbal.',ok:false}]},
+      {t:'Dejarlo pasar porque tiene credencial vigente.'},
+      {t:'Dejarlo pasar porque el jefe lo autorizó.'},
+      {t:'Solicitar la autorización escrita del jefe antes de permitir el acceso.'},
+      {t:'Llamar al jefe para confirmar la autorización verbal.'}]},
   { id:'cg3',
     text:'Protocolo de objetos sospechosos: si se detecta un objeto no identificado en área pública, se debe acordonar el sector y avisar al supervisor inmediatamente. Si el objeto está en zona restringida, se evacua además el área adyacente. Si hay una persona que dice ser dueña del objeto, se retiene a esa persona hasta que llegue el supervisor. Se encuentra una mochila sin dueño en una zona restringida. ¿Qué haces primero?',
     opts:[
-      {t:'Abrir la mochila para verificar su contenido.',ok:false},
-      {t:'Acordonar el sector, evacuar el área adyacente y avisar al supervisor.',ok:true},
-      {t:'Solo avisar al supervisor y esperar instrucciones.',ok:false},
-      {t:'Preguntar a los presentes si alguien reconoce la mochila.',ok:false}]},
+      {t:'Abrir la mochila para verificar su contenido.'},
+      {t:'Acordonar el sector, evacuar el área adyacente y avisar al supervisor.'},
+      {t:'Solo avisar al supervisor y esperar instrucciones.'},
+      {t:'Preguntar a los presentes si alguien reconoce la mochila.'}]},
   { id:'cg4',
     text:'Procedimiento de registro de ingreso: todo vehículo de reparto debe ser registrado con patente, nombre del conductor y empresa. Si transporta materiales peligrosos, debe además presentar guía de transporte y se notifica al área de seguridad industrial. Si el conductor no presenta documentación completa, no puede ingresar al recinto. Llega un camión de reparto con materiales peligrosos pero sin guía de transporte. ¿Qué haces?',
     opts:[
-      {t:'Dejarlo ingresar y notificar a seguridad industrial.',ok:false},
-      {t:'Registrar sus datos y pedirle que espere.',ok:false},
-      {t:'No permitir el ingreso hasta que presente la guía de transporte.',ok:true},
-      {t:'Avisarle al supervisor para que él decida.',ok:false}]},
+      {t:'Dejarlo ingresar y notificar a seguridad industrial.'},
+      {t:'Registrar sus datos y pedirle que espere.'},
+      {t:'No permitir el ingreso hasta que presente la guía de transporte.'},
+      {t:'Avisarle al supervisor para que él decida.'}]},
   { id:'cg5',
     text:'Protocolo nocturno de rondas: las rondas se hacen cada 60 minutos en turno normal. Si hay incidente o alarma, la ronda siguiente se hace a los 20 minutos. Si llueve o hay condiciones climáticas adversas, se agregan puntos de revisión en accesos externos. Esta noche hubo una alarma hace 25 minutos y está lloviendo. ¿Cuándo es la próxima ronda y qué incluye?',
     opts:[
-      {t:'En 60 minutos, ronda normal.',ok:false},
-      {t:'En 35 minutos, ronda normal.',ok:false},
-      {t:'Inmediatamente, ya que pasaron 25 minutos desde el incidente.',ok:false},
-      {t:'En los próximos 20 minutos desde el incidente, incluyendo accesos externos.',ok:true}]},
+      {t:'En 60 minutos, ronda normal.'},
+      {t:'En 35 minutos, ronda normal.'},
+      {t:'Inmediatamente, ya que pasaron 25 minutos desde el incidente.'},
+      {t:'En los próximos 20 minutos desde el incidente, incluyendo accesos externos.'}]},
   { id:'cg6',
     text:'Regla de entrega de llaves: las llaves de oficinas se entregan solo al titular del cargo o a quien esté en la lista de autorizados del área. Si el solicitante no está en la lista, se requiere autorización escrita del jefe de área. Fuera del horario laboral, solo se entrega a personal en lista de emergencia. A las 21:00 llega un empleado que no está en la lista de emergencia y dice necesitar la llave de su oficina urgente. ¿Qué haces?',
     opts:[
-      {t:'Entregarle la llave porque es empleado de la empresa.',ok:false},
-      {t:'Pedirle que espere a que llegue alguien de la lista.',ok:false},
-      {t:'No entregar la llave; fuera de horario solo se entrega a personal en lista de emergencia.',ok:true},
-      {t:'Llamar a su jefe para pedir autorización verbal.',ok:false}]},
+      {t:'Entregarle la llave porque es empleado de la empresa.'},
+      {t:'Pedirle que espere a que llegue alguien de la lista.'},
+      {t:'No entregar la llave; fuera de horario solo se entrega a personal en lista de emergencia.'},
+      {t:'Llamar a su jefe para pedir autorización verbal.'}]},
   { id:'cg7',
     text:'Protocolo de evacuación: ante alarma de incendio, los guardias del primer piso evacúan el hall principal y verifican baños. Los guardias de pisos superiores acompañan la salida por escaleras de emergencia. El guardia de recepción llama a bomberos y permanece en su puesto hasta la llegada de servicios de emergencia. Eres el guardia del segundo piso. Suena la alarma. ¿Qué haces?',
     opts:[
-      {t:'Llamar a bomberos desde tu puesto.',ok:false},
-      {t:'Ir al hall principal a apoyar la evacuación.',ok:false},
-      {t:'Acompañar la evacuación del segundo piso por escalera de emergencia.',ok:true},
-      {t:'Evacuar el edificio y esperar afuera.',ok:false}]},
+      {t:'Llamar a bomberos desde tu puesto.'},
+      {t:'Ir al hall principal a apoyar la evacuación.'},
+      {t:'Acompañar la evacuación del segundo piso por escalera de emergencia.'},
+      {t:'Evacuar el edificio y esperar afuera.'}]},
   { id:'cg8',
     text:'Política de reporte de incidentes: cualquier incidente que involucre a una persona (lesión, pelea, desmayo) debe reportarse al supervisor de turno en el momento. Si hay lesionados, se llama primero a emergencias médicas y luego se reporta al supervisor. El reporte escrito debe completarse dentro de las 2 horas siguientes al incidente. Un visitante se desmaya en recepción. ¿Cuál es el orden correcto de acciones?',
     opts:[
-      {t:'Reportar al supervisor → llamar a emergencias → completar el reporte escrito.',ok:false},
-      {t:'Llamar a emergencias → reportar al supervisor → completar reporte escrito en 2 horas.',ok:true},
-      {t:'Completar el reporte escrito primero para tener todo documentado.',ok:false},
-      {t:'Llamar a emergencias y esperar; el supervisor se enterará solo.',ok:false}]},
+      {t:'Reportar al supervisor → llamar a emergencias → completar el reporte escrito.'},
+      {t:'Llamar a emergencias → reportar al supervisor → completar reporte escrito en 2 horas.'},
+      {t:'Completar el reporte escrito primero para tener todo documentado.'},
+      {t:'Llamar a emergencias y esperar; el supervisor se enterará solo.'}]},
 ];
 
 // ═══════════════════════════════════════════════════════════
@@ -3231,40 +3234,40 @@ const COMP_GUARDIA = [
 // ═══════════════════════════════════════════════════════════
 const SIT_SUPERVISOR = [
   {id:'ss1', text:'Un operario de tu turno llega 20 minutos tarde por segunda vez esta semana. Falta 1 hora para el cierre de turno. ¿Qué haces?', opts:[
-    {t:'Lo llamas aparte, registras la situación y acuerdan cómo evitar que se repita.',ok:true},
-    {t:'Lo regañas delante del equipo para que sirva de ejemplo.',ok:false},
-    {t:'No dices nada para no generar tensión antes del cierre.',ok:false},
-    {t:'Lo reportas directamente a RRHH sin hablar con él primero.',ok:false}]},
+    {t:'Lo llamas aparte, registras la situación y acuerdan cómo evitar que se repita.'},
+    {t:'Lo regañas delante del equipo para que sirva de ejemplo.'},
+    {t:'No dices nada para no generar tensión antes del cierre.'},
+    {t:'Lo reportas directamente a RRHH sin hablar con él primero.'}]},
   {id:'ss2', text:'Faltan 2 horas para finalizar el turno y la meta de producción está al 60%. El equipo está trabajando a ritmo normal. ¿Cómo actúas?', opts:[
-    {t:'Evalúas causas, redistribuyes tareas donde sea posible y comunicas el estado al turno siguiente.',ok:true},
-    {t:'Presionas al equipo para que acelere sin dar más contexto.',ok:false},
-    {t:'No haces nada, la meta del turno anterior también quedó baja.',ok:false},
-    {t:'Esperas que el jefe de turno llegue para que decida.',ok:false}]},
+    {t:'Evalúas causas, redistribuyes tareas donde sea posible y comunicas el estado al turno siguiente.'},
+    {t:'Presionas al equipo para que acelere sin dar más contexto.'},
+    {t:'No haces nada, la meta del turno anterior también quedó baja.'},
+    {t:'Esperas que el jefe de turno llegue para que decida.'}]},
   {id:'ss3', text:'Dos operarios del mismo turno tienen una disputa personal que está afectando el trabajo en línea. ¿Cuál es tu primera acción?', opts:[
-    {t:'Los separes momentáneamente en tareas distintas y conversas con cada uno por separado durante el turno.',ok:true},
-    {t:'Los reúnes a los dos frente al equipo y exiges que lo resuelvan ahora.',ok:false},
-    {t:'Ignoras el problema mientras no afecte la producción directamente.',ok:false},
-    {t:'Envías el caso a RRHH sin intervenir.',ok:false}]},
+    {t:'Los separes momentáneamente en tareas distintas y conversas con cada uno por separado durante el turno.'},
+    {t:'Los reúnes a los dos frente al equipo y exiges que lo resuelvan ahora.'},
+    {t:'Ignoras el problema mientras no afecte la producción directamente.'},
+    {t:'Envías el caso a RRHH sin intervenir.'}]},
   {id:'ss4', text:'Un equipo crítico falla a mitad de turno. No hay técnico disponible de inmediato. ¿Qué haces?', opts:[
-    {t:'Activas el protocolo de contingencia, reorganizas el flujo de trabajo y escalas la falla a mantenimiento.',ok:true},
-    {t:'Detienes toda la operación hasta que llegue el técnico.',ok:false},
-    {t:'Intentas repararlo tú mismo aunque no tengas formación técnica.',ok:false},
-    {t:'Continúas la operación sin reportar para no frenar la producción.',ok:false}]},
+    {t:'Activas el protocolo de contingencia, reorganizas el flujo de trabajo y escalas la falla a mantenimiento.'},
+    {t:'Detienes toda la operación hasta que llegue el técnico.'},
+    {t:'Intentas repararlo tú mismo aunque no tengas formación técnica.'},
+    {t:'Continúas la operación sin reportar para no frenar la producción.'}]},
   {id:'ss5', text:'Tu jefe de turno te pide saltarte un paso del protocolo de seguridad para acelerar la producción. ¿Cómo respondes?', opts:[
-    {t:'Explicas el riesgo que implica y propones una alternativa que no comprometa la seguridad.',ok:true},
-    {t:'Lo haces porque es tu jefe quien lo pide.',ok:false},
-    {t:'Te niegas sin dar explicación y lo reportas a otro superior.',ok:false},
-    {t:'Preguntas al equipo si están de acuerdo antes de decidir.',ok:false}]},
+    {t:'Explicas el riesgo que implica y propones una alternativa que no comprometa la seguridad.'},
+    {t:'Lo haces porque es tu jefe quien lo pide.'},
+    {t:'Te niegas sin dar explicación y lo reportas a otro superior.'},
+    {t:'Preguntas al equipo si están de acuerdo antes de decidir.'}]},
   {id:'ss6', text:'Un trabajador nuevo comete un error que podría haber causado un accidente, aunque no lo causó. ¿Qué haces?', opts:[
-    {t:'Corriges el error en el momento, lo documentas y aprovechas para capacitarlo en el procedimiento correcto.',ok:true},
-    {t:'Lo reprendes fuerte para que no lo vuelva a hacer.',ok:false},
-    {t:'No dices nada porque no hubo consecuencias.',ok:false},
-    {t:'Lo cambias de puesto inmediatamente sin explicación.',ok:false}]},
+    {t:'Corriges el error en el momento, lo documentas y aprovechas para capacitarlo en el procedimiento correcto.'},
+    {t:'Lo reprendes fuerte para que no lo vuelva a hacer.'},
+    {t:'No dices nada porque no hubo consecuencias.'},
+    {t:'Lo cambias de puesto inmediatamente sin explicación.'}]},
   {id:'ss7', text:'Al hacer el traspaso de turno, detectas que el turno saliente dejó incompleto un registro obligatorio. ¿Cómo actúas?', opts:[
-    {t:'Completas el registro con los datos disponibles, documentas la observación y lo informas al supervisor saliente.',ok:true},
-    {t:'Dejas el registro incompleto, no es tu responsabilidad.',ok:false},
-    {t:'Lo ignoras si la operación va bien.',ok:false},
-    {t:'Reportas la falta sin completar el registro tú mismo.',ok:false}]},
+    {t:'Completas el registro con los datos disponibles, documentas la observación y lo informas al supervisor saliente.'},
+    {t:'Dejas el registro incompleto, no es tu responsabilidad.'},
+    {t:'Lo ignoras si la operación va bien.'},
+    {t:'Reportas la falta sin completar el registro tú mismo.'}]},
 ];
 
 // ═══════════════════════════════════════════════════════════
@@ -3275,30 +3278,30 @@ const SIT_SUPERVISOR = [
 // ── 16PF Abreviado — 5 factores globales, 20 ítems Likert 1-5 ──
 const PF16_ITEMS = [
   // EX — Extraversión (A+, F+, H+, Q2-)
-  {id:'pf_ex1',dim:'EX',text:'Me resulta fácil iniciar conversaciones con personas que no conozco.'},
-  {id:'pf_ex2',dim:'EX',text:'En reuniones de trabajo, participo activamente y comparto mis ideas con el grupo.'},
-  {id:'pf_ex3',dim:'EX',text:'Prefiero trabajar acompañado/a que solo/a, incluso si la tarea no lo requiere.'},
-  {id:'pf_ex4',dim:'EX',text:'Me consideran una persona sociable que genera buen clima en el equipo.',inv:true},
+  {id:'pf_ex1',text:'Me resulta fácil iniciar conversaciones con personas que no conozco.'},
+  {id:'pf_ex2',text:'En reuniones de trabajo, participo activamente y comparto mis ideas con el grupo.'},
+  {id:'pf_ex3',text:'Prefiero trabajar acompañado/a que solo/a, incluso si la tarea no lo requiere.'},
+  {id:'pf_ex4',text:'Me consideran una persona sociable que genera buen clima en el equipo.',},
   // AN — Ajuste Emocional / Baja Ansiedad (C+, O-, Q4-)
-  {id:'pf_an1',dim:'AN',text:'Mantengo la calma incluso cuando las cosas no salen según lo planeado.'},
-  {id:'pf_an2',dim:'AN',text:'Rara vez me preocupo de forma excesiva por cosas que no puedo controlar.'},
-  {id:'pf_an3',dim:'AN',text:'Duermo bien incluso en períodos de mucho trabajo o presión laboral.'},
-  {id:'pf_an4',dim:'AN',text:'No me afectan demasiado las críticas o comentarios negativos sobre mi trabajo.'},
+  {id:'pf_an1',text:'Mantengo la calma incluso cuando las cosas no salen según lo planeado.'},
+  {id:'pf_an2',text:'Rara vez me preocupo de forma excesiva por cosas que no puedo controlar.'},
+  {id:'pf_an3',text:'Duermo bien incluso en períodos de mucho trabajo o presión laboral.'},
+  {id:'pf_an4',text:'No me afectan demasiado las críticas o comentarios negativos sobre mi trabajo.'},
   // DU — Dureza Mental / Objetividad (A-, I-, M-)
-  {id:'pf_du1',dim:'DU',text:'Tomo decisiones basándome en hechos y datos, no en corazonadas o sentimientos.'},
-  {id:'pf_du2',dim:'DU',text:'Cuando hay un problema, busco la solución más práctica aunque no sea la más popular.'},
-  {id:'pf_du3',dim:'DU',text:'Me resulta fácil dar feedback negativo cuando la situación lo requiere.'},
-  {id:'pf_du4',dim:'DU',text:'Puedo separar mis emociones personales de las decisiones profesionales.'},
+  {id:'pf_du1',text:'Tomo decisiones basándome en hechos y datos, no en corazonadas o sentimientos.'},
+  {id:'pf_du2',text:'Cuando hay un problema, busco la solución más práctica aunque no sea la más popular.'},
+  {id:'pf_du3',text:'Me resulta fácil dar feedback negativo cuando la situación lo requiere.'},
+  {id:'pf_du4',text:'Puedo separar mis emociones personales de las decisiones profesionales.'},
   // IN — Independencia (E+, H+, L+, Q1+)
-  {id:'pf_in1',dim:'IN',text:'Defiendo mi posición cuando creo que tengo razón, aunque la mayoría no esté de acuerdo.'},
-  {id:'pf_in2',dim:'IN',text:'No necesito la aprobación de los demás para sentirme seguro/a de mis decisiones.'},
-  {id:'pf_in3',dim:'IN',text:'Cuestiono instrucciones que no me parecen lógicas, en vez de seguirlas sin pensar.'},
-  {id:'pf_in4',dim:'IN',text:'Prefiero formar mi propia opinión antes de consultar qué piensan los demás.'},
+  {id:'pf_in1',text:'Defiendo mi posición cuando creo que tengo razón, aunque la mayoría no esté de acuerdo.'},
+  {id:'pf_in2',text:'No necesito la aprobación de los demás para sentirme seguro/a de mis decisiones.'},
+  {id:'pf_in3',text:'Cuestiono instrucciones que no me parecen lógicas, en vez de seguirlas sin pensar.'},
+  {id:'pf_in4',text:'Prefiero formar mi propia opinión antes de consultar qué piensan los demás.'},
   // AC — Autocontrol (F-, G+, M-, Q3+)
-  {id:'pf_ac1',dim:'AC',text:'Cumplo las reglas y procedimientos aunque nadie me esté supervisando.'},
-  {id:'pf_ac2',dim:'AC',text:'Soy muy organizado/a con mi tiempo, mis tareas y mis compromisos.'},
-  {id:'pf_ac3',dim:'AC',text:'Antes de actuar, pienso bien en las consecuencias de lo que voy a hacer.'},
-  {id:'pf_ac4',dim:'AC',text:'Me cuesta improvisar; prefiero tener un plan claro antes de comenzar algo.'},
+  {id:'pf_ac1',text:'Cumplo las reglas y procedimientos aunque nadie me esté supervisando.'},
+  {id:'pf_ac2',text:'Soy muy organizado/a con mi tiempo, mis tareas y mis compromisos.'},
+  {id:'pf_ac3',text:'Antes de actuar, pienso bien en las consecuencias de lo que voy a hacer.'},
+  {id:'pf_ac4',text:'Me cuesta improvisar; prefiero tener un plan claro antes de comenzar algo.'},
 ];
 
 // ═══════════════════════════════════════════════════════════
@@ -3334,24 +3337,24 @@ const DISC_BLOCKS = [
 // ═══════════════════════════════════════════════════════════
 //  IWS-15 — Integridad Laboral
 //  Likert 1–4 (1=Nunca, 4=Siempre). Alto = mayor integridad.
-//  r:true = ítem inverso (actitud negativa hacia normas)
+//  = ítem inverso (actitud negativa hacia normas)
 // ═══════════════════════════════════════════════════════════
 const IWS_ITEMS = [
-  {id:'iw1', r:false, text:'Reporto cualquier irregularidad que observe en mi lugar de trabajo, aunque no me involucre directamente.'},
-  {id:'iw2', r:false, text:'Me niego a participar en prácticas cuestionables aunque todos a mi alrededor las acepten.'},
-  {id:'iw3', r:true,  text:'A veces es necesario omitir ciertos detalles en un informe para evitar problemas innecesarios.'},
-  {id:'iw4', r:false, text:'Prefiero enfrentar las consecuencias de decir la verdad antes que protegerme con una mentira.'},
-  {id:'iw5', r:true,  text:'Tomar materiales o insumos de la empresa para uso personal es aceptable si nadie lo nota.'},
-  {id:'iw6', r:false, text:'Cumplo con las normas de seguridad incluso cuando no hay supervisión.'},
-  {id:'iw7', r:true,  text:'Si un superior me pide hacer algo cuestionable, prefiero obedecer para no tener conflictos.'},
-  {id:'iw8', r:false, text:'Soy transparente con mis errores, incluso cuando podría ocultarlos sin consecuencias.'},
-  {id:'iw9', r:true,  text:'Está bien saltarse algunos pasos del protocolo si con eso terminas el trabajo más rápido.'},
-  {id:'iw10',r:false, text:'La honestidad es fundamental en mi trabajo, sin excepciones.'},
-  {id:'iw11',r:true,  text:'Ayudar a un compañero a cubrir un error es parte de la lealtad en un equipo.'},
-  {id:'iw12',r:false, text:'Registro fielmente mi jornada de trabajo, sin ajustar los horarios a mi conveniencia.'},
-  {id:'iw13',r:true,  text:'A veces conviene exagerar un poco los logros en un informe para dar mejor impresión.'},
-  {id:'iw14',r:false, text:'Actúo con la misma ética cuando trabajo solo/a que cuando estoy siendo observado/a.'},
-  {id:'iw15',r:false, text:'Denunciaría una irregularidad grave aunque eso me causara problemas con compañeros.'},
+  {id:'iw1', text:'Reporto cualquier irregularidad que observe en mi lugar de trabajo, aunque no me involucre directamente.'},
+  {id:'iw2', text:'Me niego a participar en prácticas cuestionables aunque todos a mi alrededor las acepten.'},
+  {id:'iw3', text:'A veces es necesario omitir ciertos detalles en un informe para evitar problemas innecesarios.'},
+  {id:'iw4', text:'Prefiero enfrentar las consecuencias de decir la verdad antes que protegerme con una mentira.'},
+  {id:'iw5', text:'Tomar materiales o insumos de la empresa para uso personal es aceptable si nadie lo nota.'},
+  {id:'iw6', text:'Cumplo con las normas de seguridad incluso cuando no hay supervisión.'},
+  {id:'iw7', text:'Si un superior me pide hacer algo cuestionable, prefiero obedecer para no tener conflictos.'},
+  {id:'iw8', text:'Soy transparente con mis errores, incluso cuando podría ocultarlos sin consecuencias.'},
+  {id:'iw9', text:'Está bien saltarse algunos pasos del protocolo si con eso terminas el trabajo más rápido.'},
+  {id:'iw10',text:'La honestidad es fundamental en mi trabajo, sin excepciones.'},
+  {id:'iw11',text:'Ayudar a un compañero a cubrir un error es parte de la lealtad en un equipo.'},
+  {id:'iw12',text:'Registro fielmente mi jornada de trabajo, sin ajustar los horarios a mi conveniencia.'},
+  {id:'iw13',text:'A veces conviene exagerar un poco los logros en un informe para dar mejor impresión.'},
+  {id:'iw14',text:'Actúo con la misma ética cuando trabajo solo/a que cuando estoy siendo observado/a.'},
+  {id:'iw15',text:'Denunciaría una irregularidad grave aunque eso me causara problemas con compañeros.'},
 ];
 
 
@@ -3365,112 +3368,112 @@ const NORMATIVA_OHS_QS = [
   // ── Bloque 1: DS N°44 ──────────────────────────────────────
   { id:'ohs1', text:'¿Qué decretos supremos reemplazó el DS N°44, vigente desde el 1 de febrero de 2025?',
     opts:[
-      { t:'DS 594 y DS 67',      ok:false },
-      { t:'DS 40 y DS 54',       ok:true  },
-      { t:'DS 40 y DS 594',      ok:false },
-      { t:'DS 101 y DS 67',      ok:false },
+      { t:'DS 594 y DS 67' },
+      { t:'DS 40 y DS 54'  },
+      { t:'DS 40 y DS 594' },
+      { t:'DS 101 y DS 67' },
     ]},
   { id:'ohs2', text:'Según el DS N°44, ¿qué es el MIPER?',
     opts:[
-      { t:'Un registro de accidentes e incidentes de la empresa',                     ok:false },
-      { t:'La Matriz de Identificación de Peligros y Evaluación de Riesgos',          ok:true  },
-      { t:'El Manual Interno de Procedimientos de Emergencia y Respuesta',            ok:false },
-      { t:'El Modelo Integrado de Prevención de Enfermedades Respiratorias',          ok:false },
+      { t:'Un registro de accidentes e incidentes de la empresa' },
+      { t:'La Matriz de Identificación de Peligros y Evaluación de Riesgos'  },
+      { t:'El Manual Interno de Procedimientos de Emergencia y Respuesta' },
+      { t:'El Modelo Integrado de Prevención de Enfermedades Respiratorias' },
     ]},
   { id:'ohs3', text:'Según el DS N°44, ¿en qué empresas es obligatorio designar un Delegado de Prevención?',
     opts:[
-      { t:'Empresas con menos de 10 trabajadores',       ok:false },
-      { t:'Empresas entre 10 y 25 trabajadores',         ok:true  },
-      { t:'Empresas entre 25 y 50 trabajadores',         ok:false },
-      { t:'Empresas con más de 100 trabajadores',        ok:false },
+      { t:'Empresas con menos de 10 trabajadores' },
+      { t:'Empresas entre 10 y 25 trabajadores'  },
+      { t:'Empresas entre 25 y 50 trabajadores' },
+      { t:'Empresas con más de 100 trabajadores' },
     ]},
   { id:'ohs4', text:'¿Cuál de los siguientes NO corresponde a uno de los once instrumentos preventivos que establece el DS N°44?',
     opts:[
-      { t:'Plan de emergencias',                          ok:false },
-      { t:'Mapa de riesgos',                              ok:false },
-      { t:'Programa de prevención de riesgos',            ok:false },
-      { t:'Evaluación psicológica obligatoria de todos los trabajadores', ok:true },
+      { t:'Plan de emergencias' },
+      { t:'Mapa de riesgos' },
+      { t:'Programa de prevención de riesgos' },
+      { t:'Evaluación psicológica obligatoria de todos los trabajadores' },
     ]},
   // ── Bloque 2: Ley 16.744 ───────────────────────────────────
   { id:'ohs5', text:'¿Qué establece principalmente la Ley 16.744?',
     opts:[
-      { t:'Las condiciones sanitarias básicas en los lugares de trabajo',              ok:false },
-      { t:'El seguro obligatorio contra accidentes del trabajo y enfermedades profesionales', ok:true },
-      { t:'El reglamento de gestión preventiva de riesgos laborales',                 ok:false },
-      { t:'Los protocolos de investigación de accidentes graves',                     ok:false },
+      { t:'Las condiciones sanitarias básicas en los lugares de trabajo' },
+      { t:'El seguro obligatorio contra accidentes del trabajo y enfermedades profesionales' },
+      { t:'El reglamento de gestión preventiva de riesgos laborales' },
+      { t:'Los protocolos de investigación de accidentes graves' },
     ]},
   { id:'ohs6', text:'Según la Ley 16.744, ¿cuál de los siguientes es un accidente de trayecto?',
     opts:[
-      { t:'El que ocurre dentro de las instalaciones de la empresa',                  ok:false },
-      { t:'El que ocurre en el camino directo entre el trabajo y el hogar del trabajador', ok:true },
-      { t:'Cualquier accidente ocurrido fuera del horario de trabajo',                ok:false },
-      { t:'El que ocurre en actividades recreativas organizadas por la empresa',      ok:false },
+      { t:'El que ocurre dentro de las instalaciones de la empresa' },
+      { t:'El que ocurre en el camino directo entre el trabajo y el hogar del trabajador' },
+      { t:'Cualquier accidente ocurrido fuera del horario de trabajo' },
+      { t:'El que ocurre en actividades recreativas organizadas por la empresa' },
     ]},
   { id:'ohs7', text:'¿Qué organismo supervisa a los organismos administradores del seguro de la Ley 16.744?',
     opts:[
-      { t:'La Dirección del Trabajo',                                ok:false },
-      { t:'El Ministerio de Salud',                                  ok:false },
-      { t:'La Superintendencia de Seguridad Social (SUSESO)',        ok:true  },
-      { t:'El Instituto de Salud Pública (ISP)',                     ok:false },
+      { t:'La Dirección del Trabajo' },
+      { t:'El Ministerio de Salud' },
+      { t:'La Superintendencia de Seguridad Social (SUSESO)'  },
+      { t:'El Instituto de Salud Pública (ISP)' },
     ]},
   // ── Bloque 3: DS 594 ───────────────────────────────────────
   { id:'ohs8', text:'¿Qué materia regula el Decreto Supremo N°594?',
     opts:[
-      { t:'La gestión preventiva de los riesgos laborales',                            ok:false },
-      { t:'Las condiciones sanitarias y ambientales básicas en los lugares de trabajo', ok:true  },
-      { t:'El seguro de accidentes del trabajo y enfermedades profesionales',          ok:false },
-      { t:'Los protocolos de prevención del acoso laboral',                            ok:false },
+      { t:'La gestión preventiva de los riesgos laborales' },
+      { t:'Las condiciones sanitarias y ambientales básicas en los lugares de trabajo'  },
+      { t:'El seguro de accidentes del trabajo y enfermedades profesionales' },
+      { t:'Los protocolos de prevención del acoso laboral' },
     ]},
   { id:'ohs9', text:'Según el DS 594, ¿cuál es el nivel máximo de ruido continuo permitido para una jornada laboral de 8 horas?',
     opts:[
-      { t:'75 dB(A)', ok:false },
-      { t:'80 dB(A)', ok:false },
-      { t:'85 dB(A)', ok:true  },
-      { t:'90 dB(A)', ok:false },
+      { t:'75 dB(A)' },
+      { t:'80 dB(A)' },
+      { t:'85 dB(A)'  },
+      { t:'90 dB(A)' },
     ]},
   { id:'ohs10', text:'¿Cuál es la jerarquía correcta de control de riesgos según la normativa vigente, del más al menos preferible?',
     opts:[
-      { t:'EPP → control administrativo → ingeniería → eliminación',                         ok:false },
-      { t:'Eliminación → sustitución → control de ingeniería → control administrativo → EPP', ok:true  },
-      { t:'Control administrativo → EPP → sustitución → eliminación',                        ok:false },
-      { t:'Control de ingeniería → eliminación → EPP → control administrativo',              ok:false },
+      { t:'EPP → control administrativo → ingeniería → eliminación' },
+      { t:'Eliminación → sustitución → control de ingeniería → control administrativo → EPP'  },
+      { t:'Control administrativo → EPP → sustitución → eliminación' },
+      { t:'Control de ingeniería → eliminación → EPP → control administrativo' },
     ]},
   // ── Bloque 4: CPHS y estructura preventiva ─────────────────
   { id:'ohs11', text:'Según el DS N°44, ¿en qué empresas es obligatorio constituir un Comité Paritario de Higiene y Seguridad (CPHS)?',
     opts:[
-      { t:'Empresas con más de 10 trabajadores', ok:false },
-      { t:'Empresas con más de 15 trabajadores', ok:false },
-      { t:'Empresas con más de 25 trabajadores', ok:true  },
-      { t:'Empresas con más de 50 trabajadores', ok:false },
+      { t:'Empresas con más de 10 trabajadores' },
+      { t:'Empresas con más de 15 trabajadores' },
+      { t:'Empresas con más de 25 trabajadores'  },
+      { t:'Empresas con más de 50 trabajadores' },
     ]},
   { id:'ohs12', text:'¿Cuántos representantes titulares tiene cada parte en un Comité Paritario?',
     opts:[
-      { t:'1 titular y 1 suplente por parte', ok:false },
-      { t:'2 titulares y 2 suplentes por parte', ok:false },
-      { t:'3 titulares y 3 suplentes por parte', ok:true  },
-      { t:'4 titulares y 4 suplentes por parte', ok:false },
+      { t:'1 titular y 1 suplente por parte' },
+      { t:'2 titulares y 2 suplentes por parte' },
+      { t:'3 titulares y 3 suplentes por parte'  },
+      { t:'4 titulares y 4 suplentes por parte' },
     ]},
   { id:'ohs13', text:'Según el DS N°44, ¿a partir de cuántos trabajadores es obligatorio contar con un Departamento de Prevención de Riesgos?',
     opts:[
-      { t:'Más de 25 trabajadores',  ok:false },
-      { t:'Más de 50 trabajadores',  ok:false },
-      { t:'Más de 100 trabajadores', ok:true  },
-      { t:'Más de 200 trabajadores', ok:false },
+      { t:'Más de 25 trabajadores' },
+      { t:'Más de 50 trabajadores' },
+      { t:'Más de 100 trabajadores'  },
+      { t:'Más de 200 trabajadores' },
     ]},
   // ── Bloque 5: Ley Karin + Psicosocial ──────────────────────
   { id:'ohs14', text:'¿Cuál es el alcance de la Ley 21.643 "Ley Karin", vigente desde agosto de 2024?',
     opts:[
-      { t:'Solo regula el acoso sexual entre compañeros de trabajo',                                             ok:false },
-      { t:'Regula el acoso laboral, acoso sexual y violencia en el trabajo, incluyendo violencia de terceros',  ok:true  },
-      { t:'Únicamente las conductas de acoso ejercidas por el empleador directo',                               ok:false },
-      { t:'Solo situaciones ocurridas dentro del horario de trabajo',                                           ok:false },
+      { t:'Solo regula el acoso sexual entre compañeros de trabajo' },
+      { t:'Regula el acoso laboral, acoso sexual y violencia en el trabajo, incluyendo violencia de terceros'  },
+      { t:'Únicamente las conductas de acoso ejercidas por el empleador directo' },
+      { t:'Solo situaciones ocurridas dentro del horario de trabajo' },
     ]},
   { id:'ohs15', text:'¿Qué instrumento se utiliza en Chile para la vigilancia de riesgos psicosociales en el trabajo?',
     opts:[
-      { t:'Cuestionario JCQ de Karasek',         ok:false },
-      { t:'Inventario de Burnout de Maslach (MBI)', ok:false },
-      { t:'Cuestionario SUSESO/ISTAS-21',        ok:true  },
-      { t:'Escala GHQ-28 de Goldberg',           ok:false },
+      { t:'Cuestionario JCQ de Karasek' },
+      { t:'Inventario de Burnout de Maslach (MBI)' },
+      { t:'Cuestionario SUSESO/ISTAS-21'  },
+      { t:'Escala GHQ-28 de Goldberg' },
     ]},
 ];
 
@@ -3506,138 +3509,9 @@ function buildQuestions(perfil) {
 
 // ═══════════════════════════════════════════════════════════
 //  CÁLCULO DE PUNTAJES
+//  Se hace en el servidor (psicoeval_calc_scores en supabase/01_claves_y_puntajes.sql):
+//  la página envía las respuestas y nunca conoce las claves de corrección.
 // ═══════════════════════════════════════════════════════════
-function calcScores(answers, selectedTests, perfil) {
-  const allQs = buildQuestions(perfil);
-  const scores = {};
-
-
-  // DC-0
-  if (selectedTests.includes('dc0')) {
-    const areas = {V:{c:0,t:0},N:{c:0,t:0},L:{c:0,t:0}};
-    allQs.filter(q=>q.testId==='dc0').forEach(q => {
-      const idx = answers[q.id];
-      areas[q.area].t++;
-      if (idx!==undefined && q.opts[idx].ok) areas[q.area].c++;
-    });
-    scores.dc0 = {};
-    Object.keys(areas).forEach(a => scores.dc0[a] = areas[a].t ? Math.round(areas[a].c/areas[a].t*100) : 0);
-    scores.dc0.total = Math.round((scores.dc0.V + scores.dc0.N + scores.dc0.L)/3);
-  }
-
-  // PAI — raw mean per dimension (1-4 scale, higher = more of the trait)
-  if (selectedTests.includes('pai')) {
-    const dims = {EE:[],AS:[],ON:[],ME:[],IL:[],ML:[],DS:[]};
-    allQs.filter(q=>q.testId==='pai').forEach(q => {
-      const v = answers[q.id]; if (v===undefined) return;
-      const adj = q.r ? (5 - v) : v;
-      if (dims[q.dim]) dims[q.dim].push(adj);
-    });
-    scores.pai = { _raw:{} };
-    ['EE','AS','ON','ME','IL','ML'].forEach(k => {
-      const vals = dims[k];
-      const mean = vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : 2.5;
-      scores.pai._raw[k] = Math.round(mean * 10) / 10;
-      scores.pai[k] = Math.round((mean - 1) / 3 * 100);
-    });
-    // DS: social desirability. Mean >3.2 on 4-point scale = suspect inflation
-    const dsVals = dims.DS || [];
-    const dsMean = dsVals.length ? dsVals.reduce((a,b)=>a+b,0)/dsVals.length : 2.5;
-    scores.pai._ds_mean = Math.round(dsMean * 10) / 10;
-    scores.pai._ds_flag = dsMean >= 3.2; // inflated if average ≥ 3.2/4
-
-    // Aquiescencia: baja varianza en respuestas brutas → responde sin discriminar contenido
-    var _paiRaw = allQs.filter(function(q){ return q.testId==='pai'; })
-                       .map(function(q){ return answers[q.id]; })
-                       .filter(function(v){ return v !== undefined; });
-    if (_paiRaw.length >= 10) {
-      var _paiMu = _paiRaw.reduce(function(a,b){ return a+b; }, 0) / _paiRaw.length;
-      var _paiSd = Math.sqrt(_paiRaw.reduce(function(a,v){ return a + Math.pow(v-_paiMu,2); }, 0) / _paiRaw.length);
-      scores.pai._aquiesc_sd   = Math.round(_paiSd * 100) / 100;
-      scores.pai._aquiesc_flag = _paiSd < 0.6; // SD < 0.6 en escala 1-4 = respuesta indiscriminada
-    }
-  }
-
-  // Juicio Situacional
-  if (selectedTests.includes('situacional')) {
-    const qs2 = allQs.filter(q=>q.testId==='situacional');
-    let correct = 0;
-    qs2.forEach(q => { const idx = answers[q.id]; if (idx!==undefined && q.opts[idx].ok) correct++; });
-    scores.situacional = { pct: qs2.length ? Math.round(correct/qs2.length*100) : 0, correct, total: qs2.length };
-  }
-
-  // Vigilancia
-  if (selectedTests.includes('vigilancia')) {
-    const qs2 = allQs.filter(q=>q.testId==='vigilancia');
-    let correct = 0;
-    qs2.forEach(q => { const idx = answers[q.id]; if (idx!==undefined && q.opts[idx].ok) correct++; });
-    scores.vigilancia = { pct: qs2.length ? Math.round(correct/qs2.length*100) : 0, correct, total: qs2.length };
-  }
-
-  // Comprensión de Instrucciones
-  if (selectedTests.includes('comprension')) {
-    const qs2 = allQs.filter(q=>q.testId==='comprension');
-    let correct = 0;
-    qs2.forEach(q => { const idx = answers[q.id]; if (idx!==undefined && q.opts[idx].ok) correct++; });
-    scores.comprension = { pct: qs2.length ? Math.round(correct/qs2.length*100) : 0, correct, total: qs2.length };
-  }
-
-  // Conocimiento Normativo OHS
-  if (selectedTests.includes('normativa_ohs')) {
-    const qs2 = allQs.filter(q => q.testId === 'normativa_ohs');
-    let correct = 0;
-    qs2.forEach(q => { const idx = answers[q.id]; if (idx !== undefined && q.opts[idx].ok) correct++; });
-    scores.normativa_ohs = { pct: qs2.length ? Math.round(correct / qs2.length * 100) : 0, correct, total: qs2.length };
-  }
-
-  // DISC-20
-  if (selectedTests.includes('disc')) {
-    var discRaw = { D:0, I:0, S:0, C:0 };
-    var discBlockQs = allQs.filter(function(q){ return q.type === 'disc_block'; });
-    discBlockQs.forEach(function(q) {
-      var a = answers[q.id];
-      if (!a || !a.most || !a.least || a.most === a.least) return;
-      discRaw[a.most]  = (discRaw[a.most]  || 0) + 2;
-      discRaw[a.least] = (discRaw[a.least] || 0) - 2;
-    });
-    var nBlocks = discBlockQs.length || 20;
-    scores.disc = {};
-    ['D','I','S','C'].forEach(function(k) {
-      scores.disc[k] = Math.round((discRaw[k] + nBlocks * 2) / (nBlocks * 4) * 100);
-    });
-    var maxDim = ['D','I','S','C'].reduce(function(a,b){ return scores.disc[a] >= scores.disc[b] ? a : b; });
-    scores.disc.dominant = maxDim;
-  }
-
-
-  // ── 16PF ──
-  if (selectedTests.includes('pf16')) {
-    var pf = allQs.filter(q=>q.testId==='pf16');
-    var dims = {};
-    pf.forEach(function(q) {
-      var v = answers[q.id]; if (v===undefined) return;
-      if (q.inv) v = 6 - v; // invert
-      if (!dims[q.dim]) dims[q.dim] = [];
-      dims[q.dim].push(v);
-    });
-    var pf16s = {};
-    Object.keys(dims).forEach(function(d) {
-      var avg = dims[d].reduce(function(a,b){return a+b;},0) / dims[d].length;
-      pf16s[d] = Math.round((avg - 1) / 4 * 100);
-    });
-    scores.pf16 = pf16s;
-  }
-
-  // ── Game scores ──
-  var _gr = (typeof S !== 'undefined' && S.gameResults) || {};
-  ['juego_semaforo','juego_globos','juego_memoria'].forEach(function(tid) {
-    if (selectedTests.includes(tid) && _gr[tid]) {
-      scores[tid] = { pct: _gr[tid].score, score: _gr[tid].score, summary: _gr[tid].summary || '' };
-    }
-  });
-
-  return scores;
-}
 
 // ═══════════════════════════════════════════════════════════
 //  MOTOR DE RENDERQ — escala PAI 1-4
@@ -3668,36 +3542,52 @@ function gotoAdminLogin() { showView('adminlogin'); }
 // ═══════════════════════════════════════════════════════════
 //  TEST MODE (temporary - for testing)
 // ═══════════════════════════════════════════════════════════
+// Acceso con una cuenta de administrador (Supabase) — sin contraseña escrita en el código.
+// Si ya hay sesión de admin abierta en este navegador, entra directo.
 function promptTestMode() {
+  if ((S.authToken && S.role) || S._testModeToken) { startTestMode(); return; }
+  var inpStyle = 'width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:11px 14px;font-size:14px;font-family:inherit;outline:none;margin-bottom:8px;box-sizing:border-box';
   var overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px';
   overlay.innerHTML = '<div style="background:#fff;border-radius:16px;padding:28px;max-width:340px;width:100%;font-family:inherit;box-shadow:0 8px 40px rgba(0,0,0,.2)">'
     + '<div style="font-size:22px;text-align:center;margin-bottom:12px">🔐</div>'
     + '<div style="font-size:16px;font-weight:800;text-align:center;margin-bottom:4px">Acceso restringido</div>'
-    + '<div style="font-size:13px;color:#64748b;text-align:center;margin-bottom:18px">Ingresa la contraseña para acceder al Modo Prueba</div>'
-    + '<input id="prueba-pwd-input" type="password" placeholder="Contraseña" autofocus '
-    + 'style="width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:11px 14px;font-size:14px;font-family:inherit;outline:none;margin-bottom:8px;box-sizing:border-box" '
+    + '<div style="font-size:13px;color:#64748b;text-align:center;margin-bottom:18px">Ingresa con tu cuenta de administrador para acceder al Modo Prueba</div>'
+    + '<input id="prueba-email-input" type="email" placeholder="Correo" autocomplete="username" style="' + inpStyle + '" '
+    + 'onkeydown="if(event.key===\'Enter\') checkTestModePwd()">'
+    + '<input id="prueba-pwd-input" type="password" placeholder="Contraseña" autocomplete="current-password" style="' + inpStyle + '" '
     + 'onkeydown="if(event.key===\'Enter\') checkTestModePwd()">'
     + '<div id="prueba-pwd-err" style="font-size:12px;color:#dc2626;margin-bottom:10px;min-height:16px"></div>'
     + '<div style="display:flex;gap:8px">'
     + '<button onclick="this.closest(\'div[style*=fixed]\').remove()" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid #e2e8f0;background:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;color:#64748b">Cancelar</button>'
-    + '<button onclick="checkTestModePwd()" style="flex:1;padding:10px;border-radius:10px;border:none;background:#6366f1;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Ingresar</button>'
+    + '<button id="prueba-pwd-btn" onclick="checkTestModePwd()" style="flex:1;padding:10px;border-radius:10px;border:none;background:#6366f1;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Ingresar</button>'
     + '</div></div>';
   document.body.appendChild(overlay);
-  setTimeout(function(){ var inp = document.getElementById('prueba-pwd-input'); if(inp) inp.focus(); }, 100);
+  setTimeout(function(){ var inp = document.getElementById('prueba-email-input'); if(inp) inp.focus(); }, 100);
 }
 
-function checkTestModePwd() {
+async function checkTestModePwd() {
+  var emailInp = document.getElementById('prueba-email-input');
   var inp = document.getElementById('prueba-pwd-input');
   var err = document.getElementById('prueba-pwd-err');
-  if (!inp) return;
-  if (inp.value === 'prueba2024') {
+  var btn = document.getElementById('prueba-pwd-btn');
+  if (!inp || !emailInp) return;
+  var email = emailInp.value.trim(), pass = inp.value;
+  if (!email || !pass) { if (err) err.textContent = 'Completa correo y contraseña.'; return; }
+  if (btn) { btn.disabled = true; btn.textContent = 'Verificando…'; }
+  try {
+    var data = await _supaLogin(email, pass);
+    if (!_roleFromAuth(data)) { _revokeSession(data.access_token); throw new Error('sin rol'); }
+    // Solo en memoria: se usa para pedir los puntajes al servidor y se cierra
+    // al volver al inicio (o vence sola en 1 hora)
+    S._testModeToken = data.access_token;
     inp.closest('div[style*="fixed"]').remove();
     startTestMode();
-  } else {
-    if (err) err.textContent = 'Contraseña incorrecta';
+  } catch(e) {
+    if (err) err.textContent = (e.message === 'sin rol') ? 'Tu cuenta no tiene rol de administrador' : 'Correo o contraseña incorrectos';
     inp.value = '';
     inp.focus();
+    if (btn) { btn.disabled = false; btn.textContent = 'Ingresar'; }
   }
 }
 
@@ -3791,6 +3681,8 @@ function launchSingleTest(testId) {
   S.selectedTests = [testId];
   S.allQs = buildQuestions(perfil);
   S.answers = {};
+  S.gameResults = {};
+  S.blockTimes = {};
   S.testBlocks = [{ testId: testId, qs: S.allQs.filter(function(q){ return q.testId === testId; }) }];
   S.blockIdx = 0;
   renderTestBlock();
@@ -3902,7 +3794,8 @@ const RESEND_ADMIN_TO = '';    // email del admin que recibirá las notificacion
 
 // ── Supabase Auth ─────────────────────────────────────────────────────────────
 // Headers dinámicos: usa el JWT del usuario autenticado si existe,
-// si no, el anon key (para candidatos que insertan sin login).
+// si no, el anon key. Sin sesión la tabla está cerrada (RLS): el candidato
+// solo usa las funciones de _candidateRpc.
 function getDBHeaders() {
   return {
     'Content-Type':  'application/json',
@@ -3921,6 +3814,22 @@ async function _supaLogin(email, pass) {
   const data = await r.json();
   if (!r.ok) throw new Error(data.error_description || data.msg || 'Credenciales incorrectas');
   return data;
+}
+
+// Rol del usuario: solo desde app_metadata, que el propio usuario no puede modificar
+// (user_metadata sí). Se asigna con supabase/01_funciones_y_roles.sql o al crear el usuario.
+function _roleFromAuth(data) {
+  const role = data && data.user && data.user.app_metadata && data.user.app_metadata.role;
+  return (role === 'admin' || role === 'viewer') ? role : null;
+}
+
+// Cierra solo esa sesión (scope=local); sin scope Supabase cerraría todas las del usuario
+function _revokeSession(token) {
+  if (!token) return;
+  fetch(`${SUPA_URL}/auth/v1/logout?scope=local`, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + token }
+  }).catch(function(){});
 }
 
 async function _supaLogout() {
@@ -3979,7 +3888,8 @@ async function _supaCreateUser(email, pass, role) {
       email,
       password:      pass,
       email_confirm: true,          // confirmar email automáticamente
-      user_metadata: { role: role || 'admin' }
+      app_metadata:  { role: role || 'viewer' },  // el que leen el login y RLS
+      user_metadata: { role: role || 'viewer' }   // solo informativo
     })
   });
   const data = await r.json();
@@ -4062,6 +3972,16 @@ document.addEventListener('keydown', function(e) {
 });
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ── Etiquetas legibles de educación y rubro ─────────────────────────
+// La tabla solo guarda el código (educacion, rubro); la etiqueta se reconstruye al leer.
+const CAND_EDU_LABELS = { basica:'Educación Básica', media_incompleta:'Media incompleta', media:'4º Medio completo', tecnica:'Técnico Superior', universitaria:'Universitaria', postgrado:'Postgrado', ejercito_retiro:'Retirado/a Ejército (carrera completa)', ejercito_baja:'Retirado/a Ejército (antes de completar)', carabineros_retiro:'Retirado/a Carabineros (carrera completa)', carabineros_baja:'Retirado/a Carabineros (antes de completar)', armada_retiro:'Retirado/a Armada (carrera completa)', armada_baja:'Retirado/a Armada (antes de completar)' };
+const CAND_RUBRO_LABELS = { seguridad:'Seguridad', comercio:'Comercio', administracion:'Administración', salud:'Salud', construccion:'Construcción', logistica:'Logística', educacion:'Educación', tecnologia:'Tecnología', otro:'Otro' };
+function _withLabels(c) {
+  if (c && c.educacion && !c.educacion_label) c.educacion_label = CAND_EDU_LABELS[c.educacion] || c.educacion;
+  if (c && c.rubro && !c.rubro_label) c.rubro_label = CAND_RUBRO_LABELS[c.rubro] || c.rubro;
+  return c;
+}
+
 // ── DB cache (TTL 60 s) ───────────────────────────────────────────
 var _dbCache   = null;
 var _dbCacheTs = 0;
@@ -4080,7 +4000,7 @@ async function getDB() {
     const r = await fetch(`${SUPA_URL}/rest/v1/candidates?select=*&order=created_at.desc`,{headers:getDBHeaders()});
     if (!r.ok) { _setConnState('error'); return _dbCache || []; }
     _setConnState('ok');
-    _dbCache   = await r.json();
+    _dbCache   = (await r.json()).map(_withLabels);
     _dbCacheTs = Date.now();
     return _dbCache;
   } catch(e) { _setConnState('error'); return _dbCache || []; }
@@ -4090,6 +4010,26 @@ async function getDBFresh() {
   _invalidateCache();
   return getDB();
 }
+// Llamada a las funciones del servidor pensadas para el candidato
+// (supabase/01_funciones_y_roles.sql). Siempre con la clave pública: no
+// requieren sesión y no dan acceso a la tabla.
+async function _candidateRpc(fn, args) {
+  const r = await fetch(`${SUPA_URL}/rest/v1/rpc/${fn}`, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY },
+    body:    JSON.stringify(args || {})
+  });
+  const txt = await r.text();
+  let data = null;
+  try { data = txt ? JSON.parse(txt) : null; } catch(e) { data = txt; }
+  if (!r.ok) {
+    const err = new Error((data && data.message) || ('HTTP ' + r.status));
+    err.status = r.status;
+    throw err;
+  }
+  return data;
+}
+
 async function addToDB(c) {
   // Embed referencia inside scores JSONB to avoid schema changes
   var scoresRow = Object.assign({}, c.scores || {});
@@ -4110,23 +4050,37 @@ async function addToDB(c) {
     rubro:      c.rubro      || null,
     historial:  c.historial  || null,
     comuna:     c.comuna     || null,
+    // Con esto el servidor calcula los puntajes (scores solo lleva datos auxiliares)
+    answers:    c.answers    || {},
+    games:      c.games      || {},
   };
   if (!navigator.onLine) { _setConnState('offline'); throw new Error('Sin conexión a internet'); }
-  const r = await fetch(`${SUPA_URL}/rest/v1/candidates`,{method:'POST',headers:getDBHeaders(),body:JSON.stringify(row)});
-  if (!r.ok) {
-    const txt = await r.text();
+  let savedId;
+  try {
+    // El servidor valida, fija estado='completed' y, si el RUT tenía una
+    // re-evaluación habilitada, actualiza ese mismo registro.
+    savedId = await _candidateRpc('candidate_submit', { p: row });
+  } catch(e) {
     _setConnState('error');
-    console.error('addToDB failed:', r.status, txt);
-    throw new Error('HTTP ' + r.status + ': ' + txt);
+    console.error('addToDB failed:', e.status, e.message);
+    throw e;
   }
+  if (savedId) c.id = savedId;
   _setConnState('ok');
   _invalidateCache();
 }
+// Devuelve true solo si la fila se eliminó de verdad.
+// Se pide return=representation porque si RLS bloquea el DELETE, Supabase responde 200 con [] (sin error).
 async function deleteFromDB(id) {
   try {
-    const r = await fetch(`${SUPA_URL}/rest/v1/candidates?id=eq.${id}`,{method:'DELETE',headers:getDBHeaders()});
-    if (!r.ok) _setConnState('error'); else { _setConnState('ok'); _invalidateCache(); }
-  } catch(e) { _setConnState('error'); }
+    const headers = Object.assign({}, getDBHeaders(), { 'Prefer': 'return=representation' });
+    const r = await fetch(`${SUPA_URL}/rest/v1/candidates?id=eq.${encodeURIComponent(id)}`,{method:'DELETE',headers:headers});
+    if (!r.ok) { _setConnState('error'); console.error('deleteFromDB failed:', r.status, await r.text()); return false; }
+    _setConnState('ok');
+    _invalidateCache();
+    const rows = await r.json().catch(function(){ return []; });
+    return Array.isArray(rows) && rows.length > 0;
+  } catch(e) { _setConnState('error'); console.error('deleteFromDB error:', e); return false; }
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -4558,13 +4512,12 @@ function regNext(fromStep) {
     var rutNorm = document.getElementById('r-rut').value.trim();
     var btnCont = document.querySelector('#reg-step-1 .btn-primary');
     if (btnCont) { btnCont.disabled = true; btnCont.textContent = 'Verificando…'; }
-    fetch(SUPA_URL + '/rest/v1/candidates?rut=eq.' + encodeURIComponent(rutNorm) + '&select=id,nombre,apellido,estado&limit=1', {
-      headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY }
-    }).then(function(r){ return r.json(); }).then(function(rows) {
+    // Solo devuelve un estado ('none', 'pending', 'completed'…), nunca datos personales
+    _candidateRpc('candidate_rut_status', { p_rut: rutNorm }).then(function(status) {
       if (btnCont) { btnCont.disabled = false; btnCont.textContent = 'Continuar →'; }
-      if (rows && rows.length > 0) {
-        var existing = rows[0];
-        showRutDuplicateBlock(existing);
+      // 'pending' = el admin habilitó una re-evaluación para este RUT
+      if (status && status !== 'none' && status !== 'pending') {
+        showRutDuplicateBlock({ estado: status });
       } else {
         regSetStep(2);
       }
@@ -4647,8 +4600,7 @@ function showRutDuplicateBlock(existing) {
     '<div style="font-size:14px;color:var(--ink3);margin-bottom:20px;line-height:1.6">El RUT <strong>' + htmlEsc(document.getElementById('r-rut').value.trim()) + '</strong> ya tiene una evaluación ' + estadoLabel + ' en el sistema.</div>' +
     '<div style="background:' + estadoBg + ';border-radius:12px;padding:16px 20px;margin-bottom:24px;text-align:left">' +
     '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:' + estadoColor + ';margin-bottom:6px">Registro encontrado</div>' +
-    '<div style="font-size:14px;font-weight:600;color:var(--ink)">' + htmlEsc((existing.nombre||'') + ' ' + (existing.apellido||'')) + '</div>' +
-    '<div style="font-size:12px;color:var(--ink3);margin-top:4px">Estado: ' + estadoLabel + '</div>' +
+    '<div style="font-size:14px;font-weight:600;color:var(--ink)">Estado: ' + estadoLabel + '</div>' +
     '</div>' +
     '<div style="font-size:13px;color:var(--ink3);margin-bottom:24px;line-height:1.6">Si crees que esto es un error o necesitas repetir la evaluación, contacta al equipo de RRHH que te envió este formulario.</div>' +
     '<button onclick="document.getElementById(\'rut-duplicate-block\').remove(); regSetStep(1);" style="padding:10px 24px;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-weight:600;color:var(--ink3);cursor:pointer;font-family:inherit">← Volver e ingresar otro RUT</button>';
@@ -4705,10 +4657,10 @@ function submitRegister() {
   const salida2 = document.getElementById('r-salida2')?.value        || '';
 
   // Labels
-  const EDU_LABELS = { basica:'Educación Básica', media_incompleta:'Media incompleta', media:'4º Medio completo', tecnica:'Técnico Superior', universitaria:'Universitaria', postgrado:'Postgrado', ejercito_retiro:'Retirado/a Ejército (carrera completa)', ejercito_baja:'Retirado/a Ejército (antes de completar)', carabineros_retiro:'Retirado/a Carabineros (carrera completa)', carabineros_baja:'Retirado/a Carabineros (antes de completar)', armada_retiro:'Retirado/a Armada (carrera completa)', armada_baja:'Retirado/a Armada (antes de completar)' };
+  const EDU_LABELS = CAND_EDU_LABELS;
   const DUR_LABELS = { menos_6m:'< 6 meses', '6m_1a':'6m–1 año', '1_2a':'1–2 años', '2_5a':'2–5 años', mas_5a:'> 5 años' };
   const SALIDA_LABELS = { termino_contrato:'Término contrato', renuncia:'Renuncia', despido:'Desvinculación', mutual:'Acuerdo mutuo', traslado:'Traslado de instalación', retiro_ffaa:'Retiro FF.AA. / Carabineros', retiro_ffaa:'Retiro FF.AA. / Carabineros', actual:'Trabajo actual' };
-  const RUBRO_LABELS = { seguridad:'Seguridad', comercio:'Comercio', administracion:'Administración', salud:'Salud', construccion:'Construcción', logistica:'Logística', educacion:'Educación', tecnologia:'Tecnología', otro:'Otro' };
+  const RUBRO_LABELS = CAND_RUBRO_LABELS;
 
   // Build experiencia structure
   const historial = [];
@@ -4814,6 +4766,8 @@ function startTests() {
   S.selectedTests = S.candidate.tests;
   S.allQs = buildQuestions(S.candidate.perfil);
   S.answers = {};
+  S.gameResults = {};
+  S.blockTimes = {};
   S.testBlocks = S.selectedTests.map(tid => ({ testId:tid, qs:S.allQs.filter(q=>q.testId===tid) }));
   S.blockIdx = 0;
   renderTestBlock();
@@ -4840,6 +4794,7 @@ function startTestTimer() {
       return;
     }
     // Deduct 1s normally, 2s if tab is hidden (double speed)
+    var prevSeconds = _timerSeconds;
     _timerSeconds -= _tabHidden ? 2 : 1;
     if (_timerSeconds <= 0) {
       _timerSeconds = 0;
@@ -4850,12 +4805,13 @@ function startTestTimer() {
       return;
     }
     updateTimerDisplay();
+    // Avisos al cruzar el umbral (con la pestaña oculta se descuenta de a 2 s y podría saltarse el valor exacto)
     // Warn at 5 minutes
-    if (_timerSeconds === 300) {
+    if (prevSeconds > 300 && _timerSeconds <= 300) {
       showTimerWarning('⏱ Quedan 5 minutos. Responde las preguntas que puedas.');
     }
     // Warn at 1 minute
-    if (_timerSeconds === 60) {
+    if (prevSeconds > 60 && _timerSeconds <= 60) {
       showTimerWarning('⚠️ Último minuto. Las respuestas se enviarán automáticamente.');
     }
   }, 1000);
@@ -4952,6 +4908,7 @@ function _showGameDone(testId, result) {
 function completeGame(testId, result) {
   if (!S.gameResults) S.gameResults = {};
   S.gameResults[testId] = result;
+  saveTestProgress();
   _showGameDone(testId, result);
   var btn = document.getElementById('btn-next-test');
   if (btn) { btn.style.display = ''; btn.disabled = false; }
@@ -5454,6 +5411,7 @@ function updateUnanswered() {
 
 function answerScale(qid, val) {
   S.answers[qid] = val;
+  saveTestProgress();  // cada respuesta: una recarga a mitad de bloque no pierde nada
   const row = document.getElementById('qrow-' + qid);
   if (!row) return;
   row.classList.add('answered');
@@ -5471,6 +5429,7 @@ function answerDiscBlock(blockId, role, dim) {
   if (role === 'least' && ans.most  === dim) ans.most  = null;
   ans[role] = dim;
   S.answers[blockId] = ans;
+  saveTestProgress();
   // Re-render this block's buttons without full re-render
   var row = document.getElementById('qrow-' + blockId);
   if (row) {
@@ -5495,6 +5454,7 @@ function answerDiscBlock(blockId, role, dim) {
 
 function answerChoice(qid, idx) {
   S.answers[qid] = idx;
+  saveTestProgress();
   const row = document.getElementById('qrow-' + qid);
   if (!row) return;
   row.classList.add('answered');
@@ -5507,6 +5467,7 @@ function answerChoice(qid, idx) {
 function prevTest() {
   if(S.blockIdx>0){
     S.blockIdx--;
+    saveTestProgress();
     document.getElementById('btn-next-test').style.display = '';
     document.getElementById('btn-prev-test').style.display = '';
     renderTestBlock();
@@ -5522,7 +5483,7 @@ function nextTest() {
     if (!S.gameResults || !S.gameResults[block.testId]) {
       toast('Completa el juego para continuar.', 'er'); return;
     }
-    if (S.blockStartTime) S.blockTimes[block.testId] = Math.round((Date.now() - S.blockStartTime) / 1000);
+    if (S.blockStartTime) _recordBlockTime(block.testId);
     if (S.blockIdx === S.testBlocks.length - 1) finishTests();
     else { S.blockIdx++; saveTestProgress(); renderTestBlock(); }
     return;
@@ -5534,55 +5495,101 @@ function nextTest() {
     toast(`Faltan ${unanswered.length} pregunta(s) por responder.`,'er'); return;
   }
   // Registrar tiempo invertido en este bloque
-  if (S.blockStartTime) S.blockTimes[block.testId] = Math.round((Date.now() - S.blockStartTime) / 1000);
+  if (S.blockStartTime) _recordBlockTime(block.testId);
   if (S.blockIdx===S.testBlocks.length-1) finishTests();
   else { S.blockIdx++; saveTestProgress(); renderTestBlock(); }
+}
+
+// Se conserva el mayor tiempo registrado: al retomar tras recargar, el
+// cronómetro del bloque parte de cero y no debe pisar el tiempo real.
+function _recordBlockTime(testId) {
+  var secs = Math.round((Date.now() - S.blockStartTime) / 1000);
+  S.blockTimes[testId] = Math.max(S.blockTimes[testId] || 0, secs);
+}
+
+// Puntajes del Modo Prueba: los calcula el servidor, solo para usuarios del
+// panel (a un candidato le permitiría probar combinaciones hasta dar con las
+// respuestas correctas). Usa la sesión de admin abierta o la del diálogo del Modo Prueba.
+async function _scorePreview(c) {
+  const token = S.authToken || S._testModeToken;
+  if (!token) throw new Error('Sin sesión de administrador');
+  const r = await fetch(`${SUPA_URL}/rest/v1/rpc/psicoeval_score_preview`, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + token },
+    body:    JSON.stringify({ p_answers: c.answers || {}, p_tests: c.tests || [], p_perfil: c.perfil, p_games: c.games || {} })
+  });
+  const data = await r.json().catch(function(){ return null; });
+  if (!r.ok) {
+    // Sesión del diálogo vencida (dura 1 hora): se pedirá de nuevo
+    if (r.status === 401 && S._testModeToken && !S.authToken) S._testModeToken = null;
+    throw new Error((data && data.message) || ('HTTP ' + r.status));
+  }
+  return data || {};
+}
+
+function _closeTestMode(goHome) {
+  // Cierra la sesión temporal abierta por el diálogo del Modo Prueba
+  if (goHome && S._testModeToken) { _revokeSession(S._testModeToken); S._testModeToken = null; }
+}
+
+async function _showTestModeResult(c) {
+  var div = document.createElement('div');
+  div.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px';
+  div.innerHTML = '<div style="background:#fff;border-radius:16px;padding:32px;max-width:460px;width:100%;text-align:center;font-family:inherit;box-shadow:0 20px 60px rgba(0,0,0,.2)">'
+    + '<div style="font-size:40px;margin-bottom:8px">🧪</div>'
+    + '<div style="font-size:20px;font-weight:800;color:var(--ink);margin-bottom:4px">Prueba finalizada</div>'
+    + '<div style="font-size:13px;color:var(--ink3);margin-bottom:16px">Candidato ficticio — datos no guardados</div>'
+    + '<div id="tm-scores" style="font-size:13px;color:var(--ink3);margin:16px 0">Calculando puntajes…</div>'
+    + '<div style="display:flex;gap:8px;margin-top:16px">'
+    + '<button onclick="this.closest(\'div[style*=fixed]\').remove();_closeTestMode(true);showView(\'landing\')" style="flex:1;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Volver al inicio</button>'
+    + '<button onclick="this.closest(\'div[style*=fixed]\').remove();startTestMode()" style="padding:12px 16px;background:var(--surface2);color:var(--ink2);border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Otra prueba</button>'
+    + '</div></div>';
+  document.body.appendChild(div);
+  var box = div.querySelector('#tm-scores');
+  var scores;
+  try {
+    scores = await _scorePreview(c);
+  } catch(e) {
+    box.innerHTML = '<span style="color:#dc2626">No se pudieron calcular los puntajes: ' + htmlEsc(e.message) + '</span>';
+    return;
+  }
+  var scoresHtml = '<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center">';
+  Object.keys(scores).forEach(function(k) {
+    var m = TESTS_META[k]; if (!m) return;
+    var pct = scores[k].pct !== undefined ? scores[k].pct : (scores[k].total !== undefined ? scores[k].total : null);
+    if (pct === null) return;
+    var c2 = pct >= 70 ? '#16a34a' : pct >= 50 ? '#b45309' : '#dc2626';
+    scoresHtml += '<div style="padding:6px 10px;border-radius:8px;background:' + c2 + '10;border:1px solid ' + c2 + '30;font-size:11px"><span style="font-weight:700;color:' + c2 + '">' + pct + '%</span> <span style="color:var(--ink3)">' + m.icon + ' ' + m.name + '</span></div>';
+  });
+  scoresHtml += '</div>';
+  box.innerHTML = scoresHtml;
 }
 
 async function finishTests() {
   stopTestTimer();
   _testInProgress = false;
-  clearTestProgress();
-  const scores = calcScores(S.answers, S.selectedTests, S.candidate.perfil);
-  // ── Detectar preguntas sin responder dentro de cada bloque ────
-  var _incomp = [];
-  S.testBlocks.forEach(function(block) {
-    var missing = block.qs.filter(function(q){ return S.answers[q.id] === undefined; }).length;
-    if (missing > 0) _incomp.push({ testId: block.testId, missing: missing, total: block.qs.length });
-  });
-  if (_incomp.length) scores._incomplete = _incomp;
+  // Guardar las respuestas del último bloque: si el envío falla, el candidato
+  // puede recargar y reintentar sin perder nada. Se borra solo tras guardar con éxito.
+  saveTestProgress();
 
   // ── Registrar tiempo del último bloque y guardar timings ──────
   var _lastBlock = S.testBlocks[S.blockIdx];
-  if (_lastBlock && S.blockStartTime) S.blockTimes[_lastBlock.testId] = Math.round((Date.now() - S.blockStartTime) / 1000);
+  if (_lastBlock && S.blockStartTime) _recordBlockTime(_lastBlock.testId);
+  // Los puntajes (y las preguntas sin responder) los calcula el servidor a partir
+  // de las respuestas; aquí solo van datos auxiliares.
+  const scores = {};
   if (Object.keys(S.blockTimes).length) scores._timings = S.blockTimes;
 
-  S.candidate.tests = S.selectedTests; S.candidate.scores = scores; S.candidate.estado = 'completed';
+  S.candidate.tests   = S.selectedTests;
+  S.candidate.answers = S.answers;
+  S.candidate.games   = S.gameResults || {};
+  S.candidate.scores  = scores;
+  S.candidate.estado  = 'completed';
 
 
   // ── Test mode: skip save, show results directly ──
   if (S.candidate._testMode) {
-    var div = document.createElement('div');
-    div.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px';
-    var scoresHtml = '<div style="display:flex;flex-wrap:wrap;gap:6px;margin:16px 0">';
-    Object.keys(scores).forEach(function(k) {
-      var m = TESTS_META[k]; if (!m) return;
-      var pct = scores[k].pct !== undefined ? scores[k].pct : (scores[k].total !== undefined ? scores[k].total : null);
-      if (pct === null) return;
-      var c2 = pct >= 70 ? '#16a34a' : pct >= 50 ? '#b45309' : '#dc2626';
-      scoresHtml += '<div style="padding:6px 10px;border-radius:8px;background:' + c2 + '10;border:1px solid ' + c2 + '30;font-size:11px"><span style="font-weight:700;color:' + c2 + '">' + pct + '%</span> <span style="color:var(--ink3)">' + m.icon + ' ' + m.name + '</span></div>';
-    });
-    scoresHtml += '</div>';
-    div.innerHTML = '<div style="background:#fff;border-radius:16px;padding:32px;max-width:460px;width:100%;text-align:center;font-family:inherit;box-shadow:0 20px 60px rgba(0,0,0,.2)">'
-      + '<div style="font-size:40px;margin-bottom:8px">🧪</div>'
-      + '<div style="font-size:20px;font-weight:800;color:var(--ink);margin-bottom:4px">Prueba finalizada</div>'
-      + '<div style="font-size:13px;color:var(--ink3);margin-bottom:16px">Candidato ficticio — datos no guardados</div>'
-      + scoresHtml
-      + '<div style="display:flex;gap:8px;margin-top:16px">'
-      + '<button onclick="this.closest(\'div[style*=fixed]\').remove();showView(\'landing\')" style="flex:1;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Volver al inicio</button>'
-      + '<button onclick="this.closest(\'div[style*=fixed]\').remove();startTestMode()" style="padding:12px 16px;background:var(--surface2);color:var(--ink2);border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Otra prueba</button>'
-      + '</div></div>';
-    document.body.appendChild(div);
+    _showTestModeResult(S.candidate);
     return;
   }
 
@@ -5625,8 +5632,9 @@ async function finishTests() {
       // Try a quick ping to distinguish network vs paused project
       let paused = false;
       try {
-        const ping = await fetch(`${SUPA_URL}/rest/v1/candidates?limit=1`, { headers: getDBHeaders() });
-        if (!ping.ok && ping.status !== 200 && ping.status !== 406) paused = true;
+        // Endpoint público de salud: no depende de permisos sobre la tabla
+        const ping = await fetch(`${SUPA_URL}/auth/v1/health`, { headers: { 'apikey': SUPA_KEY } });
+        if (!ping.ok) paused = true;
       } catch { paused = true; }
 
       if (paused) {
@@ -5634,34 +5642,36 @@ async function finishTests() {
           'Servidor temporalmente inactivo',
           'El servicio de base de datos está pausado. Esto ocurre automáticamente tras períodos sin actividad.<br><br>' +
           'Por favor avisa al equipo de RRHH para que reactiven el servicio, y luego presiona <strong>Reintentar</strong>.<br><br>' +
-          '<span style="color:#6366f1;font-weight:600">Tus respuestas están guardadas en esta sesión — no las perderás si recargas.</span>'
+          '<span style="color:#6366f1;font-weight:600">Tus respuestas quedan guardadas en este navegador: no las perderás si recargas.</span>'
         );
       } else {
         showSaveError(
           'Sin conexión a internet',
-          'No se pudo conectar al servidor. Verifica que tengas acceso a internet y presiona <strong>Reintentar</strong>.'
+          'No se pudo conectar al servidor. Verifica que tengas acceso a internet y presiona <strong>Reintentar</strong>.<br><br>' +
+          '<span style="color:#6366f1;font-weight:600">Tus respuestas quedan guardadas en este navegador: no las perderás si recargas.</span>'
         );
       }
       return;
     }
 
-    // Null id error — retry with fresh UUID
-    if (msg.includes('null value') && msg.includes('"id"')) {
-      S.candidate.id = genUUID();
-      try {
-        await addToDB(S.candidate);
-      } catch(e2) {
-        showSaveError('Error al guardar', 'Código: ' + (e2.message||'').slice(0,120) + '<br><br>Intenta de nuevo o contacta al equipo de RRHH.');
-        return;
-      }
+    // El RUT ya tenía una evaluación (p. ej. la rindió en otro dispositivo mientras tanto)
+    if (msg.includes('PSICOEVAL_DUPLICATE')) {
+      clearTestProgress();
+      showSaveError(
+        'Evaluación ya registrada',
+        'Ya existe una evaluación con tu RUT, por lo que esta no se guardó.<br><br>Si necesitas repetirla, contacta al equipo de RRHH que te envió el formulario.'
+      );
+      return;
     } else {
       showSaveError(
         'Error al guardar',
-        'Detalles: <code style="font-size:11px;background:#f2f2f7;padding:2px 6px;border-radius:4px">' + msg.slice(0, 120) + '</code><br><br>Presiona Reintentar o avisa al equipo de RRHH.'
+        'Detalles: <code style="font-size:11px;background:#f2f2f7;padding:2px 6px;border-radius:4px">' + msg.slice(0, 120) + '</code><br><br>Presiona Reintentar o avisa al equipo de RRHH.<br><br><span style="color:#6366f1;font-weight:600">Tus respuestas quedan guardadas en este navegador: no las perderás si recargas.</span>'
       );
       return;
     }
   }
+
+  clearTestProgress();
 
   // ── Webhook notification ──────────────────────────────────────────────────
   _fireWebhook(S.candidate, scores);
@@ -6295,11 +6305,36 @@ function switchReportTab(tabId, el) {
     b.style.fontWeight = '500';
   });
   cont.querySelectorAll('.rpt-tab-panel').forEach(function(p){ p.style.display='none'; });
-  el.style.borderBottom = '2px solid #4338ca';
-  el.style.color = '#4338ca';
+  el.style.borderBottom = '2px solid var(--accent)';
+  el.style.color = 'var(--accent)';
   el.style.fontWeight = '700';
   var panel = cont.querySelector('#rpt-panel-'+tabId);
   if (panel) panel.style.display = 'flex';
+}
+
+// ── Fit helpers for report ──────────────────────────────────────
+function _fitSig(score, min) {
+  if (score >= min) return {color:'#34C759',bg:'rgba(52,199,89,.12)',label:'Dentro del rango'};
+  if (score >= min * 0.85) return {color:'#FF9500',bg:'rgba(255,149,0,.12)',label:'Bajo el mínimo'};
+  return {color:'#FF3B30',bg:'rgba(255,59,48,.12)',label:'Fuera del rango'};
+}
+function _rngBar(score, min, max) {
+  var p=Math.min(100,Math.max(0,Math.round(score)));
+  var sg=_fitSig(score,min);
+  return '<div style="position:relative;height:6px;background:#E5E5EA;border-radius:100px;overflow:hidden;margin-bottom:3px">'
+    +'<div style="position:absolute;left:'+min+'%;width:'+(max-min)+'%;top:0;bottom:0;background:rgba(52,199,89,.28)"></div>'
+    +'<div style="position:absolute;left:0;top:0;height:100%;width:'+p+'%;background:'+sg.color+';border-radius:100px"></div>'
+    +'</div>'
+    +'<div style="display:flex;justify-content:space-between;font-size:9.5px;margin-bottom:10px">'
+    +'<span style="color:#86868B">0</span>'
+    +'<span style="color:#34C759;font-weight:600">↑ mín. '+min+'%</span>'
+    +'<span style="color:#86868B">100</span>'
+    +'</div>';
+}
+function _reqNote(req) {
+  if (!req) return '';
+  return '<div style="font-size:11px;color:#16a34a;background:#f0fdf4;border-left:2px solid #86efac;padding:6px 9px;border-radius:0 6px 6px 0;margin-top:6px;line-height:1.55">'
+    +htmlEsc(req)+'</div>';
 }
 
 function buildReportHtml(c, withClose) {
@@ -6354,7 +6389,48 @@ function buildReportHtml(c, withClose) {
 
   var TAB_ORDER = ['dc0','pai','disc','pf16','situacional','vigilancia','comprension','normativa_ohs'];
   var completedTests = TAB_ORDER.filter(function(tid){ return tests.indexOf(tid) !== -1 && s[tid]; });
-  var firstTab = completedTests[0] || '';
+  var _ideal = PERFIL_IDEAL[c.perfil] || null;
+  var firstTab = (_ideal && completedTests.length) ? 'resumen' : (completedTests[0] || '');
+
+  // ── Compute Resumen fit rows ──
+  var _resRows = [], _totalPeso = 0, _totalFitPeso = 0;
+  if (_ideal) {
+    var _allRTids = completedTests.concat(['juego_semaforo','juego_globos','juego_memoria'].filter(function(jt){ return tests.indexOf(jt)!==-1 && s[jt]; }));
+    _allRTids.forEach(function(tid) {
+      var idSec = _ideal[tid]; if (!idSec) return;
+      var ts = s[tid] || {};
+      if (idSec.min !== undefined) {
+        var raw = tid==='dc0' ? (ts.total||null) : (ts.pct!==undefined ? ts.pct : ts.score!==undefined ? ts.score : null);
+        if (raw===null||raw===undefined) return;
+        var rSig = _fitSig(raw, idSec.min);
+        _resRows.push({tid:tid,icon:(TESTS_META[tid]||{}).icon||'',label:idSec.label||(TESTS_META[tid]||{}).name||tid,score:Math.round(raw),min:idSec.min,max:idSec.max||100,req:idSec.req||'',sig:rSig,peso:idSec.peso||1});
+        _totalPeso+=idSec.peso||1; _totalFitPeso+=(idSec.peso||1)*Math.min(100,raw);
+      } else {
+        var dKeys = Object.keys(idSec).filter(function(k){ return k!=='_pesos' && idSec[k] && idSec[k].min!==undefined; });
+        if (!dKeys.length) return;
+        var dP=0,dFP=0,dOk=0;
+        dKeys.forEach(function(k){ var cfg=idSec[k]; var sc=ts[k]; if(sc===undefined||sc===null)return; dP+=cfg.peso||1; dFP+=(cfg.peso||1)*Math.min(100,sc); if(sc>=cfg.min)dOk++; });
+        if(!dP) return;
+        var aggSc=Math.round(dFP/dP);
+        var aggMn=Math.round(dKeys.reduce(function(a,k){ var cfg=idSec[k]; return a+(cfg.peso||1)*cfg.min; },0)/dP);
+        var rSig2=_fitSig(aggSc,aggMn);
+        var tm2=TESTS_META[tid]||{};
+        _resRows.push({tid:tid,icon:tm2.icon||'',label:tm2.name||tid,score:aggSc,min:aggMn,max:100,dimNote:dOk+'/'+dKeys.length+' dimensiones dentro del rango',req:'',sig:rSig2,peso:dP});
+        _totalPeso+=dP; _totalFitPeso+=dFP;
+      }
+    });
+  }
+  var _gFit = _totalPeso>0 ? Math.round(_totalFitPeso/_totalPeso) : null;
+  var _rBad = _resRows.filter(function(r){return r.score<r.min*0.85;}).length;
+  var _rOk  = _resRows.filter(function(r){return r.score>=r.min;}).length;
+  var _gVerdict = _rBad===0 && _rOk>=Math.ceil(_resRows.length*0.7) ? 'Apto — dentro del perfil esperado'
+                : _rBad===0 ? 'Apto con observaciones'
+                : _rBad<=1   ? 'Requiere revisión'
+                : 'Fuera del perfil — múltiples áreas bajo mínimo';
+  var _gVColor = _rBad===0 && _rOk>=Math.ceil(_resRows.length*0.7) ? '#16a34a'
+               : _rBad===0 ? '#d97706' : _rBad<=1 ? '#d97706' : '#dc2626';
+  var _gVBg   = _rBad===0 && _rOk>=Math.ceil(_resRows.length*0.7) ? '#f0fdf4'
+               : _rBad===0 ? '#fffbeb' : _rBad<=1 ? '#fffbeb' : '#fef2f2';
 
   function scoreBar(label, score) {
     var lv = scoreLevel(score);
@@ -6395,16 +6471,56 @@ function buildReportHtml(c, withClose) {
 
   // ── Tab bar ──
   html += '<div style="background:#fff;border-bottom:1px solid #e2e8f0;display:flex;overflow-x:auto;flex-shrink:0;padding:0 20px">';
+  if (_ideal && completedTests.length) {
+    html += '<button class="rpt-tab-btn" onclick="switchReportTab(\'resumen\',this)" style="padding:12px 15px;border:none;border-bottom:2px solid ' + (firstTab==='resumen'?'var(--accent)':'transparent') + ';background:transparent;cursor:pointer;font-size:12px;font-weight:' + (firstTab==='resumen'?'700':'500') + ';color:' + (firstTab==='resumen'?'var(--accent)':'#94a3b8') + ';white-space:nowrap;flex-shrink:0">📊 Resumen</button>';
+  }
   completedTests.forEach(function(tid) {
     var tm = TESTS_META[tid]; if (!tm) return;
     var active = tid === firstTab;
-    html += '<button class="rpt-tab-btn" onclick="switchReportTab(\'' + tid + '\',this)" style="padding:12px 15px;border:none;border-bottom:2px solid ' + (active ? '#4338ca' : 'transparent') + ';background:transparent;cursor:pointer;font-size:12px;font-weight:' + (active ? '700' : '500') + ';color:' + (active ? '#4338ca' : '#94a3b8') + ';white-space:nowrap;flex-shrink:0">' + tm.icon + ' ' + htmlEsc(tm.name) + '</button>';
+    html += '<button class="rpt-tab-btn" onclick="switchReportTab(\'' + tid + '\',this)" style="padding:12px 15px;border:none;border-bottom:2px solid ' + (active ? 'var(--accent)' : 'transparent') + ';background:transparent;cursor:pointer;font-size:12px;font-weight:' + (active ? '700' : '500') + ';color:' + (active ? 'var(--accent)' : '#94a3b8') + ';white-space:nowrap;flex-shrink:0">' + tm.icon + ' ' + htmlEsc(tm.name) + '</button>';
   });
   html += '<button class="rpt-tab-btn" onclick="switchReportTab(\'referencias\',this)" style="padding:12px 15px;border:none;border-bottom:2px solid transparent;background:transparent;cursor:pointer;font-size:12px;font-weight:500;color:#94a3b8;white-space:nowrap;flex-shrink:0">📞 Ref.</button>';
   html += '</div>';
 
   // ── Panels ──
   html += '<div style="overflow-y:auto;flex:1;padding:20px 24px">';
+
+  // ── RESUMEN ──────────────────────────────────────────────────────
+  if (_ideal && _resRows.length) {
+    html += '<div class="rpt-tab-panel" id="rpt-panel-resumen" style="display:flex;flex-direction:column;gap:14px">';
+    // Fit global card
+    html += '<div style="background:'+_gVBg+';border-radius:14px;border:1.5px solid '+_gVColor+'44;padding:18px 22px;display:flex;align-items:center;gap:18px">';
+    if (_gFit!==null) {
+      html += '<div style="text-align:center;flex-shrink:0;background:#fff;border-radius:12px;padding:10px 16px;border:1.5px solid '+_gVColor+'33">';
+      html += '<div style="font-size:36px;font-weight:900;color:'+_gVColor+';line-height:1">'+_gFit+'</div>';
+      html += '<div style="font-size:9px;font-weight:700;color:'+_gVColor+';text-transform:uppercase;letter-spacing:.5px;margin-top:1px">ajuste global</div>';
+      html += '</div>';
+    }
+    html += '<div>';
+    html += '<div style="font-size:15px;font-weight:800;color:'+_gVColor+';margin-bottom:4px">'+htmlEsc(_gVerdict)+'</div>';
+    html += '<div style="font-size:12px;color:'+_gVColor+';opacity:.75">'+_rOk+' de '+_resRows.length+' áreas dentro del rango esperado para <strong>'+htmlEsc(cargo)+'</strong></div>';
+    html += '</div></div>';
+    // Test rows
+    html += '<div style="background:#fff;border-radius:14px;border:1px solid #e2e8f0;overflow:hidden">';
+    html += '<div style="padding:9px 14px;border-bottom:1px solid #e2e8f0;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px">Señal por área evaluada</div>';
+    _resRows.forEach(function(row) {
+      html += '<div style="padding:11px 14px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:10px">';
+      html += '<span style="font-size:18px;flex-shrink:0">'+row.icon+'</span>';
+      html += '<div style="flex:1;min-width:0">';
+      html += '<div style="font-size:13px;font-weight:600;color:#0f172a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+htmlEsc(row.label)+'</div>';
+      if (row.dimNote) html += '<div style="font-size:10px;color:#94a3b8;margin-top:1px">'+htmlEsc(row.dimNote)+'</div>';
+      html += '</div>';
+      html += '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0">';
+      html += '<span style="font-size:18px;font-weight:900;color:'+row.sig.color+'">'+row.score+'</span>';
+      html += '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">';
+      html += '<span style="font-size:10px;font-weight:700;padding:2px 9px;border-radius:100px;background:'+row.sig.bg+';color:'+row.sig.color+'">'+row.sig.label+'</span>';
+      html += '<span style="font-size:9.5px;color:#94a3b8">mín. '+row.min+'%</span>';
+      html += '</div></div>';
+      html += '</div>';
+    });
+    html += '</div>';
+    html += '</div>'; // end resumen panel
+  }
 
   // ── DC0 ──────────────────────────────────────────────────────────
   if (s.dc0) {
@@ -6436,9 +6552,15 @@ function buildReportHtml(c, withClose) {
       html += '<div style="font-size:14px;font-weight:700;color:#0f172a">' + d[1] + '</div>';
       html += '<span style="padding:3px 12px;border-radius:100px;background:' + bd.bg + ';border:1.5px solid ' + bd.border + ';font-size:12px;font-weight:700;color:' + bd.color + '">' + Math.round(pct) + '% — ' + bd.label + '</span>';
       html += '</div>';
-      html += '<div style="height:6px;background:#e2e8f0;border-radius:100px;overflow:hidden;margin-bottom:10px">';
-      html += '<div style="height:100%;width:' + Math.round(pct) + '%;background:' + bd.color + ';border-radius:100px"></div></div>';
+      var _dc0Di = _ideal && _ideal.dc0 && _ideal.dc0.min===undefined ? _ideal.dc0[d[0]] : null;
+      if (_dc0Di) {
+        html += _rngBar(pct, _dc0Di.min, _dc0Di.max||100);
+      } else {
+        html += '<div style="height:6px;background:#e2e8f0;border-radius:100px;overflow:hidden;margin-bottom:10px">';
+        html += '<div style="height:100%;width:' + Math.round(pct) + '%;background:' + bd.color + ';border-radius:100px"></div></div>';
+      }
       html += '<div style="font-size:13px;line-height:1.65;color:#334155">' + (dimDesc('dc0', d[0], pct) || '') + '</div>';
+      if (_dc0Di) html += _reqNote(_dc0Di.req);
       html += '</div>';
     });
     html += '</div></div>';
@@ -6480,9 +6602,15 @@ function buildReportHtml(c, withClose) {
       html += '<div style="font-size:14px;font-weight:700;color:#0f172a">' + _PAI_FULL[k] + '</div>';
       html += '<span style="padding:3px 12px;border-radius:100px;background:' + bd.bg + ';border:1.5px solid ' + bd.border + ';font-size:12px;font-weight:700;color:' + bd.color + '">' + bd.label + '</span>';
       html += '</div>';
-      html += '<div style="height:6px;background:#f1f5f9;border-radius:100px;overflow:hidden;margin-bottom:10px">';
-      html += '<div style="height:100%;width:' + Math.round(norm) + '%;background:' + bd.color + ';border-radius:100px;transition:width .4s"></div></div>';
+      var _paiDi = _ideal && _ideal.pai && _ideal.pai[k];
+      if (_paiDi) {
+        html += _rngBar(norm, _paiDi.min, _paiDi.max||100);
+      } else {
+        html += '<div style="height:6px;background:#f1f5f9;border-radius:100px;overflow:hidden;margin-bottom:10px">';
+        html += '<div style="height:100%;width:' + Math.round(norm) + '%;background:' + bd.color + ';border-radius:100px;transition:width .4s"></div></div>';
+      }
       html += '<div style="font-size:13px;line-height:1.7;color:#334155">' + descTxt + '</div>';
+      if (_paiDi) html += _reqNote(_paiDi.req);
       html += '</div>';
     });
     html += '</div></div>';
@@ -6537,10 +6665,16 @@ function buildReportHtml(c, withClose) {
       html += '<div style="font-size:14px;font-weight:700;color:#0f172a">' + d[1] + '</div>';
       html += '<span style="font-size:15px;font-weight:900;color:' + lv.color + '">' + Math.round(score) + ' <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px;background:' + lv.color + '18">' + lv.label + '</span></span>';
       html += '</div>';
-      html += '<div style="height:6px;background:#e2e8f0;border-radius:100px;overflow:hidden;margin-bottom:10px">';
-      html += '<div style="height:100%;width:' + Math.round(score) + '%;background:' + lv.color + ';border-radius:100px"></div></div>';
+      var _discDi = _ideal && _ideal.disc && _ideal.disc[d[0]];
+      if (_discDi) {
+        html += _rngBar(score, _discDi.min, _discDi.max||100);
+      } else {
+        html += '<div style="height:6px;background:#e2e8f0;border-radius:100px;overflow:hidden;margin-bottom:10px">';
+        html += '<div style="height:100%;width:' + Math.round(score) + '%;background:' + lv.color + ';border-radius:100px"></div></div>';
+      }
       var dd = dimDesc('disc', d[0], score);
       if (dd) html += '<div style="font-size:12px;line-height:1.65;color:#475569">' + dd + '</div>';
+      if (_discDi) html += _reqNote(_discDi.req);
       html += '</div>';
     });
     html += '</div></div>';
@@ -6573,10 +6707,16 @@ function buildReportHtml(c, withClose) {
       html += '<div style="font-size:14px;font-weight:700;color:#0f172a">' + d[1] + '</div>';
       html += '<span style="font-size:15px;font-weight:900;color:' + lv.color + '">' + Math.round(score) + ' <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px;background:' + lv.color + '18">' + lv.label + '</span></span>';
       html += '</div>';
-      html += '<div style="height:6px;background:#e2e8f0;border-radius:100px;overflow:hidden;margin-bottom:10px">';
-      html += '<div style="height:100%;width:' + Math.round(score) + '%;background:' + lv.color + ';border-radius:100px"></div></div>';
+      var _pf16Di = _ideal && _ideal.pf16 && _ideal.pf16[d[0]];
+      if (_pf16Di) {
+        html += _rngBar(score, _pf16Di.min, _pf16Di.max||100);
+      } else {
+        html += '<div style="height:6px;background:#e2e8f0;border-radius:100px;overflow:hidden;margin-bottom:10px">';
+        html += '<div style="height:100%;width:' + Math.round(score) + '%;background:' + lv.color + ';border-radius:100px"></div></div>';
+      }
       var dd = dimDesc('pf16', d[0], score);
       if (dd) html += '<div style="font-size:12px;line-height:1.65;color:#475569">' + dd + '</div>';
+      if (_pf16Di) html += _reqNote(_pf16Di.req);
       html += '</div>';
     });
     html += '</div></div>';
@@ -6600,8 +6740,13 @@ function buildReportHtml(c, withClose) {
     html += '<div style="font-size:28px;font-weight:900;color:' + bd.color + ';line-height:1">' + Math.round(pct) + '</div>';
     html += '<div style="font-size:10px;font-weight:700;color:' + bd.color + '">% — ' + bd.label + '</div></div>';
     html += '</div>';
-    html += '<div style="height:7px;background:#e2e8f0;border-radius:100px;overflow:hidden;margin-bottom:14px">';
-    html += '<div style="height:100%;width:' + Math.round(pct) + '%;background:' + bd.color + ';border-radius:100px"></div></div>';
+    var _stDi = _ideal && _ideal[tid] && _ideal[tid].min !== undefined ? _ideal[tid] : null;
+    if (_stDi) {
+      html += _rngBar(pct, _stDi.min, _stDi.max||100);
+    } else {
+      html += '<div style="height:7px;background:#e2e8f0;border-radius:100px;overflow:hidden;margin-bottom:14px">';
+      html += '<div style="height:100%;width:' + Math.round(pct) + '%;background:' + bd.color + ';border-radius:100px"></div></div>';
+    }
     var desc = dimDesc(tid, '_self', pct);
     if (!desc && tid === 'normativa_ohs') {
       var lv5n = scoreToLevel5(pct);
@@ -6610,6 +6755,7 @@ function buildReportHtml(c, withClose) {
            : 'Conocimiento insuficiente de la normativa de seguridad. Se recomienda evaluar necesidades de formación antes de ejercer el cargo.';
     }
     if (desc) html += '<div style="font-size:13px;line-height:1.7;color:#334155">' + desc + '</div>';
+    if (_stDi) html += _reqNote(_stDi.req);
     html += '</div></div>';
   });
 
@@ -6683,21 +6829,27 @@ function buildReportHtml(c, withClose) {
 }
 
 // ── Patch campo dentro de scores JSONB en Supabase ───────────────────────
+// `value` puede ser una función (valorAnterior) => valorNuevo, para modificar listas
+// partiendo siempre de los datos frescos del servidor. Devuelve el objeto scores guardado.
 async function _patchScoresField(candidateId, key, value) {
   // Fetch current scores, merge, then PATCH
-  const r0 = await fetch(SUPA_URL + '/rest/v1/candidates?id=eq.' + candidateId + '&select=scores', { headers: getDBHeaders() });
+  const r0 = await fetch(SUPA_URL + '/rest/v1/candidates?id=eq.' + encodeURIComponent(candidateId) + '&select=scores', { headers: getDBHeaders() });
   if (!r0.ok) throw new Error('Fetch scores ' + r0.status);
   const rows = await r0.json();
   if (!rows.length) throw new Error('Candidato no encontrado');
   var scores = Object.assign({}, rows[0].scores || {});
-  scores[key] = value;
-  const r1 = await fetch(SUPA_URL + '/rest/v1/candidates?id=eq.' + candidateId, {
+  scores[key] = (typeof value === 'function') ? value(scores[key]) : value;
+  const r1 = await fetch(SUPA_URL + '/rest/v1/candidates?id=eq.' + encodeURIComponent(candidateId), {
     method: 'PATCH',
-    headers: Object.assign({}, getDBHeaders(), { 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }),
+    headers: Object.assign({}, getDBHeaders(), { 'Content-Type': 'application/json', 'Prefer': 'return=representation' }),
     body: JSON.stringify({ scores: scores })
   });
   if (!r1.ok) { var t = await r1.text(); throw new Error('PATCH ' + r1.status + ': ' + t); }
+  // Si RLS bloquea el UPDATE, Supabase responde 200 con [] en vez de un error
+  var updated = await r1.json().catch(function(){ return []; });
+  if (!Array.isArray(updated) || !updated.length) throw new Error('No se pudo guardar (sin permisos o el candidato ya no existe)');
   _invalidateCache();
+  return scores;
 }
 
 // ── Guardar notas de referencia ───────────────────────────────────────────
@@ -7700,8 +7852,10 @@ async function deleteSelected() {
   if (!checked.length) return;
   const n = checked.length;
   if (!(await appConfirm('¿Eliminar ' + n + ' candidato' + (n>1?'s':'') + '? Esta acción no se puede deshacer.'))) return;
-  for (const chk of checked) await deleteFromDB(chk.dataset.id);
-  toast(n + ' candidato' + (n>1?'s':' ') + ' eliminado' + (n>1?'s':''), 'ok');
+  let ok = 0;
+  for (const chk of checked) { if (await deleteFromDB(chk.dataset.id)) ok++; }
+  if (ok === n) toast(n + ' candidato' + (n>1?'s':'') + ' eliminado' + (n>1?'s':''), 'ok');
+  else toast('Se eliminaron ' + ok + ' de ' + n + '. Revisa tu conexión o permisos e intenta de nuevo.', 'er');
   clearSelection();
   renderCandidatesTable();
   renderDashboard();
@@ -7711,8 +7865,10 @@ async function deleteAll() {
   const all = await getDB();
   if (!all.length) { toast('No hay candidatos para eliminar.', 'er'); return; }
   if (!(await appConfirm('⚠ Esto eliminará TODOS los ' + all.length + ' candidatos de la base de datos. ¿Estás seguro/a?'))) return;
-  for (const c of all) await deleteFromDB(c.id);
-  toast('Todos los candidatos eliminados.', 'ok');
+  let ok = 0;
+  for (const c of all) { if (await deleteFromDB(c.id)) ok++; }
+  if (ok === all.length) toast('Todos los candidatos eliminados.', 'ok');
+  else toast('Se eliminaron ' + ok + ' de ' + all.length + '. Revisa tu conexión o permisos e intenta de nuevo.', 'er');
   clearSelection();
   renderCandidatesTable();
   renderDashboard();
@@ -7977,9 +8133,13 @@ async function adminLogin() {
   try {
     const data = await _supaLogin(email, pass);
 
-    // Extraer rol desde user_metadata del JWT (o user object)
-    const meta   = (data.user && data.user.user_metadata) || {};
-    const role   = meta.role || 'admin'; // fallback: admin si no hay metadato
+    const role = _roleFromAuth(data);
+    if (!role) {
+      _revokeSession(data.access_token);
+      const noRole = new Error('Tu cuenta no tiene permisos para el panel. Pide a un administrador que te asigne un rol.');
+      noRole.noRole = true;
+      throw noRole;
+    }
 
     _clearLoginFails();
     S.role         = role;
@@ -7996,6 +8156,12 @@ async function adminLogin() {
     _startInactivityTimer();
 
   } catch(err) {
+    if (err.noRole) {
+      // Contraseña correcta: no cuenta como intento fallido
+      errEl.textContent = err.message;
+      errEl.style.display = 'block';
+      return;
+    }
     const fails     = _recordLoginFail();
     const remaining = Math.max(0, _LOGIN_MAX_TRIES - fails);
     if (remaining > 0) {
@@ -8908,9 +9074,13 @@ async function confirmDelete() {
   if (!S.deleteId) return;
   const btn = document.querySelector('#del-modal .btn-primary');
   if (btn) { btn.disabled = true; btn.textContent = 'Eliminando…'; }
-  await deleteFromDB(S.deleteId);
-  closeDelModal();
+  const deleted = await deleteFromDB(S.deleteId);
   if (btn) { btn.disabled = false; btn.textContent = 'Sí, eliminar'; }
+  if (!deleted) {
+    toast('No se pudo eliminar el candidato. Revisa tu conexión o permisos e intenta de nuevo.', 'er');
+    return;
+  }
+  closeDelModal();
   toast('Candidato eliminado correctamente', 'ok');
   // Remove row instantly from DOM (no waiting for network)
   const row = document.querySelector('tr[data-id="' + S.deleteId + '"]');
@@ -8965,7 +9135,7 @@ function _renderUsersList(el, users) {
     html += '<div style="background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(15,45,82,.06);overflow:hidden;margin-bottom:16px">';
     users.forEach(function(u, i) {
       const uEmail   = u.email || '';
-      const uRole    = (u.user_metadata && u.user_metadata.role) || 'admin';
+      const uRole    = (u.app_metadata && u.app_metadata.role) || 'sin rol';
       const isSelf   = uEmail === myEmail;
       const isLast   = (i === users.length - 1);
       const rColor   = ROLE_COLOR[uRole] || '#94a3b8';
@@ -9207,6 +9377,8 @@ function saveTestProgress() {
       blockIdx:     S.blockIdx || 0,
       selectedTests: S.selectedTests || [],
       totalMinutes: S._testTotalMinutes || 30,
+      gameResults:  S.gameResults || {},
+      blockTimes:   S.blockTimes || {},
       savedAt:      Date.now(),
     }));
   } catch(e) { console.warn('saveTestProgress failed:', e.message); }
@@ -9238,11 +9410,13 @@ function resumeTestProgress() {
   S.blockIdx      = p.blockIdx || 0;
   S.selectedTests = p.selectedTests || S.candidate.tests || [];
   S._testTotalMinutes = p.totalMinutes || 30;
+  S.gameResults   = p.gameResults || {};
+  S.blockTimes    = p.blockTimes || {};
   S.allQs         = buildQuestions(S.candidate.perfil);
   S.testBlocks    = S.selectedTests.map(function(tid) {
     return { testId: tid, qs: S.allQs.filter(function(q){ return q.testId === tid; }) };
   });
-  clearTestProgress();
+  // El progreso se mantiene guardado hasta que la evaluación se envíe con éxito
   renderTestBlock();
   showView('test');
   _testInProgress = true;
@@ -9325,35 +9499,51 @@ var _TEST_ALIAS = {dc0:'D',pai:'P',situacional:'S',vigilancia:'V',comprension:'C
 var _ALIAS_TEST = {};
 Object.keys(_TEST_ALIAS).forEach(function(k){ _ALIAS_TEST[_TEST_ALIAS[k]] = k; });
 
+// Los campos van separados por & = | ~ — se codifican para que esos caracteres
+// dentro de un nombre o descripción (ej. "Bodega & Despacho") no rompan el link.
+// encodeURIComponent deja '~' y '.' sin codificar, pero aquí son separadores
+function _lnkEnc(s) { return encodeURIComponent(String(s == null ? '' : s)).replace(/~/g, '%7E').replace(/\./g, '%2E'); }
+function _lnkDec(s) {
+  // Links antiguos venían sin codificar: si el texto no es decodificable se usa tal cual
+  try { return decodeURIComponent(s); } catch(e) { return s; }
+}
+function _lnkCustomCargo(c) {
+  return [c.key, c.label, c.icon, (c.desc || '').substring(0,60)].map(_lnkEnc).join('~');
+}
+function _lnkExpParam() {
+  var expDays = (typeof _shareLinkExpDays !== 'undefined') ? _shareLinkExpDays : 30;
+  return expDays > 0 ? 'exp=' + Math.floor((Date.now() + expDays * 86400000) / 1000) : '';
+}
+
 function generateCandidateLink() {
   try {
     var parts = [];
     // a = active cargos
     var ac = getActiveCargos();
-    parts.push('a=' + ac.join(','));
+    parts.push('a=' + ac.map(_lnkEnc).join(','));
     // b = batteries per cargo (short aliases) — siempre incluida para que el link sea autosuficiente
     var bParts = [];
     ac.forEach(function(k) {
       var tests = PERFIL_TESTS[k] || PERFIL_TESTS_DEFAULT[k] || [];
       if (!tests.length) tests = ['pai','dc0','comprension','disc','pf16']; // mínimo absoluto de seguridad
-      var short = tests.map(function(t){ return _TEST_ALIAS[t] || t; }).join('.');
-      bParts.push(k + '~' + short);
+      var short = tests.map(function(t){ return _lnkEnc(_TEST_ALIAS[t] || t); }).join('.');
+      bParts.push(_lnkEnc(k) + '~' + short);
     });
     if (bParts.length) parts.push('b=' + bParts.join('|'));
     // c = custom cargos (minimal)
     var cc = CUSTOM_CARGOS.filter(function(c){ return ac.indexOf(c.key) !== -1; });
     if (cc.length) {
-      parts.push('c=' + cc.map(function(c){ return c.key + '~' + c.label + '~' + c.icon + '~' + (c.desc||'').substring(0,60); }).join('|'));
+      parts.push('c=' + cc.map(_lnkCustomCargo).join('|'));
     }
 
     // exp = timestamp de expiración (segundos Unix). 0 = sin expiración.
-    var expDays = (typeof _shareLinkExpDays !== 'undefined') ? _shareLinkExpDays : 30;
-    if (expDays > 0) parts.push('exp=' + Math.floor((Date.now() + expDays * 86400000) / 1000));
+    var exp = _lnkExpParam();
+    if (exp) parts.push(exp);
 
     var compact = parts.join('&');
     var encoded = btoa(unescape(encodeURIComponent(compact)));
     var base = window.location.href.split('?')[0].split('#')[0];
-    return base + '?c=' + encoded;
+    return base + '?c=' + encodeURIComponent(encoded); // base64 trae '+', '/' y '='
   } catch(e) { console.error('Error generating link:', e); return ''; }
 }
 
@@ -9364,6 +9554,8 @@ function applyCandidateConfig() {
     var params = new URLSearchParams(window.location.search);
     var cfgStr = params.get('c');
     if (!cfgStr) return false;
+    // URLSearchParams convierte '+' en espacio: los links antiguos (sin codificar) perdían sus '+' de base64
+    cfgStr = cfgStr.replace(/ /g, '+');
     var compact = decodeURIComponent(escape(atob(cfgStr)));
     var pairs = {};
     compact.split('&').forEach(function(p) {
@@ -9384,7 +9576,7 @@ function applyCandidateConfig() {
 
     // a = active cargos
     if (pairs.a) {
-      var activeCargos = pairs.a.split(',');
+      var activeCargos = pairs.a.split(',').map(_lnkDec);
       // Deactivate all builtins first
       Object.keys(CARGOS_ACTIVE).forEach(function(k){ CARGOS_ACTIVE[k] = false; });
       activeCargos.forEach(function(k){ CARGOS_ACTIVE[k] = true; });
@@ -9395,8 +9587,8 @@ function applyCandidateConfig() {
       pairs.c.split('|').forEach(function(entry) {
         var p = entry.split('~');
         if (p.length >= 3) {
-          // desc puede contener '~' — reunir todo lo que venga después del ícono
-          var cc = { key:p[0], label:p[1], icon:p[2], desc:p.slice(3).join('~') || '' };
+          // desc puede contener '~' en links antiguos (sin codificar) — reunir todo lo que venga después del ícono
+          var cc = { key:_lnkDec(p[0]), label:_lnkDec(p[1]), icon:_lnkDec(p[2]), desc:_lnkDec(p.slice(3).join('~')) || '' };
           if (!CUSTOM_CARGOS.some(function(x){ return x.key === cc.key; })) {
             CUSTOM_CARGOS.push(cc);
           }
@@ -9419,8 +9611,8 @@ function applyCandidateConfig() {
       pairs.b.split('|').forEach(function(entry) {
         var parts = entry.split('~');
         if (parts.length === 2) {
-          var cargo = parts[0];
-          var tests = parts[1].split('.').map(function(alias){ return _ALIAS_TEST[alias] || alias; });
+          var cargo = _lnkDec(parts[0]);
+          var tests = parts[1].split('.').map(function(alias){ alias = _lnkDec(alias); return _ALIAS_TEST[alias] || alias; });
           PERFIL_TESTS[cargo] = tests;
         }
       });
@@ -9449,20 +9641,22 @@ function shareCargoLink(cargoKey) {
     var tests = PERFIL_TESTS[cargoKey] || [];
     var parts = [];
     // Only this cargo active
-    parts.push('a=' + cargoKey);
+    parts.push('a=' + _lnkEnc(cargoKey));
     // Battery for this cargo
-    var _TA = {dc0:'D',pai:'P',situacional:'S',vigilancia:'V',comprension:'C',disc:'I',pf16:'X',normativa_ohs:'no'};
     if (!tests.length) tests = PERFIL_TESTS_DEFAULT[cargoKey] || ['pai','dc0','comprension','disc','pf16'];
-    var short = tests.map(function(t){ return _TA[t] || t; }).join('.');
-    parts.push('b=' + cargoKey + '~' + short);
+    var short = tests.map(function(t){ return _lnkEnc(_TEST_ALIAS[t] || t); }).join('.');
+    parts.push('b=' + _lnkEnc(cargoKey) + '~' + short);
     // Custom cargo descriptor if needed
     var cc = CUSTOM_CARGOS ? CUSTOM_CARGOS.filter(function(c){ return c.key === cargoKey; }) : [];
-    if (cc.length) parts.push('c=' + cc[0].key + '~' + cc[0].label + '~' + cc[0].icon + '~' + (cc[0].desc||'').substring(0,60));
+    if (cc.length) parts.push('c=' + _lnkCustomCargo(cc[0]));
+    // Vencimiento, igual que el link general
+    var exp = _lnkExpParam();
+    if (exp) parts.push(exp);
 
     var compact  = parts.join('&');
     var encoded  = btoa(unescape(encodeURIComponent(compact)));
     var base     = window.location.href.split('?')[0].split('#')[0];
-    var link     = base + '?c=' + encoded;
+    var link     = base + '?c=' + encodeURIComponent(encoded);
 
     // Show modal
     var modal = document.createElement('div');
@@ -10140,7 +10334,7 @@ function _tabResumen(c) {
     ['Educación', c.educacion_label || c.educacion || '—'],
     ['Experiencia', c.experiencia_label || c.experiencia || '—'],
     ['Comuna', c.comuna || '—'],
-    ['Rubro', c.rubro || '—'],
+    ['Rubro', c.rubro_label || c.rubro || '—'],
     ['Fecha evaluación', c.fecha ? c.fecha.substring(0,10) : '—'],
   ];
   var h = '<div style="display:flex;flex-direction:column;gap:13px">';
@@ -10371,7 +10565,7 @@ function _tabEntrevistasDrawer(c) {
   aside += '<div style="' + dkv + '"><span style="' + dkl + '">Edad</span><span style="' + dkv2 + '">' + (c.edad ? c.edad + ' años' : '—') + '</span></div>';
   aside += '<div style="' + dkv + '"><span style="' + dkl + '">Comuna</span><span style="' + dkv2 + ';font-size:11px">' + htmlEsc(c.comuna||'—') + '</span></div>';
   aside += '<div style="' + dkv + ';grid-column:1/-1"><span style="' + dkl + '">Educación</span><span style="' + dkv2 + ';font-size:11px">' + htmlEsc(c.educacion_label||c.educacion||'—') + '</span></div>';
-  aside += '<div style="' + dkv + ';grid-column:1/-1"><span style="' + dkl + '">Rubro</span><span style="' + dkv2 + ';font-size:11px">' + htmlEsc(c.rubro||'—') + '</span></div>';
+  aside += '<div style="' + dkv + ';grid-column:1/-1"><span style="' + dkl + '">Rubro</span><span style="' + dkv2 + ';font-size:11px">' + htmlEsc(c.rubro_label||c.rubro||'—') + '</span></div>';
   aside += '</div>';
 
   // Score bars (neon dark style)
@@ -10612,16 +10806,9 @@ async function saveEntrevistaDrawer(candId) {
     ts: new Date().toISOString()
   };
   try {
+    var sc = await _patchScoresField(candId, '_entrevistas', function(prev){ return (prev || []).concat([entry]); });
     var all = await getDB();
     var c = all.find(function(x){ return x.id === candId; });
-    var sc = Object.assign({}, (c && c.scores) || {});
-    sc._entrevistas = (sc._entrevistas || []).concat([entry]);
-    await fetch(SUPA_URL + '/rest/v1/candidates?id=eq.' + candId, {
-      method: 'PATCH',
-      headers: Object.assign({}, getDBHeaders(), { 'Content-Type':'application/json', 'Prefer':'return=minimal' }),
-      body: JSON.stringify({ scores: sc })
-    });
-    _invalidateCache();
     toast('🗓 Entrevista guardada ✓', 'ok');
     var updated = Object.assign({}, c, { scores: sc });
     _switchDrawerTab('entrevistas', updated);
@@ -10631,16 +10818,9 @@ async function saveEntrevistaDrawer(candId) {
 async function deleteEntrevistaEntry(candId, evId) {
   if (!(await appConfirm('¿Eliminar esta entrevista del historial?'))) return;
   try {
+    var sc = await _patchScoresField(candId, '_entrevistas', function(prev){ return (prev || []).filter(function(e){ return e.id !== evId; }); });
     var all = await getDB();
     var c = all.find(function(x){ return x.id === candId; });
-    var sc = Object.assign({}, (c && c.scores) || {});
-    sc._entrevistas = (sc._entrevistas || []).filter(function(e){ return e.id !== evId; });
-    await fetch(SUPA_URL + '/rest/v1/candidates?id=eq.' + candId, {
-      method: 'PATCH',
-      headers: Object.assign({}, getDBHeaders(), { 'Content-Type':'application/json', 'Prefer':'return=minimal' }),
-      body: JSON.stringify({ scores: sc })
-    });
-    _invalidateCache();
     toast('Entrevista eliminada', 'ok');
     var updated = Object.assign({}, c, { scores: sc });
     _switchDrawerTab('entrevistas', updated);
