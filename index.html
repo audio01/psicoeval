@@ -2063,14 +2063,15 @@ function htmlEsc(s) {
 // ═══════════════════════════════════════════════════════════
 //  TEST METADATA
 // ═══════════════════════════════════════════════════════════
+// name: nombre en el panel · cand: nombre que ve el candidato, si es distinto
 const TESTS_META = {
   dc0:          { name:'Aptitud Cognitiva (DC-0)',            icon:'⚡', color:'var(--green)'  },
-  pai:          { name:'Ajuste Psicológico (PAI)',            icon:'🔎', color:'var(--gold)'   },
+  pai:          { name:'Ajuste laboral',                     icon:'🔎', color:'var(--gold)'   },
   situacional:  { name:'Juicio Situacional',                 icon:'💡', color:'var(--accent)' },
   vigilancia:   { name:'Aptitud de Vigilancia',              icon:'🛡', color:'var(--ink2)'   },
   comprension:  { name:'Comprensión de Instrucciones',       icon:'📋', color:'var(--lilac)'  },
   disc:         { name:'Estilos Conductuales (DISC-20)',       icon:'🎭', color:'#7c3aed'        },
-  pf16:         { name:'Personalidad 16PF (Abreviado)',       icon:'🧬', color:'#0d9488'        },
+  pf16:         { name:'Personalidad laboral',               icon:'🧬', color:'#0d9488', cand:'Cuestionario de estilo personal' },
   normativa_ohs:    { name:'Conocimiento Normativo OHS',       icon:'📐', color:'#0369a1' },
   integridad:       { name:'Actitudes en el trabajo',          icon:'🧭', color:'#b45309' },   // integridad laboral (nombre neutro para el candidato)
   juego_semaforo:   { name:'Semáforo',                         icon:'🚦', color:'#16a34a', game:true },
@@ -2287,13 +2288,13 @@ function renderConfigLog() {
 loadBatteryConfig();
 
 const PERFIL_META = {
-  jefatura:        { label:'Jefatura',                   icon:'👔', color:'var(--blue)',  desc:'Evaluación para cargos de liderazgo y gestión de equipos. Incluye aptitud cognitiva, juicio situacional, perfil conductual (DISC/16PF) y juegos de crisis y dilemas éticos.' },
-  administrativo:  { label:'Administrativo',             icon:'💼', color:'var(--green)', desc:'Evaluación para roles administrativos y de soporte. Incluye aptitud cognitiva, perfil conductual (DISC/16PF) y dilemas de normatividad e integridad.' },
-  guardia:         { label:'Guardia de Seguridad',       icon:'🛡', color:'var(--ink2)',  desc:'Evaluación para roles de seguridad. Incluye juicio situacional, aptitud de vigilancia, perfil conductual (DISC/16PF) y juegos de crisis e integridad.' },
-  supervisor:      { label:'Supervisor de Seguridad',    icon:'⚙️', color:'var(--amber)', desc:'Evaluación para supervisores de turno u operaciones. Incluye aptitud cognitiva, juicio situacional, perfil conductual (DISC/16PF) y juegos conductuales de crisis y dilemas supervisivos.' },
-  prevencionista:  { label:'Prevencionista de Riesgo',   icon:'🦺', color:'var(--amber)', desc:'Evaluación para profesionales en prevención de riesgos laborales. Incluye aptitud analítica, comprensión de normativas, juicio situacional, perfil conductual (DISC/16PF) y dilemas de integridad técnica.' },
-  conductor:       { label:'Conductor',                  icon:'🚗', color:'#0891b2',      desc:'Evaluación para conductores profesionales. Incluye ajuste psicológico, aptitud de vigilancia, comprensión de instrucciones, perfil conductual (DISC/16PF) y juegos de respuesta ante emergencias e integridad operacional.' },
-  auxiliar_aseo:   { label:'Auxiliar de Aseo',           icon:'🧹', color:'#0d9488',      desc:'Evaluación para personal de aseo y limpieza. Incluye ajuste psicológico, integridad laboral, comprensión de instrucciones de trabajo y perfil conductual (DISC/16PF).' },
+  jefatura:        { label:'Jefatura',                   icon:'👔', color:'var(--blue)',  desc:'Evaluación para cargos de liderazgo y gestión de equipos. Incluye aptitud cognitiva, juicio situacional, perfil conductual (DISC y personalidad laboral) y juegos de crisis y dilemas éticos.' },
+  administrativo:  { label:'Administrativo',             icon:'💼', color:'var(--green)', desc:'Evaluación para roles administrativos y de soporte. Incluye aptitud cognitiva, perfil conductual (DISC y personalidad laboral) y dilemas de normatividad e integridad.' },
+  guardia:         { label:'Guardia de Seguridad',       icon:'🛡', color:'var(--ink2)',  desc:'Evaluación para roles de seguridad. Incluye juicio situacional, aptitud de vigilancia, perfil conductual (DISC y personalidad laboral) y juegos de crisis e integridad.' },
+  supervisor:      { label:'Supervisor de Seguridad',    icon:'⚙️', color:'var(--amber)', desc:'Evaluación para supervisores de turno u operaciones. Incluye aptitud cognitiva, juicio situacional, perfil conductual (DISC y personalidad laboral) y juegos conductuales de crisis y dilemas supervisivos.' },
+  prevencionista:  { label:'Prevencionista de Riesgo',   icon:'🦺', color:'var(--amber)', desc:'Evaluación para profesionales en prevención de riesgos laborales. Incluye aptitud analítica, comprensión de normativas, juicio situacional, perfil conductual (DISC y personalidad laboral) y dilemas de integridad técnica.' },
+  conductor:       { label:'Conductor',                  icon:'🚗', color:'#0891b2',      desc:'Evaluación para conductores profesionales. Incluye ajuste laboral, aptitud de vigilancia, comprensión de instrucciones, perfil conductual (DISC y personalidad laboral) y juegos de respuesta ante emergencias e integridad operacional.' },
+  auxiliar_aseo:   { label:'Auxiliar de Aseo',           icon:'🧹', color:'#0d9488',      desc:'Evaluación para personal de aseo y limpieza. Incluye ajuste laboral, integridad laboral, comprensión de instrucciones de trabajo y perfil conductual (DISC y personalidad laboral).' },
 };
 
 // ── localStorage key constants (centralizadas para evitar typos) ──────────────
@@ -3147,14 +3148,14 @@ const DC0_ADMIN = [
 ];
 
 // ═══════════════════════════════════════════════════════════
-//  PAI — Ajuste Psicológico Laboral (inspirado en constructos PAI/MMPI-2-RF)
+//  Ajuste laboral (id interno pai) — instrumento propio
 //  Mide: Estabilidad Emocional, Adaptación Social, Orientación Normativa,
 //        Manejo del Estrés, Integridad Laboral
 //  Escala Likert 1–4 (Nunca / A veces / Con frecuencia / Siempre)
 // ═══════════════════════════════════════════════════════════
 const PAI_BASE = [
   // Estabilidad Emocional (EE)
-  {id:'ai1', text:'Me siento abrumado/a por mis responsabilidades laborales.'},
+  {id:'ai1', text:'Siento que mis responsabilidades laborales me sobrepasan.'},
   {id:'ai2', text:'Soy capaz de separar mis problemas personales de mi desempeño laboral.'},
   {id:'ai3', text:'Experimento cambios bruscos de humor a lo largo de la jornada.'},
   {id:'ai4', text:'Mantengo la compostura incluso en situaciones de alta tensión en el trabajo.'},
@@ -3170,7 +3171,7 @@ const PAI_BASE = [
   {id:'ai12',text:'Reporto situaciones irregulares aunque sea incómodo hacerlo.'},
   // Manejo del Estrés (ME)
   {id:'ai13',text:'Bajo presión, tiendo a cometer más errores de lo habitual.'},
-  {id:'ai14',text:'Identifico cuándo estoy estresado/a y tomo medidas para manejarlo.'},
+  {id:'ai14',text:'Identifico cuándo el estrés me está afectando y tomo medidas para manejarlo.'},
   {id:'ai15',text:'Los plazos ajustados me generan ansiedad que afecta mi trabajo.'},
   {id:'ai16',text:'Puedo trabajar eficientemente incluso cuando hay cambios inesperados.'},
   // Integridad Laboral (IL)
@@ -3186,7 +3187,7 @@ const PAI_BASE = [
   {id:'ai25',text:'Mantengo una actitud positiva incluso cuando el trabajo es rutinario.'},
   // ── Escala de Deseabilidad Social (DS-8) — ítems trampa ──
   // Nadie honesto responde 4 en todos. Sirve para detectar respuesta inflada.
-  {id:'ds1', text:'Nunca me he quedado callado/a cuando debería haber dicho algo incómodo.'},
+  {id:'ds1', text:'Nunca he guardado silencio cuando debería haber dicho algo incómodo.'},
   {id:'ds2', text:'Siempre cumplo mis promesas, sin excepción.'},
   {id:'ds3', text:'Nunca he llegado tarde a una reunión de trabajo.'},
   {id:'ds4', text:'Jamás he actuado de forma deshonesta, ni en situaciones menores.'},
@@ -3515,87 +3516,69 @@ const SIT_SUPERVISOR = [
 //  Likert 1–5 (1=Nunca, 5=Siempre)
 //  D=Dominancia, I=Influencia, S=Estabilidad, C=Cumplimiento
 // ═══════════════════════════════════════════════════════════
-// ── 16PF Abreviado — 5 factores globales, 20 ítems Likert 1-5 ──
+// ── Personalidad laboral (id interno pf16) — 5 dimensiones, 20 ítems, escala de acuerdo 1-5 ──
+// Un ítem invertido por dimensión (pf_*5, rev en el servidor: 10_items_v3.sql). Los ítems que
+// reemplazaron (pf_ex3, pf_an3, pf_du3, pf_in2, pf_ac4) siguen en el servidor para recalcular
+// evaluaciones antiguas.
 const PF16_ITEMS = [
   // EX — Extraversión (A+, F+, H+, Q2-)
   {id:'pf_ex1',text:'Me resulta fácil iniciar conversaciones con personas que no conozco.'},
   {id:'pf_ex2',text:'En reuniones de trabajo, participo activamente y comparto mis ideas con el grupo.'},
-  {id:'pf_ex3',text:'Prefiero trabajar acompañado/a que solo/a, incluso si la tarea no lo requiere.'},
+  {id:'pf_ex5',text:'Prefiero trabajar por mi cuenta antes que en grupo.'},
   {id:'pf_ex4',text:'Me consideran una persona sociable que genera buen clima en el equipo.',},
   // AN — Ajuste Emocional / Baja Ansiedad (C+, O-, Q4-)
   {id:'pf_an1',text:'Mantengo la calma incluso cuando las cosas no salen según lo planeado.'},
   {id:'pf_an2',text:'Rara vez me preocupo de forma excesiva por cosas que no puedo controlar.'},
-  {id:'pf_an3',text:'Duermo bien incluso en períodos de mucho trabajo o presión laboral.'},
+  {id:'pf_an5',text:'Me cuesta dejar de pensar en los problemas del trabajo cuando termina la jornada.'},
   {id:'pf_an4',text:'No me afectan demasiado las críticas o comentarios negativos sobre mi trabajo.'},
   // DU — Dureza Mental / Objetividad (A-, I-, M-)
   {id:'pf_du1',text:'Tomo decisiones basándome en hechos y datos, no en corazonadas o sentimientos.'},
   {id:'pf_du2',text:'Cuando hay un problema, busco la solución más práctica aunque no sea la más popular.'},
-  {id:'pf_du3',text:'Me resulta fácil dar feedback negativo cuando la situación lo requiere.'},
+  {id:'pf_du5',text:'Me cuesta tomar una decisión si sé que afectará a alguien.'},
   {id:'pf_du4',text:'Puedo separar mis emociones personales de las decisiones profesionales.'},
   // IN — Independencia (E+, H+, L+, Q1+)
   {id:'pf_in1',text:'Defiendo mi posición cuando creo que tengo razón, aunque la mayoría no esté de acuerdo.'},
-  {id:'pf_in2',text:'No necesito la aprobación de los demás para sentirme seguro/a de mis decisiones.'},
+  {id:'pf_in5',text:'Suelo seguir la opinión de la mayoría aunque tenga dudas.'},
   {id:'pf_in3',text:'Cuestiono instrucciones que no me parecen lógicas, en vez de seguirlas sin pensar.'},
   {id:'pf_in4',text:'Prefiero formar mi propia opinión antes de consultar qué piensan los demás.'},
   // AC — Autocontrol (F-, G+, M-, Q3+)
   {id:'pf_ac1',text:'Cumplo las reglas y procedimientos aunque nadie me esté supervisando.'},
-  {id:'pf_ac2',text:'Soy muy organizado/a con mi tiempo, mis tareas y mis compromisos.'},
+  {id:'pf_ac2',text:'Organizo con cuidado mi tiempo, mis tareas y mis compromisos.'},
   {id:'pf_ac3',text:'Antes de actuar, pienso bien en las consecuencias de lo que voy a hacer.'},
-  {id:'pf_ac4',text:'Me cuesta improvisar; prefiero tener un plan claro antes de comenzar algo.'},
+  {id:'pf_ac5',text:'A veces dejo tareas importantes para el último momento.'},
 ];
 
 // ═══════════════════════════════════════════════════════════
 //  DISC-20 — Formato ipsativo forzado
-//  20 bloques × 4 descriptores (D/I/S/C)
+//  20 bloques × 4 cualidades (D/I/S/C)
 //  Candidato elige cuál lo describe MÁS y cuál MENOS por bloque
 //  Puntuación: Más = +2, Menos = -2, sin marcar = 0
 //  Rango bruto por dimensión: -40 a +40 → normalizado 0-100
 // ═══════════════════════════════════════════════════════════
+// Cualidades como sustantivos: neutras en género. El servidor puntúa por la letra (D/I/S/C) elegida.
 const DISC_BLOCKS = [
-  { D:'Decidido',              I:'Entusiasta',   S:'Paciente',      C:'Preciso'       },
-  { D:'Directo',               I:'Persuasivo',   S:'Constante',     C:'Analítico'     },
-  { D:'Orientado al logro',    I:'Sociable',     S:'Tranquilo',     C:'Detallista'    },
-  { D:'Firme',                 I:'Optimista',    S:'Leal',          C:'Prudente'      },
-  { D:'Independiente',         I:'Comunicativo', S:'Metódico',      C:'Sistemático'   },
-  { D:'Resolutivo',            I:'Carismático',  S:'Empático',      C:'Cuidadoso'     },
-  { D:'Audaz',                 I:'Expresivo',    S:'Colaborador',   C:'Riguroso'      },
-  { D:'Enfocado en metas',     I:'Motivador',    S:'Confiable',     C:'Normativo'     },
-  { D:'Proactivo',             I:'Abierto',      S:'Estable',       C:'Meticuloso'    },
-  { D:'Enérgico',              I:'Dinámico',     S:'Servicial',     C:'Organizado'    },
-  { D:'Orientado al desempeño',I:'Animado',      S:'Tolerante',     C:'Estructurado'  },
-  { D:'Valiente',              I:'Extrovertido', S:'Reservado',     C:'Reflexivo'     },
-  { D:'Pionero',               I:'Inspirador',   S:'Dedicado',      C:'Exacto'        },
-  { D:'Seguro',                I:'Amigable',     S:'Persistente',   C:'Disciplinado'  },
-  { D:'Asertivo',              I:'Influyente',   S:'Estabilizador', C:'Cumplidor'     },
-  { D:'Veloz',                 I:'Elocuente',    S:'Pausado',       C:'Cauteloso'     },
-  { D:'Emprendedor',           I:'Estimulante',  S:'Conciliador',   C:'Verificador'   },
-  { D:'Líder',                 I:'Convincente',  S:'Mediador',      C:'Controlador'   },
-  { D:'Iniciador',             I:'Apasionado',   S:'Armonioso',     C:'Protocolario'  },
-  { D:'Orientado a resultados',I:'Orientado a personas', S:'Orientado al equipo', C:'Orientado a la calidad' },
+  { D:'Decisión',                 I:'Entusiasmo',                 S:'Paciencia',            C:'Precisión'               },
+  { D:'Franqueza',                I:'Persuasión',                 S:'Constancia',           C:'Análisis'                },
+  { D:'Orientación al logro',     I:'Sociabilidad',               S:'Tranquilidad',         C:'Atención al detalle'     },
+  { D:'Firmeza',                  I:'Optimismo',                  S:'Lealtad',              C:'Prudencia'               },
+  { D:'Independencia',            I:'Comunicación',               S:'Método',               C:'Planificación'           },
+  { D:'Resolución',               I:'Carisma',                    S:'Empatía',              C:'Cuidado'                 },
+  { D:'Audacia',                  I:'Expresividad',               S:'Colaboración',         C:'Rigor'                   },
+  { D:'Foco en las metas',        I:'Capacidad de motivar',       S:'Confiabilidad',        C:'Apego a las normas'      },
+  { D:'Proactividad',             I:'Apertura',                   S:'Estabilidad',          C:'Minuciosidad'            },
+  { D:'Energía',                  I:'Dinamismo',                  S:'Servicio',             C:'Organización'            },
+  { D:'Foco en el desempeño',     I:'Buen humor',                 S:'Tolerancia',           C:'Estructura'              },
+  { D:'Valentía',                 I:'Extroversión',               S:'Reserva',              C:'Reflexión'               },
+  { D:'Innovación',               I:'Inspiración',                S:'Dedicación',           C:'Exactitud'               },
+  { D:'Seguridad personal',       I:'Amabilidad',                 S:'Persistencia',         C:'Disciplina'              },
+  { D:'Asertividad',              I:'Influencia',                 S:'Serenidad',            C:'Cumplimiento'            },
+  { D:'Rapidez',                  I:'Elocuencia',                 S:'Calma',                C:'Cautela'                 },
+  { D:'Emprendimiento',           I:'Capacidad de entusiasmar',   S:'Conciliación',         C:'Verificación'            },
+  { D:'Liderazgo',                I:'Poder de convencimiento',    S:'Mediación',            C:'Control'                 },
+  { D:'Iniciativa',               I:'Pasión',                     S:'Armonía',              C:'Protocolo'               },
+  { D:'Orientación a resultados', I:'Orientación a las personas', S:'Orientación al equipo', C:'Orientación a la calidad' },
 ];
 
-// ═══════════════════════════════════════════════════════════
-//  IWS-15 — Integridad Laboral
-//  Likert 1–4 (1=Nunca, 4=Siempre). Alto = mayor integridad.
-//  = ítem inverso (actitud negativa hacia normas)
-// ═══════════════════════════════════════════════════════════
-const IWS_ITEMS = [
-  {id:'iw1', text:'Reporto cualquier irregularidad que observe en mi lugar de trabajo, aunque no me involucre directamente.'},
-  {id:'iw2', text:'Me niego a participar en prácticas cuestionables aunque todos a mi alrededor las acepten.'},
-  {id:'iw3', text:'A veces es necesario omitir ciertos detalles en un informe para evitar problemas innecesarios.'},
-  {id:'iw4', text:'Prefiero enfrentar las consecuencias de decir la verdad antes que protegerme con una mentira.'},
-  {id:'iw5', text:'Tomar materiales o insumos de la empresa para uso personal es aceptable si nadie lo nota.'},
-  {id:'iw6', text:'Cumplo con las normas de seguridad incluso cuando no hay supervisión.'},
-  {id:'iw7', text:'Si un superior me pide hacer algo cuestionable, prefiero obedecer para no tener conflictos.'},
-  {id:'iw8', text:'Soy transparente con mis errores, incluso cuando podría ocultarlos sin consecuencias.'},
-  {id:'iw9', text:'Está bien saltarse algunos pasos del protocolo si con eso terminas el trabajo más rápido.'},
-  {id:'iw10',text:'La honestidad es fundamental en mi trabajo, sin excepciones.'},
-  {id:'iw11',text:'Ayudar a un compañero a cubrir un error es parte de la lealtad en un equipo.'},
-  {id:'iw12',text:'Registro fielmente mi jornada de trabajo, sin ajustar los horarios a mi conveniencia.'},
-  {id:'iw13',text:'A veces conviene exagerar un poco los logros en un informe para dar mejor impresión.'},
-  {id:'iw14',text:'Actúo con la misma ética cuando trabajo solo/a que cuando estoy siendo observado/a.'},
-  {id:'iw15',text:'Denunciaría una irregularidad grave aunque eso me causara problemas con compañeros.'},
-];
 
 
 
@@ -4597,7 +4580,7 @@ function onCargoSelect(radio) {
           var tm = TESTS_META[tid];
           if (!tm) return '';
           return '<span style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:100px;background:#fff;border:1px solid var(--accent-m);font-size:12px;font-weight:600;color:var(--accent)">'
-            + tm.icon + ' ' + tm.name
+            + tm.icon + ' ' + (tm.cand || tm.name)
             + '</span>';
         }).join('');
         detail.innerHTML = '<div style="font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--accent);margin-bottom:8px">Tests incluidos</div>'
@@ -5686,7 +5669,7 @@ function renderTestBlock() {
       var icon  = isDone ? '✓' : (tm2.icon || '📝');
       pillsHtml += '<div style="display:flex;align-items:center;gap:4px;padding:4px 10px;border-radius:100px;background:' + bg + ';border:1.5px solid ' + border + ';white-space:nowrap;flex-shrink:0;transition:all .3s">'
         + '<span style="font-size:12px">' + icon + '</span>'
-        + '<span style="font-size:11px;font-weight:' + (isCurrent?'700':'600') + ';color:' + color + '">' + (tm2.name ? tm2.name.split(' ')[0] : 'Test') + '</span>'
+        + '<span style="font-size:11px;font-weight:' + (isCurrent?'700':'600') + ';color:' + color + '">' + ((tm2.cand || tm2.name) ? (tm2.cand || tm2.name).split(' ')[0] : 'Test') + '</span>'
         + '</div>';
       if (idx < S.testBlocks.length - 1) {
         pillsHtml += '<div style="width:12px;height:1px;background:' + (isDone?'#bbf7d0':'#e2e8f0') + ';flex-shrink:0"></div>';
@@ -5702,15 +5685,15 @@ function renderTestBlock() {
 
   // ── STANDARD MODE ──
   const type    = block.qs[0]?.type;
-  const isScale = type === 'likert' || type === 'pai' || type === 'iws';
-  const scaleMax = (type === 'pai' || type === 'iws') ? 4 : 5;
+  const isScale = type === 'likert' || type === 'pai';
+  const scaleMax = type === 'pai' ? 4 : 5;
 
   // Legend for scale types
-  const LIKERT_LABELS = { 1:'Nunca', 2:'Rara vez', 3:'A veces', 4:'Frecuente', 5:'Siempre' };
+  // Personalidad laboral: los ítems son afirmaciones, así que la escala es de acuerdo
+  const LIKERT_LABELS = { 1:'Muy en desacuerdo', 2:'En desacuerdo', 3:'Ni de acuerdo ni en desacuerdo', 4:'De acuerdo', 5:'Muy de acuerdo' };
   const PAI_LABELS    = { 1:'Nunca', 2:'A veces', 3:'Frecuente', 4:'Siempre' };
-  const IWS_LABELS    = { 1:'Nunca', 2:'A veces', 3:'Frecuente', 4:'Siempre' };
-  const scaleLabels   = type === 'pai' ? PAI_LABELS : type === 'iws' ? IWS_LABELS : LIKERT_LABELS;
-  const legendKeys    = (type === 'pai' || type === 'iws') ? [1,2,3,4] : [1,2,3,4,5];
+  const scaleLabels   = type === 'pai' ? PAI_LABELS : LIKERT_LABELS;
+  const legendKeys    = type === 'pai' ? [1,2,3,4] : [1,2,3,4,5];
 
   let instrHtml = '';
   if (block.testId === 'integridad') {
@@ -5719,7 +5702,7 @@ function renderTestBlock() {
       + 'Tus respuestas se contrastan con la entrevista y las referencias laborales.</div>';
   } else if (type === 'disc_block') {
     instrHtml = '<div style="padding:12px 16px;background:#fef9c3;border:1px solid #fde047;border-radius:8px;font-size:12px;color:#713f12;margin-bottom:4px">'
-      + '📌 Para cada bloque, selecciona el descriptor que te representa <strong>MÁS</strong> (verde) y el que te representa <strong>MENOS</strong> (rojo). No puedes elegir el mismo para ambos.</div>';
+      + '📌 Para cada bloque, selecciona la cualidad que te representa <strong>MÁS</strong> (verde) y la que te representa <strong>MENOS</strong> (rojo). No puedes elegir la misma para ambos.</div>';
   } else if (isScale) {
     instrHtml = '<div class="scale-legend">'
       + legendKeys.map(n => `<span><strong>${n}</strong> — ${(scaleLabels[n]||'').replace('\n',' ')}</span>`).join('')
@@ -5756,8 +5739,8 @@ function renderTestBlock() {
       };
       return '<div class="q-choice-row' + (isBlockDone ? ' answered' : '') + '" id="qrow-' + q.id + '" role="group" aria-label="Bloque DISC ' + q.blockNum + ' de ' + q.total + '">'
         + '<div style="font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px" aria-hidden="true">Bloque ' + q.blockNum + ' de ' + q.total + '</div>'
-        + makeDiscRow('most',  '¿Cuál te describe MÁS?',   '#16a34a')
-        + makeDiscRow('least', '¿Cuál te describe MENOS?', '#dc2626')
+        + makeDiscRow('most',  '¿Qué cualidad te describe MÁS?',   '#16a34a')
+        + makeDiscRow('least', '¿Qué cualidad te describe MENOS?', '#dc2626')
         + '</div>';
     }
     if (isScale) {
@@ -6106,7 +6089,7 @@ async function finishTests() {
   document.getElementById('done-tests').innerHTML = S.selectedTests.map(t =>
     '<div style="display:flex;align-items:center;gap:10px;font-size:14px;font-weight:500">' +
     '<span style="width:28px;height:28px;border-radius:50%;background:var(--green-l);border:1.5px solid var(--green);display:flex;align-items:center;justify-content:center;font-size:13px">✓</span>' +
-    '<span>' + TESTS_META[t].icon + ' ' + TESTS_META[t].name + '</span></div>'
+    '<span>' + TESTS_META[t].icon + ' ' + (TESTS_META[t].cand || TESTS_META[t].name) + '</span></div>'
   ).join('');
   showView('results');
 }
@@ -6301,7 +6284,7 @@ const DISC_RPT = {
     C: { sube:'se ajusta a normas, procedimientos y niveles de detalle más de lo que le resulta natural.',
          baja:'flexibiliza su apego natural a normas y detalles, posiblemente para responder a exigencias de rapidez.' }
   },
-  nota: 'El DISC-20 es un instrumento de elección forzada: en cada uno de los 20 bloques la persona elige el descriptor que más y el que menos la representa. '
+  nota: 'El DISC-20 es un instrumento de elección forzada: en cada uno de los 20 bloques la persona elige la cualidad que más y la que menos la representa. '
       + 'Por eso los cuatro puntajes se compensan entre sí (su promedio es siempre 50) y deben leerse en relación unos con otros, no como niveles absolutos. '
       + 'El instrumento describe preferencias de comportamiento en el contexto laboral; no mide capacidades, inteligencia ni salud mental, y no existen perfiles buenos o malos. '
       + 'Se recomienda interpretarlo junto con la entrevista y las demás pruebas, y no utilizarlo como criterio único de decisión.'
@@ -6355,7 +6338,7 @@ const PF16_RPT = {
           preguntas:{ alto:'Cuénteme de una situación en que tuvo que cambiar un plan a última hora. ¿Cómo reaccionó?',
                       bajo:'¿Cómo se asegura de cumplir plazos y procedimientos cuando nadie le supervisa?' } }
   },
-  nota: 'Prueba breve de autodescripción (20 ítems, 4 por dimensión) que estima cinco dimensiones globales de personalidad inspiradas en el modelo de 16 factores; no corresponde al cuestionario 16PF completo. '
+  nota: 'Prueba breve de autodescripción (20 ítems, 4 por dimensión, uno de ellos redactado en sentido inverso) que estima cinco dimensiones globales de personalidad en el trabajo; es un instrumento propio y no corresponde a ningún cuestionario comercial. '
       + 'Refleja cómo la persona se percibe en el trabajo y es sensible a la tendencia a responder "de acuerdo" y a la deseabilidad social. '
       + 'No compara con un perfil esperado: si una característica es una fortaleza depende del puesto y de lo observado en la entrevista. No constituye un diagnóstico.'
 };
@@ -7141,8 +7124,8 @@ function _discReportHtml(c, disc, s, combos) {
     };
     html += card(h3('Perfil natural y adaptado')
       + '<div style="font-size:12px;color:#475569;line-height:1.65;margin-bottom:12px">'
-      + 'El <strong>perfil adaptado</strong> (descriptores elegidos como MÁS) refleja cómo actúa cuando ajusta su conducta a lo que percibe que exige su entorno laboral. '
-      + 'El <strong>perfil natural</strong> (descriptores elegidos como MENOS) refleja su estilo básico, el que tiende a aparecer cuando no se está adaptando, por ejemplo bajo presión.</div>'
+      + 'El <strong>perfil adaptado</strong> (cualidades elegidas como MÁS) refleja cómo actúa cuando ajusta su conducta a lo que percibe que exige su entorno laboral. '
+      + 'El <strong>perfil natural</strong> (cualidades elegidas como MENOS) refleja su estilo básico, el que tiende a aparecer cuando no se está adaptando, por ejemplo bajo presión.</div>'
       + '<div style="display:flex;flex-wrap:wrap;gap:16px">'
       + mini('Adaptado · MÁS', 'Conducta que muestra en su entorno', adapt)
       + mini('Natural · MENOS', 'Estilo básico y bajo presión', nat)
@@ -7601,7 +7584,7 @@ function buildReportHtml(c, withClose) {
   // El punto de color resume el resultado: aptitud frente al mínimo del cargo e
   // integridad según su nivel. DISC y 16PF no llevan punto (son descriptivas).
   var _TAB_CORTO = { resumen:'Resumen', integridad:'Integridad', dc0:'Aptitud cognitiva', situacional:'Juicio situacional', vigilancia:'Vigilancia',
-                     comprension:'Comprensión', normativa_ohs:'Normativa OHS', disc:'DISC', pf16:'16PF', pai:'Ajuste psicológico', referencias:'Referencias' };
+                     comprension:'Comprensión', normativa_ohs:'Normativa OHS', disc:'DISC', pf16:'Personalidad laboral', pai:'Ajuste laboral', referencias:'Referencias' };
   var _TAB_GRUPOS = [ ['', ['resumen']], ['Integridad', ['integridad']], ['Aptitud', ['dc0','situacional','vigilancia','comprension','normativa_ohs']],
                       ['Personalidad', ['disc','pf16','pai']], ['', ['referencias']] ];
   var _tabDot = function(tid) {
@@ -7643,7 +7626,7 @@ function buildReportHtml(c, withClose) {
     var _rsH3 = function(t, sub){ return '<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.6px">' + t + '</div>' + (sub ? '<div style="font-size:11.5px;color:#94a3b8;margin-top:2px">' + sub + '</div>' : '') + '</div>'; };
     var _rsMide = {
       dc0:'Razonamiento verbal, numérico y lógico',
-      pai:'Ajuste psicológico en el contexto laboral',
+      pai:'Estabilidad, adaptación, normas, estrés, integridad y motivación en el trabajo',
       situacional:'Criterio para resolver situaciones habituales del trabajo',
       vigilancia:'Aplicación de protocolos, detección de irregularidades y reacción ante riesgos',
       comprension:'Leer y aplicar instrucciones con varias condiciones sin omitir pasos',
@@ -7780,7 +7763,7 @@ function buildReportHtml(c, withClose) {
           + '<div style="display:flex;justify-content:space-between;font-size:9.5px;color:#94a3b8;margin-top:4px"><span>' + d.polos[0] + '</span><span>' + d.polos[1] + '</span></div>'
           + '</div>';
       });
-      _pers += _rsCard(_rsH3('Personalidad · 16PF abreviado', 'Autodescripción: ningún polo es mejor que el otro')
+      _pers += _rsCard(_rsH3('Personalidad laboral', 'Autodescripción: ningún polo es mejor que el otro')
         + _pRows
         + (_pEx ? '<div style="font-size:10.5px;color:#94a3b8">Extraversión: evaluación anterior a la corrección; se muestra el rango posible.</div>' : ''), 'flex:1 1 300px');
       if (_pMarc.length) _rsPuntos.push('<strong>Personalidad:</strong> rasgos marcados — ' + htmlEsc(_pMarc.join(', ')) + '. Evalúe en la entrevista si son una fortaleza o una dificultad para este puesto.');
@@ -7805,7 +7788,7 @@ function buildReportHtml(c, withClose) {
     // ── 6. Cómo leer este resumen ──
     html += '<div style="font-size:11.5px;color:#64748b;line-height:1.65;padding:10px 14px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0">'
       + '<strong>Cómo leer este resumen.</strong> Las pruebas de aptitud miden el porcentaje de respuestas correctas y se comparan con el mínimo configurado para el cargo en Panel → Cargos. '
-      + 'DISC y 16PF describen estilo y personalidad: no se comparan con un perfil esperado, porque que un rasgo sea fortaleza depende del puesto y de la entrevista. '
+      + 'DISC y Personalidad laboral describen estilo y personalidad: no se comparan con un perfil esperado, porque que un rasgo sea fortaleza depende del puesto y de la entrevista. '
       + 'La prueba de integridad entrega su propio nivel de riesgo. Ningún resultado por sí solo decide la contratación; la decisión corresponde al evaluador.'
       + '</div>';
 
@@ -7862,8 +7845,14 @@ function buildReportHtml(c, withClose) {
     var _flxp = firstTab === 'pai' ? 'flex' : 'none';
     html += '<div class="rpt-tab-panel" id="rpt-panel-pai" style="display:' + _flxp + ';flex-direction:column;gap:16px">';
     html += '<div style="background:#fff;border-radius:14px;border:1px solid #e2e8f0;padding:20px 24px">';
-    html += '<div style="font-size:17px;font-weight:800;color:#0f172a;margin-bottom:6px">🔎 Ajuste Psicológico — PAI</div>';
-    html += '<div style="font-size:13px;color:#64748b;line-height:1.6;margin-bottom:16px">Evalúa 6 dimensiones del ajuste psicológico laboral.</div>';
+    html += '<div style="font-size:17px;font-weight:800;color:#0f172a;margin-bottom:6px">🔎 Ajuste laboral</div>';
+    html += '<div style="font-size:13px;color:#64748b;line-height:1.6;margin-bottom:16px">Evalúa 6 dimensiones del ajuste al trabajo: estabilidad emocional, adaptación social, orientación a normas, manejo del estrés, integridad y motivación.</div>';
+    // Con la prueba de integridad en la batería, la dimensión de integridad de esta escala es secundaria
+    if (s.integridad) {
+      html += '<div style="font-size:12px;color:#475569;line-height:1.6;padding:9px 13px;background:#f8fafc;border-left:3px solid #cbd5e1;border-radius:0 8px 8px 0;margin-bottom:16px">'
+        + '<strong>Integridad:</strong> esta persona también rindió la prueba de integridad laboral ("' + TESTS_META.integridad.name + '"), que es más específica. '
+        + 'Use la dimensión de integridad de esta escala solo como dato complementario.</div>';
+    }
     if (pai._ds_flag) {
       html += '<div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:flex-start;gap:10px">';
       html += '<span style="font-size:18px;flex-shrink:0">⚠️</span>';
@@ -8182,7 +8171,7 @@ function renderWikiTab() {
       reference: 'Desarrollo propio basado en modelos de comprensión procedimental (Kintsch, 1998).'
     },
     pai: {
-      icon: '🔎', name: 'Inventario de Ajuste Psicológico (PAI)', category: 'Personalidad', items: 30, time: '8-12 min', format: 'Likert 1-5',
+      icon: '🔎', name: 'Inventario de Ajuste Laboral', category: 'Personalidad', items: 30, time: '8-12 min', format: 'Likert 1-5',
       description: 'Evalúa el ajuste psicológico general del candidato en el contexto laboral. Mide seis dimensiones clínico-laborales que predicen el desempeño y la adaptación en el puesto de trabajo.',
       dimensions: [
         { key:'EE', name:'Estabilidad Emocional', desc:'Capacidad de regulación emocional ante conflictos y presión. Puntuaciones altas indican ecuanimidad y resiliencia; bajas sugieren labilidad emocional y reactividad ante estresores.' },
@@ -8193,7 +8182,7 @@ function renderWikiTab() {
         { key:'ML', name:'Motivación Laboral', desc:'Nivel de impulso intrínseco para el trabajo, compromiso con las tareas asignadas y orientación al logro. Puntuaciones altas predicen proactividad y persistencia.' },
       ],
       scoring: 'Las respuestas Likert se promedian por dimensión y se normalizan a escala 0-100. Clasificación: Muy Bajo (0-19), Bajo (20-39), Medio (40-59), Alto (60-79), Muy Alto (80-100). Incluye ítems de control de aquiescencia.',
-      reference: 'Adaptación psicolaboral basada en constructos del PAI (Morey, 2007) y NEO-PI-R (Costa & McCrae, 1992).'
+      reference: 'Desarrollo propio. Sus dimensiones se inspiran en constructos descritos en la literatura (Morey, 2007; Costa & McCrae, 1992); no reproduce ítems ni normas de instrumentos comerciales.'
     },
     disc: {
       icon: '🎭', name: 'Estilos Conductuales (DISC-20)', category: 'Personalidad', items: 20, time: '5-8 min', format: 'Elección forzada (más/menos como yo)',
@@ -8226,8 +8215,8 @@ function renderWikiTab() {
       reference: 'Basado en competencias de seguridad (ASIS International, 2012).'
     },
     pf16: {
-      icon: '🧬', name: 'Test de Personalidad 16PF (Abreviado)', category: 'Personalidad', items: 20, time: '8-10 min', format: 'Likert 1-5',
-      description: 'Versión abreviada del Cuestionario de 16 Factores de Personalidad de Raymond Cattell. Evalúa los 5 factores globales de segundo orden que resumen la estructura de personalidad: Extraversión, Ajuste Emocional (Ansiedad inversa), Dureza Mental, Independencia y Autocontrol. Diseñado para contexto psicolaboral con énfasis en predicción de desempeño.',
+      icon: '🧬', name: 'Personalidad laboral (5 dimensiones)', category: 'Personalidad', items: 20, time: '8-10 min', format: 'Acuerdo 1-5',
+      description: 'Cuestionario propio de autodescripción con 20 afirmaciones (escala de acuerdo 1-5) que estima cinco dimensiones globales de personalidad en el trabajo: Extraversión, Ajuste emocional, Objetividad, Independencia y Autocontrol. Cada dimensión tiene un ítem invertido para reducir el efecto de responder "de acuerdo" a todo. Es descriptivo: no se compara con un perfil esperado.',
       dimensions: [
         { key:'EX', name:'Extraversión', desc:'Factor global que integra Afabilidad (A), Animación (F), Atrevimiento (H) y Autosuficiencia invertida (Q2). Mide la orientación social del candidato: desde la calidez, sociabilidad y búsqueda de contacto interpersonal hasta la reserva, independencia social y preferencia por el trabajo individual.' },
         { key:'AN', name:'Ajuste Emocional (Baja Ansiedad)', desc:'Factor global que integra Estabilidad Emocional (C), Aprensión invertida (O) y Tensión invertida (Q4). Puntuaciones altas indican serenidad, seguridad emocional y baja reactividad al estrés. Puntuaciones bajas sugieren ansiedad rasgo, preocupación excesiva y vulnerabilidad ante la presión.' },
@@ -8236,7 +8225,7 @@ function renderWikiTab() {
         { key:'AC', name:'Autocontrol', desc:'Factor global que integra Animación invertida (F), Atención a las Normas (G), Abstracción invertida (M) y Perfeccionismo (Q3). Mide la capacidad de autorregulación: desde la disciplina, el cumplimiento de normas y la planificación metódica hasta la espontaneidad, la flexibilidad y la tendencia a la improvisación.' },
       ],
       scoring: 'Cada dimensión se calcula como promedio de sus 4 ítems (escala 1-5), normalizado a 0-100. Incluye ítems inversos para control de aquiescencia. Clasificación: Muy Bajo (0-19), Bajo (20-39), Medio (40-59), Alto (60-79), Muy Alto (80-100). No hay puntaje "bueno" o "malo" universal — el perfil óptimo depende del cargo.',
-      reference: 'Basado en el 16PF-5 de Cattell, Cattell & Cattell (1993). Estructura factorial de segundo orden según Conn & Rieke (1994). Adaptación abreviada para contexto psicolaboral chileno.'
+      reference: 'Desarrollo propio. Las cinco dimensiones se inspiran en los factores globales de personalidad descritos en la literatura (Cattell; Conn & Rieke, 1994); no reproduce ítems ni normas de instrumentos comerciales.',
     },
   };
 
@@ -8377,7 +8366,7 @@ function filterWiki() {
 // ── Render Batería Tab ──
 // Maps test IDs to their parameter dimensions for parameterization
 var BATTERY_TEST_DIMENSIONS = {
-  pai:         { icon:'🔎', title:'Ajuste Psicológico (PAI)',          keys:['EE','AS','ON','ME','IL','ML'] },
+  pai:         { icon:'🔎', title:'Ajuste laboral',                    keys:['EE','AS','ON','ME','IL','ML'] },
   dc0:         { icon:'⚡', title:'Aptitud Cognitiva (DC-0)',           keys:['V','N','L'] },
   situacional: { icon:'💡', title:'Juicio Situacional',                keys:['_self'] },
   vigilancia:  { icon:'🛡', title:'Aptitud Vigilancia',               keys:['_self'] },
@@ -8414,7 +8403,7 @@ function renderBateriaTab() {
     comprension:'Interpretar instrucciones multi-condición.',
     normativa_ohs:'15 preguntas sobre DS 44, Ley 16.744, DS 594 y Ley Karin. Recomendado para Prevencionista de Riesgo.',
     integridad:'24 ítems, ~5 min. Actitudes ante hurto, registros, protocolos, sobornos y presiones. Para guardias y seguridad. El candidato la ve como "Actitudes en el trabajo".',
-    pai:'⚠ Reemplazado por juegos conductuales en Supervisor. Disponible para otros perfiles.',
+    pai:'Estabilidad emocional, adaptación, normas, estrés, integridad y motivación en el trabajo.',
     disc:'Dominancia, Influencia, Estabilidad, Cumplimiento.',
     pf16:'Extraversión, ajuste emocional, dureza, independencia y autocontrol.',
     situacional:'Escenarios laborales con opciones de respuesta.',
@@ -8516,13 +8505,13 @@ function renderBateriaTab() {
   var TM_TEST_ORDER = [
     { id:'dc0',          label:'Aptitud Cognitiva (DC0)', icon:'🧠' },
     { id:'comprension',  label:'Comprensión Lectora',     icon:'📖' },
-    { id:'pai',          label:'Inventario de Personalidad (PAI)', icon:'🧬' },
+    { id:'pai',          label:'Ajuste laboral',          icon:'🔎' },
     { id:'situacional',  label:'Evaluación Situacional',  icon:'💡' },
     { id:'vigilancia',   label:'Vigilancia y Protocolos', icon:'👁' },
     { id:'normativa_ohs',label:'Conocimiento Normativo OHS', icon:'📐' },
     { id:'integridad',   label:'Integridad laboral',      icon:'🧭' },
     { id:'disc',         label:'Perfil DISC',             icon:'🎯' },
-    { id:'pf16',         label:'16PF Abreviado',          icon:'🧬' },
+    { id:'pf16',         label:'Personalidad laboral',    icon:'🧬' },
   ];
   var tmTotal = TM_TEST_ORDER.reduce(function(a, t){ return a + (TM_MINS_CONFIG[t.id] || TM_MINS_DEFAULTS[t.id] || 4); }, 0) + 2;
 
@@ -9907,16 +9896,16 @@ async function exportCSV() {
     'Nombre','Apellido','Email','Teléfono','RUT','Cargo','Perfil','Fecha',
     'Educación','OS-10','Rubro',
     // Alertas de validez
-    'Sesgo DS (PAI)','Media DS','Aquiescencia (PAI)','SD Respuestas',
+    'Sesgo DS (Ajuste)','Media DS','Aquiescencia (Ajuste)','SD Respuestas',
     // PAI
-    'PAI Est. Emocional (1-5)','PAI Adapt. Social (1-5)','PAI Orient. Normativa (1-5)',
-    'PAI Manejo Estrés (1-5)','PAI Integridad (1-5)','PAI Motivación (1-5)',
+    'Ajuste Est. Emocional (1-5)','Ajuste Adapt. Social (1-5)','Ajuste Orient. Normativa (1-5)',
+    'Ajuste Manejo Estrés (1-5)','Ajuste Integridad (1-5)','Ajuste Motivación (1-5)',
     // DC-0
     'DC0 Verbal (1-5)','DC0 Numérico (1-5)','DC0 Lógico (1-5)','DC0 Total (1-5)',
     // Situacional / Vigilancia / Comprensión
     'Juicio Situacional (1-5)','Apt. Vigilancia (1-5)','Comprensión Instrucciones (1-5)',
     // Tiempos por test (segundos)
-    'T. PAI (s)','T. DC0 (s)','T. Situacional (s)','T. Vigilancia (s)','T. Comprensión (s)',
+    'T. Ajuste (s)','T. DC0 (s)','T. Situacional (s)','T. Vigilancia (s)','T. Comprensión (s)',
     // Historial
     'Empresa 1','Cargo 1','Duración 1','Salida 1',
     'Empresa 2','Cargo 2','Duración 2','Salida 2',
