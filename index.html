@@ -5340,16 +5340,18 @@ var _GNG = null;
 var _GNG_CFG = { practica:[7, 3], tarea:[75, 25], estimulo:600, ventana:1000, pausaMin:500, pausaMax:1100, maxPracticas:3 };
 
 function _renderGonogoGame() {
-  var fig = function(col, forma){ return '<span style="display:inline-block;width:18px;height:18px;vertical-align:-4px;margin-right:6px;background:' + col + ';border-radius:' + forma + '"></span>'; };
+  var tarjeta = function(fig, accion, col, bg){ return '<div style="flex:1;background:' + bg + ';border-radius:16px;padding:16px 10px;display:flex;flex-direction:column;align-items:center;gap:10px">'
+    + fig + '<div style="font-size:15px;font-weight:900;letter-spacing:.3px;color:' + col + '">' + accion + '</div></div>'; };
   return '<div style="max-width:440px;margin:0 auto;text-align:center">'
     + '<div id="gng-intro">'
-    +   '<div style="font-size:14px;color:var(--ink2);line-height:1.7;text-align:left;background:var(--surface2);border-radius:12px;padding:14px 16px;margin-bottom:16px">'
-    +     'En el recuadro aparecerán figuras, una por una:<br>'
-    +     fig('#22c55e', '50%') + '<strong>Círculo verde:</strong> toca el recuadro lo más rápido que puedas (en computador, también puedes usar la barra espaciadora).<br>'
-    +     fig('#ef4444', '4px') + '<strong>Cuadrado rojo:</strong> no toques nada.<br>'
-    +     '<span style="display:block;margin-top:8px;color:var(--ink3);font-size:13px">Responde rápido, pero sin equivocarte. Primero harás una práctica corta. La tarea dura unos 3 minutos y se pausa si sales de la pantalla.</span>'
+    +   '<div style="font-size:21px;font-weight:900;color:var(--ink);line-height:1.25;margin-bottom:6px">Rápido, pero sin equivocarte</div>'
+    +   '<div style="font-size:14px;color:var(--ink3);margin-bottom:16px">Aparecerán figuras, una por una.</div>'
+    +   '<div style="display:flex;gap:10px;margin-bottom:16px">'
+    +     tarjeta('<div style="width:64px;height:64px;border-radius:50%;background:#22c55e"></div>', '¡TOCA!', '#15803d', '#f0fdf4')
+    +     tarjeta('<div style="width:64px;height:64px;border-radius:12px;background:#ef4444"></div>', 'NO TOQUES', '#b91c1c', '#fef2f2')
     +   '</div>'
-    +   '<button type="button" onclick="_gngIniciar(\'practica\')" style="padding:13px 32px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit">Comenzar práctica</button>'
+    +   '<div style="font-size:13px;color:var(--ink3);line-height:1.5;margin-bottom:16px">En computador también puedes usar la barra espaciadora.<br>Primero una práctica corta · unos 3 minutos</div>'
+    +   '<button type="button" onclick="_gngIniciar(\'practica\')" style="padding:14px 36px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:800;cursor:pointer;font-family:inherit">Comenzar práctica</button>'
     + '</div>'
     + '<div id="gng-stage" style="display:none">'
     +   '<div id="gng-prog" style="font-size:12px;font-weight:700;color:var(--ink4);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px"></div>'
