@@ -1604,6 +1604,7 @@ body.exam-away #exam-shield{display:flex}
       <button class="nav-btn" id="nav-users" onclick="adminTab('users',this)"><span>👤</span><span>Usuarios</span></button>
       <div id="role-badge" style="font-size:11px;font-weight:700;text-align:center;padding:5px 8px;border-radius:100px;background:#f0fdf4;color:#16a34a;margin:6px 8px 2px;border:1px solid #bbf7d0"></div>
       <button class="nav-btn" onclick="showShareModal()" style="color:#16a34a;font-weight:600;margin-top:4px"><span>🔗</span><span>Compartir evaluación</span></button>
+      <button class="nav-btn" id="backup-btn" onclick="downloadFullBackup()" title="Descarga todas las evaluaciones y la configuración en un archivo"><span>💾</span><span style="display:flex;flex-direction:column;align-items:flex-start;line-height:1.25">Respaldo completo<span id="backup-last" style="font-size:10px;font-weight:500;color:#94a3b8"></span></span></button>
       <div id="sidebar-username" style="padding:6px 12px 2px;display:flex;flex-direction:column;gap:3px">
         <span id="sidebar-user-label" style="font-size:11px;color:#94a3b8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
         <div id="session-timer-wrap" style="display:flex;align-items:center;gap:5px">
@@ -1644,6 +1645,7 @@ body.exam-away #exam-shield{display:flex}
           <div style="display:flex;flex-direction:column;gap:4px;margin-top:20px;border-top:1px solid var(--border);padding-top:12px">
             <button class="nav-btn" onclick="toggleDarkMode()" style="color:var(--ink3)"><span>🌙</span><span>Modo oscuro</span></button>
             <button class="nav-btn" onclick="closeMobileSidebar();showShareModal()" style="color:#16a34a"><span>🔗</span><span>Compartir</span></button>
+            <button class="nav-btn" onclick="closeMobileSidebar();downloadFullBackup()"><span>💾</span><span>Respaldo completo</span></button>
             <button class="nav-btn" onclick="closeMobileSidebar();adminLogout()" style="color:var(--ink3)"><span>⎋</span><span>Cerrar sesión</span></button>
           </div>
         </div>
@@ -9771,8 +9773,96 @@ function refreshCandView() {
   renderCandidatesTable();
 }
 
+// ═══════════════════════════════════════════════════════════
+//  RESPALDO COMPLETO
+//  El plan gratuito de Supabase no guarda copias de seguridad: este botón descarga
+//  todas las evaluaciones (con sus respuestas) y la configuración en un archivo JSON.
+// ═══════════════════════════════════════════════════════════
+var _BACKUP_KEY = 'psicoeval_ultimo_respaldo';
+var _BACKUP_DIAS_AVISO = 7;
+
+function _backupDias() {
+  var t = null;
+  try { t = localStorage.getItem(_BACKUP_KEY); } catch(e) {}
+  return t ? Math.floor((Date.now() - new Date(t).getTime()) / 86400000) : null;
+}
+
+function _backupLabel() {
+  var el = document.getElementById('backup-last'); if (!el) return;
+  var d = _backupDias();
+  var atrasado = d === null || d >= _BACKUP_DIAS_AVISO;
+  el.textContent = d === null ? 'Nunca en este equipo' : d === 0 ? 'Último: hoy' : 'Último: hace ' + d + (d === 1 ? ' día' : ' días');
+  el.style.color = atrasado ? '#d97706' : '#94a3b8';
+  el.style.fontWeight = atrasado ? '700' : '500';
+}
+
+async function downloadFullBackup() {
+  if (!S.authToken) { toast('Inicie sesión en el panel para descargar el respaldo', 'er'); return; }
+  if (!(await appConfirm('Se descargará un archivo con todas las evaluaciones, sus respuestas y la configuración. Contiene datos personales y psicológicos: guárdelo en un lugar seguro y no lo comparta. ¿Continuar?'))) return;
+  var btn = document.getElementById('backup-btn');
+  if (btn) btn.disabled = true;
+  toast('Preparando respaldo…', 'ok');
+  try {
+    // Sesión vencida (p. ej. el computador estuvo suspendido): se renueva antes de empezar
+    if (S.refreshToken && (!S.tokenExpiry || S.tokenExpiry - Date.now() < 120000)) {
+      try {
+        var tk = await _supaRefreshToken();
+        S.authToken = tk.access_token; S.refreshToken = tk.refresh_token;
+        S.tokenExpiry = Date.now() + ((tk.expires_in || 3600) * 1000);
+        saveSession(); _scheduleTokenRefresh();
+      } catch(e) { throw new Error('la sesión venció; vuelva a iniciar sesión'); }
+    }
+    // Candidatos, por páginas de 1000 (límite del servidor), con el total para verificar
+    var cands = [], total = null, PAG = 1000;
+    for (var desde = 0; ; desde += PAG) {
+      var r = await fetch(SUPA_URL + '/rest/v1/candidates?select=*&order=created_at.asc,id.asc', {
+        headers: Object.assign({}, getDBHeaders(), { 'Range-Unit':'items', 'Range': desde + '-' + (desde + PAG - 1), 'Prefer':'count=exact' })
+      });
+      if (r.status === 401) throw new Error('la sesión venció; vuelva a iniciar sesión');
+      if (!r.ok) throw new Error('candidatos: HTTP ' + r.status);
+      var cr = r.headers.get('content-range') || '';
+      if (cr.indexOf('/') !== -1 && cr.split('/')[1] !== '*') total = +cr.split('/')[1];
+      var lote = await r.json();
+      cands = cands.concat(lote);
+      if (lote.length < PAG) break;
+    }
+    if (total !== null && cands.length !== total) throw new Error('se descargaron ' + cands.length + ' de ' + total + ' evaluaciones');
+    var rc = await fetch(SUPA_URL + '/rest/v1/psicoeval_config?select=key,value,updated_at', { headers: getDBHeaders() });
+    if (!rc.ok) throw new Error('configuración: HTTP ' + rc.status);
+    var cfg = await rc.json();
+
+    var ahora = new Date();
+    var data = {
+      tipo: 'psicoeval_respaldo', version: 1,
+      generado: ahora.toISOString(),
+      generado_por: (document.getElementById('sidebar-user-label') || {}).textContent || '',
+      origen: SUPA_URL,
+      totales: { evaluaciones: cands.length, con_respuestas: cands.filter(function(c){ return c.respuestas; }).length, configuracion: cfg.length },
+      configuracion: cfg,
+      evaluaciones: cands
+    };
+    var pad = function(n){ return String(n).padStart(2, '0'); };
+    var nombre = 'psicoeval_respaldo_' + ahora.getFullYear() + '-' + pad(ahora.getMonth() + 1) + '-' + pad(ahora.getDate()) + '_' + pad(ahora.getHours()) + pad(ahora.getMinutes()) + '.json';
+    var blob = new Blob([JSON.stringify(data, null, 1)], { type:'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = nombre;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 30000);
+
+    try { localStorage.setItem(_BACKUP_KEY, ahora.toISOString()); } catch(e) {}
+    _backupLabel();
+    _logConfigChange('Respaldo completo descargado', cands.length + ' evaluaciones · ' + cfg.length + ' claves de configuración');
+    toast('✓ Respaldo descargado: ' + cands.length + (cands.length === 1 ? ' evaluación' : ' evaluaciones') + ' (' + Math.max(1, Math.round(blob.size / 1024)) + ' KB)', 'ok');
+  } catch(e) {
+    toast('No se pudo completar el respaldo: ' + e.message + '. No se descargó ningún archivo.', 'er');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
 function adminTab(id, btn) {
   S.currentAdminTab = id;
+  _backupLabel();
   saveSession();
   ['dashboard','candidates','params','users','cargos','wiki','pipeline','analisis'].forEach(t => {
     const el = document.getElementById('tab-' + t); if(el) el.style.display = t === id ? 'block' : 'none';
