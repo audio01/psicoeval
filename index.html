@@ -851,7 +851,7 @@ body.exam-away #exam-shield{display:flex}
 <div id="view-landing" class="view">
   <!-- Minimal top bar — admin access only, discreet -->
   <div style="position:absolute;top:16px;right:20px;z-index:10;display:flex;gap:6px">
-    <button onclick="promptTestMode()" style="background:#6366f1;border:none;font-size:12px;color:#fff;cursor:pointer;padding:6px 14px;border-radius:8px;font-family:inherit;font-weight:600;transition:opacity .15s" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">🧪 Prueba</button>
+    <button onclick="promptTestMode()" style="background:none;border:none;font-size:12px;color:var(--ink4);cursor:pointer;padding:6px 10px;border-radius:8px;font-family:inherit;transition:color .15s" onmouseover="this.style.color='var(--ink2)'" onmouseout="this.style.color='var(--ink4)'">Modo prueba</button>
     <button onclick="gotoAdminLogin()" style="background:none;border:none;font-size:12px;color:var(--ink4);cursor:pointer;padding:6px 10px;border-radius:8px;font-family:inherit;transition:color .15s" onmouseover="this.style.color='var(--ink2)'" onmouseout="this.style.color='var(--ink4)'">Admin</button>
   </div>
 
@@ -874,7 +874,7 @@ body.exam-away #exam-shield{display:flex}
           <span style="font-size:20px;flex-shrink:0;margin-top:1px">⏱</span>
           <div>
             <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:2px">Duración estimada</div>
-            <div style="font-size:13px;color:var(--ink3);line-height:1.5">La duración se ajusta automáticamente según las pruebas asignadas a tu cargo. Responde con tranquilidad, no hay respuestas correctas o incorrectas en todos los instrumentos.</div>
+            <div style="font-size:13px;color:var(--ink3);line-height:1.5">La duración depende de las pruebas asignadas a tu cargo. Algunas miden conocimientos y razonamiento; en otras no hay respuestas correctas o incorrectas. Responde con tranquilidad y de forma honesta.</div>
           </div>
         </div>
         <div style="display:flex;align-items:flex-start;gap:12px;padding:14px 16px;background:var(--surface);border-radius:12px;border:1px solid var(--border)">
@@ -957,26 +957,26 @@ body.exam-away #exam-shield{display:flex}
         <div class="form-row">
           <div class="field">
             <label for="r-nombre">Nombres *</label>
-            <input id="r-nombre" placeholder="Ej: María José"
+            <input id="r-nombre" autocomplete="given-name" placeholder="Ej: María José"
               aria-required="true" aria-describedby="e-nombre" aria-invalid="false">
             <span class="err" id="e-nombre" role="alert" aria-live="polite"></span>
           </div>
           <div class="field">
             <label for="r-apellido">Apellidos *</label>
-            <input id="r-apellido" placeholder="Ej: González"
+            <input id="r-apellido" autocomplete="family-name" placeholder="Ej: González"
               aria-required="true" aria-describedby="e-apellido" aria-invalid="false">
             <span class="err" id="e-apellido" role="alert" aria-live="polite"></span>
           </div>
         </div>
         <div class="field">
           <label for="r-email">Correo electrónico *</label>
-          <input id="r-email" type="email" placeholder="correo@ejemplo.com"
+          <input id="r-email" autocomplete="email" type="email" placeholder="correo@ejemplo.com"
             aria-required="true" aria-describedby="e-email" aria-invalid="false">
           <span class="err" id="e-email" role="alert" aria-live="polite"></span>
         </div>
         <div class="field">
           <label for="r-telefono">Teléfono *</label>
-          <input id="r-telefono" type="tel" placeholder="9 1234 5678" maxlength="11"
+          <input id="r-telefono" autocomplete="tel-national" type="tel" placeholder="9 1234 5678" maxlength="11"
             oninput="formatTel(this)"
             aria-required="true" aria-describedby="e-telefono" aria-invalid="false">
           <span class="err" id="e-telefono" role="alert" aria-live="polite"></span>
@@ -992,7 +992,7 @@ body.exam-away #exam-shield{display:flex}
           </div>
           <div class="field">
             <label for="r-fechanac">Fecha de nacimiento *</label>
-            <input id="r-fechanac" type="date" style="width:100%"
+            <input id="r-fechanac" autocomplete="bday" type="date" style="width:100%"
               max="" oninput="validateFechanacLive(this.value)"
               aria-required="true" aria-describedby="e-fechanac" aria-invalid="false">
             <span class="err" id="e-fechanac" role="alert" aria-live="polite"></span>
@@ -1047,41 +1047,36 @@ body.exam-away #exam-shield{display:flex}
         <!-- Nivel educativo guardia — explícito -->
         <div class="field">
           <label>Nivel educacional *</label>
-          <p style="font-size:12px;color:var(--ink3);margin:4px 0 8px;line-height:1.5">El cargo requiere <strong>mínimo 4º Medio completo</strong>. Selecciona tu nivel actual.</p>
+          <p style="font-size:12px;color:var(--ink3);margin:4px 0 8px;line-height:1.5">Selecciona el nivel más alto que completaste.</p>
           <div style="display:flex;flex-direction:column;gap:7px">
             <label id="edu-g-basica-lbl" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s">
               <input type="radio" name="edu-guardia" id="r-edu-g-basica" value="basica" onchange="styleEduG()" onclick="setTimeout(styleEduG,0)" style="width:18px;height:18px;accent-color:var(--accent)">
               <div>
                 <div style="font-size:13px;font-weight:600;color:var(--ink)">Educación Básica</div>
-                <div style="font-size:11px;color:#e11d48;font-weight:600">No cumple el requisito mínimo</div>
               </div>
             </label>
             <label id="edu-g-sin4-lbl" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s">
               <input type="radio" name="edu-guardia" id="r-edu-g-sin4" value="media_incompleta" onchange="styleEduG()" onclick="setTimeout(styleEduG,0)" style="width:18px;height:18px;accent-color:var(--accent)">
               <div>
                 <div style="font-size:13px;font-weight:600;color:var(--ink)">Educación Media incompleta</div>
-                <div style="font-size:11px;color:#e11d48;font-weight:600">No cumple el requisito mínimo</div>
               </div>
             </label>
             <label id="edu-g-4medio-lbl" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s">
               <input type="radio" name="edu-guardia" id="r-edu-g-4medio" value="media" onchange="styleEduG()" onclick="setTimeout(styleEduG,0)" style="width:18px;height:18px;accent-color:var(--accent)">
               <div>
                 <div style="font-size:13px;font-weight:600;color:var(--ink)">4º Medio completo</div>
-                <div style="font-size:11px;color:#16a34a;font-weight:600">✓ Cumple el requisito mínimo</div>
               </div>
             </label>
             <label id="edu-g-tecnica-lbl" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s">
               <input type="radio" name="edu-guardia" id="r-edu-g-tecnica" value="tecnica" onchange="styleEduG()" onclick="setTimeout(styleEduG,0)" style="width:18px;height:18px;accent-color:var(--accent)">
               <div>
                 <div style="font-size:13px;font-weight:600;color:var(--ink)">Técnico de Nivel Superior</div>
-                <div style="font-size:11px;color:#16a34a;font-weight:600">✓ Cumple el requisito mínimo</div>
               </div>
             </label>
             <label id="edu-g-univ-lbl" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s">
               <input type="radio" name="edu-guardia" id="r-edu-g-univ" value="universitaria" onchange="styleEduG()" onclick="setTimeout(styleEduG,0)" style="width:18px;height:18px;accent-color:var(--accent)">
               <div>
                 <div style="font-size:13px;font-weight:600;color:var(--ink)">Universitaria o superior</div>
-                <div style="font-size:11px;color:#16a34a;font-weight:600">✓ Cumple el requisito mínimo</div>
               </div>
             </label>
 
@@ -1313,7 +1308,7 @@ body.exam-away #exam-shield{display:flex}
     <div id="reg-step-3" class="card cp" style="display:none">
       <h2 style="font-size:22px;font-weight:800;margin-bottom:4px">Experiencia laboral</h2>
       <p style="font-size:13px;color:var(--ink3);margin-bottom:4px">Indica tus dos últimas experiencias laborales más estables.</p>
-      <p style="font-size:12px;color:var(--ink4);margin-bottom:20px">Si no tienes experiencia, puedes continuar sin llenar estos campos.</p>
+      <p style="font-size:12px;color:var(--ink4);margin-bottom:20px">Si no tienes experiencia laboral, deja estos campos en blanco. La referencia de más abajo sí es obligatoria.</p>
 
       <!-- Experiencia 1 -->
       <div style="background:var(--surface2);border-radius:12px;padding:16px;margin-bottom:14px;border:1px solid var(--border)">
@@ -1390,20 +1385,20 @@ body.exam-away #exam-shield{display:flex}
           <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#0369a1">📞 Referencia Laboral</div>
           <span style="font-size:10px;font-weight:800;background:#dc2626;color:#fff;padding:2px 8px;border-radius:100px;letter-spacing:.4px;text-transform:uppercase">Obligatorio</span>
         </div>
-        <p style="font-size:12px;color:#475569;margin:0 0 10px;line-height:1.5">Indica los datos de un <strong>ex-jefe, supervisor o encargado directo</strong> que pueda confirmar tu experiencia laboral. El equipo de RRHH lo contactará para verificar la información.</p>
+        <p style="font-size:12px;color:#475569;margin:0 0 10px;line-height:1.5">Indica los datos de un <strong>ex-jefe, supervisor o encargado directo</strong> que pueda confirmar tu experiencia laboral. Si no tienes experiencia, indica a alguien que pueda dar referencias sobre ti: un profesor, jefe de práctica o encargado de un voluntariado. El equipo de RRHH lo contactará para verificar la información.</p>
         <div style="background:#fef2f2;border:1.5px solid #fca5a5;border-radius:8px;padding:10px 13px;margin-bottom:12px;display:flex;gap:8px;align-items:flex-start">
           <span style="font-size:15px;flex-shrink:0;line-height:1.4">⚠️</span>
-          <span style="font-size:12px;color:#991b1b;line-height:1.5"><strong>Esta persona será contactada.</strong> Asegúrate de que el número sea real y que la persona recuerde haber trabajado contigo. Datos falsos o no verificables invalidan la evaluación.</span>
+          <span style="font-size:12px;color:#991b1b;line-height:1.5"><strong>Esta persona será contactada.</strong> Asegúrate de que el número sea real y que la persona te conozca. Datos falsos o no verificables invalidan la evaluación.</span>
         </div>
         <div style="display:flex;flex-direction:column;gap:10px">
           <div class="field">
-            <label>Empresa donde trabajaste <span style="color:#dc2626">*</span></label>
+            <label>Empresa o institución <span style="color:#dc2626">*</span></label>
             <input id="r-ref-empresa" placeholder="Nombre de la empresa">
             <span id="e-ref-empresa" style="font-size:11px;color:#dc2626;display:none;margin-top:3px"></span>
           </div>
           <div class="form-row">
             <div class="field">
-              <label>Nombre de tu ex-jefe o supervisor <span style="color:#dc2626">*</span></label>
+              <label>Nombre de tu ex-jefe, supervisor o referente <span style="color:#dc2626">*</span></label>
               <input id="r-ref-nombre" placeholder="Nombre y apellido">
               <span id="e-ref-nombre" style="font-size:11px;color:#dc2626;display:none;margin-top:3px"></span>
             </div>
@@ -2292,13 +2287,13 @@ function renderConfigLog() {
 loadBatteryConfig();
 
 const PERFIL_META = {
-  jefatura:        { label:'Jefatura',                   icon:'👔', color:'var(--blue)',  desc:'Evaluación para cargos de liderazgo y gestión de equipos. Incluye aptitud cognitiva, juicio situacional, perfil conductual (DISC y personalidad laboral) y juegos de crisis y dilemas éticos.' },
-  administrativo:  { label:'Administrativo',             icon:'💼', color:'var(--green)', desc:'Evaluación para roles administrativos y de soporte. Incluye aptitud cognitiva, perfil conductual (DISC y personalidad laboral) y dilemas de normatividad e integridad.' },
-  guardia:         { label:'Guardia de Seguridad',       icon:'🛡', color:'var(--ink2)',  desc:'Evaluación para roles de seguridad. Incluye juicio situacional, aptitud de vigilancia, perfil conductual (DISC y personalidad laboral) y juegos de crisis e integridad.' },
-  supervisor:      { label:'Supervisor de Seguridad',    icon:'⚙️', color:'var(--amber)', desc:'Evaluación para supervisores de turno u operaciones. Incluye aptitud cognitiva, juicio situacional, perfil conductual (DISC y personalidad laboral) y juegos conductuales de crisis y dilemas supervisivos.' },
-  prevencionista:  { label:'Prevencionista de Riesgo',   icon:'🦺', color:'var(--amber)', desc:'Evaluación para profesionales en prevención de riesgos laborales. Incluye aptitud analítica, comprensión de normativas, juicio situacional, perfil conductual (DISC y personalidad laboral) y dilemas de integridad técnica.' },
-  conductor:       { label:'Conductor',                  icon:'🚗', color:'#0891b2',      desc:'Evaluación para conductores profesionales. Incluye ajuste laboral, aptitud de vigilancia, comprensión de instrucciones, perfil conductual (DISC y personalidad laboral) y juegos de respuesta ante emergencias e integridad operacional.' },
-  auxiliar_aseo:   { label:'Auxiliar de Aseo',           icon:'🧹', color:'#0d9488',      desc:'Evaluación para personal de aseo y limpieza. Incluye ajuste laboral, integridad laboral, comprensión de instrucciones de trabajo y perfil conductual (DISC y personalidad laboral).' },
+  jefatura:        { label:'Jefatura',                   icon:'👔', color:'var(--blue)',  desc:'Evaluación para cargos de jefatura y conducción de equipos.' },
+  administrativo:  { label:'Administrativo',             icon:'💼', color:'var(--green)', desc:'Evaluación para cargos administrativos y de apoyo.' },
+  guardia:         { label:'Guardia de Seguridad',       icon:'🛡', color:'var(--ink2)',  desc:'Evaluación para guardias de seguridad.' },
+  supervisor:      { label:'Supervisor de Seguridad',    icon:'⚙️', color:'var(--amber)', desc:'Evaluación para supervisores de seguridad, de turno u operaciones.' },
+  prevencionista:  { label:'Prevencionista de Riesgo',   icon:'🦺', color:'var(--amber)', desc:'Evaluación para profesionales en prevención de riesgos.' },
+  conductor:       { label:'Conductor',                  icon:'🚗', color:'#0891b2',      desc:'Evaluación para conductores profesionales.' },
+  auxiliar_aseo:   { label:'Auxiliar de Aseo',           icon:'🧹', color:'#0d9488',      desc:'Evaluación para personal de aseo y limpieza.' },
 };
 
 // ── localStorage key constants (centralizadas para evitar typos) ──────────────
@@ -5057,42 +5052,59 @@ var _timerInterval = null;
 var _tabHidden = false;
 var _timerPaused = false;
 
+// El cronómetro se basa en el reloj real, no en contar ticks: en el celular el navegador
+// suspende los intervalos cuando la persona cambia de app, y el tiempo se detenía.
+// Ahora, al volver, se descuenta lo que estuvo fuera, al doble.
+var _timerLastTick = 0;
+var _timerSaveCount = 0;
+
 function startTestTimer() {
   var mins = S._testTotalMinutes || 40;
-  _timerSeconds = mins * 60;
+  // Al retomar una evaluación se conserva el tiempo que quedaba (recargar no lo reinicia)
+  _timerSeconds = (S._resumeSeconds !== undefined && S._resumeSeconds !== null) ? S._resumeSeconds : mins * 60;
+  S._resumeSeconds = null;
+  _timerLastTick = Date.now();
   updateTimerDisplay();
   if (_timerInterval) clearInterval(_timerInterval);
-  _timerInterval = setInterval(function() {
-    // Skip if timer is paused (e.g., during personality tests)
-    if (_timerPaused) {
-      return;
-    }
-    // Deduct 1s normally, 2s if tab is hidden (double speed)
-    var prevSeconds = _timerSeconds;
-    _timerSeconds -= _tabHidden ? 2 : 1;
-    if (_timerSeconds <= 0) {
-      _timerSeconds = 0;
-      updateTimerDisplay();
-      clearInterval(_timerInterval);
-      _timerInterval = null;
-      timeExpired();
-      return;
-    }
-    updateTimerDisplay();
-    // Avisos al cruzar el umbral (con la pestaña oculta se descuenta de a 2 s y podría saltarse el valor exacto)
-    // Warn at 5 minutes
-    if (prevSeconds > 300 && _timerSeconds <= 300) {
-      showTimerWarning('⏱ Quedan 5 minutos. Responde las preguntas que puedas.');
-    }
-    // Warn at 1 minute
-    if (prevSeconds > 60 && _timerSeconds <= 60) {
-      showTimerWarning('⚠️ Último minuto. Las respuestas se enviarán automáticamente.');
-    }
-  }, 1000);
+  if (_timerSeconds <= 0) { _timerSeconds = 0; updateTimerDisplay(); timeExpired(); return; }
+  _timerInterval = setInterval(_timerTick, 1000);
 
   // Tab visibility detection
   document.addEventListener('visibilitychange', onVisibilityChange);
   _integStart();
+}
+
+function _timerTick() {
+  if (!_timerInterval) return;
+  var now = Date.now();
+  var dt = Math.floor((now - _timerLastTick) / 1000);
+  if (dt <= 0) return;
+  _timerLastTick += dt * 1000;
+  // Pruebas sin tiempo (personalidad): el reloj no corre
+  if (_timerPaused) return;
+  // Fuera de la ventana el tiempo corre al doble
+  var prevSeconds = _timerSeconds;
+  _timerSeconds -= dt * (_tabHidden ? 2 : 1);
+  // Guarda el tiempo restante cada ~15 s, para que una recarga no lo reinicie
+  if (++_timerSaveCount % 15 === 0 && _testInProgress) saveTestProgress();
+  if (_timerSeconds <= 0) {
+    _timerSeconds = 0;
+    updateTimerDisplay();
+    clearInterval(_timerInterval);
+    _timerInterval = null;
+    timeExpired();
+    return;
+  }
+  updateTimerDisplay();
+  // Avisos al cruzar el umbral (se descuentan varios segundos a la vez y podría saltarse el valor exacto)
+  // Warn at 5 minutes
+  if (prevSeconds > 300 && _timerSeconds <= 300) {
+    showTimerWarning('⏱ Quedan 5 minutos. Responde las preguntas que puedas.');
+  }
+  // Warn at 1 minute
+  if (prevSeconds > 60 && _timerSeconds <= 60) {
+    showTimerWarning('⚠️ Último minuto. Las respuestas se enviarán automáticamente.');
+  }
 }
 
 function stopTestTimer() {
@@ -5102,6 +5114,9 @@ function stopTestTimer() {
 }
 
 function onVisibilityChange() {
+  // Antes de cambiar el estado, descuenta el tiempo transcurrido con el estado anterior
+  // (al volver al celular, todo el tiempo fuera cuenta al doble)
+  _timerTick();
   _tabHidden = document.hidden;
   var timerEl = document.getElementById('test-timer');
   if (!timerEl) return;
@@ -8942,6 +8957,11 @@ function _calibPanelHtml(perfil, tid) {
         return d[1] + ': <strong>' + a + ' de ' + l.length + '</strong>';
       });
       if (dTxt.length) txt += '<br>Sobre el mínimo, según su dictamen en la entrevista: ' + dTxt.join(' · ') + '.';
+      var sg = { exito:[], fracaso:[] };
+      cands.forEach(function(c){ var r = _segResultado(c.scores._seguimiento), v = _calibPuntaje(c.scores, tid, k); if (sg[r] && v !== null) sg[r].push(v); });
+      var sgTxt = [['exito','Buen resultado'], ['fracaso','Mal resultado']].filter(function(g){ return sg[g[0]].length; }).map(function(g){
+        return g[1] + ': <strong>' + sg[g[0]].filter(function(v){ return v >= cfg.min; }).length + ' de ' + sg[g[0]].length + '</strong>'; });
+      if (sgTxt.length) txt += '<br>Sobre el mínimo, según el seguimiento después de la contratación: ' + sgTxt.join(' · ') + '.';
       if (vals.length < 30) txt += '<br><span style="color:#94a3b8">Con menos de 30 evaluaciones, tome estos datos solo como orientación.</span>';
     }
     out += '<div style="font-size:11.5px;color:#475569;line-height:1.6;margin-top:8px">' + txt + '</div>';
@@ -9954,6 +9974,8 @@ async function renderDashboard() {
   });
   h += '</div>';
 
+  h += _segAvisoDashboard(allCands);
+
   // ── 3 Big Metrics — Enterprise Premium ──
   var compPct  = total ? Math.round(nComp/total*100) : 0;
 
@@ -10849,6 +10871,7 @@ function saveTestProgress() {
       gameResults:  S.gameResults || {},
       blockTimes:   S.blockTimes || {},
       integrity:    S.integrity || null,
+      timerSeconds: _testInProgress ? _timerSeconds : null,
       savedAt:      Date.now(),
     }));
   } catch(e) { console.warn('saveTestProgress failed:', e.message); }
@@ -10883,6 +10906,13 @@ function resumeTestProgress() {
   S.gameResults   = p.gameResults || {};
   S.blockTimes    = p.blockTimes || {};
   S.integrity     = p.integrity || null;
+  // Tiempo restante: lo que quedaba al guardar, menos el tiempo transcurrido desde entonces
+  // (salvo si estaba en una prueba sin tiempo)
+  if (typeof p.timerSeconds === 'number') {
+    var _blkTid = (S.selectedTests || [])[S.blockIdx];
+    var _sinTiempo = _blkTid === 'pf16' || _blkTid === 'disc';
+    S._resumeSeconds = Math.max(0, Math.round(p.timerSeconds - (_sinTiempo ? 0 : (Date.now() - p.savedAt) / 1000)));
+  }
   S.allQs         = buildQuestions(S.candidate.perfil);
   S.testBlocks    = S.selectedTests.map(function(tid) {
     return { testId: tid, qs: S.allQs.filter(function(q){ return q.testId === tid; }) };
@@ -11727,7 +11757,8 @@ async function renderAnalisisTab() {
     h += '</div></div></div>';
   }
 
-  el.innerHTML = h || '<div style="text-align:center;padding:40px;color:var(--ink3)">Sin datos suficientes para analizar.</div>';
+  h += '<div style="margin-top:20px">' + _segAnalisisHtml(cands) + '</div>';
+  el.innerHTML = h;
 }
 
 // ── Candidate Drawer ─────────────────────────────────────────────
@@ -12579,10 +12610,200 @@ async function deleteEntrevistaEntry(candId, evId) {
   } catch(e) { toast('Error: ' + e.message, 'er'); }
 }
 
+// ═══════════════════════════════════════════════════════════
+//  SEGUIMIENTO DESPUÉS DE LA CONTRATACIÓN (scores._seguimiento)
+//  Si fue contratado y cómo le fue a los 3 y 6 meses. Es la base para saber si las
+//  pruebas predicen el desempeño y para calibrar los mínimos con datos reales.
+// ═══════════════════════════════════════════════════════════
+var _SEG_SALIDA = [
+  ['renuncia', 'Renuncia'],
+  ['desempeno', 'Desvinculación por desempeño'],
+  ['conducta', 'Desvinculación por conducta o falta disciplinaria'],
+  ['termino', 'Término de contrato o de servicio'],
+  ['otro', 'Otro motivo']
+];
+var _SEG_HITOS = [['m3', 3, 'A los 3 meses'], ['m6', 6, 'A los 6 meses']];
+
+function _segFechaHito(seg, meses) {
+  if (!seg || seg.contratado !== 'si' || !seg.fecha_ingreso) return null;
+  var d = new Date(seg.fecha_ingreso + 'T12:00');
+  if (isNaN(d)) return null;
+  d.setMonth(d.getMonth() + meses);
+  return d;
+}
+
+// Hitos vencidos sin registrar (y que no quedaron cerrados por una salida anterior)
+function _segPendientes(seg) {
+  if (!seg || seg.contratado !== 'si' || !seg.fecha_ingreso) return [];
+  var out = [], salio = false;
+  _SEG_HITOS.forEach(function(hz) {
+    var r = seg[hz[0]] || {};
+    if (salio) return;
+    if (r.sigue === 'no') { salio = true; return; }
+    var f = _segFechaHito(seg, hz[1]);
+    if (!r.sigue && f && f <= new Date()) out.push({ hito:hz[2], fecha:f });
+  });
+  return out;
+}
+
+// Resultado para el análisis: 'exito' (sigue, desempeño 4–5, sin incidentes),
+// 'fracaso' (salida por desempeño o conducta, incidentes o desempeño 1–2) o 'neutro'
+function _segResultado(seg) {
+  if (!seg || seg.contratado !== 'si') return null;
+  var ult = seg.m6 && seg.m6.sigue ? seg.m6 : seg.m3 && seg.m3.sigue ? seg.m3 : null;
+  if (!ult) return null;
+  var hayFalla = ['m3', 'm6'].some(function(k){ var r = seg[k] || {}; return r.incidentes === 'si' || (r.sigue === 'no' && (r.motivo === 'desempeno' || r.motivo === 'conducta')) || (r.desempeno && r.desempeno <= 2); });
+  if (hayFalla) return 'fracaso';
+  if (ult.sigue === 'si' && ult.desempeno >= 4) return 'exito';
+  return 'neutro';
+}
+
+function _segFormHtml(c) {
+  var seg = (c.scores && c.scores._seguimiento) || {};
+  var sel = function(id, val, opts){ return '<select id="' + id + '" onchange="_segVisibilidad()" style="width:100%;padding:7px 9px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--ink)">'
+    + opts.map(function(o){ return '<option value="' + o[0] + '"' + (String(val || '') === String(o[0]) ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select>'; };
+  var fld = function(label, inner){ return '<div class="ev-field" style="margin-bottom:8px"><label style="font-size:11px;font-weight:600;color:var(--ink3)">' + label + '</label>' + inner + '</div>'; };
+  var h = '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:16px">';
+  h += '<div style="font-size:10.5px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Resultado de la contratación</div>';
+  h += '<div style="font-size:11.5px;color:var(--ink3);line-height:1.5;margin-bottom:12px">Registre si la persona fue contratada y cómo le fue. Con estos datos se puede comprobar si las pruebas predicen el desempeño.</div>';
+  var pend = _segPendientes(seg);
+  if (pend.length) h += '<div style="font-size:12px;font-weight:700;color:#b45309;background:#fffbeb;border-radius:8px;padding:7px 10px;margin-bottom:10px">⏰ Seguimiento pendiente: ' + pend.map(function(p){ return p.hito.toLowerCase() + ' (desde el ' + p.fecha.toLocaleDateString('es-CL') + ')'; }).join(' y ') + '</div>';
+  h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 10px">';
+  h += fld('¿Se concretó la contratación?', sel('seg-contratado', seg.contratado, [['', 'Sin definir'], ['si', 'Sí'], ['no', 'No']]));
+  h += '<div id="seg-ingreso-wrap">' + fld('Fecha de ingreso', '<input type="date" id="seg-ingreso" value="' + htmlEsc(seg.fecha_ingreso || '') + '" style="width:100%;padding:6px 9px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--ink)">') + '</div>';
+  h += '</div>';
+  _SEG_HITOS.forEach(function(hz) {
+    var k = hz[0], r = seg[k] || {}, f = _segFechaHito(seg, hz[1]);
+    h += '<div id="seg-' + k + '-wrap" style="border-top:1px solid var(--border);padding-top:10px;margin-top:6px">';
+    h += '<div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:8px">' + hz[2] + (f ? ' <span style="font-weight:500;color:var(--ink4)">· ' + f.toLocaleDateString('es-CL') + '</span>' : '') + '</div>';
+    h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 10px">';
+    h += fld('¿Sigue en el cargo?', sel('seg-' + k + '-sigue', r.sigue, [['', 'Sin registrar'], ['si', 'Sí'], ['no', 'No']]));
+    h += '<div id="seg-' + k + '-motivo-wrap">' + fld('Motivo de salida', sel('seg-' + k + '-motivo', r.motivo, [['', 'Seleccione…']].concat(_SEG_SALIDA))) + '</div>';
+    h += fld('Desempeño según su jefatura', sel('seg-' + k + '-desempeno', r.desempeno, [['', 'Sin registrar'], ['1', '1 · Muy bajo'], ['2', '2 · Bajo'], ['3', '3 · Adecuado'], ['4', '4 · Bueno'], ['5', '5 · Muy bueno']]));
+    h += fld('¿Tuvo incidentes disciplinarios?', sel('seg-' + k + '-incidentes', r.incidentes, [['', 'Sin registrar'], ['no', 'No'], ['si', 'Sí']]));
+    h += '</div>';
+    h += fld('Notas', '<textarea id="seg-' + k + '-nota" rows="2" style="width:100%;padding:7px 9px;border:1.5px solid var(--border);border-radius:8px;font-size:12.5px;font-family:inherit;background:var(--surface);color:var(--ink);resize:vertical" placeholder="Fuente de la información, observaciones…">' + htmlEsc(r.nota || '') + '</textarea>');
+    h += '</div>';
+  });
+  h += '<button onclick="saveSeguimiento(\'' + c.id + '\')" style="width:100%;margin-top:6px;padding:9px;border-radius:9px;border:none;background:var(--accent);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Guardar seguimiento</button>';
+  if (seg.actualizado) h += '<div style="font-size:10.5px;color:var(--ink4);margin-top:6px;text-align:center">Actualizado el ' + new Date(seg.actualizado).toLocaleDateString('es-CL') + (seg.por ? ' por ' + htmlEsc(seg.por) : '') + '</div>';
+  h += '</div>';
+  setTimeout(_segVisibilidad, 0);
+  return h;
+}
+
+// Muestra solo los campos que aplican (fecha e hitos si fue contratada; motivo si salió)
+function _segVisibilidad() {
+  var v = function(id){ var e = document.getElementById(id); return e ? e.value : ''; };
+  var show = function(id, on){ var e = document.getElementById(id); if (e) e.style.display = on ? '' : 'none'; };
+  var contr = v('seg-contratado') === 'si';
+  show('seg-ingreso-wrap', contr);
+  var salio = false;
+  _SEG_HITOS.forEach(function(hz) {
+    var k = hz[0];
+    show('seg-' + k + '-wrap', contr && !salio);
+    show('seg-' + k + '-motivo-wrap', v('seg-' + k + '-sigue') === 'no');
+    if (v('seg-' + k + '-sigue') === 'no') salio = true;
+  });
+}
+
+async function saveSeguimiento(candId) {
+  var v = function(id){ var e = document.getElementById(id); return e ? e.value : ''; };
+  var seg = { contratado:v('seg-contratado'), fecha_ingreso:v('seg-contratado') === 'si' ? v('seg-ingreso') : '' };
+  if (seg.contratado === 'si' && !seg.fecha_ingreso) { toast('Indique la fecha de ingreso', 'er'); return; }
+  var salio = false;
+  for (var i = 0; i < _SEG_HITOS.length; i++) {
+    var k = _SEG_HITOS[i][0];
+    if (seg.contratado !== 'si' || salio) break;
+    var r = { sigue:v('seg-' + k + '-sigue'), motivo:v('seg-' + k + '-sigue') === 'no' ? v('seg-' + k + '-motivo') : '',
+              desempeno:+v('seg-' + k + '-desempeno') || 0, incidentes:v('seg-' + k + '-incidentes'), nota:v('seg-' + k + '-nota').trim() };
+    if (r.sigue === 'no' && !r.motivo) { toast('Indique el motivo de salida (' + _SEG_HITOS[i][2].toLowerCase() + ')', 'er'); return; }
+    if (r.sigue || r.desempeno || r.incidentes || r.nota) seg[k] = r;
+    if (r.sigue === 'no') salio = true;
+  }
+  seg.actualizado = new Date().toISOString();
+  seg.por = S.userEmail || '';
+  try {
+    var sc = await _patchScoresField(candId, '_seguimiento', function(){ return seg; });
+    var all = await getDB();
+    var c = all.find(function(x){ return x.id === candId; });
+    toast('✓ Seguimiento guardado', 'ok');
+    if (c) _switchDrawerTab('seguimiento', Object.assign({}, c, { scores: sc }));
+  } catch(e) { toast('Error: ' + e.message, 'er'); }
+}
+
+// Tarjeta del Análisis: permanencia, motivos de salida y puntajes según el resultado
+function _segAnalisisHtml(cands) {
+  var conSeg = cands.filter(function(c){ return c.scores && c.scores._seguimiento && c.scores._seguimiento.contratado === 'si'; });
+  var h = '<div style="background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:20px 24px">';
+  h += '<div style="font-size:15px;font-weight:800;color:var(--ink);margin-bottom:4px">Seguimiento después de la contratación</div>';
+  h += '<div style="font-size:12px;color:var(--ink3);margin-bottom:14px">Compara los puntajes de quienes tuvieron buen resultado (siguen, desempeño 4–5, sin incidentes) con los de quienes tuvieron mal resultado (salida por desempeño o conducta, incidentes o desempeño 1–2).</div>';
+  if (!conSeg.length) return h + '<div style="font-size:12.5px;color:var(--ink3)">Aún no hay contrataciones registradas. Regístrelas en la ficha del candidato → pestaña Seguimiento.</div></div>';
+  var m3 = conSeg.filter(function(c){ return c.scores._seguimiento.m3 && c.scores._seguimiento.m3.sigue; });
+  // Permanencia a 6 meses: entre quienes ya tienen el dato o salieron antes
+  var m6 = conSeg.filter(function(c){ var g = c.scores._seguimiento; return (g.m6 && g.m6.sigue) || (g.m3 && g.m3.sigue === 'no'); });
+  var siguen6 = m6.filter(function(c){ var g = c.scores._seguimiento; return g.m6 && g.m6.sigue === 'si'; }).length;
+  var pend = cands.filter(function(c){ return _segPendientes(c.scores && c.scores._seguimiento).length; }).length;
+  var kpi = function(n, l){ return '<div style="flex:1 1 110px;background:var(--bg);border-radius:10px;padding:10px 12px"><div style="font-size:22px;font-weight:900;color:var(--ink);line-height:1">' + n + '</div><div style="font-size:11px;color:var(--ink3);margin-top:3px">' + l + '</div></div>'; };
+  h += '<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px">'
+    + kpi(conSeg.length, 'contrataciones registradas')
+    + kpi(m3.length, 'con seguimiento a 3 meses')
+    + kpi(m6.length ? Math.round(siguen6 / m6.length * 100) + ' %' : '—', 'siguen a los 6 meses' + (m6.length ? ' (' + siguen6 + ' de ' + m6.length + ')' : ''))
+    + kpi(pend, 'seguimientos pendientes')
+    + '</div>';
+  // Motivos de salida
+  var mot = {};
+  conSeg.forEach(function(c){ ['m3','m6'].forEach(function(k){ var r = c.scores._seguimiento[k]; if (r && r.sigue === 'no' && r.motivo) mot[r.motivo] = (mot[r.motivo] || 0) + 1; }); });
+  var motTxt = _SEG_SALIDA.filter(function(m){ return mot[m[0]]; }).map(function(m){ return m[1] + ': ' + mot[m[0]]; });
+  if (motTxt.length) h += '<div style="font-size:12px;color:var(--ink2);margin-bottom:14px"><strong>Salidas:</strong> ' + motTxt.join(' · ') + '</div>';
+  // Puntajes según resultado
+  var grupos = { exito:[], fracaso:[] };
+  conSeg.forEach(function(c){ var r = _segResultado(c.scores._seguimiento); if (grupos[r]) grupos[r].push(c); });
+  var filas = [['situacional','Juicio situacional'], ['vigilancia','Aptitud de vigilancia'], ['comprension','Comprensión de instrucciones'], ['normativa_ohs','Normativa OHS'], ['dc0','Aptitud cognitiva']];
+  var media = function(lista, tid){ var v = lista.map(function(c){ var t = c.scores[tid]; return t ? (tid === 'dc0' ? t.total : t.pct) : null; }).filter(function(x){ return typeof x === 'number'; });
+    return v.length ? { m:Math.round(v.reduce(function(a, b){ return a + b; }, 0) / v.length), n:v.length } : null; };
+  var tabla = filas.map(function(f){
+    var a = media(grupos.exito, f[0]), b = media(grupos.fracaso, f[0]);
+    if (!a && !b) return '';
+    var cel = function(x){ return x ? '<strong>' + x.m + ' %</strong> <span style="color:var(--ink4)">(' + x.n + ')</span>' : '<span style="color:var(--ink4)">—</span>'; };
+    return '<tr><td style="padding:6px 8px;border-top:1px solid var(--border)">' + f[1] + '</td><td style="padding:6px 8px;border-top:1px solid var(--border);text-align:center">' + cel(a) + '</td><td style="padding:6px 8px;border-top:1px solid var(--border);text-align:center">' + cel(b) + '</td></tr>';
+  }).join('');
+  var integ = function(lista){ var v = lista.filter(function(c){ return c.scores.integridad; }); if (!v.length) return null;
+    var r = v.filter(function(c){ return c.scores.integridad.nivel === 'riesgo_alto' || c.scores.integridad.nivel === 'explorar'; }).length; return { r:r, n:v.length }; };
+  var ia = integ(grupos.exito), ib = integ(grupos.fracaso);
+  if (ia || ib) {
+    var celI = function(x){ return x ? '<strong>' + x.r + ' de ' + x.n + '</strong>' : '<span style="color:var(--ink4)">—</span>'; };
+    tabla += '<tr><td style="padding:6px 8px;border-top:1px solid var(--border)">Integridad: con indicadores (a explorar o riesgo alto)</td><td style="padding:6px 8px;border-top:1px solid var(--border);text-align:center">' + celI(ia) + '</td><td style="padding:6px 8px;border-top:1px solid var(--border);text-align:center">' + celI(ib) + '</td></tr>';
+  }
+  if (tabla) {
+    h += '<table style="width:100%;border-collapse:collapse;font-size:12px;color:var(--ink2)"><thead><tr>'
+      + '<th style="text-align:left;padding:6px 8px;font-size:10.5px;color:var(--ink3);text-transform:uppercase;letter-spacing:.4px">Prueba</th>'
+      + '<th style="padding:6px 8px;font-size:10.5px;color:#15803d;text-transform:uppercase;letter-spacing:.4px">Buen resultado (' + grupos.exito.length + ')</th>'
+      + '<th style="padding:6px 8px;font-size:10.5px;color:#b91c1c;text-transform:uppercase;letter-spacing:.4px">Mal resultado (' + grupos.fracaso.length + ')</th>'
+      + '</tr></thead><tbody>' + tabla + '</tbody></table>';
+    h += '<div style="font-size:11px;color:var(--ink4);margin-top:8px">Promedio del porcentaje de respuestas correctas; entre paréntesis, cuántas personas. '
+      + (grupos.exito.length + grupos.fracaso.length < 30 ? 'Con menos de 30 casos, las diferencias son solo orientativas.' : '') + '</div>';
+  } else {
+    h += '<div style="font-size:12.5px;color:var(--ink3)">Aún no hay suficientes seguimientos con resultado para comparar puntajes.</div>';
+  }
+  return h + '</div>';
+}
+
+// Aviso del Dashboard: seguimientos vencidos sin registrar
+function _segAvisoDashboard(cands) {
+  var lista = cands.map(function(c){ return { c:c, p:_segPendientes(c.scores && c.scores._seguimiento) }; }).filter(function(x){ return x.p.length; });
+  if (!lista.length) return '';
+  return '<div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:12px;padding:12px 16px;margin-bottom:20px">'
+    + '<div style="font-size:13px;font-weight:800;color:#92400e;margin-bottom:6px">⏰ ' + lista.length + (lista.length === 1 ? ' seguimiento pendiente' : ' seguimientos pendientes') + '</div>'
+    + lista.slice(0, 6).map(function(x){ return '<div style="font-size:12px;color:#92400e;line-height:1.7"><a onclick="openCandDrawer(\'' + x.c.id + '\')" style="cursor:pointer;text-decoration:underline;font-weight:700">' + htmlEsc((x.c.nombre || '') + ' ' + (x.c.apellido || '')) + '</a> · ' + x.p.map(function(p){ return p.hito.toLowerCase(); }).join(' y ') + '</div>'; }).join('')
+    + (lista.length > 6 ? '<div style="font-size:11px;color:#92400e;margin-top:3px">y ' + (lista.length - 6) + ' más</div>' : '')
+    + '</div>';
+}
+
 function _tabSeguimiento(c) {
   var sc = c.scores || {};
   var hist = (sc._pipeline_history || []).slice().reverse();
-  var h = '<div style="display:flex;flex-direction:column;gap:4px">';
+  var h = _segFormHtml(c) + '<div style="display:flex;flex-direction:column;gap:4px">';
   h += '<div style="font-size:10.5px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">Historial de etapas</div>';
   if (hist.length) {
     hist.forEach(function(entry) {
