@@ -2552,7 +2552,7 @@ function _cfgReloadAll() {
   } catch(e) {}
 }
 
-var TM_MINS_DEFAULTS = { dc0:6, pai:5, situacional:5, vigilancia:3, comprension:4, disc:3, pf16:4, normativa_ohs:6, integridad:5, gonogo:4, bart:6, juego_semaforo:4, juego_globos:5, juego_memoria:5 };
+var TM_MINS_DEFAULTS = { dc0:6, pai:5, situacional:5, vigilancia:3, comprension:4, disc:3, pf16:4, normativa_ohs:6, integridad:5, gonogo:4, bart:3, juego_semaforo:4, juego_globos:5, juego_memoria:5 };
 var TM_MINS_CONFIG = (function(){
   try {
     var saved = localStorage.getItem('psicoeval_tm_mins');
@@ -5536,9 +5536,9 @@ function _gngFin() {
 // ── CONTROL DEL RIESGO (globos, BART) ─────────────────────────────────────
 // Cada inflada suma un punto al globo; "Guardar" lo pasa al total; si el globo explota se
 // pierde lo de ese globo. Todos los candidatos reciben la misma secuencia de puntos de
-// explosión (igual a la de 13_control_riesgo.sql), así se comparan en igualdad de condiciones.
+// explosión (igual a la de 14_globos_corta.sql), así se comparan en igualdad de condiciones.
 // La página registra cada globo; el resultado lo calcula Supabase.
-var _BART2_SECUENCIA = [32,100,105,117,126,15,83,36,49,45,113,66,62,75,6,2,87,28,96,109,53,122,70,41,79,19,23,92,58,11];
+var _BART2_SECUENCIA = [11,37,40,59,5,14,62,43,46,56,18,2,8,21,50,27,34,24,53,30];
 var _BART2 = null;
 
 function _renderBartGame() {
@@ -5548,13 +5548,13 @@ function _renderBartGame() {
     +     'Infla globos para juntar puntos. Cada vez que infles, el globo suma <strong>1 punto</strong>.<br>'
     +     'Cuando quieras, toca <strong>Guardar</strong>: los puntos del globo pasan a tu total y sigues con un globo nuevo.<br>'
     +     'Si el globo <strong>explota</strong>, pierdes los puntos de ese globo (no los que ya guardaste). Cada globo explota en un momento distinto y no se puede saber cuándo.'
-    +     '<span style="display:block;margin-top:8px;color:var(--ink3);font-size:13px">Son 30 globos. Intenta juntar la mayor cantidad de puntos. Toma unos 5 minutos.</span>'
+    +     '<span style="display:block;margin-top:8px;color:var(--ink3);font-size:13px">Son 20 globos. Intenta juntar la mayor cantidad de puntos. Toma unos 2 minutos.</span>'
     +   '</div>'
     +   '<button type="button" onclick="_bart2Iniciar()" style="padding:13px 32px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit">Comenzar</button>'
     + '</div>'
     + '<div id="bart2-stage" style="display:none">'
     +   '<div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:var(--ink3);margin-bottom:8px">'
-    +     '<span>Globo <span id="bart2-n">1</span> de 30</span><span>Total guardado: <span id="bart2-total">0</span> puntos</span></div>'
+    +     '<span>Globo <span id="bart2-n">1</span> de 20</span><span>Total guardado: <span id="bart2-total">0</span> puntos</span></div>'
     +   '<div style="position:relative;height:240px;border-radius:18px;background:var(--surface2);display:flex;align-items:center;justify-content:center;overflow:hidden">'
     +     '<div id="bart2-globo" style="width:40px;height:40px;border-radius:50% 50% 48% 48%;background:radial-gradient(circle at 35% 30%,#c4b5fd,#7c3aed 70%);box-shadow:0 6px 18px rgba(124,58,237,.25);transition:width .08s,height .08s"></div>'
     +     '<div id="bart2-boom" style="position:absolute;inset:0;display:none;align-items:center;justify-content:center;font-size:64px">💥</div>'
@@ -5625,7 +5625,7 @@ function _bart2Inflar() {
   _BART2.tiempos.push(performance.now());
   document.getElementById('bart2-pts').textContent = _BART2.inf;
   var g = document.getElementById('bart2-globo');
-  var d = Math.round(40 + Math.sqrt(_BART2.inf / 128) * 170);
+  var d = Math.round(40 + Math.sqrt(_BART2.inf / 64) * 170);
   g.style.width = d + 'px'; g.style.height = Math.round(d * 1.08) + 'px';
   if (_BART2.inf >= _BART2_SECUENCIA[_BART2.i]) {
     g.style.display = 'none';
@@ -6525,7 +6525,7 @@ const PERFIL_IDEAL = {
 };
 // Copia de los mínimos iniciales, antes de aplicar los ajustes guardados
 // Control del riesgo (globos): mínimo inicial 50 en todos los cargos base. 50 equivale a inflar en
-// promedio 64 veces, la estrategia de mayor ganancia esperada; pasar de ahí es arriesgar más de lo que conviene.
+// promedio 32 veces, la estrategia de mayor ganancia esperada; pasar de ahí es arriesgar más de lo que conviene.
 Object.keys(PERFIL_IDEAL).forEach(function(pf) {
   PERFIL_IDEAL[pf].bart = { min:50, max:100, label:'Control del riesgo',
     req:'No arriesgar más de lo que conviene: en la tarea de globos, no superar la estrategia de mayor ganancia esperada. Mínimo provisional, a calibrar con los datos propios.' };
@@ -8053,7 +8053,7 @@ function _bartReportHtml(c, g) {
     r += '<div style="display:flex;gap:16px;align-items:center;padding:12px 14px;border-radius:12px;background:' + bg + '">'
       + '<div style="text-align:center;min-width:76px"><div style="font-size:30px;font-weight:900;color:' + col + ';line-height:1">' + g.pct + '</div>'
       + '<div style="font-size:9.5px;font-weight:700;color:' + col + ';text-transform:uppercase;letter-spacing:.4px;margin-top:4px">Control del riesgo</div></div>'
-      + '<div style="font-size:13px;color:#1e293b;line-height:1.6">Infló en promedio <strong>' + num(g.infladas_prom) + ' veces</strong> los globos que guardó. La estrategia de mayor ganancia es inflar unas 64 veces.'
+      + '<div style="font-size:13px;color:#1e293b;line-height:1.6">Infló en promedio <strong>' + num(g.infladas_prom) + ' veces</strong> los globos que guardó. La estrategia de mayor ganancia es inflar unas 32 veces.'
       + (min !== null ? '<br><strong style="color:' + col + '">' + (cumple ? 'Sobre' : 'Bajo') + ' el mínimo del cargo</strong> (' + min + ').' : '') + '</div></div>';
     if (min !== null) {
       r += '<div style="position:relative;height:6px;background:#e2e8f0;border-radius:100px;margin:12px 0 3px">'
@@ -8070,7 +8070,7 @@ function _bartReportHtml(c, g) {
       + '<div style="font-size:14px;font-weight:800;color:#0f172a">' + _BART_NIVELES[g.nivel][0] + '</div>'
       + '<div style="font-size:12.5px;color:#475569;line-height:1.6;margin-top:3px">' + _BART_NIVELES[g.nivel][1] + '</div>'
       + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:12px">'
-      + [['prudente', 'Prudente', 'menos de 32'], ['moderado', 'Moderado', '32 a 64'], ['alto', 'Alta', 'más de 64']].map(function(q){ var on = q[0] === g.nivel;
+      + [['prudente', 'Prudente', 'menos de 16'], ['moderado', 'Moderado', '16 a 32'], ['alto', 'Alta', 'más de 32']].map(function(q){ var on = q[0] === g.nivel;
           return '<div style="padding:7px 9px;border-radius:9px;font-size:11.5px;text-align:center;' + (on ? 'background:#0f2d52;color:#fff;font-weight:700' : 'background:#f8fafc;color:#94a3b8') + '">' + q[1] + '<div style="font-size:10px;font-weight:500;opacity:.8">' + q[2] + ' infladas</div></div>'; }).join('')
       + '</div>');
   }
@@ -8084,9 +8084,9 @@ function _bartReportHtml(c, g) {
   if (g.puntos !== undefined) t += fila('Puntos guardados', g.puntos);
   if (g.inicio_prom !== null && g.inicio_prom !== undefined && g.final_prom !== null && g.final_prom !== undefined) {
     var dif = g.final_prom - g.inicio_prom;
-    t += fila('Primeros 10 globos → últimos 10', num(g.inicio_prom) + ' → ' + num(g.final_prom),
-      dif <= -5 ? 'Redujo el riesgo a lo largo de la tarea: ajusta su conducta después de perder.'
-      : dif >= 5 ? 'Aumentó el riesgo a lo largo de la tarea.' : 'Mantuvo un nivel de riesgo parecido durante toda la tarea.');
+    t += fila('Primeros 7 globos → últimos 7', num(g.inicio_prom) + ' → ' + num(g.final_prom),
+      dif <= -3 ? 'Redujo el riesgo a lo largo de la tarea: ajusta su conducta después de perder.'
+      : dif >= 3 ? 'Aumentó el riesgo a lo largo de la tarea.' : 'Mantuvo un nivel de riesgo parecido durante toda la tarea.');
   }
   if (g.ritmo_ms) t += fila('Tiempo entre infladas', g.ritmo_ms + ' ms', 'Mediana por globo. Un ritmo muy rápido sugiere inflar sin detenerse a evaluar.');
   t += fila('Dispositivo', _GNG_DISP[g.dispositivo] || 'No registrado');
@@ -8108,7 +8108,7 @@ function _bartReportHtml(c, g) {
   // 5. Limitaciones
   out += card(h3('Cómo leer este resultado')
     + '<ul style="margin:0;padding-left:18px;font-size:12px;color:#475569;line-height:1.65">'
-    + '<li>Mide la disposición a asumir riesgos en un juego con puntos sin valor real (Balloon Analogue Risk Task, Lejuez y otros, 2002).</li>'
+    + '<li>Mide la disposición a asumir riesgos en un juego con puntos sin valor real (Balloon Analogue Risk Task, Lejuez y otros, 2002). Es una versión corta (20 globos, explosiones entre 1 y 64 infladas); los estudios citados usan la versión clásica.</li>'
     + '<li>El resultado es estable en el tiempo (White, Lejuez y de Wit, 2008), pero un metaanálisis de 237 estudios encontró que se relaciona poco con conductas riesgosas reales (Frey, Pantoja y Lob, 2026). <strong>No fundamente un rechazo solo en este resultado</strong>: úselo junto con la entrevista y las referencias.</li>'
     + '<li>El mínimo inicial (50) equivale a no superar la estrategia de mayor ganancia esperada. Es provisional: ajústelo en Panel → Cargos con sus propios datos y el seguimiento después de la contratación.</li>'
     + '</ul>');
@@ -9181,12 +9181,12 @@ function renderWikiTab() {
     },
     bart: {
       icon: '🎈', name: 'Control del riesgo (tarea de globos, BART)', category: 'Conducta', items: 30, time: '5 min', format: 'Tarea de decisión: inflar o guardar',
-      description: 'Balloon Analogue Risk Task (Lejuez y otros, 2002). La persona infla 30 globos: cada inflada suma un punto, puede guardar los puntos cuando quiera y, si el globo explota, los pierde. Todos los candidatos reciben la misma secuencia de puntos de explosión (entre 2 y 126 infladas, promedio 64), para compararlos en igualdad de condiciones. El candidato la ve como "Globos".',
+      description: 'Balloon Analogue Risk Task (Lejuez y otros, 2002). Versión corta propia: la persona infla 20 globos (la clásica usa 30 o más). Cada inflada suma un punto, puede guardar los puntos cuando quiera y, si el globo explota, los pierde. Todos los candidatos reciben la misma secuencia de puntos de explosión (entre 2 y 62 infladas, promedio 32), para compararlos en igualdad de condiciones. El candidato la ve como "Globos".',
       dimensions: [
-        { key:'_self', name:'Control del riesgo', desc:'100 menos el promedio de infladas en los globos guardados (sobre 128). Más alto = más prudente. Se compara con el mínimo del cargo. El informe agrega globos explotados, cambio entre el inicio y el final, ritmo de infladas y un nivel descriptivo (prudente, moderado, alta disposición al riesgo).' },
+        { key:'_self', name:'Control del riesgo', desc:'100 menos el promedio de infladas en los globos guardados (sobre 64). Más alto = más prudente. Se compara con el mínimo del cargo. El informe agrega globos explotados, cambio entre el inicio y el final, ritmo de infladas y un nivel descriptivo (prudente, moderado, alta disposición al riesgo).' },
       ],
-      scoring: 'Lo calcula el servidor a partir del registro de globos, y verifica que coincida con la secuencia de explosiones. No interpretable si no coincide, está incompleto o la persona no se comprometió con la tarea (más de 10 globos guardados sin inflar o menos de 3 infladas promedio). Mínimo inicial: 50, que equivale a no superar la estrategia de mayor ganancia esperada (64 infladas).',
-      reference: 'Lejuez y otros (2002), Journal of Experimental Psychology: Applied 8, 75-84. Estabilidad test-retest r = 0,77 (White, Lejuez y de Wit, 2008). Metaanálisis de 237 estudios: estable, pero con relación nula a baja con conductas riesgosas reales (Frey, Pantoja y Lob, 2026). No usar como criterio único.'
+      scoring: 'Lo calcula el servidor a partir del registro de globos, y verifica que coincida con la secuencia de explosiones. No interpretable si no coincide, está incompleto o la persona no se comprometió con la tarea (más de 7 globos guardados sin inflar o menos de 3 infladas promedio). Mínimo inicial: 50, que equivale a no superar la estrategia de mayor ganancia esperada (32 infladas).',
+      reference: 'Lejuez y otros (2002), Journal of Experimental Psychology: Applied 8, 75-84. Estabilidad test-retest r = 0,77 en la versión clásica (White, Lejuez y de Wit, 2008); la versión corta no tiene estudios propios. Metaanálisis de 237 estudios: estable, pero con relación nula a baja con conductas riesgosas reales (Frey, Pantoja y Lob, 2026). No usar como criterio único.'
     },
     pf16: {
       icon: '🧬', name: 'Personalidad laboral (5 dimensiones)', category: 'Personalidad', items: 20, time: '8-10 min', format: 'Acuerdo 1-5',
@@ -9386,7 +9386,7 @@ function renderBateriaTab() {
     situacional:'Escenarios laborales con opciones de respuesta.',
     vigilancia:'Protocolos y detección de irregularidades.',
     gonogo:'~4 min. Círculo verde: tocar rápido; cuadrado rojo: no tocar. Mide la capacidad de frenarse. El candidato la ve como "Reacción y atención".',
-    bart:'~5 min. 30 globos: inflar suma puntos, pero el globo puede explotar. Mide la disposición a asumir riesgos. Baja relación con conducta real: no usar sola para rechazar. El candidato la ve como "Globos".',
+    bart:'~2-3 min. 20 globos: inflar suma puntos, pero el globo puede explotar. Mide la disposición a asumir riesgos. Baja relación con conducta real: no usar sola para rechazar. El candidato la ve como "Globos".',
   };
 
   var out = '';
@@ -9583,7 +9583,7 @@ function _calibPanelHtml(perfil, tid) {
 
   var out = '<div style="padding:12px 16px 16px;background:#fafbfc;border-top:1px dashed #e2e8f0">';
   out += '<div style="font-size:11.5px;color:#64748b;line-height:1.55;margin-bottom:6px">'
-    + (tid === 'bart' ? 'El mínimo se expresa en una escala de 0 a 100, donde más alto es más prudente (100 menos el promedio de infladas en los globos guardados, sobre 128). El valor inicial (50) equivale a no superar la estrategia de mayor ganancia esperada; es provisional. Esta tarea se relaciona poco con conductas riesgosas reales: úsela con cautela. '
+    + (tid === 'bart' ? 'El mínimo se expresa en una escala de 0 a 100, donde más alto es más prudente (100 menos el promedio de infladas en los globos guardados, sobre 64). El valor inicial (50) equivale a no superar la estrategia de mayor ganancia esperada; es provisional. Esta tarea se relaciona poco con conductas riesgosas reales: úsela con cautela. '
      : tid === 'gonogo' ? 'El mínimo es el porcentaje de cuadrados rojos en que la persona debe frenarse; bajo ese valor el informe marca "Bajo el mínimo". El valor inicial (80 %) es provisional: esta tarea no tiene normas chilenas. '
                         : 'El mínimo es el porcentaje de respuestas correctas que se espera para este cargo; bajo ese valor el informe marca "Bajo el mínimo". ')
     + 'Use los puntajes reales para ajustarlo: si casi todas las personas que usted recomienda quedan bajo el mínimo, probablemente es demasiado exigente; '
