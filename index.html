@@ -6342,8 +6342,160 @@ const PF16_RPT = {
   },
   nota: 'Prueba breve de autodescripción (20 ítems, 4 por dimensión, uno de ellos redactado en sentido inverso) que estima cinco dimensiones globales de personalidad en el trabajo; es un instrumento propio y no corresponde a ningún cuestionario comercial. '
       + 'Refleja cómo la persona se percibe en el trabajo y es sensible a la tendencia a responder "de acuerdo" y a la deseabilidad social. '
+      + 'Las combinaciones y las áreas de aplicación laboral son interpretaciones a partir de estas cinco dimensiones, no mediciones adicionales. '
       + 'No compara con un perfil esperado: si una característica es una fortaleza depende del puesto y de lo observado en la entrevista. No constituye un diagnóstico.'
 };
+
+// Áreas de aplicación laboral: cada área se describe con las dimensiones que más la explican.
+// Una frase por dimensión y nivel; redacción neutra en género y descriptiva (sin perfil esperado).
+const PF16_AREAS = [
+  { titulo:'Estilo de trabajo y organización', icon:'🗂', dims:['AC','IN'], txt:{
+      AC:{ alto:'Planifica sus tareas, sigue los procedimientos y cuida el orden y los plazos sin necesidad de supervisión cercana.',
+           medio:'Se organiza de forma adecuada y sigue los procedimientos, con margen para ajustar el plan cuando la situación lo pide.',
+           bajo:'Trabaja con flexibilidad y resuelve sobre la marcha; en tareas que exigen orden estricto le ayuda una estructura externa (listas, plazos, revisiones).' },
+      IN:{ alto:'Prefiere tener autonomía sobre cómo hacer su trabajo y propone sus propias formas de resolverlo.',
+           medio:'Trabaja con autonomía en lo habitual y consulta cuando la tarea lo requiere.',
+           bajo:'Se desempeña mejor con instrucciones claras y con la posibilidad de consultar antes de decidir.' } } },
+  { titulo:'Relaciones interpersonales', icon:'🤝', dims:['EX','DU'], txt:{
+      EX:{ alto:'Establece contacto con facilidad, participa en el grupo y suele contribuir al buen clima.',
+           medio:'Se relaciona con naturalidad y equilibra la vida de equipo con el trabajo individual.',
+           bajo:'Construye relaciones selectivas y se expresa con mesura; tiende a escuchar más que a tomar la palabra en grupo.' },
+      DU:{ alto:'En el trato prioriza la tarea y la franqueza; su estilo puede resultar directo para algunas personas.',
+           medio:'Combina franqueza con consideración por cómo se sienten las demás personas.',
+           bajo:'Presta atención a cómo se sienten los demás y cuida las relaciones; puede evitar conversaciones incómodas.' } } },
+  { titulo:'Manejo de la presión', icon:'⏱', dims:['AN','AC'], txt:{
+      AN:{ alto:'Se describe con calma ante la presión, los imprevistos y las críticas, y se recupera con rapidez de las dificultades.',
+           medio:'Maneja la presión habitual; las exigencias intensas y prolongadas pueden generarle tensión.',
+           bajo:'Tiende a preocuparse y a resentir la presión o las críticas; le ayudan la claridad de expectativas y la retroalimentación oportuna.' },
+      AC:{ alto:'Bajo presión se apoya en la planificación y los procedimientos; los cambios bruscos de plan pueden aumentar su tensión.',
+           medio:'Bajo presión combina el apego al plan con cierta flexibilidad.',
+           bajo:'Bajo presión improvisa con rapidez, aunque puede pasar por alto pasos del procedimiento.' } } },
+  { titulo:'Toma de decisiones', icon:'⚖️', dims:['DU','IN','AC'], txt:{
+      DU:{ alto:'Decide con base en hechos y criterios prácticos.',
+           medio:'Pondera los hechos y el impacto de la decisión en las personas.',
+           bajo:'Da especial peso al impacto de sus decisiones en las personas.' },
+      IN:{ alto:'Confía en su propio criterio y se aparta de la opinión del grupo cuando tiene argumentos.',
+           medio:'Decide por su cuenta en lo habitual y busca acuerdo en lo importante.',
+           bajo:'Busca la validación de la jefatura o del grupo antes de decidir.' },
+      AC:{ alto:'Prefiere analizar las consecuencias antes de actuar, lo que puede hacer más lentas las decisiones urgentes.',
+           medio:'Equilibra la reflexión previa con la rapidez cuando hace falta.',
+           bajo:'Decide con rapidez y sobre la marcha; en decisiones importantes conviene verificar que revise las consecuencias.' } } },
+  { titulo:'Adaptación al cambio', icon:'🔄', dims:['AC','AN'], txt:{
+      AC:{ alto:'Prefiere la estabilidad y los procesos conocidos; los cambios le resultan más llevaderos si se anticipan y se explican.',
+           medio:'Acepta los cambios cuando tienen sentido y ajusta su forma de trabajar.',
+           bajo:'Se adapta con facilidad a lo nuevo y a los imprevistos.' },
+      AN:{ alto:'Vive la incertidumbre con tranquilidad.',
+           medio:'La incertidumbre prolongada puede generarle cierta tensión.',
+           bajo:'La incertidumbre puede generarle preocupación; le ayuda contar con información clara sobre lo que cambia.' } } },
+  { titulo:'Supervisión y liderazgo', icon:'🧭', dims:['EX','IN','DU'], txt:{
+      EX:{ alto:'Si conduce personas, tiende a hacerlo con presencia y comunicación frecuente.',
+           medio:'Si conduce personas, combina cercanía con espacio para el trabajo autónomo.',
+           bajo:'Si conduce personas, tiende a un estilo sobrio, más desde el ejemplo y la tarea que desde la presencia.' },
+      IN:{ alto:'Frente a su jefatura asume posiciones propias y plantea desacuerdos; necesita espacio para opinar.',
+           medio:'Acepta la dirección de su jefatura y plantea desacuerdos cuando tiene fundamentos.',
+           bajo:'Responde bien a una supervisión clara y cercana; puede costarle plantear desacuerdos.' },
+      DU:{ alto:'Puede entregar retroalimentación difícil y tomar decisiones impopulares.',
+           medio:'Entrega retroalimentación con equilibrio entre franqueza y tacto.',
+           bajo:'Cuida el clima del equipo; la retroalimentación negativa y las decisiones impopulares pueden costarle más.' } } }
+];
+
+// Combinaciones frecuentes entre dimensiones (solo niveles alto / bajo). Se muestran las que
+// calzan, primero las más específicas (más condiciones), hasta 4.
+const PF16_COMBOS = [
+  { si:{ EX:'alto', IN:'alto', DU:'alto' }, titulo:'Perfil de conducción',
+    txt:'Sociabilidad, criterio propio y orientación a hechos: una combinación frecuente en personas que asumen roles de conducción. Conviene explorar cuánto considera la opinión de su equipo.',
+    q:'Cuénteme de una decisión en que cambió de opinión por lo que le planteó su equipo.' },
+  { si:{ AC:'alto', AN:'alto' }, titulo:'Estabilidad y método',
+    txt:'Combina calma ante la presión con orden y apego a los procedimientos: suele mostrar un desempeño constante y previsible.',
+    q:'Cuénteme de una situación en que el procedimiento no servía para lo que estaba pasando. ¿Qué hizo?' },
+  { si:{ AC:'alto', AN:'bajo' }, titulo:'Exigencia y preocupación',
+    txt:'Se organiza y cumple con rigor, pero tiende a preocuparse: puede vivir con tensión los errores propios o los cambios de plan.',
+    q:'Cuénteme de un error suyo en el trabajo. ¿Cómo lo vivió y qué hizo después?' },
+  { si:{ AC:'bajo', AN:'bajo' }, titulo:'Reactividad ante la presión',
+    txt:'Tiende a improvisar y a resentir la presión: en situaciones exigentes puede costarle mantener a la vez el orden y la calma.',
+    q:'Cuénteme de una situación de mucha presión en que tuvo que seguir un procedimiento. ¿Qué hizo?' },
+  { si:{ AC:'bajo', AN:'alto' }, titulo:'Flexibilidad serena',
+    txt:'Se mantiene en calma ante lo imprevisto y se adapta con facilidad; en tareas rutinarias o muy normadas puede perder rigurosidad.',
+    q:'¿Cómo se asegura de no omitir pasos en una tarea que repite muchas veces?' },
+  { si:{ EX:'alto', DU:'bajo' }, titulo:'Orientación a las personas',
+    txt:'Combina sociabilidad con atención al clima: facilita la cooperación y el trato con público, aunque puede costarle poner límites a personas cercanas.',
+    q:'Describa una situación en que tuvo que decirle que no a alguien con quien se lleva bien.' },
+  { si:{ EX:'alto', DU:'alto' }, titulo:'Presencia directa',
+    txt:'Se relaciona con facilidad y habla con franqueza: puede influir y dar retroalimentación clara, aunque su estilo directo puede resultar fuerte para algunas personas.',
+    q:'Cuénteme de una vez en que su franqueza generó un conflicto. ¿Cómo lo resolvió?' },
+  { si:{ EX:'bajo', DU:'alto' }, titulo:'Foco en la tarea',
+    txt:'Prefiere la tarea al contacto social y decide con criterio práctico: aporta concentración y objetividad; el trabajo en equipo intenso o el trato emocional pueden resultarle menos naturales.',
+    q:'Cuénteme de una situación en que tuvo que apoyar emocionalmente a alguien del equipo.' },
+  { si:{ EX:'bajo', AN:'bajo' }, titulo:'Reserva y preocupación',
+    txt:'Tiende a guardar para sí sus preocupaciones: conviene explorar cómo pide ayuda cuando algo le supera.',
+    q:'Cuénteme de una vez en que necesitó ayuda en el trabajo. ¿Cómo la pidió?' },
+  { si:{ IN:'alto', AC:'bajo' }, titulo:'Autonomía con poca estructura',
+    txt:'Actúa según su propio criterio y con flexibilidad: aporta iniciativa, pero en entornos muy normados puede apartarse de los procedimientos.',
+    q:'Cuénteme de una vez en que decidió no seguir un procedimiento. ¿Por qué y qué pasó?' },
+  { si:{ IN:'alto', AC:'alto' }, titulo:'Criterio propio con método',
+    txt:'Tiene opiniones propias y trabaja con método: puede proponer mejoras a los procedimientos y sostenerlas con argumentos.',
+    q:'Cuénteme de una mejora que propuso a un procedimiento. ¿Cómo la planteó y qué pasó?' },
+  { si:{ IN:'bajo', AC:'alto' }, titulo:'Apego a la norma y a la jefatura',
+    txt:'Sigue las normas y las orientaciones de la jefatura: aporta confiabilidad en entornos regulados; puede costarle actuar cuando no hay instrucciones claras.',
+    q:'Describa una situación en que no tenía instrucciones claras. ¿Qué hizo?' },
+  { si:{ IN:'bajo', DU:'bajo' }, titulo:'Búsqueda de armonía',
+    txt:'Valora el consenso y cuida a las personas: evita los conflictos, lo que puede postergar conversaciones necesarias.',
+    q:'Cuénteme de un conflicto que tuvo que enfrentar directamente. ¿Cómo lo hizo?' }
+];
+
+// Ítems invertidos (10_items_v3.sql). Solo se usan para los índices de validez del informe.
+const PF16_INVERTIDOS = { pf_ex5:1, pf_an5:1, pf_du5:1, pf_in5:1, pf_ac5:1 };
+
+// Índices de validez a partir de las respuestas guardadas (evaluaciones desde 08_respuestas.sql)
+function _pf16Validez(c, s) {
+  var ans = (c && c.respuestas && c.respuestas.answers) || null;
+  var t = s && s._timings ? s._timings.pf16 : null;
+  var out = { disponible:false, indices:[], alertas:0, grave:false, tiempo:t };
+  if (t) out.indices.push({ nombre:'Tiempo de respuesta', valor:Math.floor(t / 60) + ' min ' + Math.round(t % 60) + ' s',
+    alerta:t < 60, txt:t < 60 ? 'Menos de 3 segundos por ítem: probablemente no leyó con atención.' : 'Tiempo compatible con una lectura atenta.' });
+  if (!ans) { out.alertas = out.indices.filter(function(x){ return x.alerta; }).length; return out; }
+  var items = Object.keys(ans).filter(function(k){ return /^pf_/.test(k) && typeof ans[k] === 'number' && ans[k] >= 1 && ans[k] <= 5; });
+  if (items.length < 10) { out.alertas = out.indices.filter(function(x){ return x.alerta; }).length; return out; }
+  out.disponible = true;
+  var vals = items.map(function(k){ return ans[k]; });
+  var n = vals.length;
+  var pct = function(f){ return Math.round(vals.filter(f).length / n * 100); };
+  var ext = pct(function(v){ return v === 1 || v === 5; }), cen = pct(function(v){ return v === 3; });
+  var iguales = vals.every(function(v){ return v === vals[0]; });
+  out.grave = iguales;
+  out.indices.push({ nombre:'Respuestas extremas', valor:ext + ' %', alerta:ext > 80,
+    txt:ext > 80 ? 'Casi todas las respuestas en los extremos de la escala: perfil posiblemente exagerado.' : 'Uso variado de la escala.' });
+  out.indices.push({ nombre:'Respuestas al centro', valor:cen + ' %', alerta:cen > 60,
+    txt:cen > 60 ? 'Muchas respuestas neutras: perfil poco diferenciado o baja implicación.' : 'Toma posición en la mayoría de los ítems.' });
+  // Aquiescencia: de acuerdo con el ítem invertido y también con los directos de la misma dimensión
+  var inv = items.filter(function(k){ return PF16_INVERTIDOS[k]; });
+  if (inv.length) {
+    var contra = inv.filter(function(k){
+      var dim = k.slice(3, 5), dir = items.filter(function(j){ return j.slice(3, 5) === dim && !PF16_INVERTIDOS[j]; });
+      if (!dir.length) return false;
+      var m = dir.reduce(function(a, j){ return a + ans[j]; }, 0) / dir.length;
+      return ans[k] >= 4 && m >= 4;
+    }).length;
+    out.indices.push({ nombre:'Tendencia a responder "de acuerdo"', valor:contra + ' de ' + inv.length, alerta:contra >= 3,
+      txt:contra >= 3 ? 'Estuvo de acuerdo con afirmaciones opuestas en varias dimensiones: los puntajes altos pueden estar inflados.' : 'Responde de forma coherente a las afirmaciones opuestas.' });
+  }
+  // Consistencia: dentro de una dimensión, las respuestas (ya recodificadas) no deberían estar en polos opuestos
+  var dims = {};
+  items.forEach(function(k){ var d = k.slice(3, 5); (dims[d] = dims[d] || []).push(PF16_INVERTIDOS[k] ? 6 - ans[k] : ans[k]); });
+  var incoh = Object.keys(dims).filter(function(d){ var v = dims[d]; return v.length > 1 && Math.max.apply(null, v) - Math.min.apply(null, v) >= 3; }).length;
+  out.indices.push({ nombre:'Consistencia entre ítems', valor:incoh ? incoh + (incoh === 1 ? ' dimensión dispar' : ' dimensiones dispares') : 'Coherente',
+    alerta:incoh >= 2, txt:incoh >= 2 ? 'Respuestas contradictorias dentro de varias dimensiones: los niveles medios pueden ocultar respuestas opuestas.' : 'Las respuestas de cada dimensión van en la misma dirección.' });
+  if (iguales) out.indices.unshift({ nombre:'Patrón repetido', valor:'Todas iguales', alerta:true, txt:'Marcó la misma opción en todos los ítems: el perfil no es interpretable.' });
+  out.alertas = out.indices.filter(function(x){ return x.alerta; }).length;
+  return out;
+}
+
+function _pf16ValidezNivel(v) {
+  if (v.grave || v.alertas >= 2) return { label:'Dudosa', color:'#b91c1c', bg:'#fef2f2', txt:'Hay varias señales de que las respuestas no reflejan bien a la persona. Use el perfil solo como guía para la entrevista.' };
+  if (v.alertas === 1) return { label:'Interpretar con cautela', color:'#b45309', bg:'#fffbeb', txt:'Hay una señal a considerar. Contraste los rasgos más marcados en la entrevista.' };
+  if (!v.disponible) return { label:'Sin índices', color:'#475569', bg:'#f1f5f9', txt:'Evaluación anterior al registro de respuestas: solo puede revisarse el tiempo.' };
+  return { label:'Confiable', color:'#15803d', bg:'#f0fdf4', txt:'No hay señales de respuestas al azar, exageradas o contradictorias.' };
+}
 
 function pf16ZoneOf(v) { return v >= 70 ? 'alto' : v >= 40 ? 'medio' : 'bajo'; }
 
@@ -6366,7 +6518,9 @@ function pf16ExRangoAntiguo(viejo) {
   return _PF16_EX_RANGOS[v] ? _PF16_EX_RANGOS[v].slice() : [Math.max(0, v - 25), Math.min(100, v + 25)];
 }
 
-// Pestaña 16PF del informe (también se usa en el PDF). Descriptiva, sin perfil esperado.
+// Pestaña de Personalidad laboral del informe (también se usa en el PDF). Descriptiva, sin perfil esperado.
+// Secciones: síntesis · perfil gráfico · validez · lectura por dimensión · combinaciones ·
+// áreas de aplicación laboral · preguntas para la entrevista · nota técnica.
 function _pf16ReportHtml(c, pf, s) {
   var R = PF16_RPT;
   var keys = R.orden.filter(function(k){ return pf[k] !== undefined && pf[k] !== null; });
@@ -6381,10 +6535,19 @@ function _pf16ReportHtml(c, pf, s) {
   };
   var ACC = '#0f766e';
   var card = function(inner, extra){ return '<div style="background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:16px 18px;break-inside:avoid;page-break-inside:avoid;' + (extra || '') + '">' + inner + '</div>'; };
-  var h3 = function(t){ return '<div style="font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">' + t + '</div>'; };
+  var h3 = function(t, sub){ return '<div style="margin-bottom:10px"><div style="font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.7px">' + t + '</div>'
+    + (sub ? '<div style="font-size:11px;color:#94a3b8;margin-top:2px">' + sub + '</div>' : '') + '</div>'; };
   var html = '';
 
-  // ── Resumen global ──
+  // ── Validez de las respuestas ──
+  var V = _pf16Validez(c, s), VN = _pf16ValidezNivel(V);
+
+  // ── Combinaciones que calzan (más específicas primero) ──
+  var combos = PF16_COMBOS.filter(function(cb){
+    return Object.keys(cb.si).every(function(k){ return keys.indexOf(k) !== -1 && zona(k) === cb.si[k]; });
+  }).sort(function(a, b){ return Object.keys(b.si).length - Object.keys(a.si).length; }).slice(0, 4);
+
+  // ── Síntesis ──
   var altos = keys.filter(function(k){ return zona(k) === 'alto'; });
   var bajos = keys.filter(function(k){ return zona(k) === 'bajo'; });
   var unir = function(t){ return t.length <= 1 ? t.join('') : t.slice(0, -1).join(', ') + ' y ' + t[t.length - 1]; };
@@ -6392,7 +6555,6 @@ function _pf16ReportHtml(c, pf, s) {
   if (!altos.length && !bajos.length) {
     resumen = first + ' se describe con un perfil equilibrado: ' + (exRango && zona('EX') === 'indet' ? 'las dimensiones que pueden precisarse' : 'las cinco dimensiones') + ' se ubican en niveles medios, sin rasgos que se destaquen hacia uno u otro polo.';
   } else {
-    // Altos: "orientación hacia la sociabilidad y el criterio propio"; bajos: "más cerca del polo de reserva"
     resumen = first + ' se describe en el trabajo';
     if (altos.length) resumen += ' con una marcada orientación hacia ' + unir(altos.map(function(k){ return R.dim[k].rasgoAlto; }));
     if (altos.length && bajos.length) resumen += ', y';
@@ -6401,21 +6563,18 @@ function _pf16ReportHtml(c, pf, s) {
     var medios = keys.filter(function(k){ return zona(k) === 'medio'; }).length;
     resumen += medios ? '. Las demás dimensiones se ubican en niveles medios.' : '.';
   }
+  if (combos.length) resumen += ' Su perfil se resume en: ' + unir(combos.map(function(cb){ return '<strong>' + cb.titulo.toLowerCase() + '</strong>'; })) + '.';
   resumen += ' Se trata de una autodescripción: indica cómo se percibe, y su valor para el puesto debe evaluarse en la entrevista.';
+  var aportes = keys.filter(function(k){ var z = zona(k); return z === 'alto' || z === 'bajo'; }).map(function(k){ return R.dim[k][zona(k)]; });
+  var aporta = aportes.map(function(t){ return t.aporta; }).filter(Boolean);
+  var considerar = aportes.map(function(t){ return t.considerar; }).filter(Boolean);
 
-  // Patrones que conviene contrastar (todas las dimensiones extremas en la misma dirección)
-  var aviso = '';
-  var keysVal = keys.filter(function(k){ return !(k === 'EX' && exRango); });
-  if (keysVal.length >= 4 && keysVal.every(function(k){ return val(k) >= 80; })) {
-    aviso = 'Todas las dimensiones son muy altas. Puede reflejar una tendencia a responder "de acuerdo" o a presentar una imagen favorable; contraste con ejemplos concretos en la entrevista.';
-  } else if (keysVal.length >= 4 && keysVal.every(function(k){ return val(k) <= 20; })) {
-    aviso = 'Todas las dimensiones son muy bajas. Puede reflejar una tendencia a responder "en desacuerdo" o poca implicación con la prueba; contraste en la entrevista.';
-  }
   var inc = (s._incomplete || []).find(function(x){ return x.testId === 'pf16'; });
-
   html += '<div style="border-radius:12px;padding:18px 20px;background:linear-gradient(135deg,#134e4a,#0f766e);color:#fff">'
-    + '<div style="font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;opacity:.75;margin-bottom:6px">Perfil de personalidad · 5 dimensiones globales</div>'
-    + '<div style="font-size:13.5px;line-height:1.7;max-width:760px">' + resumen + '</div>'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">'
+    + '<div style="font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;opacity:.75">Personalidad laboral · síntesis</div>'
+    + '<span style="font-size:10.5px;font-weight:800;padding:3px 10px;border-radius:100px;background:#fff;color:' + VN.color + '">Validez: ' + VN.label + '</span></div>'
+    + '<div style="font-size:13.5px;line-height:1.7;max-width:780px">' + resumen + '</div>'
     + '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:12px">'
     + keys.map(function(k){ return '<span style="padding:3px 10px;border-radius:100px;background:rgba(255,255,255,.16);font-size:11px;font-weight:700">' + R.dim[k].nombre + ': ' + ZL[zona(k)] + '</span>'; }).join('')
     + '</div></div>';
@@ -6429,47 +6588,112 @@ function _pf16ReportHtml(c, pf, s) {
     html += '<div style="padding:10px 14px;border-radius:10px;background:#fffbeb;border:1.5px solid #fde68a;color:#92400e;font-size:12px;line-height:1.55">'
       + '<strong>Respuestas incompletas:</strong> respondió ' + (inc.total - inc.missing) + ' de ' + inc.total + ' ítems. Interprete el perfil con cautela.</div>';
   }
-  if (aviso) {
-    html += '<div style="padding:10px 14px;border-radius:10px;background:#fffbeb;border:1.5px solid #fde68a;color:#92400e;font-size:12px;line-height:1.55"><strong>Patrón de respuesta:</strong> ' + aviso + '</div>';
-  }
 
-  // ── Perfil por dimensión: continuo entre dos polos + descripción ──
+  // ── Perfil gráfico: las 5 dimensiones en una sola hoja de perfil ──
+  var W = 640, x0 = 168, x1 = 472, rowH = 46, top = 30, H = top + keys.length * rowH + 8;
+  var X = function(v){ return x0 + (x1 - x0) * v / 100; };
+  var g = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" style="max-width:720px;display:block;margin:0 auto" font-family="-apple-system,Segoe UI,sans-serif">';
+  g += '<rect x="' + X(0) + '" y="' + (top - 8) + '" width="' + (X(40) - X(0)) + '" height="' + (H - top) + '" fill="#f8fafc"/>';
+  g += '<rect x="' + X(40) + '" y="' + (top - 8) + '" width="' + (X(70) - X(40)) + '" height="' + (H - top) + '" fill="#f0fdfa"/>';
+  g += '<rect x="' + X(70) + '" y="' + (top - 8) + '" width="' + (X(100) - X(70)) + '" height="' + (H - top) + '" fill="#f8fafc"/>';
+  [['Bajo', 20], ['Medio', 55], ['Alto', 85]].forEach(function(z){ g += '<text x="' + X(z[1]) + '" y="' + (top - 14) + '" text-anchor="middle" font-size="9.5" font-weight="700" fill="#94a3b8">' + z[0] + '</text>'; });
+  for (var t = 0; t <= 100; t += 10) g += '<line x1="' + X(t) + '" x2="' + X(t) + '" y1="' + (top - 8) + '" y2="' + (H - 8) + '" stroke="' + (t === 50 ? '#94a3b8' : '#e2e8f0') + '" stroke-width="' + (t === 50 ? 1.2 : 1) + '"' + (t === 50 ? ' stroke-dasharray="4 3"' : '') + '/>';
+  var pts = [];
+  keys.forEach(function(k, i){
+    var d = R.dim[k], cy = top + i * rowH + rowH / 2;
+    g += '<text x="' + (x0 - 10) + '" y="' + (cy - 3) + '" text-anchor="end" font-size="11" font-weight="700" fill="#334155">' + d.polos[0] + '</text>';
+    g += '<text x="' + (x0 - 10) + '" y="' + (cy + 10) + '" text-anchor="end" font-size="9" fill="#94a3b8">' + d.nombre + '</text>';
+    g += '<text x="' + (x1 + 10) + '" y="' + (cy + 4) + '" font-size="11" font-weight="700" fill="#334155">' + d.polos[1] + '</text>';
+    g += '<line x1="' + x0 + '" x2="' + x1 + '" y1="' + cy + '" y2="' + cy + '" stroke="#cbd5e1" stroke-width="1"/>';
+    if (k === 'EX' && exRango) {
+      g += '<rect x="' + X(exRango[0]) + '" y="' + (cy - 7) + '" width="' + Math.max(4, X(exRango[1]) - X(exRango[0])) + '" height="14" rx="7" fill="' + ACC + '33" stroke="' + ACC + '" stroke-dasharray="3 2"/>';
+    } else {
+      pts.push([X(val(k)), cy, val(k)]);
+    }
+  });
+  if (pts.length > 1) g += '<polyline points="' + pts.map(function(p){ return p[0] + ',' + p[1]; }).join(' ') + '" fill="none" stroke="' + ACC + '" stroke-width="2" stroke-linejoin="round" opacity=".55"/>';
+  pts.forEach(function(p){
+    g += '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="7" fill="' + ACC + '" stroke="#fff" stroke-width="2"/>';
+    g += '<text x="' + p[0] + '" y="' + (p[1] - 11) + '" text-anchor="middle" font-size="10" font-weight="800" fill="#0f172a">' + p[2] + '</text>';
+  });
+  g += '</svg>';
+
+  // ── Validez (tarjeta) ──
+  var vHtml = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span style="font-size:11.5px;font-weight:800;padding:3px 10px;border-radius:100px;background:' + VN.bg + ';color:' + VN.color + '">' + VN.label + '</span></div>'
+    + '<div style="font-size:12px;color:#334155;line-height:1.55;margin-bottom:10px">' + VN.txt + '</div>'
+    + V.indices.map(function(x){
+        return '<div style="display:flex;gap:8px;padding:6px 0;border-top:1px solid #f1f5f9;font-size:11.5px;line-height:1.5">'
+          + '<span style="flex-shrink:0">' + (x.alerta ? '⚠️' : '✓') + '</span>'
+          + '<div style="flex:1"><strong style="color:#0f172a">' + x.nombre + ':</strong> <span style="color:' + (x.alerta ? '#b45309' : '#475569') + '">' + x.valor + '</span>'
+          + '<div style="color:#64748b">' + x.txt + '</div></div></div>';
+      }).join('');
+
+  html += '<div style="display:flex;flex-wrap:wrap;gap:14px">'
+    + card(h3('Perfil gráfico', 'Cada fila va de un polo a otro; ninguno es mejor en sí mismo. Zona media: 40–69.') + g, 'flex:2 1 420px')
+    + card(h3('Validez de las respuestas') + vHtml, 'flex:1 1 240px')
+    + '</div>';
+
+  // ── Lectura por dimensión ──
   var rows = keys.map(function(k){
     var d = R.dim[k], v = val(k), z = zona(k);
     var rango = (k === 'EX' && exRango) ? exRango : null;
     var t = z === 'indet'
       ? { txt:'Con este registro no es posible precisar el nivel: el valor real se encuentra entre ' + rango[0] + ' y ' + rango[1] + '. Explore esta dimensión en la entrevista.', aporta:'', considerar:'' }
       : d[z];
-    var marca = rango
-      ? '<div style="position:absolute;left:' + rango[0] + '%;width:' + Math.max(2, rango[1] - rango[0]) + '%;top:-3px;height:16px;border-radius:8px;background:' + ACC + '33;border:2px dashed ' + ACC + '"></div>'
-      : '<div style="position:absolute;left:calc(' + v + '% - 8px);top:-4px;width:16px;height:16px;border-radius:50%;background:' + ACC + ';border:2.5px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.3)"></div>';
-    var bar = '<div style="position:relative;height:10px;border-radius:100px;background:linear-gradient(90deg,#e2e8f0 0%,#e2e8f0 39%,#f1f5f9 39%,#f1f5f9 70%,#e2e8f0 70%);margin:6px 0 4px">'
-      + '<div style="position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:#94a3b8"></div>'
-      + marca
-      + '</div>';
-    return '<div style="padding:14px 0;border-top:1px solid #f1f5f9;break-inside:avoid;page-break-inside:avoid">'
+    return '<div style="padding:12px 0;border-top:1px solid #f1f5f9;break-inside:avoid;page-break-inside:avoid">'
       + '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap">'
       + '<div><span style="font-size:13.5px;font-weight:800;color:#0f172a">' + d.nombre + '</span> <span style="font-size:11px;color:#94a3b8">· ' + d.mide + '</span></div>'
-      + '<div style="font-size:12px;color:#334155">' + (rango ? 'entre <strong style="font-size:16px;color:#0f172a">' + rango[0] + '</strong> y <strong style="font-size:16px;color:#0f172a">' + rango[1] + '</strong>' : '<strong style="font-size:16px;color:#0f172a">' + v + '</strong>') + ' · ' + ZL[z] + '</div></div>'
-      + '<div style="display:flex;justify-content:space-between;font-size:10.5px;color:#64748b;font-weight:700;margin-top:6px"><span>◀ ' + d.polos[0] + '</span><span>' + d.polos[1] + ' ▶</span></div>'
-      + bar
-      + '<div style="font-size:12.5px;line-height:1.65;color:#1e293b;margin-top:6px">' + t.txt + '</div>'
-      + '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">'
-      + (t.aporta ? '<div style="flex:1 1 220px;font-size:11.5px;line-height:1.6;color:#334155;background:#f0fdfa;border-radius:8px;padding:8px 10px"><strong style="color:' + ACC + '">Aporta:</strong> ' + t.aporta + '</div>' : '')
-      + (t.considerar ? '<div style="flex:1 1 220px;font-size:11.5px;line-height:1.6;color:#334155;background:#f8fafc;border-radius:8px;padding:8px 10px"><strong style="color:#475569">A considerar:</strong> ' + t.considerar + '</div>' : '')
+      + '<div style="font-size:12px;color:#334155">' + (rango ? 'entre <strong>' + rango[0] + '</strong> y <strong>' + rango[1] + '</strong>' : '<strong style="font-size:15px;color:#0f172a">' + v + '</strong>')
+      + ' · <span style="font-weight:700;color:' + ACC + '">' + ZL[z] + '</span> <span style="color:#94a3b8">(' + (z === 'alto' ? d.polos[1] : z === 'bajo' ? d.polos[0] : 'zona media') + ')</span></div></div>'
+      + '<div style="font-size:12.5px;line-height:1.65;color:#1e293b;margin-top:5px">' + t.txt + '</div>'
+      + '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:7px">'
+      + (t.aporta ? '<div style="flex:1 1 220px;font-size:11.5px;line-height:1.6;color:#334155;background:#f0fdfa;border-radius:8px;padding:7px 10px"><strong style="color:' + ACC + '">Aporta:</strong> ' + t.aporta + '</div>' : '')
+      + (t.considerar ? '<div style="flex:1 1 220px;font-size:11.5px;line-height:1.6;color:#334155;background:#f8fafc;border-radius:8px;padding:7px 10px"><strong style="color:#475569">A considerar:</strong> ' + t.considerar + '</div>' : '')
       + '</div></div>';
   }).join('');
-  html += card(h3('Perfil por dimensión')
-    + '<div style="font-size:11px;color:#64748b;margin-bottom:2px">Cada dimensión va de un polo a otro; ninguno es mejor en sí mismo. La línea central marca el punto medio.</div>'
-    + rows);
+  html += card(h3('Lectura por dimensión') + rows);
 
-  // ── Preguntas para profundizar (solo dimensiones en los extremos) ──
+  // ── Combinaciones destacadas ──
+  if (combos.length) {
+    html += card(h3('Combinaciones destacadas', 'Cómo se combinan las dimensiones más marcadas')
+      + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px">'
+      + combos.map(function(cb){
+          return '<div style="border:1px solid #ccfbf1;background:#f0fdfa;border-radius:10px;padding:10px 12px">'
+            + '<div style="font-size:12.5px;font-weight:800;color:#134e4a;margin-bottom:3px">' + cb.titulo + '</div>'
+            + '<div style="font-size:10.5px;color:' + ACC + ';font-weight:700;margin-bottom:5px">' + Object.keys(cb.si).map(function(k){ var f = { EX:1, DU:1, IN:1 }[k]; return R.dim[k].nombre + ' ' + (cb.si[k] === 'alto' ? (f ? 'alta' : 'alto') : (f ? 'baja' : 'bajo')); }).join(' · ') + '</div>'
+            + '<div style="font-size:12px;line-height:1.6;color:#334155">' + cb.txt + '</div></div>';
+        }).join('') + '</div>');
+  }
+
+  // ── Áreas de aplicación laboral ──
+  var zonaTxt = function(area, k){ var z = zona(k); return z === 'indet' ? null : area.txt[k][z]; };
+  html += card(h3('Áreas de aplicación laboral', 'Cómo es probable que se exprese su perfil en distintas situaciones de trabajo')
+    + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px">'
+    + PF16_AREAS.map(function(a){
+        var frases = a.dims.filter(function(k){ return keys.indexOf(k) !== -1; }).map(function(k){ return zonaTxt(a, k); }).filter(Boolean);
+        if (!frases.length) return '';
+        return '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:11px 13px;break-inside:avoid;page-break-inside:avoid">'
+          + '<div style="font-size:12.5px;font-weight:800;color:#0f172a;margin-bottom:5px">' + a.icon + ' ' + a.titulo + '</div>'
+          + '<div style="font-size:12px;line-height:1.65;color:#334155">' + frases.join(' ') + '</div>'
+          + '<div style="font-size:10px;color:#94a3b8;margin-top:5px">Según ' + unir(a.dims.map(function(k){ return R.dim[k].nombre; })) + '</div></div>';
+      }).join('') + '</div>');
+
+  // ── Aportes y aspectos a considerar ──
+  if (aporta.length || considerar.length) {
+    html += '<div style="display:flex;flex-wrap:wrap;gap:14px">'
+      + (aporta.length ? card(h3('Lo que probablemente aporta') + '<ul style="margin:0;padding-left:18px;font-size:12px;line-height:1.7;color:#334155">' + aporta.map(function(x){ return '<li>' + x + '</li>'; }).join('') + '</ul>', 'flex:1 1 280px') : '')
+      + (considerar.length ? card(h3('Aspectos a considerar') + '<ul style="margin:0;padding-left:18px;font-size:12px;line-height:1.7;color:#334155">' + considerar.map(function(x){ return '<li>' + x + '</li>'; }).join('') + '</ul>', 'flex:1 1 280px') : '')
+      + '</div>';
+  }
+
+  // ── Preguntas para profundizar (dimensiones en los extremos y combinaciones) ──
   var qs = [];
-  keys.forEach(function(k){ var z = zona(k); if (z !== 'medio') qs.push({ k:k, q: R.dim[k].preguntas[z] }); });
+  keys.forEach(function(k){ var z = zona(k); if (z !== 'medio' && R.dim[k].preguntas[z]) qs.push({ tag:R.dim[k].nombre, q:R.dim[k].preguntas[z] }); });
+  combos.forEach(function(cb){ qs.push({ tag:cb.titulo, q:cb.q }); });
   if (qs.length) {
     html += card(h3('Preguntas para profundizar en la entrevista')
       + '<ol style="margin:0;padding-left:18px;font-size:12px;color:#334155;line-height:1.7">'
-      + qs.map(function(x){ return '<li style="margin-bottom:5px">' + x.q + ' <span style="font-size:10px;font-weight:800;color:' + ACC + '">' + R.dim[x.k].nombre + '</span></li>'; }).join('')
+      + qs.map(function(x){ return '<li style="margin-bottom:5px">' + x.q + ' <span style="font-size:10px;font-weight:800;color:' + ACC + '">' + x.tag + '</span></li>'; }).join('')
       + '</ol>');
   }
 
@@ -7747,7 +7971,7 @@ function buildReportHtml(c, withClose) {
       if (_dFlat) _rsPuntos.push('<strong>DISC:</strong> perfil poco diferenciado. Pida ejemplos concretos de cómo actúa bajo presión y cómo se relaciona con su jefatura.');
     }
     if (s.pf16) {
-      var _pf = s.pf16, _pR = PF16_RPT;
+      var _pf = s.pf16, _pR = PF16_RPT, _pVal = _pf16Validez(c, s), _pValN = _pf16ValidezNivel(_pVal);
       var _pEx = (_pf._v !== 2 && _pf.EX !== undefined && _pf.EX !== null) ? pf16ExRangoAntiguo(_pf.EX) : null;
       var _pMarc = [];
       var _pRows = '';
@@ -7770,7 +7994,9 @@ function buildReportHtml(c, withClose) {
       });
       _pers += _rsCard(_rsH3('Personalidad laboral', 'Autodescripción: ningún polo es mejor que el otro')
         + _pRows
-        + (_pEx ? '<div style="font-size:10.5px;color:#94a3b8">Extraversión: evaluación anterior a la corrección; se muestra el rango posible.</div>' : ''), 'flex:1 1 300px');
+        + (_pEx ? '<div style="font-size:10.5px;color:#94a3b8">Extraversión: evaluación anterior a la corrección; se muestra el rango posible.</div>' : '')
+        + (_pVal.alertas || _pVal.grave ? '<div style="font-size:11px;color:' + _pValN.color + ';margin-top:4px"><strong>Validez: ' + _pValN.label + '.</strong> Ver detalle en la pestaña.</div>' : ''), 'flex:1 1 300px');
+      if (_pVal.grave || _pVal.alertas >= 2) _rsPuntos.push('<strong>Personalidad laboral:</strong> la validez de las respuestas es dudosa; use el perfil solo como guía y explore los rasgos en la entrevista.');
       if (_pMarc.length) _rsPuntos.push('<strong>Personalidad:</strong> rasgos marcados — ' + htmlEsc(_pMarc.join(', ')) + '. Evalúe en la entrevista si son una fortaleza o una dificultad para este puesto.');
     }
     if (_pers) html += '<div style="display:flex;flex-wrap:wrap;gap:14px">' + _pers + '</div>';
