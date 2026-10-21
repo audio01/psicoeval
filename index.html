@@ -11239,9 +11239,11 @@ function _invContinuar(rut) {
 // ── Panel: invitaciones ───────────────────────────────────────────────────
 var _invTab = 'rut', _invHoras = 72, _invResultados = [], _invLista = null;
 
-function _invMensaje(link) {
+// tipo 'link' (link único): se avisa que es de un solo uso
+function _invMensaje(link, tipo) {
   return '*Actualmente estamos en la fase de evaluaciones y te invitamos a realizar el siguiente paso de nuestro proceso de selección:*\n\n'
-    + '🔗 Enlace de la evaluación:\n' + link + '\n\n'
+    + '🔗 Enlace de la evaluación:\n' + link + '\n'
+    + (tipo === 'link' ? '🔒 *Este enlace es personal y de un solo uso: no lo compartas.*\n' : '') + '\n'
     + '⚠️ *Antes de comenzar, considera lo siguiente:*\n'
     + '* *Tiempo continuo:* La evaluación debe completarse de principio a fin una vez iniciada. Asegúrate de disponer de al menos 30 minutos sin interrupciones.\n'
     + '* *Entorno:* Realízala en un lugar tranquilo y silencioso para mantener tu concentración.\n'
@@ -11266,8 +11268,8 @@ function _invCopiarViejo(texto) {
   var ta = document.createElement('textarea'); ta.value = texto; ta.style.cssText = 'position:fixed;opacity:0';
   document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch(e) {} ta.remove();
 }
-function _invCopiarMensaje(codigo) { _invCopiar(_invMensaje(_invLink(codigo)), '✓ Mensaje copiado: pégalo en WhatsApp'); }
-function _invWhatsapp(codigo) { window.open('https://wa.me/?text=' + encodeURIComponent(_invMensaje(_invLink(codigo))), '_blank'); }
+function _invCopiarMensaje(codigo, tipo) { _invCopiar(_invMensaje(_invLink(codigo), tipo), '✓ Mensaje copiado: pégalo en WhatsApp'); }
+function _invWhatsapp(codigo, tipo) { window.open('https://wa.me/?text=' + encodeURIComponent(_invMensaje(_invLink(codigo), tipo)), '_blank'); }
 
 function showInviteModal() {
   var modal = document.getElementById('inv-modal');
@@ -11333,8 +11335,8 @@ function _invRender() {
         h += '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-top:' + (i ? '1px solid #dcfce7' : 'none') + ';flex-wrap:wrap">'
           + '<div style="flex:1;min-width:150px"><div style="font-size:13px;font-weight:700;color:var(--ink)">' + (r.rut ? '🪪 ' + htmlEsc(r.rut) : '🔗 Link único ' + (i + 1)) + '</div>'
           + '<div style="font-size:11px;color:var(--ink4);font-family:monospace;word-break:break-all">' + htmlEsc(_invLink(r.codigo)) + '</div></div>'
-          + '<button onclick="_invCopiarMensaje(\'' + r.codigo + '\')" class="btn btn-outline btn-sm">📋 Copiar mensaje</button>'
-          + '<button onclick="_invWhatsapp(\'' + r.codigo + '\')" class="btn btn-sm" style="background:#25d366;color:#fff;border:none">WhatsApp</button></div>';
+          + '<button onclick="_invCopiarMensaje(\'' + r.codigo + '\',\'' + (r.rut ? 'rut' : 'link') + '\')" class="btn btn-outline btn-sm">📋 Copiar mensaje</button>'
+          + '<button onclick="_invWhatsapp(\'' + r.codigo + '\',\'' + (r.rut ? 'rut' : 'link') + '\')" class="btn btn-sm" style="background:#25d366;color:#fff;border:none">WhatsApp</button></div>';
       });
       h += '</div>';
     }
@@ -11365,7 +11367,7 @@ function _invListaHtml() {
     var quien = v.tipo === 'rut' ? '🪪 ' + _invRutTxt(v.rut_norm) : '🔗 Link único' + (v.rut_norm ? ' · usado por ' + _invRutTxt(v.rut_norm) : '');
     var acc = '';
     if (esAdmin && !v.usada_en && !v.anulada) {
-      if (e[0] !== 'Vencida') acc += '<button onclick="_invCopiarMensaje(\'' + v.codigo + '\')" title="Copiar mensaje de WhatsApp" class="btn btn-ghost btn-sm" style="padding:4px 8px">📋</button>';
+      if (e[0] !== 'Vencida') acc += '<button onclick="_invCopiarMensaje(\'' + v.codigo + '\',\'' + v.tipo + '\')" title="Copiar mensaje de WhatsApp" class="btn btn-ghost btn-sm" style="padding:4px 8px">📋</button>';
       acc += '<button onclick="_invRenovar(\'' + v.codigo + '\')" title="Renovar: vigente por 72 horas más desde ahora" class="btn btn-ghost btn-sm" style="padding:4px 8px">↻</button>'
         + '<button onclick="_invAnular(\'' + v.codigo + '\')" title="Anular" class="btn btn-ghost btn-sm" style="padding:4px 8px;color:#b91c1c">✕</button>';
     }
