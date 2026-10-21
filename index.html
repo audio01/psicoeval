@@ -2392,7 +2392,49 @@ function _cfgSetLocal(key, value) {
   } catch(e) {}
 }
 
-async function _cfgUpload(key) {
+// ── Cambios pendientes: si un guardado falla (sesión vencida, sin conexión…) la
+// sección queda marcada. No se pisa con la versión del servidor al recargar, se
+// reintenta sola y el panel muestra un aviso hasta que se guarde.
+var _CFG_PENDING_KEY = 'psicoeval_cfg_pendiente';
+var _CFG_NOMBRES = { batteries:'Baterías', cargos:'Cargos activos', custom_cargos:'Cargos personalizados', tm_mins:'Tiempos',
+                     params:'Perfil ideal', disc_profile:'Perfil DISC', pf16_profile:'Perfil 16PF', webhook_url:'Webhook', config_log:'Historial' };
+function _cfgPendientes() {
+  try { return JSON.parse(localStorage.getItem(_CFG_PENDING_KEY) || '[]'); } catch(e) { return []; }
+}
+function _cfgMarcarPendiente(key, pendiente) {
+  var p = _cfgPendientes().filter(function(k){ return k !== key; });
+  if (pendiente) p.push(key);
+  try { localStorage.setItem(_CFG_PENDING_KEY, JSON.stringify(p)); } catch(e) {}
+  _cfgAvisoPendientes();
+}
+function _cfgAvisoPendientes() {
+  var p = _cfgPendientes().filter(function(k){ return k !== 'config_log'; });
+  var el = document.getElementById('cfg-pendiente-aviso');
+  if (!p.length) { if (el) el.remove(); return; }
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'cfg-pendiente-aviso';
+    el.style.cssText = 'position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:9500;max-width:min(560px,calc(100vw - 32px));'
+      + 'background:#fffbeb;border:1.5px solid #f59e0b;color:#92400e;border-radius:12px;padding:12px 16px;font-size:12.5px;line-height:1.5;'
+      + 'box-shadow:0 8px 24px rgba(0,0,0,.15);display:flex;gap:12px;align-items:center';
+    document.body.appendChild(el);
+  }
+  el.innerHTML = '<div style="flex:1"><strong>⚠ Cambios sin guardar en el servidor:</strong> ' + p.map(function(k){ return _CFG_NOMBRES[k] || k; }).join(', ')
+    + '. Los candidatos todavía no los ven.</div>'
+    + '<button onclick="_cfgReintentarPendientes(true)" style="flex-shrink:0;padding:7px 12px;border-radius:8px;border:none;background:#f59e0b;color:#fff;font-weight:700;cursor:pointer;font-family:inherit">Reintentar</button>';
+}
+async function _cfgReintentarPendientes(manual) {
+  if (!_cfgIsAdmin()) { if (manual) toast('Inicia sesión como administrador para guardar los cambios pendientes', 'er'); return; }
+  var p = _cfgPendientes(), fallos = 0;
+  for (var i = 0; i < p.length; i++) {
+    try { await _cfgUpload(p[i]); _cfgMarcarPendiente(p[i], false); }
+    catch(e) { fallos++; console.error('Reintento de configuración fallido', p[i], e); }
+  }
+  if (manual) toast(fallos ? '⚠ Aún no se pudieron guardar algunos cambios' : '✓ Cambios guardados en el servidor', fallos ? 'er' : 'ok');
+}
+window.addEventListener('online', function(){ _cfgReintentarPendientes(false); });
+
+async function _cfgUpload(key, reintento) {
   var value = _cfgLocalValue(key);
   if (value === undefined) value = (key === 'webhook_url') ? '' : null;
   if (value === null) return;
@@ -2403,6 +2445,20 @@ async function _cfgUpload(key) {
     headers: Object.assign(_cfgHeaders(), { 'Prefer': 'resolution=merge-duplicates,return=representation' }),
     body:    JSON.stringify({ key: key, value: value, updated_at: new Date().toISOString(), updated_by: userEmail })
   });
+  // Sesión vencida (p. ej. el computador estuvo suspendido): se renueva y se reintenta una vez
+  if (r.status === 401 && !reintento && S.refreshToken) {
+    try {
+      const data = await _supaRefreshToken();
+      S.authToken    = data.access_token;
+      S.refreshToken = data.refresh_token;
+      S.tokenExpiry  = Date.now() + ((data.expires_in || 3600) * 1000);
+      saveSession();
+      _scheduleTokenRefresh();
+    } catch(e) {
+      throw new Error('la sesión venció; vuelve a iniciar sesión');
+    }
+    return _cfgUpload(key, true);
+  }
   if (!r.ok) throw new Error('HTTP ' + r.status + ': ' + (await r.text()).slice(0, 120));
   // Si RLS lo bloquea, Supabase responde 200/201 sin filas
   var rows = await r.json().catch(function(){ return []; });
@@ -2411,12 +2467,19 @@ async function _cfgUpload(key) {
 
 // Llamada desde cada save*(): sube el cambio (agrupando cambios seguidos)
 function _cfgPush(key) {
-  if (!_cfgIsAdmin() || !_CFG_KEYS[key]) return;
+  if (!_CFG_KEYS[key]) return;
+  var rol = null;
+  try { rol = S.role; } catch(e) {}
+  if (rol !== 'admin') return;                 // candidatos y visores no guardan configuración
+  _cfgMarcarPendiente(key, true);              // queda pendiente hasta confirmar el guardado
+  if (!_cfgIsAdmin()) return;                  // admin sin sesión válida: se guarda al volver a entrar
   clearTimeout(_cfgTimers[key]);
   _cfgTimers[key] = setTimeout(function() {
-    _cfgUpload(key).catch(function(e) {
+    _cfgUpload(key).then(function() {
+      _cfgMarcarPendiente(key, false);
+    }).catch(function(e) {
       console.error('No se pudo guardar la configuración', key, e);
-      toast('⚠ No se pudo guardar el cambio en el servidor (' + e.message + '). Revisa tu conexión e inténtalo de nuevo.', 'er');
+      toast('⚠ No se pudo guardar el cambio en el servidor (' + e.message + '). Quedó pendiente y se reintentará.', 'er');
     });
   }, 600);
 }
@@ -2456,9 +2519,15 @@ async function _cfgPull() {
   }
 
   var onServer = {};
+  // Por rol (no por sesión vigente): con la sesión vencida se descarga como invitado y
+  // tampoco debe pisar los cambios pendientes de este admin
+  var esAdmin = false;
+  try { esAdmin = S.role === 'admin'; } catch(e) {}
+  var pendientes = esAdmin ? _cfgPendientes() : [];
   rows.forEach(function(row) {
     if (!_CFG_KEYS[row.key]) return;
     onServer[row.key] = true;
+    if (pendientes.indexOf(row.key) !== -1) return;   // cambio local sin guardar: no se pisa
     _cfgSetLocal(row.key, row.value);
   });
 
@@ -2494,6 +2563,8 @@ async function _cfgPull() {
     }
   }
   if (primeraVez) { try { localStorage.setItem(_CFG_SYNC_FLAG, new Date().toISOString()); } catch(e) {} }
+  if (pendientes.length && _cfgIsAdmin()) await _cfgReintentarPendientes(false);
+  _cfgAvisoPendientes();
 
   if (_cfgIsAdmin()) {
     // La batería vigente siempre se sube (aunque nunca se haya personalizado):
@@ -6972,15 +7043,10 @@ const LEVEL5_NAMES = {1:'Muy Bajo',2:'Bajo',3:'Medio',4:'Alto',5:'Muy Alto'};
 
 function switchReportTab(tabId, el) {
   var cont = el.closest('.rpt-modal');
-  cont.querySelectorAll('.rpt-tab-btn').forEach(function(b){
-    b.style.borderBottom = '2px solid transparent';
-    b.style.color = '#94a3b8';
-    b.style.fontWeight = '500';
-  });
+  cont.querySelectorAll('.rpt-tab-btn').forEach(function(b){ b.classList.remove('on'); });
   cont.querySelectorAll('.rpt-tab-panel').forEach(function(p){ p.style.display='none'; });
-  el.style.borderBottom = '2px solid var(--accent)';
-  el.style.color = 'var(--accent)';
-  el.style.fontWeight = '700';
+  el.classList.add('on');
+  el.scrollIntoView({ block:'nearest', inline:'nearest' });
   var panel = cont.querySelector('#rpt-panel-'+tabId);
   if (panel) panel.style.display = 'flex';
 }
@@ -7074,17 +7140,21 @@ function _integSummaryHtml(s) {
   if (ig.copiar)   items.push('<strong>' + ig.copiar + '</strong> ' + (ig.copiar === 1 ? 'intento' : 'intentos') + ' de copiar');
   if (ig.captura)  items.push('<strong>' + ig.captura + '</strong> ' + (ig.captura === 1 ? 'intento' : 'intentos') + ' de captura de pantalla');
   if (ig.imprimir) items.push('<strong>' + ig.imprimir + '</strong> ' + (ig.imprimir === 1 ? 'intento' : 'intentos') + ' de imprimir');
+  // Una sola línea; la explicación queda en el ícono ⓘ (tooltip)
+  var linea = function(col, icon, titulo, detalle, ayuda) {
+    return '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px;padding:7px 12px;border-radius:8px;background:' + col.bg + ';border-left:3px solid ' + col.bd + ';color:' + col.tx + ';font-size:12px;line-height:1.5">'
+      + '<span style="font-weight:800;white-space:nowrap">' + icon + ' ' + titulo + '</span>'
+      + (detalle ? '<span>' + detalle + '</span>' : '')
+      + (ayuda ? '<span title="' + ayuda + '" style="margin-left:auto;font-size:11px;opacity:.8;cursor:help;white-space:nowrap">Contrastar en la entrevista ⓘ</span>' : '')
+      + '</div>';
+  };
   if (!items.length) {
-    return '<div style="display:flex;align-items:center;gap:8px;padding:9px 14px;border-radius:10px;background:#f0fdf4;border:1px solid #bbf7d0;font-size:12.5px;color:#166534">'
-      + '<span>🛡</span><span><strong>Integridad:</strong> sin incidentes durante la evaluación.</span></div>';
+    return linea({ bg:'#f0fdf4', bd:'#22c55e', tx:'#166534' }, '🛡', 'Sin incidentes durante la evaluación', '', '');
   }
   var grave = _integLevel(s) === 'grave';
-  var col = grave ? { bg:'#fff1f2', bd:'#fecdd3', tx:'#9f1239' } : { bg:'#fffbeb', bd:'#fde68a', tx:'#92400e' };
-  return '<div style="padding:11px 14px;border-radius:10px;background:' + col.bg + ';border:1.5px solid ' + col.bd + ';color:' + col.tx + ';font-size:12.5px;line-height:1.6">'
-    + '<div style="font-weight:800;margin-bottom:3px">⚠️ Incidentes durante la evaluación</div>'
-    + items.join(' · ')
-    + '<div style="font-size:11.5px;opacity:.85;margin-top:4px">Puede indicar búsqueda de ayuda externa. Una salida breve también puede deberse a una notificación o a un clic fuera de la ventana; contrástelo en la entrevista.</div>'
-    + '</div>';
+  var col = grave ? { bg:'#fff1f2', bd:'#e11d48', tx:'#9f1239' } : { bg:'#fffbeb', bd:'#f59e0b', tx:'#92400e' };
+  return linea(col, '⚠️', 'Incidentes durante la evaluación:', items.join(' · '),
+    'Puede indicar búsqueda de ayuda externa. Una salida breve también puede deberse a una notificación o a un clic fuera de la ventana.');
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -7590,7 +7660,7 @@ function buildReportHtml(c, withClose) {
   var TAB_ORDER = ['integridad','dc0','pai','disc','pf16','situacional','vigilancia','comprension','normativa_ohs'];
   var completedTests = TAB_ORDER.filter(function(tid){ return tests.indexOf(tid) !== -1 && s[tid]; });
   var _ideal = PERFIL_IDEAL[c.perfil] || null;
-  var firstTab = (_ideal && completedTests.length) ? 'resumen' : (completedTests[0] || '');
+  var firstTab = completedTests.length ? 'resumen' : '';
 
   // ── Compute Resumen fit rows ──
   var _resRows = [], _totalPeso = 0, _totalFitPeso = 0;
@@ -7598,7 +7668,7 @@ function buildReportHtml(c, withClose) {
     var _allRTids = completedTests.concat(['juego_semaforo','juego_globos','juego_memoria'].filter(function(jt){ return tests.indexOf(jt)!==-1 && s[jt]; }));
     _allRTids.forEach(function(tid) {
       // DISC y 16PF son descriptivos: si un rasgo es fortaleza o no depende del
-      // lugar de trabajo y de la entrevista, así que no suman al ajuste global
+      // lugar de trabajo y de la entrevista, así que no se comparan con mínimos
       if (tid === 'disc' || tid === 'pf16') return;
       var idSec = _ideal[tid]; if (!idSec) return;
       var ts = s[tid] || {};
@@ -7606,7 +7676,7 @@ function buildReportHtml(c, withClose) {
         var raw = tid==='dc0' ? (ts.total||null) : (ts.pct!==undefined ? ts.pct : ts.score!==undefined ? ts.score : null);
         if (raw===null||raw===undefined) return;
         var rSig = _fitSig(raw, idSec.min);
-        _resRows.push({tid:tid,icon:(TESTS_META[tid]||{}).icon||'',label:idSec.label||(TESTS_META[tid]||{}).name||tid,score:Math.round(raw),min:idSec.min,max:idSec.max||100,req:idSec.req||'',sig:rSig,peso:idSec.peso||1});
+        _resRows.push({tid:tid,icon:(TESTS_META[tid]||{}).icon||'',label:idSec.label||(TESTS_META[tid]||{}).name||tid,score:Math.round(raw),ok:ts.correct,n:ts.total,min:idSec.min,max:idSec.max||100,req:idSec.req||'',sig:rSig,peso:idSec.peso||1});
         _totalPeso+=idSec.peso||1; _totalFitPeso+=(idSec.peso||1)*Math.min(100,raw);
       } else {
         var dKeys = Object.keys(idSec).filter(function(k){ return k!=='_pesos' && idSec[k] && idSec[k].min!==undefined; });
@@ -7623,18 +7693,7 @@ function buildReportHtml(c, withClose) {
       }
     });
   }
-  var _gFit = _totalPeso>0 ? Math.round(_totalFitPeso/_totalPeso) : null;
-  if (!_resRows.length && firstTab === 'resumen') firstTab = completedTests[0] || '';
-  var _rBad = _resRows.filter(function(r){return r.score<r.min*0.85;}).length;
-  var _rOk  = _resRows.filter(function(r){return r.score>=r.min;}).length;
-  var _gVerdict = _rBad===0 && _rOk>=Math.ceil(_resRows.length*0.7) ? 'Apto — dentro del perfil esperado'
-                : _rBad===0 ? 'Apto con observaciones'
-                : _rBad<=1   ? 'Requiere revisión'
-                : 'Fuera del perfil — múltiples áreas bajo mínimo';
-  var _gVColor = _rBad===0 && _rOk>=Math.ceil(_resRows.length*0.7) ? '#16a34a'
-               : _rBad===0 ? '#d97706' : _rBad<=1 ? '#d97706' : '#dc2626';
-  var _gVBg   = _rBad===0 && _rOk>=Math.ceil(_resRows.length*0.7) ? '#f0fdf4'
-               : _rBad===0 ? '#fffbeb' : _rBad<=1 ? '#fffbeb' : '#fef2f2';
+  var _rOk = _resRows.filter(function(r){ return r.score >= r.min; }).length;
 
   function scoreBar(label, score) {
     var lv = scoreLevel(score);
@@ -7657,76 +7716,254 @@ function buildReportHtml(c, withClose) {
   }
 
   var html = '<div class="rpt-modal" style="font-family:SF Pro Display,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;display:flex;flex-direction:column;height:100%;min-height:0">';
+  html += '<style>'
+    + '.rpt-tabs{display:flex;flex-wrap:wrap;align-items:center;gap:6px 6px;padding:10px 20px;background:#fff;border-bottom:1px solid #e2e8f0;flex-shrink:0}'
+    + '.rpt-tg{display:flex;flex-wrap:wrap;align-items:center;gap:3px;min-width:0}'
+    + '.rpt-tg+.rpt-tg{border-left:1px solid #e2e8f0;padding-left:10px;margin-left:4px}'
+    + '.rpt-tg-lbl{font-size:9.5px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:#94a3b8;margin-right:5px}'
+    + '.rpt-tab-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border:none;border-radius:8px;background:transparent;color:#475569;font-family:inherit;font-size:12.5px;font-weight:600;line-height:1.2;cursor:pointer;white-space:nowrap;transition:background .15s,color .15s}'
+    + '.rpt-tab-btn:hover{background:#f1f5f9;color:#0f172a}'
+    + '.rpt-tab-btn.on{background:#0f2d52;color:#fff}'
+    + '.rpt-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}'
+    + '.rpt-tab-btn.on .rpt-dot{box-shadow:0 0 0 2px rgba(255,255,255,.9)}'
+    + '.rpt-print-title{display:none}'
+    + '@media (max-width:640px){.rpt-tabs{padding:8px 12px}.rpt-tg+.rpt-tg{border-left:none;padding-left:0;margin-left:0}}'
+    + '</style>';
 
   // ── Header ──
-  html += '<div style="background:#0f2d52;color:#fff;padding:20px 28px 16px;flex-shrink:0;position:relative">';
-  if (withClose) html += '<button onclick="document.getElementById(\'cand-modal-overlay\').style.display=\'none\'" style="position:absolute;top:14px;right:14px;background:rgba(255,255,255,.15);border:none;color:#fff;width:30px;height:30px;border-radius:50%;font-size:16px;cursor:pointer;line-height:1">✕</button>';
-  html += '<div style="font-size:21px;font-weight:800;margin-bottom:3px">' + nombre + '</div>';
-  html += '<div style="font-size:13px;opacity:.75">' + cargo + (edad ? ' · ' + edad + ' años' : '') + ' · ' + fecha + '</div>';
-  if (completedTests.length) {
-    html += '<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:12px">';
-    completedTests.forEach(function(tid) {
-      var tm = TESTS_META[tid]; if (!tm) return;
-      html += '<span style="font-size:10px;font-weight:600;padding:3px 9px;border-radius:100px;background:rgba(255,255,255,.2);color:#fff">' + tm.icon + ' ' + htmlEsc(tm.name) + '</span>';
-    });
-    html += '</div>';
-  }
+  var _ini = ((c.nombre || '').trim().charAt(0) + (c.apellido || '').trim().charAt(0)).toUpperCase();
+  var _meta = [['Cargo', cargo]];
+  if (c.rut) _meta.push(['RUT', htmlEsc(c.rut)]);
+  if (edad) _meta.push(['Edad', edad + ' años']);
+  _meta.push(['Fecha de evaluación', fecha]);
+  _meta.push(['Pruebas rendidas', String(completedTests.length)]);
+  html += '<div style="background:#0f2d52;color:#fff;padding:18px 24px 14px;flex-shrink:0;position:relative">';
+  if (withClose) html += '<button onclick="document.getElementById(\'cand-modal-overlay\').style.display=\'none\'" title="Cerrar" style="position:absolute;top:14px;right:14px;background:rgba(255,255,255,.12);border:none;color:#fff;width:30px;height:30px;border-radius:50%;font-size:15px;cursor:pointer;line-height:1">✕</button>';
+  html += '<div style="display:flex;align-items:center;gap:14px;padding-right:44px">';
+  html += '<div style="width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;letter-spacing:.5px;flex-shrink:0">' + htmlEsc(_ini || '–') + '</div>';
+  html += '<div style="min-width:0"><div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.6">Informe psicolaboral</div>';
+  html += '<div style="font-size:20px;font-weight:800;line-height:1.25">' + nombre + '</div></div>';
   html += '</div>';
+  html += '<div style="display:flex;flex-wrap:wrap;gap:8px 30px;margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.14)">';
+  _meta.forEach(function(m){
+    html += '<div><div style="font-size:9.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;opacity:.55">' + m[0] + '</div>'
+      + '<div style="font-size:13px;font-weight:600;margin-top:1px">' + m[1] + '</div></div>';
+  });
+  html += '</div></div>';
 
   // ── Integridad (visible en todas las pestañas) ──
   var _integHtml = _integTestBannerHtml(s) + _integSummaryHtml(s) + _bateriaHtml(s);
-  if (_integHtml) html += '<div style="padding:12px 24px 0;background:#fff;flex-shrink:0;display:flex;flex-direction:column;gap:8px">' + _integHtml + '</div>';
+  if (_integHtml) html += '<div style="padding:10px 20px 0;background:#fff;flex-shrink:0;display:flex;flex-direction:column;gap:6px">' + _integHtml + '</div>';
 
-  // ── Tab bar ──
-  html += '<div style="background:#fff;border-bottom:1px solid #e2e8f0;display:flex;overflow-x:auto;flex-shrink:0;padding:0 20px">';
-  if (_ideal && _resRows.length) {
-    html += '<button class="rpt-tab-btn" onclick="switchReportTab(\'resumen\',this)" style="padding:12px 15px;border:none;border-bottom:2px solid ' + (firstTab==='resumen'?'var(--accent)':'transparent') + ';background:transparent;cursor:pointer;font-size:12px;font-weight:' + (firstTab==='resumen'?'700':'500') + ';color:' + (firstTab==='resumen'?'var(--accent)':'#94a3b8') + ';white-space:nowrap;flex-shrink:0">📊 Resumen</button>';
-  }
-  completedTests.forEach(function(tid) {
-    var tm = TESTS_META[tid]; if (!tm) return;
-    var active = tid === firstTab;
-    html += '<button class="rpt-tab-btn" onclick="switchReportTab(\'' + tid + '\',this)" style="padding:12px 15px;border:none;border-bottom:2px solid ' + (active ? 'var(--accent)' : 'transparent') + ';background:transparent;cursor:pointer;font-size:12px;font-weight:' + (active ? '700' : '500') + ';color:' + (active ? 'var(--accent)' : '#94a3b8') + ';white-space:nowrap;flex-shrink:0">' + tm.icon + ' ' + htmlEsc(tm.name) + '</button>';
+  // ── Tab bar: pestañas agrupadas por tipo de prueba ──
+  // El punto de color resume el resultado: aptitud frente al mínimo del cargo e
+  // integridad según su nivel. DISC y 16PF no llevan punto (son descriptivas).
+  var _TAB_CORTO = { resumen:'Resumen', integridad:'Integridad', dc0:'Aptitud cognitiva', situacional:'Juicio situacional', vigilancia:'Vigilancia',
+                     comprension:'Comprensión', normativa_ohs:'Normativa OHS', disc:'DISC', pf16:'16PF', pai:'Ajuste psicológico', referencias:'Referencias' };
+  var _TAB_GRUPOS = [ ['', ['resumen']], ['Integridad', ['integridad']], ['Aptitud', ['dc0','situacional','vigilancia','comprension','normativa_ohs']],
+                      ['Personalidad', ['disc','pf16','pai']], ['', ['referencias']] ];
+  var _tabDot = function(tid) {
+    if (tid === 'integridad' && s.integridad) {
+      return { sin_indicadores:'#16a34a', explorar:'#d97706', riesgo_alto:'#dc2626', no_interpretable:'#94a3b8' }[s.integridad.nivel] || '';
+    }
+    var r = _resRows.filter(function(x){ return x.tid === tid; })[0];
+    if (!r) return '';
+    return r.score >= r.min ? '#16a34a' : r.score >= r.min * 0.85 ? '#d97706' : '#dc2626';
+  };
+  var _tabTitulo = {};
+  html += '<div class="rpt-tabs">';
+  _TAB_GRUPOS.forEach(function(g) {
+    var ids = g[1].filter(function(tid){ return tid === 'referencias' || (tid === 'resumen' ? firstTab === 'resumen' : completedTests.indexOf(tid) !== -1); });
+    if (!ids.length) return;
+    // Un grupo de una sola pestaña con el mismo nombre no necesita rótulo
+    var lbl = (g[0] && !(ids.length === 1 && _TAB_CORTO[ids[0]] === g[0])) ? g[0] : '';
+    html += '<div class="rpt-tg">' + (lbl ? '<span class="rpt-tg-lbl">' + lbl + '</span>' : '');
+    ids.forEach(function(tid) {
+      var dot = _tabDot(tid);
+      var full = tid === 'resumen' ? 'Resumen' : tid === 'referencias' ? 'Referencias laborales' : ((TESTS_META[tid] || {}).name || tid);
+      _tabTitulo[tid] = full;
+      html += '<button class="rpt-tab-btn' + (tid === firstTab ? ' on' : '') + '" onclick="switchReportTab(\'' + tid + '\',this)" title="' + htmlEsc(full) + '">'
+        + (dot ? '<span class="rpt-dot" style="background:' + dot + '"></span>' : '') + _TAB_CORTO[tid] + '</button>';
+    });
+    html += '</div>';
   });
-  html += '<button class="rpt-tab-btn" onclick="switchReportTab(\'referencias\',this)" style="padding:12px 15px;border:none;border-bottom:2px solid transparent;background:transparent;cursor:pointer;font-size:12px;font-weight:500;color:#94a3b8;white-space:nowrap;flex-shrink:0">📞 Ref.</button>';
   html += '</div>';
 
   // ── Panels ──
   html += '<div style="overflow-y:auto;flex:1;padding:20px 24px">';
 
   // ── RESUMEN ──────────────────────────────────────────────────────
-  if (_ideal && _resRows.length) {
+  // Vista general de todas las pruebas. Solo las de aptitud se comparan con el
+  // mínimo del cargo; DISC y 16PF se describen; la integridad tiene su propio nivel.
+  if (firstTab === 'resumen') {
+    var _rsFirst = htmlEsc(((c.nombre || '').trim().split(/\s+/)[0]) || 'La persona evaluada');
+    var _rsCard = function(inner, extra){ return '<div style="background:#fff;border-radius:14px;border:1px solid #e2e8f0;padding:16px 18px;break-inside:avoid;page-break-inside:avoid;' + (extra || '') + '">' + inner + '</div>'; };
+    var _rsH3 = function(t, sub){ return '<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.6px">' + t + '</div>' + (sub ? '<div style="font-size:11.5px;color:#94a3b8;margin-top:2px">' + sub + '</div>' : '') + '</div>'; };
+    var _rsMide = {
+      dc0:'Razonamiento verbal, numérico y lógico',
+      pai:'Ajuste psicológico en el contexto laboral',
+      situacional:'Criterio para resolver situaciones habituales del trabajo',
+      vigilancia:'Aplicación de protocolos, detección de irregularidades y reacción ante riesgos',
+      comprension:'Leer y aplicar instrucciones con varias condiciones sin omitir pasos',
+      normativa_ohs:'Conocimiento de la normativa de seguridad y salud ocupacional'
+    };
+    var _rsPuntos = [];   // puntos para la entrevista
+
     html += '<div class="rpt-tab-panel" id="rpt-panel-resumen" style="display:flex;flex-direction:column;gap:14px">';
-    // Fit global card
-    html += '<div style="background:'+_gVBg+';border-radius:14px;border:1.5px solid '+_gVColor+'44;padding:18px 22px;display:flex;align-items:center;gap:18px">';
-    if (_gFit!==null) {
-      html += '<div style="text-align:center;flex-shrink:0;background:#fff;border-radius:12px;padding:10px 16px;border:1.5px solid '+_gVColor+'33">';
-      html += '<div style="font-size:36px;font-weight:900;color:'+_gVColor+';line-height:1">'+_gFit+'</div>';
-      html += '<div style="font-size:9px;font-weight:700;color:'+_gVColor+';text-transform:uppercase;letter-spacing:.5px;margin-top:1px">ajuste global</div>';
-      html += '</div>';
+
+    // ── 1. Pruebas de aptitud (con mínimo del cargo) ──
+    var _apt = _resRows.slice();
+    if (!_apt.length) {
+      // Sin perfil del cargo: se muestran los porcentajes sin mínimo
+      ['dc0','situacional','vigilancia','comprension','normativa_ohs'].forEach(function(tid){
+        if (completedTests.indexOf(tid) === -1) return;
+        var ts = s[tid] || {}, raw = tid === 'dc0' ? ts.total : ts.pct;
+        if (raw === undefined || raw === null) return;
+        var tm = TESTS_META[tid] || {};
+        _apt.push({ tid:tid, icon:tm.icon || '', label:tm.name || tid, score:Math.round(raw), min:null, ok:tid === 'dc0' ? undefined : ts.correct, n:tid === 'dc0' ? undefined : ts.total });
+      });
     }
-    html += '<div>';
-    html += '<div style="font-size:15px;font-weight:800;color:'+_gVColor+';margin-bottom:4px">'+htmlEsc(_gVerdict)+'</div>';
-    html += '<div style="font-size:12px;color:'+_gVColor+';opacity:.75">'+_rOk+' de '+_resRows.length+' áreas dentro del rango esperado para <strong>'+htmlEsc(cargo)+'</strong></div>';
-    html += '</div></div>';
-    // Test rows
-    html += '<div style="background:#fff;border-radius:14px;border:1px solid #e2e8f0;overflow:hidden">';
-    html += '<div style="padding:9px 14px;border-bottom:1px solid #e2e8f0;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px">Señal por área evaluada</div>';
-    _resRows.forEach(function(row) {
-      html += '<div style="padding:11px 14px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:10px">';
-      html += '<span style="font-size:18px;flex-shrink:0">'+row.icon+'</span>';
-      html += '<div style="flex:1;min-width:0">';
-      html += '<div style="font-size:13px;font-weight:600;color:#0f172a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+htmlEsc(row.label)+'</div>';
-      if (row.dimNote) html += '<div style="font-size:10px;color:#94a3b8;margin-top:1px">'+htmlEsc(row.dimNote)+'</div>';
-      html += '</div>';
-      html += '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0">';
-      html += '<span style="font-size:18px;font-weight:900;color:'+row.sig.color+'">'+row.score+'</span>';
-      html += '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">';
-      html += '<span style="font-size:10px;font-weight:700;padding:2px 9px;border-radius:100px;background:'+row.sig.bg+';color:'+row.sig.color+'">'+row.sig.label+'</span>';
-      html += '<span style="font-size:9.5px;color:#94a3b8">mín. '+row.min+'%</span>';
-      html += '</div></div>';
-      html += '</div>';
-    });
-    html += '</div>';
+    if (_apt.length) {
+      var _conMin = _apt.filter(function(r){ return r.min !== null && r.min !== undefined; });
+      var _bajo = _conMin.filter(function(r){ return r.score < r.min; });
+      var _aptHead = '';
+      if (_conMin.length) {
+        var _aCol = !_bajo.length ? '#15803d' : _bajo.length === _conMin.length ? '#b91c1c' : '#b45309';
+        var _aBg  = !_bajo.length ? '#f0fdf4' : _bajo.length === _conMin.length ? '#fef2f2' : '#fffbeb';
+        var _aTxt = !_bajo.length ? 'Alcanza el mínimo del cargo en todas las pruebas de aptitud.'
+                  : _bajo.length === 1 ? 'Queda bajo el mínimo del cargo en ' + htmlEsc(_bajo[0].label) + '.'
+                  : 'Queda bajo el mínimo del cargo en ' + _bajo.length + ' pruebas.';
+        _aptHead = '<div style="display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:12px;background:' + _aBg + ';margin-bottom:14px">'
+          + '<div style="text-align:center;flex-shrink:0;min-width:64px"><div style="font-size:26px;font-weight:900;color:' + _aCol + ';line-height:1">' + _rOk + '<span style="font-size:15px;opacity:.6"> / ' + _conMin.length + '</span></div>'
+          + '<div style="font-size:9px;font-weight:700;color:' + _aCol + ';text-transform:uppercase;letter-spacing:.4px;margin-top:3px">sobre el mínimo</div></div>'
+          + '<div style="font-size:13px;color:#1e293b;line-height:1.55">' + _aTxt + '</div></div>';
+      }
+      var _aptRows = '';
+      _apt.forEach(function(row){
+        var hasMin = row.min !== null && row.min !== undefined;
+        var sg = hasMin ? _fitSig(row.score, row.min) : { color:'#475569', bg:'#f1f5f9', label:'' };
+        var p = Math.max(0, Math.min(100, row.score));
+        var det = [];
+        if (row.ok !== undefined && row.n) det.push(row.ok + ' de ' + row.n + ' correctas');
+        if (row.dimNote) det.push(row.dimNote);
+        _aptRows += '<div style="padding:11px 0;border-top:1px solid #f1f5f9">'
+          + '<div style="display:flex;align-items:flex-start;gap:10px">'
+          + '<span style="font-size:17px;flex-shrink:0;line-height:1.2">' + row.icon + '</span>'
+          + '<div style="flex:1;min-width:0">'
+          + '<div style="font-size:13px;font-weight:700;color:#0f172a">' + htmlEsc(row.label) + '</div>'
+          + (_rsMide[row.tid] ? '<div style="font-size:11.5px;color:#64748b;margin-top:1px">' + _rsMide[row.tid] + '</div>' : '')
+          + '</div>'
+          + '<div style="text-align:right;flex-shrink:0">'
+          + '<div style="font-size:17px;font-weight:900;color:' + sg.color + ';line-height:1.1">' + row.score + '<span style="font-size:11px;font-weight:700">%</span></div>'
+          + (hasMin ? '<div style="font-size:10px;font-weight:700;color:' + sg.color + '">' + (row.score >= row.min ? 'Sobre el mínimo' : 'Bajo el mínimo') + '</div>' : '')
+          + '</div></div>'
+          + '<div style="position:relative;height:6px;background:#e2e8f0;border-radius:100px;margin:8px 0 3px 27px">'
+          + '<div style="position:absolute;left:0;top:0;height:100%;width:' + p + '%;background:' + sg.color + ';border-radius:100px"></div>'
+          + (hasMin ? '<div style="position:absolute;left:' + row.min + '%;top:-3px;bottom:-3px;width:2px;background:#0f172a" title="Mínimo del cargo"></div>' : '')
+          + '</div>'
+          + '<div style="display:flex;justify-content:space-between;font-size:10.5px;color:#94a3b8;margin-left:27px">'
+          + '<span>' + det.join(' · ') + '</span>'
+          + (hasMin ? '<span>mínimo del cargo: ' + row.min + '%</span>' : '')
+          + '</div></div>';
+        if (hasMin && row.score < row.min) {
+          _rsPuntos.push('<strong>' + htmlEsc(row.label) + ':</strong> ' + row.score + '%, bajo el mínimo de ' + row.min + '%. Verifique en la entrevista o con una tarea práctica si refleja una dificultad real para el puesto.');
+        }
+      });
+      html += _rsCard(_rsH3('Pruebas de aptitud', _conMin.length ? 'Porcentaje de respuestas correctas, comparado con el mínimo definido para ' + cargo : 'Porcentaje de respuestas correctas (el cargo no tiene mínimos definidos)')
+        + _aptHead + _aptRows);
+    }
+
+    // ── 2. Integridad laboral (prueba) ──
+    if (s.integridad && INTEG_NIVELES[s.integridad.nivel]) {
+      var _ig = s.integridad, _ign = INTEG_NIVELES[_ig.nivel];
+      var _igDet = [];
+      if (_ig.total !== undefined && _ig.max) _igDet.push('Puntaje de riesgo: ' + _ig.total + ' de ' + _ig.max);
+      if (_ig.criticos && _ig.criticos.length) _igDet.push(_ig.criticos.length + (_ig.criticos.length === 1 ? ' respuesta crítica' : ' respuestas críticas'));
+      html += _rsCard(_rsH3('Integridad laboral', TESTS_META.integridad.name + ' · tiene criterio propio de riesgo')
+        + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px">' + _integNivelBadge(_ig)
+        + (_igDet.length ? '<span style="font-size:11.5px;color:#64748b">' + _igDet.join(' · ') + '</span>' : '') + '</div>'
+        + '<div style="font-size:12.5px;color:#334155;line-height:1.65">' + _ign.txt + '</div>');
+      if (_ig.nivel !== 'sin_indicadores') {
+        _rsPuntos.push('<strong>Integridad laboral:</strong> ' + _ign.titulo.toLowerCase() + '. Revise las respuestas y las preguntas sugeridas en la pestaña "' + TESTS_META.integridad.name + '".');
+      }
+    }
+
+    // ── 3. Personalidad: DISC y 16PF (descriptivas) ──
+    var _pers = '';
+    if (s.disc) {
+      var _dv = function(k){ return Math.round(s.disc[k] || 0); };
+      var _dk = ['D','I','S','C'];
+      var _ds = _dk.slice().sort(function(a, b){ return _dv(b) - _dv(a); });
+      var _dFlat = _dv(_ds[0]) - _dv(_ds[3]) < 20;
+      var _dSec = _dv(_ds[1]) >= 55 ? _ds[1] : '';
+      var _dProf = _DISC_PROFILES[_ds[0] + _dSec] || _DISC_PROFILES[_ds[0]] || { name:DISC_DIM_LABELS[_ds[0]], tagline:'' };
+      var _dBars = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0 4px">';
+      _dk.forEach(function(k){
+        _dBars += '<div style="text-align:center"><div style="height:56px;display:flex;align-items:flex-end;justify-content:center;background:#f8fafc;border-radius:6px">'
+          + '<div style="width:60%;height:' + Math.max(3, _dv(k)) + '%;background:' + DISC_RPT.color[k] + ';border-radius:4px 4px 0 0"></div></div>'
+          + '<div style="font-size:12px;font-weight:900;color:' + DISC_RPT.color[k] + ';margin-top:4px">' + k + ' <span style="color:#0f172a">' + _dv(k) + '</span></div>'
+          + '<div style="font-size:9.5px;color:#94a3b8">' + DISC_DIM_LABELS[k] + '</div></div>';
+      });
+      _dBars += '</div>';
+      _pers += _rsCard(_rsH3('Estilo conductual · DISC', 'Descriptivo: no hay estilos buenos ni malos')
+        + '<div style="font-size:15px;font-weight:800;color:#0f172a;margin-bottom:4px">' + (_dFlat ? 'Perfil equilibrado' : htmlEsc(_dProf.name)) + '</div>'
+        + '<div style="font-size:12.5px;color:#475569;line-height:1.6">' + (_dFlat
+            ? 'Los cuatro factores están próximos entre sí: puede reflejar flexibilidad o respuestas poco diferenciadas.'
+            : htmlEsc(_dProf.tagline || '')) + '</div>'
+        + _dBars, 'flex:1 1 300px');
+      if (_dFlat) _rsPuntos.push('<strong>DISC:</strong> perfil poco diferenciado. Pida ejemplos concretos de cómo actúa bajo presión y cómo se relaciona con su jefatura.');
+    }
+    if (s.pf16) {
+      var _pf = s.pf16, _pR = PF16_RPT;
+      var _pEx = (_pf._v !== 2 && _pf.EX !== undefined && _pf.EX !== null) ? pf16ExRangoAntiguo(_pf.EX) : null;
+      var _pMarc = [];
+      var _pRows = '';
+      _pR.orden.forEach(function(k){
+        if (_pf[k] === undefined || _pf[k] === null) return;
+        var d = _pR.dim[k], v = Math.round(_pf[k]);
+        var rng = (k === 'EX' && _pEx) ? _pEx : null;
+        var z = rng ? (pf16ZoneOf(rng[0]) === pf16ZoneOf(rng[1]) ? pf16ZoneOf(rng[0]) : 'indet') : pf16ZoneOf(v);
+        if (z === 'alto') _pMarc.push(d.polos[1] + ' (' + d.nombre + ' ' + v + ')');
+        if (z === 'bajo') _pMarc.push(d.polos[0] + ' (' + d.nombre + ' ' + v + ')');
+        var mark = rng
+          ? '<div style="position:absolute;left:' + rng[0] + '%;width:' + Math.max(2, rng[1] - rng[0]) + '%;top:-2px;bottom:-2px;background:#0f766e55;border-radius:100px"></div>'
+          : '<div style="position:absolute;left:calc(' + v + '% - 6px);top:-4px;width:12px;height:12px;border-radius:50%;background:#0f766e;border:2px solid #fff;box-shadow:0 0 0 1px #0f766e"></div>';
+        _pRows += '<div style="margin-bottom:11px">'
+          + '<div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:5px"><span style="font-weight:700;color:#0f172a">' + d.nombre + '</span>'
+          + '<span style="font-weight:800;color:#0f766e">' + (rng ? rng[0] + '–' + rng[1] : v) + '</span></div>'
+          + '<div style="position:relative;height:4px;background:linear-gradient(90deg,#e2e8f0 0 40%,#cbd5e1 40% 70%,#e2e8f0 70%);border-radius:100px">' + mark + '</div>'
+          + '<div style="display:flex;justify-content:space-between;font-size:9.5px;color:#94a3b8;margin-top:4px"><span>' + d.polos[0] + '</span><span>' + d.polos[1] + '</span></div>'
+          + '</div>';
+      });
+      _pers += _rsCard(_rsH3('Personalidad · 16PF abreviado', 'Autodescripción: ningún polo es mejor que el otro')
+        + _pRows
+        + (_pEx ? '<div style="font-size:10.5px;color:#94a3b8">Extraversión: evaluación anterior a la corrección; se muestra el rango posible.</div>' : ''), 'flex:1 1 300px');
+      if (_pMarc.length) _rsPuntos.push('<strong>Personalidad:</strong> rasgos marcados — ' + htmlEsc(_pMarc.join(', ')) + '. Evalúe en la entrevista si son una fortaleza o una dificultad para este puesto.');
+    }
+    if (_pers) html += '<div style="display:flex;flex-wrap:wrap;gap:14px">' + _pers + '</div>';
+
+    // ── 4. Condiciones de la evaluación ──
+    var _mon = s._integridad;
+    if (_mon && (_mon.salidas || _mon.copiar || _mon.captura || _mon.imprimir)) {
+      _rsPuntos.push('<strong>Condiciones de la evaluación:</strong> hubo incidentes mientras respondía (ver aviso arriba). Pregunte si recibió ayuda o consultó otras fuentes.');
+    }
+    if (s._bateria && s._bateria.faltantes && s._bateria.faltantes.length) {
+      _rsPuntos.push('<strong>Batería incompleta:</strong> no rindió ' + htmlEsc(_testNames(s._bateria.faltantes)) + '.');
+    }
+
+    // ── 5. Puntos para la entrevista ──
+    html += _rsCard(_rsH3('Puntos para la entrevista', 'Generados a partir de los resultados')
+      + (_rsPuntos.length
+          ? '<ul style="margin:0;padding-left:18px;font-size:12.5px;color:#1e293b;line-height:1.7">' + _rsPuntos.map(function(t){ return '<li style="margin-bottom:4px">' + t + '</li>'; }).join('') + '</ul>'
+          : '<div style="font-size:12.5px;color:#334155;line-height:1.65">Los resultados no muestran aspectos que requieran una exploración especial. Use la entrevista para confirmar con ejemplos concretos lo descrito en cada prueba.</div>'));
+
+    // ── 6. Cómo leer este resumen ──
+    html += '<div style="font-size:11.5px;color:#64748b;line-height:1.65;padding:10px 14px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0">'
+      + '<strong>Cómo leer este resumen.</strong> Las pruebas de aptitud miden el porcentaje de respuestas correctas y se comparan con el mínimo configurado para el cargo en Panel → Cargos. '
+      + 'DISC y 16PF describen estilo y personalidad: no se comparan con un perfil esperado, porque que un rasgo sea fortaleza depende del puesto y de la entrevista. '
+      + 'La prueba de integridad entrega su propio nivel de riesgo. Ningún resultado por sí solo decide la contratación; la decisión corresponde al evaluador.'
+      + '</div>';
+
     html += '</div>'; // end resumen panel
   }
 
@@ -7952,6 +8189,11 @@ function buildReportHtml(c, withClose) {
 
   html += '</div>'; // end panels
   html += '</div>'; // end rpt-modal
+  // Título de cada sección para el PDF (en pantalla lo da la pestaña activa)
+  html = html.replace(/(<div class="rpt-tab-panel" id="rpt-panel-([a-z0-9_]+)"[^>]*>)/g, function(m, open, tid) {
+    var t = tid === 'integridad' ? 'Integridad laboral — ' + TESTS_META.integridad.name : _tabTitulo[tid];
+    return t ? open + '<div class="rpt-print-title" style="font-size:15px;font-weight:800;color:#0f2d52;padding-bottom:6px;margin-bottom:12px;border-bottom:2px solid #0f2d52">' + htmlEsc(t) + '</div>' : open;
+  });
   return html;
 }
 
@@ -8381,7 +8623,7 @@ function renderBateriaTab() {
     '💡 Evaluación Situacional':       'Escenarios laborales y protocolos. Evalúan criterio ante situaciones reales del cargo.',
     '📐 Conocimiento Técnico':         'Evalúa dominio de normativa y conocimiento especializado del cargo. Disponible solo para perfiles que lo requieran. Actualmente: Prevencionista de Riesgo.',
     '🧭 Integridad laboral':          'Evaluativa: entrega un nivel de riesgo (sin indicadores, a explorar, riesgo alto o no interpretable) con los motivos. Puede fundamentar un rechazo; la decisión final es del evaluador.',
-    '🎭 Perfil Conductual':    'Pruebas descriptivas: el informe describe el perfil sin compararlo con un perfil esperado ni sumar al ajuste global. Si un rasgo es una fortaleza depende del puesto y de la entrevista.',
+    '🎭 Perfil Conductual':    'Pruebas descriptivas: el informe describe el perfil sin compararlo con un perfil esperado ni con mínimos del cargo. Si un rasgo es una fortaleza depende del puesto y de la entrevista.',
     '🎮 Juegos Conductuales':          'Simulaciones conductuales que miden estabilidad emocional, normatividad e integridad sin riesgo de deseabilidad social. · ⚡ Sala de Crisis: respuesta ante múltiples alertas simultáneas y presión temporal. · 🧭 Dilemas de Supervisión: criterio ético, liderazgo e integridad ante situaciones reales del cargo.',
     '⏸ Juegos Cognitivos (en pausa)': 'Juegos disponibles pero desactivados temporalmente. Se pueden activar para perfiles que los requieran.',
   };
@@ -9441,7 +9683,8 @@ async function downloadPdfReport(id) {
     div { break-inside: avoid; }
 
     /* Hide tab bar and action buttons */
-    .rpt-tab-btn { display: none !important; }
+    .rpt-tab-btn, .rpt-tabs { display: none !important; }
+    .rpt-print-title { display: block !important; }
     button { display: none !important; }
 
     /* Colors */
@@ -9483,6 +9726,8 @@ function printReport() {
 body{font-size:11px;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
 .rpt-tab-panel{display:block!important}
+.rpt-tabs{display:none!important}
+.rpt-print-title{display:block!important}
 div{break-inside:avoid}
 </style></head><body>${clone.innerHTML}</body></html>`;
   const blob = new Blob([printHtml], { type: 'text/html;charset=utf-8' });
