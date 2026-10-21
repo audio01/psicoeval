@@ -1437,8 +1437,6 @@ body.exam-away #exam-shield{display:flex}
     <button class="btn btn-ghost btn-sm" onclick="gotoRegister()" style="margin-bottom:24px;color:var(--ink3)">← Volver</button>
     <h2 style="font-size:26px;font-weight:800;margin-bottom:14px" id="sel-title">Tu evaluación</h2>
     <div id="sel-profile-banner" style="border-radius:12px;padding:16px 18px;margin-bottom:20px;border:1.5px solid"></div>
-    <div id="sel-tests-list" style="display:none"></div>
-    <div id="sel-total-time" style="display:none"></div>
 
     <!-- Aviso de tiempo — banner prominente -->
     <div style="background:#fff1f2;border:2px solid #f43f5e;border-radius:14px;overflow:hidden;margin-bottom:16px;box-shadow:0 4px 16px rgba(244,63,94,.15)">
@@ -1801,18 +1799,6 @@ body.exam-away #exam-shield{display:flex}
             <div id="contacto-card"></div>
           </div>
         </div>
-        <!-- Webhook settings -->
-        <div style="margin-top:36px;border-top:1px solid var(--border);padding-top:24px">
-          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
-            <div>
-              <div style="font-size:16px;font-weight:700">Webhook de notificaciones</div>
-              <div style="font-size:12px;color:var(--ink3);margin-top:2px">Recibe una notificación automática cada vez que un candidato complete su evaluación</div>
-            </div>
-            <button onclick="openWebhookSettings()" class="btn btn-outline btn-sm" style="display:flex;align-items:center;gap:6px">
-              <span>🔔</span><span id="webhook-btn-label">Configurar webhook</span>
-            </button>
-          </div>
-        </div>
       </div>
 
       <!-- Baterías -->
@@ -1935,29 +1921,6 @@ body.exam-away #exam-shield{display:flex}
   </div>
 </div>
 
-<!-- Webhook settings modal -->
-<div id="webhook-modal" class="overlay" style="display:none" onclick="if(event.target===this)this.style.display='none'">
-  <div class="modal" style="max-width:480px;width:100%" onclick="event.stopPropagation()">
-    <h3 style="margin-bottom:4px">🔔 Webhook de notificaciones</h3>
-    <p class="sub" style="margin-bottom:20px">Cuando un candidato complete su evaluación, se enviará automáticamente un POST a esta URL con los datos del resultado.</p>
-    <div style="display:flex;flex-direction:column;gap:12px">
-      <div class="field">
-        <label style="font-size:12px;font-weight:600;color:var(--ink2)">URL del webhook</label>
-        <input type="url" id="webhook-url-input" placeholder="https://hooks.zapier.com/hooks/catch/..." style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit">
-      </div>
-      <div style="background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-size:12px;color:var(--ink3);line-height:1.7">
-        <strong style="color:var(--ink2);display:block;margin-bottom:4px">Payload enviado (JSON):</strong>
-        <code>event, timestamp, candidato &#123;nombre, apellido, email, rut, cargo, comuna&#125;, resultado &#123;fit_global, fit_label, tests&#125;</code>
-      </div>
-      <div id="webhook-status" style="font-size:12px;min-height:18px"></div>
-    </div>
-    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px;flex-wrap:wrap">
-      <button class="btn btn-ghost btn-sm" onclick="testWebhook()" style="margin-right:auto">Probar conexión</button>
-      <button class="btn btn-outline" onclick="document.getElementById('webhook-modal').style.display='none'">Cancelar</button>
-      <button class="btn btn-primary" onclick="saveWebhookSettings()">Guardar</button>
-    </div>
-  </div>
-</div>
 
 <!-- Delete confirmation modal -->
 <div id="del-modal" class="overlay" style="display:none">
@@ -2060,14 +2023,15 @@ const TESTS_META = {
   integridad:       { name:'Actitudes en el trabajo',          icon:'🧭', color:'#b45309' },   // integridad laboral (nombre neutro para el candidato)
   gonogo:           { name:'Control de impulsos',              icon:'🎯', color:'#dc2626', game:true, cand:'Reacción y atención', badge:'⏱ Tarea de reacción' },
   bart:             { name:'Control del riesgo',               icon:'🎈', color:'#7c3aed', game:true, cand:'Globos', badge:'🎈 Tarea de decisión' },
+  // Juegos retirados: solo para mostrar resultados de evaluaciones antiguas
   juego_semaforo:   { name:'Semáforo',                         icon:'🚦', color:'#16a34a', game:true },
-  juego_globos:     { name:'Globos',                           icon:'🎈', color:'#6366f1', game:true },
+  juego_globos:     { name:'Globos (versión anterior)',        icon:'🎈', color:'#6366f1', game:true },
   juego_memoria:    { name:'Memoria',                          icon:'🧠', color:'#0891b2', game:true },
 };
 
 // Default batteries — can be overridden via Baterías
 const PERFIL_TESTS_DEFAULT = {
-  jefatura:       ['dc0','situacional','comprension','disc','pf16','juego_memoria'],
+  jefatura:       ['dc0','situacional','comprension','disc','pf16'],
   administrativo: ['dc0','comprension','disc','pf16'],
   guardia:        ['situacional','vigilancia','comprension','integridad','disc','pf16','gonogo','bart'],
   supervisor:     ['dc0','situacional','comprension','integridad','disc','pf16','gonogo'],
@@ -2077,7 +2041,6 @@ const PERFIL_TESTS_DEFAULT = {
 };
 
 // All available tests per cargo (max possible)
-const ALL_TESTS_AVAILABLE = ['dc0','situacional','vigilancia','comprension','normativa_ohs','integridad','disc','pf16','gonogo','bart','juego_semaforo','juego_globos','juego_memoria'];
 
 // Active batteries (loaded from localStorage, falls back to default)
 var PERFIL_TESTS = Object.assign({}, PERFIL_TESTS_DEFAULT);
@@ -2099,122 +2062,10 @@ function saveBatteryConfig() {
   _cfgPush('batteries');
 }
 
-// ── Webhook configurable ─────────────────────────────────────────────────────
-const _WEBHOOK_KEY = 'psicoeval_webhook_url';
 
-function getWebhookUrl() {
-  try { return localStorage.getItem(_WEBHOOK_KEY) || ''; } catch(e) { return ''; }
-}
-function saveWebhookUrl(url) {
-  try {
-    if (url) localStorage.setItem(_WEBHOOK_KEY, url);
-    else localStorage.removeItem(_WEBHOOK_KEY);
-  } catch(e) {}
-  _cfgPush('webhook_url');
-}
 
-// ── Resend email notification ─────────────────────────────────────────────────
-function _sendEmailNotification(candidate, scores) {
-  if (!RESEND_API_KEY || !RESEND_ADMIN_TO) return;
-  try {
-    var nombre  = (candidate.nombre || '') + ' ' + (candidate.apellido || '');
-    var cargo   = candidate.cargo || candidate.perfil || 'Sin cargo';
-    var fecha   = candidate.fecha || new Date().toLocaleDateString('es-CL');
-    var subject = '✅ Evaluación completada — ' + nombre.trim();
-    var html = '<div style="font-family:system-ui,sans-serif;max-width:560px;margin:0 auto">'
-      + '<div style="background:#0f2d52;padding:24px;border-radius:12px 12px 0 0">'
-      + '<h2 style="color:#fff;margin:0;font-size:18px">✅ Evaluación completada</h2></div>'
-      + '<div style="background:#fff;border:1px solid #e2e8f0;padding:24px;border-radius:0 0 12px 12px">'
-      + '<table style="width:100%;border-collapse:collapse">'
-      + '<tr><td style="padding:8px 0;color:#64748b;font-size:13px;width:120px">Candidato</td>'
-      + '<td style="padding:8px 0;font-size:13px;font-weight:600;color:#0f172a">' + nombre.trim() + '</td></tr>'
-      + '<tr><td style="padding:8px 0;color:#64748b;font-size:13px">Email</td>'
-      + '<td style="padding:8px 0;font-size:13px;color:#0f172a">' + (candidate.email||'—') + '</td></tr>'
-      + '<tr><td style="padding:8px 0;color:#64748b;font-size:13px">Cargo</td>'
-      + '<td style="padding:8px 0;font-size:13px;color:#0f172a">' + cargo + '</td></tr>'
-      + '<tr><td style="padding:8px 0;color:#64748b;font-size:13px">Fecha</td>'
-      + '<td style="padding:8px 0;font-size:13px;color:#0f172a">' + fecha + '</td></tr>'
-      + '</table>'
-      + '<div style="margin-top:20px;padding-top:16px;border-top:1px solid #f1f5f9;font-size:12px;color:#94a3b8">Enviado automáticamente por PsicoEval</div>'
-      + '</div></div>';
 
-    fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + RESEND_API_KEY
-      },
-      body: JSON.stringify({
-        from:    RESEND_FROM,
-        to:      [RESEND_ADMIN_TO],
-        subject: subject,
-        html:    html
-      })
-    }).catch(function(e) { console.warn('Email notification failed:', e.message); });
-  } catch(e) { console.warn('_sendEmailNotification error:', e.message); }
-}
 
-function _fireWebhook(candidate, scores) {
-  const url = getWebhookUrl();
-  if (!url) return;
-  const pm  = PERFIL_META[candidate.perfil] || {};
-  const payload = {
-    event:     'evaluacion_completada',
-    timestamp: new Date().toISOString(),
-    candidato: {
-      nombre:   candidate.nombre,
-      apellido: candidate.apellido,
-      email:    candidate.email,
-      rut:      candidate.rut,
-      cargo:    pm.label || candidate.perfil,
-      comuna:   candidate.comuna || null,
-    },
-    resultado: {
-      tests: candidate.tests || [],
-    }
-  };
-  fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-    mode: 'no-cors'
-  }).catch(function(e) { console.warn('Webhook error:', e.message); });
-}
-
-function openWebhookSettings() {
-  const url   = getWebhookUrl();
-  const modal = document.getElementById('webhook-modal');
-  if (!modal) return;
-  document.getElementById('webhook-url-input').value = url;
-  document.getElementById('webhook-status').textContent = '';
-  modal.style.display = 'flex';
-}
-
-function saveWebhookSettings() {
-  const url      = (document.getElementById('webhook-url-input').value || '').trim();
-  const statusEl = document.getElementById('webhook-status');
-  if (url && !/^https?:\/\/.+/.test(url)) {
-    statusEl.textContent = 'La URL debe comenzar con http:// o https://';
-    statusEl.style.color = 'var(--rose)';
-    return;
-  }
-  saveWebhookUrl(url);
-  statusEl.textContent = url ? '✓ Webhook guardado' : '✓ Webhook eliminado';
-  statusEl.style.color = 'var(--green)';
-  setTimeout(function() { document.getElementById('webhook-modal').style.display = 'none'; }, 1200);
-  toast(url ? 'Webhook configurado' : 'Webhook eliminado', 'ok');
-}
-
-function testWebhook() {
-  const url      = (document.getElementById('webhook-url-input').value || '').trim();
-  const statusEl = document.getElementById('webhook-status');
-  if (!url) { statusEl.textContent = 'Ingresa una URL primero'; statusEl.style.color = 'var(--rose)'; return; }
-  statusEl.textContent = 'Enviando prueba…'; statusEl.style.color = 'var(--ink3)';
-  const payload = { event: 'test_conexion', timestamp: new Date().toISOString(), fuente: 'PsicoEval' };
-  fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload), mode:'no-cors' })
-    .then(function() { statusEl.textContent = '✓ Petición enviada (modo no-cors — verifica en tu servidor)'; statusEl.style.color = 'var(--green)'; })
-    .catch(function(e) { statusEl.textContent = '✗ Error: ' + e.message; statusEl.style.color = 'var(--rose)'; });
-}
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ── Config change history ─────────────────────────────────────────────────────
@@ -2307,8 +2158,7 @@ var _CFG_KEYS = {
   tm_mins:       LS_TM_MINS,        // │
   contacto:      LS_CONTACTO,       // ┘ WhatsApp para avisar que terminó (11_contacto.sql)
   params:        LS_PARAMS,         // ┐ solo panel (el candidato no las ve:
-  webhook_url:   _WEBHOOK_KEY,      // │ le servirían para acomodar respuestas)
-  config_log:    _CONFIG_LOG_KEY    // ┘
+  config_log:    _CONFIG_LOG_KEY    // ┘ le servirían para acomodar respuestas)
 };
 var _cfgLoaded = false;
 var _CFG_SYNC_FLAG = 'psicoeval_cfg_sincronizado';   // este navegador ya se sincronizó como admin
@@ -2323,22 +2173,15 @@ function _cfgHeaders() {
   try { token = S && S.authToken; } catch(e) {}
   return { 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + (token || SUPA_KEY) };
 }
-// El webhook se guarda en localStorage como texto plano; el resto como JSON
 function _cfgLocalValue(key) {
   var raw = null;
   try { raw = localStorage.getItem(_CFG_KEYS[key]); } catch(e) {}
   if (raw === null) return undefined;
-  if (key === 'webhook_url') return raw;
   try { return JSON.parse(raw); } catch(e) { return undefined; }
 }
 function _cfgSetLocal(key, value) {
   try {
-    if (key === 'webhook_url') {
-      if (value) localStorage.setItem(_CFG_KEYS[key], String(value));
-      else localStorage.removeItem(_CFG_KEYS[key]);
-    } else {
-      localStorage.setItem(_CFG_KEYS[key], JSON.stringify(value));
-    }
+    localStorage.setItem(_CFG_KEYS[key], JSON.stringify(value));
   } catch(e) {}
 }
 
@@ -2347,7 +2190,7 @@ function _cfgSetLocal(key, value) {
 // reintenta sola y el panel muestra un aviso hasta que se guarde.
 var _CFG_PENDING_KEY = 'psicoeval_cfg_pendiente';
 var _CFG_NOMBRES = { batteries:'Baterías', cargos:'Cargos activos', custom_cargos:'Cargos personalizados', tm_mins:'Tiempos', contacto:'Mensaje final',
-                     params:'Mínimos por cargo', webhook_url:'Webhook', config_log:'Historial' };
+                     params:'Mínimos por cargo', config_log:'Historial' };
 function _cfgPendientes() {
   try { return JSON.parse(localStorage.getItem(_CFG_PENDING_KEY) || '[]'); } catch(e) { return []; }
 }
@@ -2386,7 +2229,7 @@ window.addEventListener('online', function(){ _cfgReintentarPendientes(false); }
 
 async function _cfgUpload(key, reintento) {
   var value = _cfgLocalValue(key);
-  if (value === undefined) value = (key === 'webhook_url') ? '' : null;
+  if (value === undefined) value = null;
   if (value === null) return;
   var userEmail = '';
   try { userEmail = S.userEmail || ''; } catch(e) {}
@@ -2552,7 +2395,7 @@ function _cfgReloadAll() {
   } catch(e) {}
 }
 
-var TM_MINS_DEFAULTS = { dc0:6, pai:5, situacional:5, vigilancia:3, comprension:4, disc:3, pf16:4, normativa_ohs:6, integridad:5, gonogo:4, bart:3, juego_semaforo:4, juego_globos:5, juego_memoria:5 };
+var TM_MINS_DEFAULTS = { dc0:6, pai:5, situacional:5, vigilancia:3, comprension:4, disc:3, pf16:4, normativa_ohs:6, integridad:5, gonogo:4, bart:3 };
 var TM_MINS_CONFIG = (function(){
   try {
     var saved = localStorage.getItem('psicoeval_tm_mins');
@@ -4016,8 +3859,6 @@ function launchTestMode(perfil) {
 // ═══════════════════════════════════════════════════════════
 //  INFORME PROFESIONAL
 // ═══════════════════════════════════════════════════════════
-const PAI_NAMES = {EE:'Est. Emocional',AS:'Adapt. Social',ON:'Orient. Normativa',ME:'Manejo del Estrés',IL:'Integridad Laboral',ML:'Motivación Laboral'};
-const PAI_COLORS = {EE:'#1c5d8c',AS:'#3a7850',ON:'#a07528',ME:'#c04b1c',IL:'#3a7850',ML:'#1c5d8c'};
 
 
 // ═══════════════════════════════════════════════════════════
@@ -4069,11 +3910,8 @@ const SUPA_URL = 'https://refjkmmlivssauxdnflf.supabase.co';
 const SUPA_KEY = 'sb_publishable_iiS3T7VOXatZ3GQDPI1qhQ_P6YbASUh';
 // La clave service_role NUNCA va en esta página: la gestión de usuarios la hace
 // la Edge Function "psicoeval-usuarios" (supabase/functions/), que la tiene en el servidor.
-// Resend API key para notificaciones por email al admin cuando un candidato termina.
-// Obtén una gratuita en https://resend.com — plan free incluye 3,000 emails/mes.
-const RESEND_API_KEY  = '';    // No pegar claves aquí: esta página es pública. Los correos deben enviarse desde el servidor (pendiente).
-const RESEND_FROM     = 'PsicoEval <notificaciones@tudominio.com>'; // remitente verificado
-const RESEND_ADMIN_TO = '';    // email del admin que recibirá las notificaciones
+// Los avisos por correo al terminar una evaluación deben enviarse desde el servidor (pendiente):
+// esta página es pública y no puede llevar claves de envío.
 
 // ── Supabase Auth ─────────────────────────────────────────────────────────────
 // Headers dinámicos: usa el JWT del usuario autenticado si existe,
@@ -4263,10 +4101,6 @@ async function getDB() {
   } catch(e) { _setConnState('error'); return _dbCache || []; }
 }
 
-async function getDBFresh() {
-  _invalidateCache();
-  return getDB();
-}
 // Llamada a las funciones del servidor pensadas para el candidato
 // (supabase/01_funciones_y_roles.sql). Siempre con la clave pública: no
 // requieren sesión y no dan acceso a la tabla.
@@ -4582,9 +4416,6 @@ function onCargoSelect(radio) {
   var e = document.getElementById('e-cargo-opcion'); if (e) e.textContent = '';
 }
 
-function onPerfilChange() {
-  // nothing at step 1 — just store selection
-}
 
 function styleOs10() {
   const si = document.getElementById('r-os10-si').checked;
@@ -5291,34 +5122,30 @@ function timeExpired() {
 //  JUEGOS INTERACTIVOS
 // ═══════════════════════════════════════════════════════════
 
+// Tareas que se pueden rendir. Los juegos antiguos (Semáforo, Globos, Memoria) se retiraron:
+// si un link antiguo los incluye, se saltan (renderTestBlock) y su resultado previo se sigue viendo.
+var _GAME_UI = {
+  gonogo: { render: function(){ return _renderGonogoGame(); }, init: function(){ _initGonogoGame(); } },
+  bart:   { render: function(){ return _renderBartGame(); },   init: function(){ _initBartGame(); } }
+};
+
 function _renderGameUI(testId) {
-  var map = { bart: _renderBartGame, gonogo: _renderGonogoGame, juego_semaforo: _renderSemaforoGame, juego_globos: _renderGlobosGame, juego_memoria: _renderMemoriaGame };
-  return (map[testId] || function(){ return '<p>Juego no disponible.</p>'; })();
+  var fn = _GAME_UI[testId];
+  return fn ? fn.render() : '<p>Juego no disponible.</p>';
 }
 
 function _initGame(testId) {
-  var map = { bart: _initBartGame, gonogo: _initGonogoGame, juego_semaforo: _initSemaforoGame, juego_globos: _initGlobosGame, juego_memoria: _initMemoriaGame };
-  var fn = map[testId]; if (fn) fn();
+  var fn = _GAME_UI[testId]; if (fn) fn.init();
 }
 
 function _showGameDone(testId, result) {
   var gc = document.getElementById('game-container');
   if (!gc) return;
-  // Tareas que puntúa el servidor (Control de impulsos): no se muestra puntaje al candidato
-  if (typeof result.score !== 'number') {
-    gc.innerHTML = '<div style="text-align:center;padding:28px 16px">'
-      + '<div style="width:56px;height:56px;border-radius:50%;background:var(--green-l);border:2px solid var(--green);color:var(--green);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;margin:0 auto 12px">✓</div>'
-      + '<div style="font-size:18px;font-weight:800;color:var(--ink);margin-bottom:6px">Tarea completada</div>'
-      + '<div style="font-size:13px;color:var(--ink3)">Gracias. Puedes continuar con la siguiente parte.</div></div>';
-    return;
-  }
-  var col = result.score >= 70 ? '#16a34a' : result.score >= 50 ? '#b45309' : '#dc2626';
-  var icon = result.score >= 70 ? '🎯' : result.score >= 50 ? '👍' : '💪';
+  // Las tareas las puntúa el servidor: no se muestra puntaje al candidato
   gc.innerHTML = '<div style="text-align:center;padding:28px 16px">'
-    + '<div style="font-size:52px;margin-bottom:10px">' + icon + '</div>'
-    + '<div style="font-size:28px;font-weight:900;color:' + col + ';margin-bottom:6px">' + result.score + '<span style="font-size:16px;font-weight:600;color:var(--ink3)">/100</span></div>'
-    + '<div style="font-size:13px;color:var(--ink3);margin-top:4px">' + (result.summary || '') + '</div>'
-    + '</div>';
+    + '<div style="width:56px;height:56px;border-radius:50%;background:var(--green-l);border:2px solid var(--green);color:var(--green);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;margin:0 auto 12px">✓</div>'
+    + '<div style="font-size:18px;font-weight:800;color:var(--ink);margin-bottom:6px">Tarea completada</div>'
+    + '<div style="font-size:13px;color:var(--ink3)">Gracias. Puedes continuar con la siguiente parte.</div></div>';
 }
 
 function completeGame(testId, result) {
@@ -5658,306 +5485,6 @@ function _bart2Fin() {
   completeGame('bart', { v:1, globos:_BART2.reg, dispositivo:disp, pausas:_BART2.pausas });
 }
 
-// ── SEMÁFORO ─────────────────────────────────────────────────────────────
-// Ya no se aplica (lo reemplazó Control de impulsos); se conserva para evaluaciones antiguas.
-var _SEM = null;
-
-function _renderSemaforoGame() {
-  return '<div style="text-align:center;max-width:340px;margin:0 auto">'
-    + '<div style="font-size:13px;color:var(--ink3);margin-bottom:20px;line-height:1.6">Presiona el botón <strong>tan pronto</strong> como la luz cambie a verde.<br>Espera — no presiones antes de que cambie.</div>'
-    + '<div id="sem-counter" style="font-size:12px;font-weight:700;color:var(--ink4);margin-bottom:16px;text-transform:uppercase;letter-spacing:.5px">Ronda 1 / 8</div>'
-    + '<div style="display:flex;justify-content:center;margin-bottom:20px">'
-    + '<div style="width:80px;height:200px;background:#1e293b;border-radius:16px;padding:16px;display:flex;flex-direction:column;justify-content:space-between;align-items:center">'
-    + '<div id="sem-red"    style="width:48px;height:48px;border-radius:50%;background:#ef4444;box-shadow:0 0 20px #ef444460;transition:all .1s"></div>'
-    + '<div id="sem-yellow" style="width:48px;height:48px;border-radius:50%;background:#374151;transition:all .1s"></div>'
-    + '<div id="sem-green"  style="width:48px;height:48px;border-radius:50%;background:#374151;box-shadow:none;transition:all .1s"></div>'
-    + '</div></div>'
-    + '<div id="sem-status" style="font-size:15px;font-weight:600;color:#94a3b8;margin-bottom:16px">Preparando...</div>'
-    + '<button id="sem-btn" disabled onclick="_semPress()" style="padding:14px 40px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;opacity:.5;transition:all .15s">¡AHORA!</button>'
-    + '<div id="sem-feedback" style="height:24px;margin-top:10px;font-size:13px;font-weight:600"></div>'
-    + '<div id="sem-history" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:16px"></div>'
-    + '</div>';
-}
-
-function _initSemaforoGame() {
-  _SEM = { round:0, times:[], falseStarts:0, ROUNDS:8, goTime:null, waiting:false, finished:false, _t:null, _mt:null };
-  setTimeout(_semNextRound, 800);
-}
-
-function _semNextRound() {
-  if (!_SEM || _SEM.finished) return;
-  _SEM.round++;
-  if (_SEM.round > _SEM.ROUNDS) { _semFinish(); return; }
-  var cnt = document.getElementById('sem-counter');
-  var st  = document.getElementById('sem-status');
-  var btn = document.getElementById('sem-btn');
-  var red = document.getElementById('sem-red');
-  var grn = document.getElementById('sem-green');
-  if (!cnt) return;
-  cnt.textContent = 'Ronda ' + _SEM.round + ' / ' + _SEM.ROUNDS;
-  st.textContent = 'Espera...'; st.style.color = '#94a3b8';
-  btn.disabled = true; btn.style.opacity = '.5';
-  red.style.background = '#ef4444'; red.style.boxShadow = '0 0 20px #ef444460';
-  grn.style.background = '#374151'; grn.style.boxShadow = 'none';
-  _SEM.waiting = true; _SEM.goTime = null;
-  var delay = 2000 + Math.random() * 3000;
-  clearTimeout(_SEM._t);
-  _SEM._t = setTimeout(function() {
-    if (!_SEM || _SEM.finished) return;
-    _SEM.goTime = Date.now(); _SEM.waiting = false;
-    grn.style.background = '#22c55e'; grn.style.boxShadow = '0 0 24px #22c55e80';
-    red.style.background = '#374151'; red.style.boxShadow = 'none';
-    st.textContent = '¡AHORA!'; st.style.color = '#16a34a';
-    btn.disabled = false; btn.style.opacity = '1';
-    clearTimeout(_SEM._mt);
-    _SEM._mt = setTimeout(function() {
-      if (!_SEM || _SEM.finished || !document.getElementById('sem-btn') || document.getElementById('sem-btn').disabled) return;
-      _semRecord(null);
-    }, 1500);
-  }, delay);
-}
-
-function _semPress() {
-  if (!_SEM || _SEM.finished) return;
-  if (_SEM.waiting) {
-    _SEM.falseStarts++;
-    clearTimeout(_SEM._t); clearTimeout(_SEM._mt);
-    var fb = document.getElementById('sem-feedback');
-    if (fb) { fb.textContent = '⚠️ Demasiado pronto — espera el verde'; fb.style.color = '#f59e0b'; }
-    _semAddChip('Anticipó', '#fef3c7', '#b45309');
-    _SEM.waiting = false;
-    setTimeout(_semNextRound, 1400);
-    return;
-  }
-  var rt = _SEM.goTime ? Date.now() - _SEM.goTime : 1500;
-  clearTimeout(_SEM._mt);
-  _semRecord(rt);
-}
-
-function _semRecord(rt) {
-  if (!_SEM) return;
-  var btn = document.getElementById('sem-btn');
-  var grn = document.getElementById('sem-green');
-  var fb  = document.getElementById('sem-feedback');
-  if (btn) { btn.disabled = true; btn.style.opacity = '.5'; }
-  if (grn) { grn.style.background = '#374151'; grn.style.boxShadow = 'none'; }
-  if (rt === null) {
-    _SEM.times.push(1500);
-    if (fb) { fb.textContent = '⏱️ Sin respuesta'; fb.style.color = '#94a3b8'; }
-    _semAddChip('—', '#f1f5f9', '#94a3b8');
-  } else {
-    _SEM.times.push(rt);
-    var lbl = rt < 300 ? '⚡ ' + rt + 'ms' : rt < 450 ? '✓ ' + rt + 'ms' : rt + 'ms';
-    var col = rt < 300 ? '#16a34a' : rt < 450 ? '#0891b2' : rt < 650 ? '#b45309' : '#94a3b8';
-    if (fb) { fb.textContent = (rt < 300 ? '⚡ Excelente' : rt < 450 ? '✓ Buena reacción' : rt < 650 ? 'Regular' : 'Lento') + ' — ' + rt + 'ms'; fb.style.color = col; }
-    _semAddChip(lbl, rt < 400 ? '#f0fdf4' : rt < 600 ? '#eff6ff' : '#fef3c7', col);
-  }
-  setTimeout(_semNextRound, 1000);
-}
-
-function _semAddChip(label, bg, color) {
-  var h = document.getElementById('sem-history'); if (!h) return;
-  var d = document.createElement('div');
-  d.style.cssText = 'padding:3px 9px;border-radius:100px;background:' + bg + ';font-size:11px;font-weight:700;color:' + color;
-  d.textContent = label; h.appendChild(d);
-}
-
-function _semFinish() {
-  if (!_SEM) return; _SEM.finished = true;
-  var validTimes = _SEM.times.filter(function(t){ return t < 1500; });
-  var meanRT = validTimes.length ? Math.round(validTimes.reduce(function(a,b){ return a+b; }, 0) / validTimes.length) : 800;
-  var rtScore = Math.max(0, Math.min(100, Math.round((700 - meanRT) / 4.5)));
-  var score   = Math.max(0, rtScore - _SEM.falseStarts * 8);
-  completeGame('juego_semaforo', { score:score, meanRT:meanRT, falseStarts:_SEM.falseStarts,
-    summary:'Tiempo de reacción: ' + meanRT + 'ms · Anticipaciones: ' + _SEM.falseStarts });
-}
-
-// ── GLOBOS (versión antigua) ──────────────────────────────────────────────
-// Ya no se aplica (la reemplazó Control del riesgo); se conserva para evaluaciones antiguas.
-var _BART = null;
-var _BART_TOTAL = 10;
-
-function _renderGlobosGame() {
-  return '<div style="text-align:center;max-width:360px;margin:0 auto">'
-    + '<div style="font-size:13px;color:var(--ink3);margin-bottom:16px;line-height:1.6">Infla el globo para ganar puntos. Puedes guardarlo cuando quieras.<br><strong>Cuidado</strong> — si explota pierdes los puntos de ese globo.</div>'
-    + '<div style="display:flex;justify-content:space-between;margin-bottom:12px;font-size:12px;font-weight:700;color:var(--ink3)">'
-    + '<span>Globo <span id="bart-cur">1</span>/' + _BART_TOTAL + '</span>'
-    + '<span>💰 <span id="bart-total">0</span> pts guardados</span></div>'
-    + '<div style="height:200px;display:flex;align-items:flex-end;justify-content:center;margin-bottom:4px">'
-    + '<div id="bart-balloon" style="font-size:64px;line-height:1;transition:font-size .08s;user-select:none">🎈</div></div>'
-    + '<div style="font-size:13px;font-weight:600;color:#6366f1;margin-bottom:16px">+<span id="bart-pumps">0</span> pts en este globo</div>'
-    + '<div id="bart-btns" style="display:flex;gap:10px;justify-content:center">'
-    + '<button id="bart-pump-btn" onclick="_bartPump()" style="flex:1;padding:12px;background:#6366f1;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">💨 Inflar (+1)</button>'
-    + '<button id="bart-bank-btn" onclick="_bartBank()" style="flex:1;padding:12px;background:#16a34a;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">💰 Guardar</button>'
-    + '</div>'
-    + '<div id="bart-msg" style="height:28px;margin-top:10px;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center"></div>'
-    + '<div id="bart-hist" style="display:flex;gap:5px;flex-wrap:wrap;justify-content:center;margin-top:8px"></div>'
-    + '</div>';
-}
-
-function _initGlobosGame() {
-  _BART = { balloon:0, pumps:0, bankedTotal:0, pumpsHistory:[], allPumps:[], maxPumps:[], finished:false };
-  for (var i = 0; i < _BART_TOTAL; i++) _BART.maxPumps.push(5 + Math.floor(Math.random() * 24));
-  _bartNewBalloon();
-}
-
-function _bartNewBalloon() {
-  if (!_BART) return;
-  if (_BART.balloon >= _BART_TOTAL) { _bartFinish(); return; }
-  _BART.pumps = 0;
-  var bi = document.getElementById('bart-balloon');
-  var pi = document.getElementById('bart-pumps');
-  var ci = document.getElementById('bart-cur');
-  var mi = document.getElementById('bart-msg');
-  var pb = document.getElementById('bart-pump-btn');
-  var bb = document.getElementById('bart-bank-btn');
-  if (bi) { bi.style.fontSize = '64px'; bi.textContent = '🎈'; }
-  if (pi) pi.textContent = '0';
-  if (ci) ci.textContent = _BART.balloon + 1;
-  if (mi) mi.textContent = '';
-  if (pb) pb.disabled = false;
-  if (bb) bb.disabled = false;
-}
-
-function _bartPump() {
-  if (!_BART || _BART.finished) return;
-  _BART.pumps++;
-  var size = Math.min(160, 64 + _BART.pumps * 7);
-  var bi = document.getElementById('bart-balloon');
-  var pi = document.getElementById('bart-pumps');
-  if (bi) bi.style.fontSize = size + 'px';
-  if (pi) pi.textContent = _BART.pumps;
-  if (_BART.pumps >= _BART.maxPumps[_BART.balloon]) _bartPop();
-}
-
-function _bartPop() {
-  if (!_BART) return;
-  var bi = document.getElementById('bart-balloon');
-  var mi = document.getElementById('bart-msg');
-  var pb = document.getElementById('bart-pump-btn');
-  var bb = document.getElementById('bart-bank-btn');
-  if (bi) { bi.textContent = '💥'; bi.style.fontSize = '80px'; }
-  if (mi) { mi.textContent = '¡Explotó! Perdiste ' + _BART.pumps + ' pts'; mi.style.color = '#dc2626'; }
-  if (pb) pb.disabled = true;
-  if (bb) bb.disabled = true;
-  _BART.allPumps.push({ pumps:_BART.pumps, popped:true });
-  _bartAddChip('💥', '#fef2f2', '#dc2626');
-  _BART.balloon++;
-  setTimeout(_bartNewBalloon, 1200);
-}
-
-function _bartBank() {
-  if (!_BART || _BART.finished) return;
-  _BART.bankedTotal += _BART.pumps;
-  _BART.pumpsHistory.push(_BART.pumps);
-  _BART.allPumps.push({ pumps:_BART.pumps, popped:false });
-  var ti = document.getElementById('bart-total');
-  var mi = document.getElementById('bart-msg');
-  var pb = document.getElementById('bart-pump-btn');
-  var bb = document.getElementById('bart-bank-btn');
-  if (ti) ti.textContent = _BART.bankedTotal;
-  if (mi) { mi.textContent = '✓ ' + _BART.pumps + ' pts guardados'; mi.style.color = '#16a34a'; }
-  if (pb) pb.disabled = true;
-  if (bb) bb.disabled = true;
-  _bartAddChip('💰' + _BART.pumps, '#f0fdf4', '#16a34a');
-  _BART.balloon++;
-  setTimeout(_bartNewBalloon, 900);
-}
-
-function _bartAddChip(label, bg, color) {
-  var h = document.getElementById('bart-hist'); if (!h) return;
-  var d = document.createElement('div');
-  d.style.cssText = 'padding:3px 9px;border-radius:100px;background:' + bg + ';font-size:11px;font-weight:700;color:' + color;
-  d.textContent = label; h.appendChild(d);
-}
-
-function _bartFinish() {
-  if (!_BART) return; _BART.finished = true;
-  var amp = _BART.pumpsHistory.length
-    ? Math.round(_BART.pumpsHistory.reduce(function(a,b){ return a+b; }, 0) / _BART.pumpsHistory.length * 10) / 10
-    : 0;
-  var score = amp <= 10 ? Math.round(40 + amp / 10 * 60) : Math.max(20, Math.round(100 - (amp - 10) / 15 * 60));
-  var popped = _BART.allPumps.filter(function(x){ return x.popped; }).length;
-  completeGame('juego_globos', { score:score, amp:amp, bankedTotal:_BART.bankedTotal, popped:popped,
-    summary:'Promedio infladas: ' + amp + ' · Globos explotados: ' + popped + '/' + _BART_TOTAL });
-}
-
-// ── MEMORIA ───────────────────────────────────────────────────────────────
-var _MEM = null;
-
-function _renderMemoriaGame() {
-  return '<div style="max-width:380px;margin:0 auto">'
-    + '<div style="font-size:13px;color:var(--ink3);margin-bottom:16px;text-align:center;line-height:1.6">Encuentra los <strong>8 pares iguales</strong>. Voltea dos cartas a la vez.<br>Recuerda dónde están para completarlo en menos intentos.</div>'
-    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
-    + '<span id="mem-pairs"    style="font-size:12px;font-weight:700;color:var(--ink3)">Pares: 0/8</span>'
-    + '<span id="mem-attempts" style="font-size:12px;font-weight:700;color:var(--ink3)">Intentos: 0</span>'
-    + '<span id="mem-timer"    style="font-size:12px;font-weight:700;color:var(--ink3)">0s</span></div>'
-    + '<div id="mem-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px"></div>'
-    + '</div>';
-}
-
-function _initMemoriaGame() {
-  var emojis = ['🐶','🐱','🦊','🐸','🦁','🐻','🦋','🌸'];
-  var cards  = emojis.concat(emojis);
-  for (var i = cards.length - 1; i > 0; i--) { var j = Math.floor(Math.random()*(i+1)); var t=cards[i]; cards[i]=cards[j]; cards[j]=t; }
-  _MEM = { cards:cards, matched:new Array(16).fill(false), flipped:[], attempts:0, pairs:0,
-           startTime:Date.now(), timerInterval:null, locked:false, finished:false };
-  var grid = document.getElementById('mem-grid'); if (!grid) return;
-  var html = '';
-  for (var k = 0; k < 16; k++) {
-    html += '<div id="mc-'+k+'" onclick="_memFlip('+k+')" style="aspect-ratio:1;border-radius:10px;background:#e2e8f0;border:2px solid #cbd5e1;display:flex;align-items:center;justify-content:center;font-size:28px;cursor:pointer;transition:all .15s;user-select:none">🃏</div>';
-  }
-  grid.innerHTML = html;
-  _MEM.timerInterval = setInterval(function() {
-    var el = document.getElementById('mem-timer');
-    if (el && _MEM && !_MEM.finished) el.textContent = Math.floor((Date.now()-_MEM.startTime)/1000)+'s';
-  }, 500);
-}
-
-function _memFlip(idx) {
-  if (!_MEM || _MEM.locked || _MEM.finished) return;
-  if (_MEM.matched[idx]) return;
-  if (_MEM.flipped.indexOf(idx) !== -1) return;
-  if (_MEM.flipped.length >= 2) return;
-  _MEM.flipped.push(idx);
-  var card = document.getElementById('mc-'+idx);
-  if (card) { card.textContent = _MEM.cards[idx]; card.style.background = '#eff6ff'; card.style.borderColor = '#6366f1'; }
-  if (_MEM.flipped.length === 2) {
-    _MEM.attempts++;
-    var aEl = document.getElementById('mem-attempts'); if (aEl) aEl.textContent = 'Intentos: ' + _MEM.attempts;
-    _MEM.locked = true;
-    var a = _MEM.flipped[0], b = _MEM.flipped[1];
-    if (_MEM.cards[a] === _MEM.cards[b]) {
-      _MEM.matched[a] = _MEM.matched[b] = true; _MEM.pairs++;
-      var pEl = document.getElementById('mem-pairs'); if (pEl) pEl.textContent = 'Pares: ' + _MEM.pairs + '/8';
-      var ca = document.getElementById('mc-'+a), cb = document.getElementById('mc-'+b);
-      if (ca) { ca.style.background = '#f0fdf4'; ca.style.borderColor = '#22c55e'; ca.style.cursor = 'default'; }
-      if (cb) { cb.style.background = '#f0fdf4'; cb.style.borderColor = '#22c55e'; cb.style.cursor = 'default'; }
-      _MEM.flipped = []; _MEM.locked = false;
-      if (_MEM.pairs === 8) _memFinish();
-    } else {
-      setTimeout(function() {
-        if (!_MEM) return;
-        [a, b].forEach(function(i) {
-          var c = document.getElementById('mc-'+i);
-          if (c) { c.textContent = '🃏'; c.style.background = '#e2e8f0'; c.style.borderColor = '#cbd5e1'; }
-        });
-        _MEM.flipped = []; _MEM.locked = false;
-      }, 900);
-    }
-  }
-}
-
-function _memFinish() {
-  if (!_MEM) return; _MEM.finished = true;
-  clearInterval(_MEM.timerInterval);
-  var elapsed = Math.floor((Date.now() - _MEM.startTime) / 1000);
-  var efficiency = Math.min(1, 8 / Math.max(8, _MEM.attempts));
-  var timeBonus  = elapsed < 30 ? 10 : elapsed < 45 ? 5 : 0;
-  var score = Math.min(100, Math.round(efficiency * 90) + timeBonus);
-  completeGame('juego_memoria', { score:score, attempts:_MEM.attempts, elapsed:elapsed,
-    summary:'Completado en ' + _MEM.attempts + ' intentos · ' + elapsed + 's' });
-}
 
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -5971,8 +5498,8 @@ function renderTestBlock() {
   // Pause timer for personality tests (pf16, disc), resume for others
   _timerPaused = (block.testId === 'pf16' || block.testId === 'disc');
 
-  // Skip empty non-game blocks
-  if (!meta.game && block.qs.length === 0) {
+  // Saltar bloques vacíos y juegos retirados
+  if ((!meta.game && block.qs.length === 0) || (meta.game && !_GAME_UI[block.testId])) {
     if (S.blockIdx < total - 1) { S.blockIdx++; renderTestBlock(); return; }
     else { finishTests(); return; }
   }
@@ -6427,9 +5954,6 @@ async function finishTests() {
 
   clearTestProgress();
 
-  // ── Webhook notification ──────────────────────────────────────────────────
-  _fireWebhook(S.candidate, scores);
-  _sendEmailNotification(S.candidate, scores);
   // ── Success ───────────────────────────────────────────────────────────────
   document.getElementById('done-name').textContent = S.candidate.nombre;
   _doneWhatsapp();
@@ -6458,7 +5982,6 @@ const PERFIL_IDEAL = {
     },
     situacional: { min:70, max:100, label:'Juicio Situacional',          req:'Decisiones correctas ante escenarios de liderazgo.' },
     comprension: { min:75, max:100, label:'Comprensión de Instrucciones', req:'Interpreta y aplica correctamente instrucciones complejas y procedimientos de gestión.' },
-    juego_memoria: { min:60, max:100, label:'Memoria de Trabajo',        req:'Retención y recuperación de información en contextos de alta demanda cognitiva y toma de decisiones.' },
     gonogo: { min:80, max:100, label:'Control de impulsos', req:'Frenar una respuesta automática: porcentaje de rojos en que la persona no tocó. Mínimo provisional, a calibrar con los datos propios.' },
   },
 
@@ -6476,7 +5999,6 @@ const PERFIL_IDEAL = {
     situacional:    { min:70, max:100, label:'Juicio Situacional',          req:'Decisiones correctas en incidentes de seguridad.' },
     vigilancia:     { min:65, max:100, label:'Apt. Vigilancia',             req:'Atención sostenida y aplicación de protocolos.' },
     comprension:    { min:80, max:100, label:'Comprensión de Instrucciones', req:'Aplica protocolos de seguridad con precisión; sin ambigüedad ante instrucciones multi-condición.' },
-    juego_semaforo: { min:60, max:100, label:'Control de Impulsos',         req:'Tiempo de reacción y capacidad de inhibir respuestas anticipadas. Crítico para vigilancia activa y manejo de incidentes.' },
     gonogo:         { min:80, max:100, label:'Control de impulsos',         req:'Frenarse ante situaciones que piden no actuar. Crítico para vigilancia activa y manejo de incidentes. Mínimo provisional, a calibrar con los datos propios.' },
     },
   supervisor: {
@@ -6487,7 +6009,6 @@ const PERFIL_IDEAL = {
     },
     situacional:  { min:70, max:100, label:'Juicio Situacional', req:'Toma decisiones correctas ante escenarios típicos de supervisión operativa.' },
     comprension:  { min:75, max:100, label:'Comprensión de Instrucciones', req:'Interpreta y aplica procedimientos operativos complejos con precisión.' },
-    juego_globos: { min:40, max:75, label:'Tolerancia al Riesgo', req:'Disposición moderada al riesgo; equilibrio entre precaución e iniciativa operativa.' },
     gonogo:       { min:80, max:100, label:'Control de impulsos', req:'Frenarse antes de actuar ante incidentes o conflictos con el equipo. Mínimo provisional, a calibrar con los datos propios.' },
   },
   prevencionista: {
@@ -6513,7 +6034,6 @@ const PERFIL_IDEAL = {
     dc0:            { min:55, max:100, label:'Aptitud Cognitiva',             req:'Procesamiento de información, lectura de guías de ruta, reportes de incidentes y cumplimiento de protocolos escritos.' },
     vigilancia:      { min:72, max:100, label:'Apt. Vigilancia',             req:'Atención sostenida y detección de anomalías durante la conducción. Indicador principal del cargo.' },
     comprension:     { min:70, max:100, label:'Comprensión de Instrucciones', req:'Aplica correctamente rutas, protocolos de acceso y procedimientos ante incidentes.' },
-    juego_semaforo:  { min:60, max:100, label:'Reacción Vial',               req:'Tiempo de reacción y control de impulsos. Clave para respuesta ante imprevistos en conducción.' },
     gonogo:          { min:80, max:100, label:'Control de impulsos',         req:'Frenarse ante lo que pide no actuar (maniobras arriesgadas, provocaciones en ruta). Mínimo provisional, a calibrar con los datos propios.' },
   },
 
@@ -7090,78 +6610,12 @@ function rawBand(score100) {
   if (score100 >= 55) return { label:'Moderado', color:'#b45309', bg:'#fffbeb', border:'#fde68a' };
   return                     { label:'Bajo',     color:'#b91c1c', bg:'#fef2f2', border:'#fecaca' };
 }
-function rawBand4(mean14) { // for PAI 1-4 scale
-  if (mean14 >= 3.0) return { label:'Alto',     color:'#0f766e', bg:'#f0fdfa', border:'#99f6e4' };
-  if (mean14 >= 2.0) return { label:'Moderado', color:'#b45309', bg:'#fffbeb', border:'#fde68a' };
-  return                    { label:'Bajo',     color:'#b91c1c', bg:'#fef2f2', border:'#fecaca' };
-}
 function rawBandPct(pct) { // for choice tests % correct
   if (pct >= 75) return { label:'Logrado',         color:'#0f766e', bg:'#f0fdfa', border:'#99f6e4' };
   if (pct >= 50) return { label:'Parcialmente logrado', color:'#b45309', bg:'#fffbeb', border:'#fde68a' };
   return                { label:'Por desarrollar', color:'#b91c1c', bg:'#fef2f2', border:'#fecaca' };
 }
 
-// ═══════════════════════════════════════════════════════════
-//  NORMA INTERNA — percentiles desde BD
-// ═══════════════════════════════════════════════════════════
-var _normCache = null; // { pai:{EE:{mean,sd,...}}, dc0:{...} }
-
-async function fetchInternalNorm(perfil) {
-  // Fetch last 200 completed candidates of same perfil
-  try {
-    var url = SUPA_URL + '/rest/v1/candidates?estado=eq.completed&perfil=eq.' + perfil
-      + '&select=scores&order=created_at.desc&limit=200';
-    var r = await fetch(url, { headers: getDBHeaders() });
-    if (!r.ok) return null;
-    var data = await r.json();
-    if (!data || data.length < 3) return null; // need at least 3 for meaningful norm
-
-    // Collect values per test/dim
-    var acc = { pai:{EE:[],AS:[],ON:[],ME:[],IL:[],ML:[]}, dc0:{V:[],N:[],L:[]} };
-    data.forEach(function(c) {
-      var s = c.scores; if (!s) return;
-      if (s.pai) ['EE','AS','ON','ME','IL','ML'].forEach(function(k){ if(s.pai[k]!==undefined) acc.pai[k].push(s.pai[k]); });
-      if (s.dc0) ['V','N','L'].forEach(function(k){ if(s.dc0[k]!==undefined) acc.dc0[k].push(s.dc0[k]); });
-    });
-
-    // Compute mean and sd per dim
-    function stats(arr) {
-      if (arr.length < 2) return null;
-      var mean = arr.reduce(function(a,b){return a+b;},0) / arr.length;
-      var sd = Math.sqrt(arr.reduce(function(a,b){return a+(b-mean)*(b-mean);},0) / arr.length);
-      return { mean: Math.round(mean*10)/10, sd: Math.max(1, Math.round(sd*10)/10), n: arr.length };
-    }
-
-    var norm = { n: data.length };
-    ['pai','dc0'].forEach(function(test) {
-      norm[test] = {};
-      Object.keys(acc[test]).forEach(function(k) {
-        var st = stats(acc[test][k]);
-        if (st) norm[test][k] = st;
-      });
-    });
-    return norm;
-  } catch(e) { return null; }
-}
-
-function normPercentile(score, mean, sd) {
-  // Approximate percentile from z-score using error function approximation
-  if (!mean || !sd) return null;
-  var z = (score - mean) / sd;
-  // Approximation of normal CDF
-  var t = 1 / (1 + 0.3275911 * Math.abs(z));
-  var poly = t * (0.254829592 + t * (-0.284496736 + t * (1.421413741 + t * (-1.453152027 + t * 1.061405429))));
-  var erfApprox = 1 - poly * Math.exp(-z * z);
-  var cdf = 0.5 * (1 + (z >= 0 ? erfApprox : -erfApprox));
-  return Math.round(Math.max(1, Math.min(99, cdf * 100)));
-}
-
-function percBand(pct) {
-  if (pct === null) return null;
-  if (pct >= 75) return { label:'Por encima del grupo', color:'#0f766e', bg:'#f0fdfa', border:'#99f6e4' };
-  if (pct >= 40) return { label:'Dentro del grupo', color:'#b45309', bg:'#fffbeb', border:'#fde68a' };
-  return              { label:'Por debajo del grupo', color:'#b91c1c', bg:'#fef2f2', border:'#fecaca' };
-}
 
 
 // ═══════════════════════════════════════════════════════════
@@ -7441,21 +6895,8 @@ function radarChartSvg(dims,opts){
   return s+'</svg>';
 }
 
-function gaugeHtml(pct, color, size=90) {
-  const r = 34, cx = 50, cy = 44;
-  const circ = Math.PI * r; // semicircle circumference
-  const filled = (pct / 100) * circ;
-  return `<svg width="${size}" height="${size*0.6}" viewBox="0 0 100 60" style="overflow:visible">
-    <path d="M ${cx-r} ${cy} A ${r} ${r} 0 0 1 ${cx+r} ${cy}" fill="none" stroke="#e8e4dc" stroke-width="9" stroke-linecap="round"/>
-    <path d="M ${cx-r} ${cy} A ${r} ${r} 0 0 1 ${cx+r} ${cy}" fill="none" stroke="${color}" stroke-width="9" stroke-linecap="round"
-      stroke-dasharray="${filled} ${circ}" style="transition:stroke-dasharray 1s ease"/>
-    <text x="${cx}" y="${cy-4}" text-anchor="middle" font-size="16" font-weight="900" fill="${color}">${pct}</text>
-    <text x="${cx}" y="${cy+10}" text-anchor="middle" font-size="7" fill="#9a9088">/ 100</text>
-  </svg>`;
-}
 
 // ── Mini horizontal bar ──────────────────────────────────────
-const NIVEL_LABELS_RPT = {1:"Muy Bajo",2:"Bajo",3:"Medio",4:"Alto",5:"Muy Alto"};
 function scoreToLevel5(score100) {
   // Calibrated thresholds — more discriminative (fewer 4s/5s)
   if (score100 >= 90) return 5;  // top 10%
@@ -7464,7 +6905,6 @@ function scoreToLevel5(score100) {
   if (score100 >= 30) return 2;  // below average
   return 1;                       // low
 }
-const LEVEL5_NAMES = {1:'Muy Bajo',2:'Bajo',3:'Medio',4:'Alto',5:'Muy Alto'};
 
 function switchReportTab(tabId, el) {
   var cont = el.closest('.rpt-modal');
@@ -8136,8 +7576,9 @@ function _aptRowsDe(c) {
   var ideal = PERFIL_IDEAL[c.perfil] || null;
   var rows = [];
   if (!ideal) return rows;
-  var tids = _MIRADA_ORDEN.filter(function(t){ return tests.indexOf(t) !== -1 && s[t]; })
-    .concat(['juego_semaforo','juego_globos','juego_memoria'].filter(function(jt){ return tests.indexOf(jt) !== -1 && s[jt]; }));
+  // Los juegos antiguos (Semáforo, Globos, Memoria) no se comparan con mínimos: su puntaje se
+  // calculaba en el navegador y no está validado. El informe los muestra solo como dato.
+  var tids = _MIRADA_ORDEN.filter(function(t){ return tests.indexOf(t) !== -1 && s[t]; });
   tids.forEach(function(tid) {
     // DISC y Personalidad laboral son descriptivos: no se comparan con mínimos
     if (tid === 'disc' || tid === 'pf16') return;
@@ -8426,25 +7867,7 @@ function buildReportHtml(c, withClose) {
   var _resRows = _aptRowsDe(c);
   var _rOk = _resRows.filter(function(r){ return r.cumple; }).length;
 
-  function scoreBar(label, score) {
-    var lv = scoreLevel(score);
-    var pct = Math.max(0, Math.min(100, score));
-    return '<div style="margin-bottom:18px">'
-      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">'
-      + '<span style="font-size:13px;font-weight:600;color:#1e293b">' + label + '</span>'
-      + '<div style="display:flex;align-items:center;gap:8px">'
-      + '<span style="font-size:15px;font-weight:900;color:' + lv.color + '">' + Math.round(score) + '</span>'
-      + '<span style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:100px;background:' + lv.color + '18;color:' + lv.color + '">' + lv.label + '</span>'
-      + '</div></div>'
-      + '<div style="height:7px;background:#e2e8f0;border-radius:100px;overflow:hidden">'
-      + '<div style="height:100%;width:' + pct + '%;background:' + lv.color + ';border-radius:100px"></div>'
-      + '</div></div>';
-  }
 
-  function descBox(text) {
-    if (!text) return '';
-    return '<div style="font-size:12px;color:#475569;line-height:1.65;padding:10px 13px;background:#f8fafc;border-radius:8px;border-left:3px solid #e2e8f0;margin-top:-6px;margin-bottom:20px">' + text + '</div>';
-  }
 
   var html = '<div class="rpt-modal" style="font-family:SF Pro Display,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;display:flex;flex-direction:column;height:100%;min-height:0">';
   html += '<style>'
@@ -8631,6 +8054,17 @@ function buildReportHtml(c, withClose) {
     // Control del riesgo: no interpretable
     if (s.bart && completedTests.indexOf('bart') !== -1 && s.bart.valido === false) {
       _rsPuntos.push('<strong>Control del riesgo:</strong> resultado no interpretable: ' + htmlEsc((s.bart.motivos || []).join('; ').toLowerCase()) + '.');
+    }
+
+    // Juegos antiguos: solo como dato, sin mínimo
+    var _jAnt = ['juego_semaforo','juego_globos','juego_memoria'].filter(function(jt){ return tests.indexOf(jt) !== -1 && s[jt] && typeof s[jt].score === 'number'; });
+    if (_jAnt.length) {
+      html += _rsCard(_rsH3('Juegos de una versión anterior', 'Solo como dato: no se comparan con el mínimo del cargo')
+        + _jAnt.map(function(jt){ var tm = TESTS_META[jt] || {};
+            return '<div style="display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-top:1px solid #f1f5f9;font-size:12.5px">'
+              + '<span style="color:#334155">' + (tm.icon || '') + ' ' + htmlEsc(tm.name || jt) + (s[jt].summary ? '<span style="display:block;font-size:11px;color:#94a3b8">' + htmlEsc(s[jt].summary) + '</span>' : '') + '</span>'
+              + '<strong style="color:#475569;white-space:nowrap">' + Math.round(s[jt].score) + ' / 100</strong></div>'; }).join('')
+        + '<div style="font-size:11px;color:#94a3b8;margin-top:6px;line-height:1.5">Estos juegos se retiraron: su puntaje se calculaba en el navegador y no está validado. Control de impulsos y Control del riesgo los reemplazan.</div>');
     }
 
     // ── 2. Integridad laboral (prueba) ──
@@ -9068,16 +8502,6 @@ async function viewCandReport(id) {
 // ═══════════════════════════════════════════════════════════
 let _paramPerfil = 'jefatura';
 
-function switchParamTab(perfil, btn) {
-  _paramPerfil = perfil;
-  document.querySelectorAll('.param-tab-btn').forEach(b => {
-    const active = b === btn;
-    b.style.background = active ? 'var(--accent)' : 'transparent';
-    b.style.color = active ? '#fff' : 'var(--ink2)';
-    b.style.borderColor = active ? 'var(--accent)' : 'var(--border)';
-  });
-  renderBateriaTab();
-}
 
 function toggleBatteryTest(cb) {
   var tid = cb.dataset.tid;
@@ -9376,8 +8800,6 @@ function renderBateriaTab() {
     '📐 Conocimiento Técnico':         'Evalúa dominio de normativa y conocimiento especializado del cargo. Disponible solo para perfiles que lo requieran. Actualmente: Prevencionista de Riesgo.',
     '🧭 Integridad laboral':          'Evaluativa: entrega un nivel de riesgo (sin indicadores, a explorar, riesgo alto o no interpretable) con los motivos. Puede fundamentar un rechazo; la decisión final es del evaluador.',
     '🎭 Perfil Conductual':    'Pruebas descriptivas: el informe describe el perfil sin compararlo con un perfil esperado ni con mínimos del cargo. Si un rasgo es una fortaleza depende del puesto y de la entrevista.',
-    '🎮 Juegos Conductuales':          'Simulaciones conductuales que miden estabilidad emocional, normatividad e integridad sin riesgo de deseabilidad social. · ⚡ Sala de Crisis: respuesta ante múltiples alertas simultáneas y presión temporal. · 🧭 Dilemas de Supervisión: criterio ético, liderazgo e integridad ante situaciones reales del cargo.',
-    '⏸ Juegos Cognitivos (en pausa)': 'Juegos disponibles pero desactivados temporalmente. Se pueden activar para perfiles que los requieran.',
     '🎯 Control de impulsos':  'Tareas de conducta, evaluativas: se comparan con el mínimo del cargo (provisional). Reacción: frenarse ante una señal (inicial 80 %). Globos: no arriesgar más de lo que conviene (inicial 50).',
   };
 
@@ -9404,8 +8826,6 @@ function renderBateriaTab() {
     '💡 Evaluación Situacional':       { accent:'#d97706', bg:'#fffbeb', border:'#fde68a' },
     '📐 Conocimiento Técnico':         { accent:'#0f766e', bg:'#f0fdfa', border:'#99f6e4' },
     '🎭 Perfil Conductual':    { accent:'#0891b2', bg:'#ecfeff', border:'#a5f3fc' },
-    '🎮 Juegos Conductuales':          { accent:'#dc2626', bg:'#fef2f2', border:'#fecaca' },
-    '⏸ Juegos Cognitivos (en pausa)': { accent:'#94a3b8', bg:'#f8fafc', border:'#e2e8f0' },
     '🎯 Control de impulsos':  { accent:'#b91c1c', bg:'#fef2f2', border:'#fecaca' },
   };
 
@@ -9894,26 +9314,6 @@ function closeCmpOpenReport(id) {
   viewCandReport(id);
 }
 
-function printCompare() {
-  const body = document.getElementById('compare-body');
-  if (!body) return;
-  const inlineStyle = document.querySelector('style') ? document.querySelector('style').textContent : '';
-  const printHtml = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Comparativa Candidatos</title>
-<style>${inlineStyle}
-@page{margin:12mm 10mm;size:A4 landscape}
-body{font-size:11px;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
-div{break-inside:avoid}
-@media (min-width: 600px) {
-  .testselect-body { padding: 52px 40px; }
-}
-
-</style></head><body>${body.innerHTML}</body></html>`;
-  const blob = new Blob([printHtml], {type:'text/html;charset=utf-8'});
-  const url  = URL.createObjectURL(blob);
-  const w = window.open(url, '_blank', 'width=1100,height=800');
-  if (w) setTimeout(() => { w.print(); URL.revokeObjectURL(url); }, 800);
-}
 
 function clearSelection() {
   document.querySelectorAll('.row-chk').forEach(c => c.checked = false);
@@ -10235,27 +9635,6 @@ async function downloadPdfReport(id) {
   setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 
-function printReport() {
-  const content = document.getElementById('cand-modal-content');
-  if (!content) return;
-  const inlineStyle = document.querySelector('style') ? document.querySelector('style').textContent : '';
-  const clone = content.cloneNode(true);
-  clone.querySelectorAll('button').forEach(b => b.style.display = 'none');
-  const printHtml = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Informe PsicoEval</title>
-<style>${inlineStyle}
-@page{margin:14mm 12mm;size:A4}
-body{font-size:11px;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
-.rpt-tab-panel{display:block!important}
-.rpt-tabs{display:none!important}
-.rpt-print-title{display:block!important}
-div{break-inside:avoid}
-</style></head><body>${clone.innerHTML}</body></html>`;
-  const blob = new Blob([printHtml], { type: 'text/html;charset=utf-8' });
-  const url  = URL.createObjectURL(blob);
-  const w = window.open(url, '_blank', 'width=900,height=700');
-  if (w) setTimeout(() => { w.print(); URL.revokeObjectURL(url); }, 600);
-}
 function closeCandModal() {
   document.getElementById('cand-modal-overlay').style.display = 'none';
   document.getElementById('cand-modal-content').innerHTML = '';
@@ -11044,9 +10423,6 @@ function renderUsersTab() {
     return;
   }
 
-  // Update webhook button label
-  var wbLabel = document.getElementById('webhook-btn-label');
-  if (wbLabel) wbLabel.textContent = getWebhookUrl() ? '🟢 Webhook activo — editar' : 'Configurar webhook';
 
   el.innerHTML = '<div style="text-align:center;padding:32px;color:#94a3b8;font-size:13px">Cargando usuarios…</div>';
   _usersFn('list').then(function(data) {
@@ -12360,7 +11736,6 @@ function _tabEvaluaciones(c) {
   return h;
 }
 
-var _COMP_NAMES = ['Trabajo en equipo','Comunicación','Resolución de problemas','Orientación a resultados','Adaptabilidad'];
 
 // ── Competencias del perfil de la empresa (entrevista estructurada) ──
 // Las 5 de siempre, con definición y escala descrita en 1, 3 y 5 (propuestas/entrevista_estructurada.md).
@@ -12665,12 +12040,6 @@ function _evGetScreen() {
   return result;
 }
 
-function _evGetFlags() {
-  return _EV_RED_FLAGS.map(function(_, i) {
-    var cb = document.getElementById('ev-flag-' + i);
-    return cb ? cb.checked : false;
-  });
-}
 
 function _evGetChecksOp() {
   return _EV_CHECKS_OP.map(function(_, i) {
@@ -12679,14 +12048,6 @@ function _evGetChecksOp() {
   });
 }
 
-function _evScoreLabel(val, label) {
-  if (!val && val !== 0) return '<span style="color:var(--ink4);font-size:11px">—</span>';
-  var pct = Math.round(val / 100 * 100);
-  var color = val >= 70 ? '#16a34a' : val >= 45 ? '#d97706' : '#e11d48';
-  return '<div class="ev-kpi-chip"><span style="font-size:11px;font-weight:700;color:' + color + '">' + val + '</span>'
-       + '<span style="font-size:9.5px;color:var(--ink4);margin-top:1px">' + label + '</span>'
-       + '<div class="ev-score-bar" style="width:100%"><div class="ev-score-bar-fill" style="width:' + pct + '%;background:' + color + '"></div></div></div>';
-}
 
 function _tabEntrevistasDrawer(c) {
   var sc = c.scores || {};
