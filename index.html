@@ -10467,6 +10467,24 @@ function _fechaCand(c) {
   return null;
 }
 
+// Momento de la evaluación para ordenar la tabla de candidatos: hora en que se envió
+// (respuestas.guardado); si no, created_at; si no, el campo fecha
+function _momentoCand(c) {
+  var g = c.respuestas && c.respuestas.guardado;
+  if (g) { var d = new Date(g); if (!isNaN(d)) return d; }
+  return _fechaCand(c);
+}
+
+function _momentoTxt(c) {
+  var d = _momentoCand(c);
+  if (!d || (!(c.respuestas && c.respuestas.guardado) && !c.created_at)) {
+    var m = String(c.fecha || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+    return m ? m[3] + '-' + m[2] + '-' + m[1] : (c.fecha || '');
+  }
+  return d.toLocaleDateString('es-CL', { day:'2-digit', month:'2-digit', year:'numeric' })
+    + ' ' + d.toLocaleTimeString('es-CL', { hour:'2-digit', minute:'2-digit', hour12:false });
+}
+
 async function renderDashboard() {
   const container = document.getElementById('dash-content');
   if (!container) return;
@@ -10664,9 +10682,9 @@ function _applyCandSort(cands) {
     } else if (f === 'estado') {
       va = _ESTADO_ORDER[a.estado] ?? 9;
       vb = _ESTADO_ORDER[b.estado] ?? 9;
-    } else { // fecha
-      va = a.fecha || '';
-      vb = b.fecha || '';
+    } else { // fecha y hora (la más reciente primero por defecto)
+      va = (_momentoCand(a) || new Date(0)).getTime();
+      vb = (_momentoCand(b) || new Date(0)).getTime();
     }
     if (va < vb) return asc ? -1 : 1;
     if (va > vb) return asc ? 1 : -1;
@@ -10919,7 +10937,7 @@ async function renderCandidatesTable() {
     const edu  = c.educacion_label || c.educacion ? htmlEsc(c.educacion_label || c.educacion) : '';
     const exp  = c.experiencia_label || c.experiencia ? htmlEsc(c.experiencia_label || c.experiencia) : '';
     const cargo = htmlEsc(c.cargo || '—');
-    const fecha = htmlEsc(c.fecha || '');
+    const fecha = htmlEsc(_momentoTxt(c));
     const edad  = c.edad ? htmlEsc(String(c.edad)) : '';
     const fullName = htmlEsc(c.nombre + ' ' + c.apellido);
     return `
