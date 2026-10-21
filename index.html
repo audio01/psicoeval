@@ -7686,7 +7686,7 @@ function _miradaFichaHtml(c) {
 }
 
 // "Por revisar" del Dashboard: lo que requiere una acción del evaluador
-function _porRevisarHtml(cands) {
+function _porRevisarHtml(cands, desde) {
   var grupos = [
     { titulo:'Integridad con riesgo alto', icon:'🔴', lista:[] },
     { titulo:'Incidentes durante la evaluación', icon:'⚠️', lista:[] },
@@ -7696,6 +7696,8 @@ function _porRevisarHtml(cands) {
   cands.forEach(function(c) {
     if (c.estado !== 'completed') return;
     var m = _miradaDe(c), et = getPipelineEtapa(c);
+    var f = _fechaCand(c), enPeriodo = !desde || (f && f >= desde);
+    if (!enPeriodo) { if (m.segPend.length) grupos[3].lista.push({ c:c, nota:m.segPend.map(function(p){ return p.hito.toLowerCase(); }).join(' y ') }); return; }
     if (et === 'descartado') { if (m.segPend.length) grupos[3].lista.push({ c:c, nota:m.segPend.map(function(p){ return p.hito.toLowerCase(); }).join(' y ') }); return; }
     if (m.integ === 'riesgo_alto' && !m.dictamen) grupos[0].lista.push({ c:c });
     if (m.incid === 'grave' && !m.dictamen) grupos[1].lista.push({ c:c });
@@ -9842,6 +9844,26 @@ function setDashPerfil(perfil, btn) {
   renderDashboard();
 }
 
+// ── Período del Dashboard (días; 0 = todo). Se recuerda en este navegador. ──
+var _DASH_PERIODO_KEY = 'psicoeval_dash_periodo';
+var _dashPeriodo = (function(){ try { var v = parseInt(localStorage.getItem(_DASH_PERIODO_KEY), 10); return isNaN(v) ? 30 : v; } catch(e) { return 30; } })();
+function setDashPeriodo(d) {
+  _dashPeriodo = d;
+  try { localStorage.setItem(_DASH_PERIODO_KEY, String(d)); } catch(e) {}
+  renderDashboard();
+}
+
+// Fecha de la evaluación: created_at si existe; si no, el campo fecha (ISO o DD-MM-AAAA)
+function _fechaCand(c) {
+  if (c.created_at) { var d0 = new Date(c.created_at); if (!isNaN(d0)) return d0; }
+  var f = String(c.fecha || '');
+  var m = f.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return new Date(+m[1], +m[2] - 1, +m[3], 12);
+  m = f.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);
+  if (m) return new Date(+m[3], +m[2] - 1, +m[1], 12);
+  return null;
+}
+
 async function renderDashboard() {
   const container = document.getElementById('dash-content');
   if (!container) return;
@@ -9849,162 +9871,121 @@ async function renderDashboard() {
 
   const allCands = await getDB();
   const perfil   = _dashPerfil;
-  const cands    = perfil === 'all' ? allCands : allCands.filter(c => c.perfil === perfil);
-  const total    = cands.length;
-  const completed = cands.filter(c => c.estado === 'completed');
-  const inProg   = cands.filter(c => c.estado === 'in_progress').length;
-  const pending  = cands.filter(c => c.estado === 'pending').length;
-  const nComp    = completed.length;
-
+  const delCargo = perfil === 'all' ? allCands : allCands.filter(c => c.perfil === perfil);
+  // Período: [desde, ahora] y el período anterior del mismo largo, para comparar
+  var ahora = new Date(), dias = _dashPeriodo;
+  var desde = dias ? new Date(ahora.getTime() - dias * 86400000) : null;
+  var desdeAnt = dias ? new Date(ahora.getTime() - 2 * dias * 86400000) : null;
+  var enRango = function(c, a, b){ var f = _fechaCand(c); return f && (!a || f >= a) && (!b || f < b); };
+  var cands = delCargo.filter(function(c){ return !desde || enRango(c, desde, null); });
+  var completadas = cands.filter(function(c){ return c.estado === 'completed'; });
+  var antCompl = dias ? delCargo.filter(function(c){ return c.estado === 'completed' && enRango(c, desdeAnt, desde); }).length : null;
+  var miradas = completadas.map(function(c){ return { c:c, m:_miradaDe(c) }; });
+  var conDict = miradas.filter(function(x){ return x.m.dictamen; });
+  var recomendados = conDict.filter(function(x){ return x.m.dictamen === 'recomendado' || x.m.dictamen === 'obs'; }).length;
+  var sinTerminar = cands.filter(function(c){ return c.estado !== 'completed'; }).length;
+  // Mismo criterio que "Por revisar": en proceso (ni seleccionados ni descartados) y sin dictamen
+  var sinDict = miradas.filter(function(x){ var e = getPipelineEtapa(x.c); return !x.m.dictamen && e !== 'seleccionado' && e !== 'descartado'; }).length;
 
   var PLABEL = { all:'Todos' };
   var PICON  = { all:'📊' };
   getAllCargos().forEach(function(k) { var pm = PERFIL_META[k]; if(pm){ PLABEL[k]=pm.label; PICON[k]=pm.icon; }});
+  var PER_LBL = { 7:'Últimos 7 días', 30:'Últimos 30 días', 90:'Últimos 90 días', 0:'Todo' };
 
-  // Subtitle
   const subEl = document.getElementById('dash-subtitle');
-  if (subEl) subEl.textContent = perfil === 'all' ? 'Vista general de evaluaciones' : PICON[perfil] + ' ' + PLABEL[perfil];
+  if (subEl) subEl.textContent = (perfil === 'all' ? 'Todos los cargos' : PICON[perfil] + ' ' + PLABEL[perfil]) + ' · ' + PER_LBL[dias].toLowerCase();
 
-  var h = '';
+  var h = '<style>'
+    + '.dash-grid4{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:22px}'
+    + '.dash-grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;margin-bottom:22px}'
+    + '.dash-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px}'
+    + '.dash-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--ink4)}'
+    + '@media (max-width:640px){.dash-grid2{grid-template-columns:1fr}.dash-grid4{grid-template-columns:1fr 1fr;gap:10px}.dash-card{padding:12px 14px}.dash-kpi{font-size:26px!important}}'
+    + '</style>';
 
-  // ── Profile filter pills ──
-  h += '<div style="display:flex;gap:6px;margin-bottom:24px;flex-wrap:wrap">';
-  var dashProfiles = ['all'].concat(_cargosParaFiltro(allCands));
-  dashProfiles.forEach(function(pf) {
+  // ── Filtros: período y cargo ──
+  h += '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:18px">';
+  h += '<div style="display:flex;gap:6px;flex-wrap:wrap">';
+  ['all'].concat(_cargosParaFiltro(allCands)).forEach(function(pf) {
     var active = pf === perfil;
-    h += '<button class="dash-perfil-btn" onclick="setDashPerfil(\'' + pf + '\',this)" style="padding:6px 16px;border-radius:100px;border:1.5px solid ' + (active?'var(--accent)':'var(--border)') + ';background:' + (active?'var(--accent)':'transparent') + ';color:' + (active?'#fff':'var(--ink3)') + ';font-size:12px;font-weight:600;cursor:pointer;transition:all .15s">' + PICON[pf] + ' ' + PLABEL[pf] + '</button>';
+    h += '<button class="dash-perfil-btn" onclick="setDashPerfil(\'' + pf + '\',this)" style="padding:6px 14px;border-radius:100px;border:1.5px solid ' + (active?'var(--accent)':'var(--border)') + ';background:' + (active?'var(--accent)':'transparent') + ';color:' + (active?'#fff':'var(--ink3)') + ';font-size:12px;font-weight:600;cursor:pointer;transition:all .15s">' + PICON[pf] + ' ' + PLABEL[pf] + '</button>';
   });
   h += '</div>';
-
-  h += _porRevisarHtml(allCands);
-
-  // ── 3 Big Metrics — Enterprise Premium ──
-  var compPct  = total ? Math.round(nComp/total*100) : 0;
-
-  h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px">';
-
-  // Metric 1: Candidatos
-  h += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px 22px;position:relative;overflow:hidden">';
-  h += '<div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#4338ca,#6366f1)"></div>';
-  h += '<div style="display:flex;justify-content:space-between;align-items:flex-start">';
-  h += '<div>';
-  h += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--ink4);margin-bottom:10px">Candidatos</div>';
-  h += '<div style="font-size:38px;font-weight:800;color:var(--ink);letter-spacing:-.04em;line-height:1">' + total + '</div>';
-  h += '</div>';
-  h += '<div style="width:44px;height:44px;border-radius:10px;background:#eef2ff;display:flex;align-items:center;justify-content:center;font-size:20px">👥</div>';
-  h += '</div>';
-  h += '<div style="display:flex;gap:16px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">';
-  h += '<div style="flex:1"><div style="font-size:20px;font-weight:800;color:#059669">' + nComp + '</div><div style="font-size:10px;font-weight:600;color:var(--ink4)">Completados</div></div>';
-  h += '<div style="flex:1"><div style="font-size:20px;font-weight:800;color:#2563eb">' + inProg + '</div><div style="font-size:10px;font-weight:600;color:var(--ink4)">En curso</div></div>';
-  h += '<div style="flex:1"><div style="font-size:20px;font-weight:800;color:var(--ink4)">' + pending + '</div><div style="font-size:10px;font-weight:600;color:var(--ink4)">Pendientes</div></div>';
-  h += '</div></div>';
-
-  // Metric 2: En curso
-  h += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px 22px;position:relative;overflow:hidden">';
-  h += '<div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#2563eb,#60a5fa)"></div>';
-  h += '<div style="display:flex;justify-content:space-between;align-items:flex-start">';
-  h += '<div>';
-  h += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--ink4);margin-bottom:10px">Completados</div>';
-  h += '<div style="font-size:38px;font-weight:800;color:#059669;letter-spacing:-.04em;line-height:1">' + nComp + '</div>';
-  h += '</div>';
-  h += '<div style="width:44px;height:44px;border-radius:10px;background:#ecfdf5;display:flex;align-items:center;justify-content:center;font-size:20px">✅</div>';
-  h += '</div>';
-  h += '<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);font-size:11px;color:var(--ink4)">';
-  h += compPct + '% del total completado';
-  h += '</div></div>';
-
-  // Metric 3: Pendientes
-  h += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px 22px;position:relative;overflow:hidden">';
-  h += '<div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#94a3b8,#cbd5e1)"></div>';
-  h += '<div style="display:flex;justify-content:space-between;align-items:flex-start">';
-  h += '<div>';
-  h += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--ink4);margin-bottom:10px">Pendientes / En curso</div>';
-  h += '<div style="font-size:38px;font-weight:800;color:var(--ink4);letter-spacing:-.04em;line-height:1">' + (inProg + pending) + '</div>';
-  h += '</div>';
-  h += '<div style="width:44px;height:44px;border-radius:10px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:20px">⏳</div>';
-  h += '</div>';
-  h += '<div style="display:flex;gap:16px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">';
-  h += '<div style="flex:1"><div style="font-size:20px;font-weight:800;color:#2563eb">' + inProg + '</div><div style="font-size:10px;font-weight:600;color:var(--ink4)">En curso</div></div>';
-  h += '<div style="flex:1"><div style="font-size:20px;font-weight:800;color:var(--ink4)">' + pending + '</div><div style="font-size:10px;font-weight:600;color:var(--ink4)">Pendientes</div></div>';
-  h += '</div></div>';
-
-  h += '</div>'; // end metrics grid
-
-  // ── Candidates list ──
-  // Sort: completed first (by fit desc), then in_progress, then pending
-  var sorted = [...cands].sort(function(a, b) {
-    var order = { completed:0, in_progress:1, pending:2 };
-    var oa = order[a.estado] !== undefined ? order[a.estado] : 3;
-    var ob = order[b.estado] !== undefined ? order[b.estado] : 3;
-    if (oa !== ob) return oa - ob;
-    return 0;
+  h += '<div style="display:inline-flex;background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:3px">';
+  [7, 30, 90, 0].forEach(function(d) {
+    var on = d === dias;
+    h += '<button onclick="setDashPeriodo(' + d + ')" style="padding:5px 11px;border:none;border-radius:7px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;background:' + (on ? 'var(--surface)' : 'transparent') + ';color:' + (on ? 'var(--ink)' : 'var(--ink3)') + ';' + (on ? 'box-shadow:0 1px 2px rgba(0,0,0,.08)' : '') + '">' + (d ? d + ' días' : 'Todo') + '</button>';
   });
+  h += '</div></div>';
 
-  if (!sorted.length) {
-    h += '<div style="text-align:center;padding:48px 20px;color:var(--ink4);font-size:13px">No hay candidatos' + (perfil !== 'all' ? ' en este perfil' : '') + '. Usa el enlace de evaluación para añadir candidatos.</div>';
-  } else {
-    h += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);margin-bottom:12px">Candidatos recientes</div>';
-    h += '<div style="display:flex;flex-direction:column;gap:1px;background:var(--border);border-radius:12px;overflow:hidden">';
+  // ── Indicadores ──
+  var kpi = function(lbl, valor, sub, color, onclick) {
+    return '<div class="dash-card"' + (onclick ? ' onclick="' + onclick + '" style="cursor:pointer"' : '') + '>'
+      + '<div class="dash-lbl">' + lbl + '</div>'
+      + '<div class="dash-kpi" style="font-size:34px;font-weight:800;letter-spacing:-.03em;line-height:1.1;margin-top:8px;color:' + (color || 'var(--ink)') + '">' + valor + '</div>'
+      + '<div style="font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.45">' + sub + '</div></div>';
+  };
+  var delta = '';
+  if (antCompl !== null) {
+    var dif = completadas.length - antCompl;
+    delta = (dif === 0 ? 'Igual que' : (dif > 0 ? '▲ ' + dif + ' más que' : '▼ ' + (-dif) + ' menos que')) + ' los ' + dias + ' días anteriores (' + antCompl + ')';
+  } else delta = 'Desde el inicio';
+  h += '<div class="dash-grid4">'
+    + kpi('Evaluaciones completadas', completadas.length, delta, 'var(--ink)')
+    + kpi('Sin dictamen', sinDict, completadas.length ? 'Evaluaciones del período en proceso, aún sin dictamen de entrevista' : 'No hay evaluaciones en el período', sinDict ? '#b45309' : 'var(--ink)')
+    + kpi('Recomendados', conDict.length ? Math.round(recomendados / conDict.length * 100) + ' %' : '—', conDict.length ? recomendados + ' de ' + conDict.length + ' con dictamen (incluye "con observaciones")' : 'Aún no hay dictámenes en el período', '#15803d')
+    + kpi('Sin terminar', sinTerminar, sinTerminar ? 'Comenzaron la evaluación y no la completaron' : 'Nadie dejó la evaluación a medias', sinTerminar ? '#b45309' : 'var(--ink)', sinTerminar ? "_candPerfil='" + perfil + "';adminTab('candidates',document.getElementById('nav-candidates'));var f=document.getElementById('filter-status');if(f){f.value='pending';renderCandidatesTable();}" : '')
+    + '</div>';
 
-    sorted.slice(0, 15).forEach(function(c) {
-      var statCol = { completed:'#16a34a', in_progress:'#2563eb', pending:'#94a3b8' };
-      var statLbl = { completed:'Completado', in_progress:'En curso', pending:'Pendiente' };
-      var statIcon = { completed:'●', in_progress:'◐', pending:'○' };
+  // ── Por revisar (seguimientos: siempre; lo demás: dentro del período) ──
+  h += _porRevisarHtml(delCargo, desde);
 
-      h += '<div style="display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--surface);cursor:pointer;transition:background .1s" onmouseover="this.style.background=\'var(--surface2)\'" onmouseout="this.style.background=\'var(--surface)\'" onclick="viewCandReport(\'' + c.id + '\')">';
+  // ── Gráficos ──
+  h += '<div class="dash-grid2">';
+  h += '<div class="dash-card"><div class="dash-lbl" style="margin-bottom:12px">Evaluaciones completadas por semana</div><canvas id="chart-weekly" height="170"></canvas></div>';
+  h += '<div class="dash-card"><div class="dash-lbl" style="margin-bottom:4px">Resultados del período</div>'
+    + '<div style="font-size:11.5px;color:var(--ink3);margin-bottom:12px">Porcentaje de evaluados que alcanzan el mínimo del cargo en cada prueba de aptitud</div>'
+    + _dashResultadosHtml(completadas) + '</div>';
+  h += '</div>';
 
-      // Avatar
-      var init = htmlEsc(((c.nombre||'')[0] || '') + ((c.apellido||'')[0] || '')).toUpperCase();
-      h += '<div style="width:36px;height:36px;border-radius:50%;background:var(--accent-l);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">' + init + '</div>';
-
-      // Name + meta
-      h += '<div style="flex:1;min-width:0">';
-      h += '<div style="font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + htmlEsc(c.nombre) + ' ' + htmlEsc(c.apellido) + '</div>';
-      h += '<div style="font-size:11px;color:var(--ink4);display:flex;gap:8px;align-items:center;margin-top:1px">';
-      h += '<span>' + htmlEsc(c.cargo || PLABEL[c.perfil] || '—') + '</span>';
-      if (perfil === 'all' && c.perfil && PLABEL[c.perfil] && PLABEL[c.perfil] !== (c.cargo || PLABEL[c.perfil])) h += '<span style="color:var(--ink4)">· ' + htmlEsc(PLABEL[c.perfil]) + '</span>';
-      h += '</div></div>';
-
-      // Status
-      h += '<div style="display:flex;align-items:center;gap:5px;flex-shrink:0">';
-      h += '<span style="color:' + (statCol[c.estado]||'#94a3b8') + ';font-size:10px">' + (statIcon[c.estado]||'○') + '</span>';
-      h += '<span style="font-size:11px;color:' + (statCol[c.estado]||'#94a3b8') + ';font-weight:500">' + (statLbl[c.estado]||'—') + '</span>';
-      h += '</div>';
-
-
-      // Arrow
-      h += '<span style="color:var(--ink4);font-size:14px;flex-shrink:0">›</span>';
-      h += '</div>';
-    });
-
-    h += '</div>'; // end list
-
-    if (sorted.length > 15) {
-      h += '<div style="text-align:center;padding:14px;font-size:12px;color:var(--ink3)">Mostrando 15 de ' + sorted.length + ' — <a onclick="adminTab(\'candidates\',document.getElementById(\'nav-candidates\'))" style="color:var(--accent);cursor:pointer;font-weight:600">ver todos →</a></div>';
-    }
+  // ── Últimas evaluaciones ──
+  var ultimas = cands.slice().sort(function(a, b){ return (_fechaCand(b) || 0) - (_fechaCand(a) || 0); });
+  h += '<div class="dash-card" style="padding:0;overflow:hidden">';
+  h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--border)"><div class="dash-lbl">Últimas evaluaciones</div>'
+    + '<a onclick="adminTab(\'candidates\',document.getElementById(\'nav-candidates\'))" style="font-size:12px;font-weight:600;color:var(--accent);cursor:pointer">Ver todas →</a></div>';
+  if (!ultimas.length) {
+    h += '<div style="text-align:center;padding:32px 20px;color:var(--ink4);font-size:13px">No hay evaluaciones en este período' + (perfil !== 'all' ? ' para este cargo' : '') + '.</div>';
   }
-
-  // ── Charts row ──────────────────────────────────────────────────────────────
-  h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px">';
-
-  // Chart 1: Evaluaciones por semana (last 8 weeks)
-  h += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 22px">';
-  h += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--ink4);margin-bottom:14px">Evaluaciones por semana</div>';
-  h += '<canvas id="chart-weekly" height="160"></canvas>';
-  h += '</div>';
-
-  // Chart 2: Ajuste promedio por cargo
-  h += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 22px">';
-  h += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--ink4);margin-bottom:14px">Completados por cargo</div>';
-  h += '<canvas id="chart-cargo" height="160"></canvas>';
-  h += '</div>';
-
+  ultimas.slice(0, 8).forEach(function(c) {
+    var init = htmlEsc(((c.nombre||'')[0] || '') + ((c.apellido||'')[0] || '')).toUpperCase();
+    var f = _fechaCand(c);
+    h += '<div style="display:flex;align-items:center;gap:12px;padding:11px 18px;border-top:1px solid var(--border);cursor:pointer;flex-wrap:wrap" onmouseover="this.style.background=\'var(--surface2)\'" onmouseout="this.style.background=\'\'" onclick="openCandDrawer(\'' + c.id + '\')">';
+    h += '<div style="width:32px;height:32px;border-radius:50%;background:var(--accent-l);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">' + init + '</div>';
+    h += '<div style="flex:1 1 160px;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + htmlEsc((c.nombre || '') + ' ' + (c.apellido || '')) + '</div>'
+      + '<div style="font-size:11px;color:var(--ink4)">' + htmlEsc(c.cargo || PLABEL[c.perfil] || '—') + (f ? ' · ' + f.toLocaleDateString('es-CL') : '') + '</div></div>';
+    h += '<div style="flex:0 1 auto">' + _miradaChipsHtml(_miradaDe(c)) + '</div>';
+    h += '</div>';
+  });
   h += '</div>';
 
   container.innerHTML = h;
+  _initDashCharts(delCargo, dias);
+}
 
-  // ── Initialize Charts ────────────────────────────────────────────────────────
-  _initDashCharts(allCands);
+// Barras: porcentaje de evaluados sobre el mínimo, por prueba de aptitud
+function _dashResultadosHtml(completadas) {
+  var porPrueba = {};
+  completadas.forEach(function(c){ _aptRowsDe(c).forEach(function(r){ var p = porPrueba[r.tid] || (porPrueba[r.tid] = { label:r.label, icon:r.icon, n:0, ok:0 }); p.n++; if (r.cumple) p.ok++; }); });
+  var filas = Object.keys(porPrueba).map(function(k){ return porPrueba[k]; }).sort(function(a, b){ return b.n - a.n; });
+  if (!filas.length) return '<div style="font-size:12.5px;color:var(--ink4);padding:20px 0">Sin evaluaciones con pruebas de aptitud en el período.</div>';
+  return filas.map(function(p) {
+    var pct = Math.round(p.ok / p.n * 100);
+    var col = pct >= 70 ? '#16a34a' : pct >= 40 ? '#d97706' : '#dc2626';
+    return '<div style="margin-bottom:11px">'
+      + '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span style="color:var(--ink2);font-weight:600">' + p.icon + ' ' + htmlEsc(p.label) + '</span>'
+      + '<span style="color:var(--ink3)"><strong style="color:' + col + '">' + pct + ' %</strong> · ' + p.ok + ' de ' + p.n + '</span></div>'
+      + '<div style="height:8px;background:var(--bg);border-radius:100px;overflow:hidden;border:1px solid var(--border)"><div style="height:100%;width:' + pct + '%;background:' + col + ';border-radius:100px"></div></div></div>';
+  }).join('') + '<div style="font-size:10.5px;color:var(--ink4);margin-top:6px">Si casi nadie alcanza un mínimo, puede ser demasiado exigente: revíselo en Cargos.</div>';
 }
 
 
@@ -10014,82 +9995,27 @@ function statusBadge(estado) {
   return `<span class="badge ${s.cls}">${s.lbl}</span>`;
 }
 
-function _initDashCharts(allCands) {
+function _initDashCharts(cands, dias) {
   if (typeof Chart === 'undefined') return;
-
-  // Destroy existing chart instances to avoid "canvas already in use" error
   if (window._chartWeekly) { window._chartWeekly.destroy(); window._chartWeekly = null; }
-  if (window._chartCargo)  { window._chartCargo.destroy();  window._chartCargo  = null; }
-
-  // ── Chart 1: Evaluaciones completadas por semana (últimas 8 semanas) ──
-  var weekLabels = [];
-  var weekData   = [];
-  var now = new Date();
-  for (var w = 7; w >= 0; w--) {
-    var weekStart = new Date(now);
-    weekStart.setDate(now.getDate() - w * 7 - now.getDay());
-    weekStart.setHours(0,0,0,0);
-    var weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekStart.getDate() + 6);
-    weekEnd.setHours(23,59,59,999);
-    var label = (weekStart.getDate()) + '/' + (weekStart.getMonth()+1);
-    weekLabels.push(label);
-    var count = allCands.filter(function(c) {
-      if (c.estado !== 'completed' || !c.fecha) return false;
-      var d = new Date(c.fecha);
-      return d >= weekStart && d <= weekEnd;
-    }).length;
-    weekData.push(count);
+  // Semanas a mostrar según el período (7 y 30 días: 8 semanas; 90: 13; todo: 26)
+  var nSem = dias === 90 ? 13 : dias === 0 ? 26 : 8;
+  var labels = [], data = [], now = new Date();
+  for (var w = nSem - 1; w >= 0; w--) {
+    var ini = new Date(now); ini.setDate(now.getDate() - w * 7 - now.getDay()); ini.setHours(0, 0, 0, 0);
+    var fin = new Date(ini); fin.setDate(ini.getDate() + 6); fin.setHours(23, 59, 59, 999);
+    labels.push(ini.getDate() + '/' + (ini.getMonth() + 1));
+    data.push(cands.filter(function(c){ var f = _fechaCand(c); return c.estado === 'completed' && f && f >= ini && f <= fin; }).length);
   }
-  var ctxW = document.getElementById('chart-weekly');
-  if (ctxW) {
-    window._chartWeekly = new Chart(ctxW, {
-      type: 'bar',
-      data: {
-        labels: weekLabels,
-        datasets: [{
-          label: 'Completados',
-          data: weekData,
-          backgroundColor: 'rgba(99,102,241,.75)',
-          borderRadius: 6,
-          borderSkipped: false
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: { legend: { display: false } },
-        scales: {
-          x: { grid: { display: false }, ticks: { font: { size: 11 } } },
-          y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 11 } }, grid: { color: '#f1f5f9' } }
-        }
-      }
-    });
-  }
-
-  // ── Chart 2: Completados por cargo ──
-  var cargoMap2 = {};
-  allCands.filter(function(c){ return c.estado === 'completed'; }).forEach(function(c) {
-    var k = c.cargo || c.perfil || 'Sin cargo';
-    cargoMap2[k] = (cargoMap2[k] || 0) + 1;
+  var ctx = document.getElementById('chart-weekly');
+  if (!ctx) return;
+  window._chartWeekly = new Chart(ctx, {
+    type: 'bar',
+    data: { labels: labels, datasets: [{ label: 'Completadas', data: data, backgroundColor: 'rgba(99,102,241,.75)', borderRadius: 6, borderSkipped: false }] },
+    options: { responsive: true, plugins: { legend: { display: false } },
+      scales: { x: { grid: { display: false }, ticks: { font: { size: 11 }, maxRotation: 0, autoSkip: true } },
+                y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0, font: { size: 11 } }, grid: { color: '#f1f5f9' } } } }
   });
-  var cargoLabels = Object.keys(cargoMap2);
-  var cargoData   = cargoLabels.map(function(k){ return cargoMap2[k]; });
-  var ctxC = document.getElementById('chart-cargo');
-  if (ctxC) {
-    window._chartCargo = new Chart(ctxC, {
-      type: 'bar',
-      data: {
-        labels: cargoLabels.length ? cargoLabels : ['Sin datos'],
-        datasets: [{ label: 'Completados', data: cargoData.length ? cargoData : [0],
-          backgroundColor: 'rgba(99,102,241,.75)', borderRadius: 6, borderSkipped: false }]
-      },
-      options: { indexAxis: 'y', responsive: true,
-        plugins: { legend: { display: false } },
-        scales: { x: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 11 } }, grid: { color: '#f1f5f9' } },
-                  y: { grid: { display: false }, ticks: { font: { size: 11 } } } }
-      }
-    });
-  }
 }
 
 // ── Candidates cargo tab ─────────────────────────────────────
