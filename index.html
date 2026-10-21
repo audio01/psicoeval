@@ -2059,6 +2059,7 @@ const TESTS_META = {
   normativa_ohs:    { name:'Conocimiento Normativo OHS',       icon:'📐', color:'#0369a1' },
   integridad:       { name:'Actitudes en el trabajo',          icon:'🧭', color:'#b45309' },   // integridad laboral (nombre neutro para el candidato)
   gonogo:           { name:'Control de impulsos',              icon:'🎯', color:'#dc2626', game:true, cand:'Reacción y atención', badge:'⏱ Tarea de reacción' },
+  bart:             { name:'Control del riesgo',               icon:'🎈', color:'#7c3aed', game:true, cand:'Globos', badge:'🎈 Tarea de decisión' },
   juego_semaforo:   { name:'Semáforo',                         icon:'🚦', color:'#16a34a', game:true },
   juego_globos:     { name:'Globos',                           icon:'🎈', color:'#6366f1', game:true },
   juego_memoria:    { name:'Memoria',                          icon:'🧠', color:'#0891b2', game:true },
@@ -2068,15 +2069,15 @@ const TESTS_META = {
 const PERFIL_TESTS_DEFAULT = {
   jefatura:       ['dc0','situacional','comprension','disc','pf16','juego_memoria'],
   administrativo: ['dc0','comprension','disc','pf16'],
-  guardia:        ['situacional','vigilancia','comprension','integridad','disc','pf16','gonogo'],
+  guardia:        ['situacional','vigilancia','comprension','integridad','disc','pf16','gonogo','bart'],
   supervisor:     ['dc0','situacional','comprension','integridad','disc','pf16','gonogo'],
   prevencionista: ['dc0','situacional','comprension','disc','pf16'],
-  conductor:      ['pai','dc0','vigilancia','comprension','disc','pf16','gonogo'],
+  conductor:      ['pai','dc0','vigilancia','comprension','disc','pf16','gonogo','bart'],
   auxiliar_aseo:  ['pai','comprension','disc','pf16'],
 };
 
 // All available tests per cargo (max possible)
-const ALL_TESTS_AVAILABLE = ['dc0','situacional','vigilancia','comprension','normativa_ohs','integridad','disc','pf16','gonogo','juego_semaforo','juego_globos','juego_memoria'];
+const ALL_TESTS_AVAILABLE = ['dc0','situacional','vigilancia','comprension','normativa_ohs','integridad','disc','pf16','gonogo','bart','juego_semaforo','juego_globos','juego_memoria'];
 
 // Active batteries (loaded from localStorage, falls back to default)
 var PERFIL_TESTS = Object.assign({}, PERFIL_TESTS_DEFAULT);
@@ -2551,7 +2552,7 @@ function _cfgReloadAll() {
   } catch(e) {}
 }
 
-var TM_MINS_DEFAULTS = { dc0:6, pai:5, situacional:5, vigilancia:3, comprension:4, disc:3, pf16:4, normativa_ohs:6, integridad:5, gonogo:4, juego_semaforo:4, juego_globos:5, juego_memoria:5 };
+var TM_MINS_DEFAULTS = { dc0:6, pai:5, situacional:5, vigilancia:3, comprension:4, disc:3, pf16:4, normativa_ohs:6, integridad:5, gonogo:4, bart:6, juego_semaforo:4, juego_globos:5, juego_memoria:5 };
 var TM_MINS_CONFIG = (function(){
   try {
     var saved = localStorage.getItem('psicoeval_tm_mins');
@@ -3880,7 +3881,7 @@ function startTestMode() {
     '🧠 Cognitivos':        ['dc0','comprension'],
     '🧬 Personalidad':      ['pai','disc','pf16'],
     '💡 Situacionales':     ['situacional','vigilancia'],
-    '⏱ Tarea de reacción':  ['gonogo'],
+    '⏱ Tareas de conducta': ['gonogo','bart'],
   };
 
   var h = '<div style="text-align:center;margin-bottom:16px"><span style="font-size:28px">🧪</span></div>';
@@ -3899,7 +3900,7 @@ function startTestMode() {
          + 'onmouseout="this.style.borderColor=\'var(--border)\';this.style.background=\'var(--surface)\'">';
       h += '<span style="font-size:20px">' + m.icon + '</span>';
       h += '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + m.name + '</div>';
-      h += '<div style="font-size:10px;color:var(--ink4)">~' + mins + ' min' + (isGame ? ' · ' + (m.badge ? 'Tarea de reacción' : 'Juego interactivo') : '') + '</div></div>';
+      h += '<div style="font-size:10px;color:var(--ink4)">~' + mins + ' min' + (isGame ? ' · ' + (m.badge ? m.badge.replace(/^\S+\s/, '') : 'Juego interactivo') : '') + '</div></div>';
       h += '<span style="font-size:12px;color:var(--ink4)">▶</span>';
       h += '</button>';
     });
@@ -5291,12 +5292,12 @@ function timeExpired() {
 // ═══════════════════════════════════════════════════════════
 
 function _renderGameUI(testId) {
-  var map = { gonogo: _renderGonogoGame, juego_semaforo: _renderSemaforoGame, juego_globos: _renderGlobosGame, juego_memoria: _renderMemoriaGame };
+  var map = { bart: _renderBartGame, gonogo: _renderGonogoGame, juego_semaforo: _renderSemaforoGame, juego_globos: _renderGlobosGame, juego_memoria: _renderMemoriaGame };
   return (map[testId] || function(){ return '<p>Juego no disponible.</p>'; })();
 }
 
 function _initGame(testId) {
-  var map = { gonogo: _initGonogoGame, juego_semaforo: _initSemaforoGame, juego_globos: _initGlobosGame, juego_memoria: _initMemoriaGame };
+  var map = { bart: _initBartGame, gonogo: _initGonogoGame, juego_semaforo: _initSemaforoGame, juego_globos: _initGlobosGame, juego_memoria: _initMemoriaGame };
   var fn = map[testId]; if (fn) fn();
 }
 
@@ -5532,6 +5533,125 @@ function _gngFin() {
   completeGame('gonogo', { v:1, ensayos:_GNG.reg, dispositivo:disp, pausas:_GNG.pausas, practicas:_GNG.practicas });
 }
 
+// ── CONTROL DEL RIESGO (globos, BART) ─────────────────────────────────────
+// Cada inflada suma un punto al globo; "Guardar" lo pasa al total; si el globo explota se
+// pierde lo de ese globo. Todos los candidatos reciben la misma secuencia de puntos de
+// explosión (igual a la de 13_control_riesgo.sql), así se comparan en igualdad de condiciones.
+// La página registra cada globo; el resultado lo calcula Supabase.
+var _BART2_SECUENCIA = [32,100,105,117,126,15,83,36,49,45,113,66,62,75,6,2,87,28,96,109,53,122,70,41,79,19,23,92,58,11];
+var _BART2 = null;
+
+function _renderBartGame() {
+  return '<div style="max-width:420px;margin:0 auto;text-align:center">'
+    + '<div id="bart2-intro">'
+    +   '<div style="font-size:14px;color:var(--ink2);line-height:1.7;text-align:left;background:var(--surface2);border-radius:12px;padding:14px 16px;margin-bottom:16px">'
+    +     'Infla globos para juntar puntos. Cada vez que infles, el globo suma <strong>1 punto</strong>.<br>'
+    +     'Cuando quieras, toca <strong>Guardar</strong>: los puntos del globo pasan a tu total y sigues con un globo nuevo.<br>'
+    +     'Si el globo <strong>explota</strong>, pierdes los puntos de ese globo (no los que ya guardaste). Cada globo explota en un momento distinto y no se puede saber cuándo.'
+    +     '<span style="display:block;margin-top:8px;color:var(--ink3);font-size:13px">Son 30 globos. Intenta juntar la mayor cantidad de puntos. Toma unos 5 minutos.</span>'
+    +   '</div>'
+    +   '<button type="button" onclick="_bart2Iniciar()" style="padding:13px 32px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit">Comenzar</button>'
+    + '</div>'
+    + '<div id="bart2-stage" style="display:none">'
+    +   '<div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:var(--ink3);margin-bottom:8px">'
+    +     '<span>Globo <span id="bart2-n">1</span> de 30</span><span>Total guardado: <span id="bart2-total">0</span> puntos</span></div>'
+    +   '<div style="position:relative;height:240px;border-radius:18px;background:var(--surface2);display:flex;align-items:center;justify-content:center;overflow:hidden">'
+    +     '<div id="bart2-globo" style="width:40px;height:40px;border-radius:50% 50% 48% 48%;background:radial-gradient(circle at 35% 30%,#c4b5fd,#7c3aed 70%);box-shadow:0 6px 18px rgba(124,58,237,.25);transition:width .08s,height .08s"></div>'
+    +     '<div id="bart2-boom" style="position:absolute;inset:0;display:none;align-items:center;justify-content:center;font-size:64px">💥</div>'
+    +   '</div>'
+    +   '<div style="font-size:14px;font-weight:700;color:#7c3aed;margin:12px 0">Puntos en este globo: <span id="bart2-pts">0</span></div>'
+    +   '<div style="display:flex;gap:10px">'
+    +     '<button type="button" id="bart2-inflar" onclick="_bart2Inflar()" style="flex:1;padding:15px;background:#7c3aed;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;touch-action:manipulation">Inflar</button>'
+    +     '<button type="button" id="bart2-guardar" onclick="_bart2Guardar()" style="flex:1;padding:15px;background:#16a34a;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;touch-action:manipulation">Guardar</button>'
+    +   '</div>'
+    +   '<div id="bart2-msg" style="min-height:24px;margin-top:12px;font-size:14px;font-weight:700"></div>'
+    + '</div>'
+    + '</div>';
+}
+
+function _initBartGame() {
+  document.removeEventListener('visibilitychange', _bart2Visibilidad);
+  _BART2 = { i:0, inf:0, tiempos:[], reg:[], total:0, pausas:0, bloqueado:false, activo:false };
+}
+
+function _bart2Visibilidad() {
+  if (document.hidden && _BART2 && _BART2.activo && document.getElementById('bart2-stage')) _BART2.pausas++;
+}
+
+function _bart2Iniciar() {
+  if (!_BART2) return;
+  _BART2.activo = true;
+  document.addEventListener('visibilitychange', _bart2Visibilidad);
+  document.getElementById('bart2-intro').style.display = 'none';
+  document.getElementById('bart2-stage').style.display = '';
+  _bart2Nuevo();
+}
+
+function _bart2Nuevo() {
+  if (!_BART2 || !document.getElementById('bart2-stage')) return;
+  if (_BART2.i >= _BART2_SECUENCIA.length) { _bart2Fin(); return; }
+  _BART2.inf = 0; _BART2.tiempos = []; _BART2.bloqueado = false;
+  document.getElementById('bart2-n').textContent = _BART2.i + 1;
+  document.getElementById('bart2-pts').textContent = '0';
+  document.getElementById('bart2-msg').textContent = '';
+  document.getElementById('bart2-boom').style.display = 'none';
+  var g = document.getElementById('bart2-globo');
+  g.style.display = ''; g.style.width = g.style.height = '40px';
+  document.getElementById('bart2-inflar').disabled = false;
+  document.getElementById('bart2-guardar').disabled = false;
+}
+
+// Mediana del tiempo entre infladas del globo (ritmo)
+function _bart2Ritmo() {
+  var t = _BART2.tiempos, d = [];
+  for (var k = 1; k < t.length; k++) d.push(t[k] - t[k - 1]);
+  if (!d.length) return null;
+  d.sort(function(a, b){ return a - b; });
+  return Math.round(d.length % 2 ? d[(d.length - 1) / 2] : (d[d.length / 2 - 1] + d[d.length / 2]) / 2);
+}
+
+function _bart2Cerrar(exploto) {
+  _BART2.bloqueado = true;
+  document.getElementById('bart2-inflar').disabled = true;
+  document.getElementById('bart2-guardar').disabled = true;
+  _BART2.reg.push([_BART2.inf, exploto ? 1 : 0, _bart2Ritmo()]);
+  _BART2.i++;
+  setTimeout(_bart2Nuevo, exploto ? 1300 : 900);
+}
+
+function _bart2Inflar() {
+  if (!_BART2 || _BART2.bloqueado) return;
+  _BART2.inf++;
+  _BART2.tiempos.push(performance.now());
+  document.getElementById('bart2-pts').textContent = _BART2.inf;
+  var g = document.getElementById('bart2-globo');
+  var d = Math.round(40 + Math.sqrt(_BART2.inf / 128) * 170);
+  g.style.width = d + 'px'; g.style.height = Math.round(d * 1.08) + 'px';
+  if (_BART2.inf >= _BART2_SECUENCIA[_BART2.i]) {
+    g.style.display = 'none';
+    document.getElementById('bart2-boom').style.display = 'flex';
+    var m = document.getElementById('bart2-msg');
+    m.textContent = '¡Explotó! Perdiste los ' + _BART2.inf + ' puntos de este globo.'; m.style.color = '#dc2626';
+    _bart2Cerrar(true);
+  }
+}
+
+function _bart2Guardar() {
+  if (!_BART2 || _BART2.bloqueado) return;
+  _BART2.total += _BART2.inf;
+  document.getElementById('bart2-total').textContent = _BART2.total;
+  var m = document.getElementById('bart2-msg');
+  m.textContent = '✓ Guardaste ' + _BART2.inf + (_BART2.inf === 1 ? ' punto.' : ' puntos.'); m.style.color = 'var(--green)';
+  _bart2Cerrar(false);
+}
+
+function _bart2Fin() {
+  document.removeEventListener('visibilitychange', _bart2Visibilidad);
+  _BART2.activo = false;
+  var disp = window.matchMedia && window.matchMedia('(pointer: coarse)').matches ? 'tactil' : 'mouse';
+  completeGame('bart', { v:1, globos:_BART2.reg, dispositivo:disp, pausas:_BART2.pausas });
+}
+
 // ── SEMÁFORO ─────────────────────────────────────────────────────────────
 // Ya no se aplica (lo reemplazó Control de impulsos); se conserva para evaluaciones antiguas.
 var _SEM = null;
@@ -5646,7 +5766,8 @@ function _semFinish() {
     summary:'Tiempo de reacción: ' + meanRT + 'ms · Anticipaciones: ' + _SEM.falseStarts });
 }
 
-// ── GLOBOS (BART) ─────────────────────────────────────────────────────────
+// ── GLOBOS (versión antigua) ──────────────────────────────────────────────
+// Ya no se aplica (la reemplazó Control del riesgo); se conserva para evaluaciones antiguas.
 var _BART = null;
 var _BART_TOTAL = 10;
 
@@ -6179,7 +6300,7 @@ async function _showTestModeResult(c) {
   Object.keys(scores).forEach(function(k) {
     var m = TESTS_META[k]; if (!m) return;
     if (k === 'integridad') { scoresHtml += '<div style="font-size:11px">' + _integNivelBadge(scores[k]) + '</div>'; return; }
-    if (k === 'gonogo' && !scores[k].valido) { scoresHtml += '<div style="padding:6px 10px;border-radius:8px;background:#f1f5f9;border:1px solid #e2e8f0;font-size:11px"><span style="font-weight:700;color:#475569">No interpretable</span> <span style="color:var(--ink3)">' + m.icon + ' ' + m.name + '</span></div>'; return; }
+    if ((k === 'gonogo' || k === 'bart') && !scores[k].valido) { scoresHtml += '<div style="padding:6px 10px;border-radius:8px;background:#f1f5f9;border:1px solid #e2e8f0;font-size:11px"><span style="font-weight:700;color:#475569">No interpretable</span> <span style="color:var(--ink3)">' + m.icon + ' ' + m.name + '</span></div>'; return; }
     var pct = scores[k].pct !== undefined ? scores[k].pct : (scores[k].total !== undefined ? scores[k].total : null);
     if (pct === null) return;
     var c2 = pct >= 70 ? '#16a34a' : pct >= 50 ? '#b45309' : '#dc2626';
@@ -6403,6 +6524,12 @@ const PERFIL_IDEAL = {
   },
 };
 // Copia de los mínimos iniciales, antes de aplicar los ajustes guardados
+// Control del riesgo (globos): mínimo inicial 50 en todos los cargos base. 50 equivale a inflar en
+// promedio 64 veces, la estrategia de mayor ganancia esperada; pasar de ahí es arriesgar más de lo que conviene.
+Object.keys(PERFIL_IDEAL).forEach(function(pf) {
+  PERFIL_IDEAL[pf].bart = { min:50, max:100, label:'Control del riesgo',
+    req:'No arriesgar más de lo que conviene: en la tarea de globos, no superar la estrategia de mayor ganancia esperada. Mínimo provisional, a calibrar con los datos propios.' };
+});
 const PERFIL_IDEAL_INICIAL = JSON.parse(JSON.stringify(PERFIL_IDEAL));
 
 
@@ -7897,12 +8024,104 @@ function _gonogoReportHtml(c, g) {
 }
 
 // ═══════════════════════════════════════════════════════════
+//  INFORME · CONTROL DEL RIESGO (globos, BART)
+// ═══════════════════════════════════════════════════════════
+var _BART_NIVELES = {
+  prudente: ['Prudente', 'Prefiere asegurar ganancias pequeñas antes que arriesgar lo acumulado. En el extremo, puede reflejar un estilo muy cauteloso.'],
+  moderado: ['Moderado', 'Asume riesgos dentro de lo razonable: no supera la estrategia de mayor ganancia esperada.'],
+  alto:     ['Alta disposición al riesgo', 'Sigue arriesgando más allá de lo que conviene, aun cuando puede perder lo acumulado.']
+};
+
+function _bartReportHtml(c, g) {
+  var card = function(inner){ return '<div style="background:#fff;border-radius:14px;border:1px solid #e2e8f0;padding:16px 18px;break-inside:avoid;page-break-inside:avoid">' + inner + '</div>'; };
+  var h3 = function(t){ return '<div style="font-size:11px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">' + t + '</div>'; };
+  var num = function(x){ return String(x).replace('.', ','); };
+  var cfg = (PERFIL_IDEAL[c.perfil] || {}).bart;
+  var min = cfg && cfg.min !== undefined ? cfg.min : null;
+  var out = '';
+
+  // 1. Resultado
+  var r = '';
+  if (g.valido === false) {
+    r += '<div style="display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:12px;background:#f1f5f9">'
+      + '<div style="font-size:22px;line-height:1">⚪</div><div><div style="font-size:14px;font-weight:800;color:#334155">Resultado no interpretable</div>'
+      + '<div style="font-size:12.5px;color:#475569;line-height:1.6;margin-top:3px">' + (g.motivos || []).map(htmlEsc).join('<br>') + '</div>'
+      + '<div style="font-size:12px;color:#64748b;line-height:1.6;margin-top:6px">No se compara con el mínimo del cargo.</div></div></div>';
+  } else {
+    var cumple = min === null || g.pct >= min;
+    var col = min === null ? '#0f2d52' : cumple ? '#15803d' : '#b91c1c', bg = min === null ? '#f8fafc' : cumple ? '#f0fdf4' : '#fef2f2';
+    r += '<div style="display:flex;gap:16px;align-items:center;padding:12px 14px;border-radius:12px;background:' + bg + '">'
+      + '<div style="text-align:center;min-width:76px"><div style="font-size:30px;font-weight:900;color:' + col + ';line-height:1">' + g.pct + '</div>'
+      + '<div style="font-size:9.5px;font-weight:700;color:' + col + ';text-transform:uppercase;letter-spacing:.4px;margin-top:4px">Control del riesgo</div></div>'
+      + '<div style="font-size:13px;color:#1e293b;line-height:1.6">Infló en promedio <strong>' + num(g.infladas_prom) + ' veces</strong> los globos que guardó. La estrategia de mayor ganancia es inflar unas 64 veces.'
+      + (min !== null ? '<br><strong style="color:' + col + '">' + (cumple ? 'Sobre' : 'Bajo') + ' el mínimo del cargo</strong> (' + min + ').' : '') + '</div></div>';
+    if (min !== null) {
+      r += '<div style="position:relative;height:6px;background:#e2e8f0;border-radius:100px;margin:12px 0 3px">'
+        + '<div style="position:absolute;left:0;top:0;height:100%;width:' + Math.max(0, Math.min(100, g.pct)) + '%;background:' + col + ';border-radius:100px"></div>'
+        + '<div style="position:absolute;left:' + min + '%;top:-3px;bottom:-3px;width:2px;background:#0f172a" title="Mínimo del cargo"></div></div>'
+        + '<div style="display:flex;justify-content:space-between;font-size:10.5px;color:#94a3b8"><span>0 · más riesgo</span><span>mínimo del cargo: ' + min + '</span><span>100 · más prudencia</span></div>';
+    }
+  }
+  out += card(h3('Resultado') + r);
+
+  // 2. Nivel descriptivo
+  if (g.nivel && _BART_NIVELES[g.nivel]) {
+    out += card(h3('Disposición al riesgo')
+      + '<div style="font-size:14px;font-weight:800;color:#0f172a">' + _BART_NIVELES[g.nivel][0] + '</div>'
+      + '<div style="font-size:12.5px;color:#475569;line-height:1.6;margin-top:3px">' + _BART_NIVELES[g.nivel][1] + '</div>'
+      + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:12px">'
+      + [['prudente', 'Prudente', 'menos de 32'], ['moderado', 'Moderado', '32 a 64'], ['alto', 'Alta', 'más de 64']].map(function(q){ var on = q[0] === g.nivel;
+          return '<div style="padding:7px 9px;border-radius:9px;font-size:11.5px;text-align:center;' + (on ? 'background:#0f2d52;color:#fff;font-weight:700' : 'background:#f8fafc;color:#94a3b8') + '">' + q[1] + '<div style="font-size:10px;font-weight:500;opacity:.8">' + q[2] + ' infladas</div></div>'; }).join('')
+      + '</div>');
+  }
+
+  // 3. Indicadores
+  var fila = function(k, v, nota){ return '<tr><td style="padding:7px 0;border-top:1px solid #f1f5f9;font-size:12.5px;color:#475569">' + k + (nota ? '<div style="font-size:11px;color:#94a3b8">' + nota + '</div>' : '') + '</td>'
+    + '<td style="padding:7px 0;border-top:1px solid #f1f5f9;font-size:13px;font-weight:700;color:#0f172a;text-align:right;vertical-align:top">' + v + '</td></tr>'; };
+  var t = '<table style="width:100%;border-collapse:collapse">';
+  if (g.infladas_prom !== undefined) t += fila('Promedio de infladas en globos guardados', num(g.infladas_prom), 'Indicador principal. Solo cuenta los globos que no explotaron, porque en esos la persona decidió cuándo parar.');
+  if (g.globos) t += fila('Globos que explotaron', g.explotados + ' de ' + g.globos);
+  if (g.puntos !== undefined) t += fila('Puntos guardados', g.puntos);
+  if (g.inicio_prom !== null && g.inicio_prom !== undefined && g.final_prom !== null && g.final_prom !== undefined) {
+    var dif = g.final_prom - g.inicio_prom;
+    t += fila('Primeros 10 globos → últimos 10', num(g.inicio_prom) + ' → ' + num(g.final_prom),
+      dif <= -5 ? 'Redujo el riesgo a lo largo de la tarea: ajusta su conducta después de perder.'
+      : dif >= 5 ? 'Aumentó el riesgo a lo largo de la tarea.' : 'Mantuvo un nivel de riesgo parecido durante toda la tarea.');
+  }
+  if (g.ritmo_ms) t += fila('Tiempo entre infladas', g.ritmo_ms + ' ms', 'Mediana por globo. Un ritmo muy rápido sugiere inflar sin detenerse a evaluar.');
+  t += fila('Dispositivo', _GNG_DISP[g.dispositivo] || 'No registrado');
+  if (g.pausas) t += fila('Veces que salió de la pantalla', g.pausas);
+  out += card(h3('Indicadores') + t + '</table>');
+
+  // 4. Para la entrevista
+  var bajo = g.valido !== false && min !== null && g.pct < min;
+  if (bajo || g.nivel === 'alto') {
+    var preg = ['Cuénteme de una vez en que se saltó un procedimiento de seguridad para terminar antes. ¿Qué pasó?',
+                '¿Cuál es el mayor riesgo que ha tomado en un trabajo o conduciendo? ¿Lo volvería a hacer?',
+                'Hábleme de una situación en que decidió no arriesgarse aunque eso le costara algo.'];
+    out += card(h3('Para la entrevista')
+      + '<div style="font-size:12.5px;color:#475569;line-height:1.6;margin-bottom:8px">' + (bajo ? 'Quedó bajo el mínimo del cargo. ' : '')
+      + 'Verifique con ejemplos concretos cómo decide cuando hay un riesgo de por medio:</div>'
+      + '<ul style="margin:0;padding-left:18px;font-size:12.5px;color:#1e293b;line-height:1.7">' + preg.map(function(p){ return '<li>' + p + '</li>'; }).join('') + '</ul>');
+  }
+
+  // 5. Limitaciones
+  out += card(h3('Cómo leer este resultado')
+    + '<ul style="margin:0;padding-left:18px;font-size:12px;color:#475569;line-height:1.65">'
+    + '<li>Mide la disposición a asumir riesgos en un juego con puntos sin valor real (Balloon Analogue Risk Task, Lejuez y otros, 2002).</li>'
+    + '<li>El resultado es estable en el tiempo (White, Lejuez y de Wit, 2008), pero un metaanálisis de 237 estudios encontró que se relaciona poco con conductas riesgosas reales (Frey, Pantoja y Lob, 2026). <strong>No fundamente un rechazo solo en este resultado</strong>: úselo junto con la entrevista y las referencias.</li>'
+    + '<li>El mínimo inicial (50) equivale a no superar la estrategia de mayor ganancia esperada. Es provisional: ajústelo en Panel → Cargos con sus propios datos y el seguimiento después de la contratación.</li>'
+    + '</ul>');
+  return out;
+}
+
+// ═══════════════════════════════════════════════════════════
 //  RESULTADO EN UNA MIRADA
 //  Mismos criterios que el Resumen del informe: aptitudes frente al mínimo del cargo,
 //  nivel de integridad, incidentes, estilo DISC, dictamen y seguimiento.
 //  Se usa en la ficha, en la tabla de candidatos y en "Por revisar" del Dashboard.
 // ═══════════════════════════════════════════════════════════
-var _MIRADA_ORDEN = ['integridad','dc0','pai','disc','pf16','situacional','vigilancia','comprension','normativa_ohs','gonogo'];
+var _MIRADA_ORDEN = ['integridad','dc0','pai','disc','pf16','situacional','vigilancia','comprension','normativa_ohs','gonogo','bart'];
 
 // Filas de aptitud del candidato (puntaje frente al mínimo del cargo)
 function _aptRowsDe(c) {
@@ -7923,7 +8142,9 @@ function _aptRowsDe(c) {
       if (raw === null || raw === undefined) return;
       var gng = tid === 'gonogo';
       rows.push({ tid:tid, icon:(TESTS_META[tid] || {}).icon || '', label:idSec.label || (TESTS_META[tid] || {}).name || tid, score:Math.round(raw), ok:gng ? undefined : ts.correct, n:gng ? undefined : ts.total,
-                  detTxt:gng && ts.rojos ? 'se frenó en ' + (ts.rojos - ts.comisiones) + ' de ' + ts.rojos + ' rojos' : '',
+                  detTxt:gng && ts.rojos ? 'se frenó en ' + (ts.rojos - ts.comisiones) + ' de ' + ts.rojos + ' rojos'
+                        : tid === 'bart' && ts.infladas_prom !== undefined ? 'infló en promedio ' + String(ts.infladas_prom).replace('.', ',') + ' veces por globo guardado' : '',
+                  u:tid === 'bart' ? '' : '%',   // Control del riesgo usa una escala de 0 a 100, no un porcentaje
                   min:idSec.min, max:idSec.max || 100, req:idSec.req || '', cumple:raw >= idSec.min });
     } else {
       // Prueba con dimensiones (DC-0, Ajuste laboral): promedio y dimensiones bajo su mínimo
@@ -7972,7 +8193,7 @@ function _miradaChipsHtml(m) {
   if (m.apt.length) {
     var todo = m.aptOk === m.apt.length, nada = m.aptOk === 0;
     out.push(chip('Aptitud ' + m.aptOk + '/' + m.apt.length, todo ? '#15803d' : nada ? '#be123c' : '#b45309', todo ? '#f0fdf4' : nada ? '#fff1f2' : '#fffbeb',
-      m.bajo.length ? 'Bajo el mínimo: ' + m.bajo.map(function(r){ return r.label + ' ' + r.score + '% (mín. ' + r.min + '%)'; }).join(', ') : 'Sobre el mínimo en todas las pruebas de aptitud'));
+      m.bajo.length ? 'Bajo el mínimo: ' + m.bajo.map(function(r){ var u = r.u === undefined ? '%' : r.u; return r.label + ' ' + r.score + u + ' (mín. ' + r.min + u + ')'; }).join(', ') : 'Sobre el mínimo en todas las pruebas de aptitud'));
   }
   if (m.integ && _INTEG_CORTO[m.integ]) { var ic = _INTEG_CORTO[m.integ]; out.push(chip(ic[0], ic[1], ic[2])); }
   if (m.dictamen) { var d = _EV_DICTAMEN.filter(function(x){ return x.val === m.dictamen; })[0]; if (d) out.push(chip(d.icon + ' ' + d.label, d.color, d.bg)); }
@@ -7987,8 +8208,9 @@ function _miradaFichaHtml(c) {
   if (!m.completada) return h + '<div style="font-size:12.5px;color:var(--ink3)">La evaluación aún no está completa.</div></div>';
   h += _miradaChipsHtml(m);
   var lineas = [];
-  m.bajo.forEach(function(r){ lineas.push('<strong>' + htmlEsc(r.label) + ':</strong> ' + (r.dimsBajo ? 'bajo el mínimo en ' + htmlEsc(r.dimsBajo.join(', ')) : r.score + '%, bajo el mínimo de ' + r.min + '%')); });
+  m.bajo.forEach(function(r){ lineas.push('<strong>' + htmlEsc(r.label) + ':</strong> ' + (r.dimsBajo ? 'bajo el mínimo en ' + htmlEsc(r.dimsBajo.join(', ')) : r.score + (r.u === undefined ? '%' : r.u) + ', bajo el mínimo de ' + r.min + (r.u === undefined ? '%' : r.u))); });
   if (c.scores && c.scores.gonogo && c.scores.gonogo.valido === false) lineas.push('<strong>Control de impulsos:</strong> resultado no interpretable.');
+  if (c.scores && c.scores.bart && c.scores.bart.valido === false) lineas.push('<strong>Control del riesgo:</strong> resultado no interpretable.');
   if (m.disc) lineas.push('<strong>Estilo DISC:</strong> ' + htmlEsc(m.disc === 'Perfil equilibrado' ? m.disc : 'predomina ' + m.disc));
   if (!m.dictamen) lineas.push('<span style="color:var(--ink4)">Aún sin dictamen de entrevista.</span>');
   if (m.segPend.length) lineas.push('<span style="color:#b45309;font-weight:600">⏰ Seguimiento pendiente: ' + m.segPend.map(function(p){ return p.hito.toLowerCase(); }).join(' y ') + '</span>');
@@ -8189,7 +8411,7 @@ function buildReportHtml(c, withClose) {
           trabajaMejorCon:'Estilos D, que aportan dirección y sentido de urgencia, e I, que aportan dinamismo. Este estilo aporta una base sólida de rigor y confiabilidad.' },
   };
 
-  var TAB_ORDER = ['integridad','dc0','pai','disc','pf16','situacional','vigilancia','comprension','normativa_ohs','gonogo'];
+  var TAB_ORDER = ['integridad','dc0','pai','disc','pf16','situacional','vigilancia','comprension','normativa_ohs','gonogo','bart'];
   var completedTests = TAB_ORDER.filter(function(tid){ return tests.indexOf(tid) !== -1 && s[tid]; });
   var _ideal = PERFIL_IDEAL[c.perfil] || null;
   var firstTab = completedTests.length ? 'resumen' : '';
@@ -8262,8 +8484,8 @@ function buildReportHtml(c, withClose) {
   // El punto de color resume el resultado: aptitud frente al mínimo del cargo e
   // integridad según su nivel. DISC y 16PF no llevan punto (son descriptivas).
   var _TAB_CORTO = { resumen:'Resumen', integridad:'Integridad', dc0:'Aptitud cognitiva', situacional:'Juicio situacional', vigilancia:'Vigilancia',
-                     comprension:'Comprensión', normativa_ohs:'Normativa OHS', gonogo:'Control de impulsos', disc:'DISC', pf16:'Personalidad laboral', pai:'Ajuste laboral', entrevista:'Entrevista', referencias:'Referencias' };
-  var _TAB_GRUPOS = [ ['', ['resumen']], ['Integridad', ['integridad']], ['Aptitud', ['dc0','situacional','vigilancia','comprension','normativa_ohs','gonogo']],
+                     comprension:'Comprensión', normativa_ohs:'Normativa OHS', gonogo:'Control de impulsos', bart:'Control del riesgo', disc:'DISC', pf16:'Personalidad laboral', pai:'Ajuste laboral', entrevista:'Entrevista', referencias:'Referencias' };
+  var _TAB_GRUPOS = [ ['', ['resumen']], ['Integridad', ['integridad']], ['Aptitud', ['dc0','situacional','vigilancia','comprension','normativa_ohs','gonogo','bart']],
                       ['Personalidad', ['disc','pf16','pai']], ['', ['entrevista']], ['', ['referencias']] ];
   var _tabDot = function(tid) {
     if (tid === 'entrevista') { var bb = _evBanda(_evPromedio(_evCompsDe(_evUlt))); return bb ? bb.color : ''; }
@@ -8312,7 +8534,8 @@ function buildReportHtml(c, withClose) {
       vigilancia:'Aplicación de protocolos, detección de irregularidades y reacción ante riesgos',
       comprension:'Leer y aplicar instrucciones con varias condiciones sin omitir pasos',
       normativa_ohs:'Conocimiento de la normativa de seguridad y salud ocupacional',
-      gonogo:'Capacidad de frenar una respuesta automática (tarea de reacción)'
+      gonogo:'Capacidad de frenar una respuesta automática (tarea de reacción)',
+      bart:'No arriesgar más de lo que conviene (tarea de globos)'
     };
     var _rsPuntos = [];   // puntos para la entrevista
 
@@ -8348,6 +8571,7 @@ function buildReportHtml(c, withClose) {
       var _aptRows = '';
       _apt.forEach(function(row){
         var hasMin = row.min !== null && row.min !== undefined;
+        var _u = row.u === undefined ? '%' : row.u;
         var sg = !hasMin ? { color:'#475569', bg:'#f1f5f9', label:'' }
                : (!row.cumple && row.score >= row.min) ? _fitSig(row.min * 0.9, row.min) : _fitSig(row.score, row.min);
         var p = Math.max(0, Math.min(100, row.score));
@@ -8363,7 +8587,7 @@ function buildReportHtml(c, withClose) {
           + (_rsMide[row.tid] ? '<div style="font-size:11.5px;color:#64748b;margin-top:1px">' + _rsMide[row.tid] + '</div>' : '')
           + '</div>'
           + '<div style="text-align:right;flex-shrink:0">'
-          + '<div style="font-size:17px;font-weight:900;color:' + sg.color + ';line-height:1.1">' + row.score + '<span style="font-size:11px;font-weight:700">%</span></div>'
+          + '<div style="font-size:17px;font-weight:900;color:' + sg.color + ';line-height:1.1">' + row.score + '<span style="font-size:11px;font-weight:700">' + _u + '</span></div>'
           + (hasMin ? '<div style="font-size:10px;font-weight:700;color:' + sg.color + '">' + (row.cumple ? 'Sobre el mínimo' : 'Bajo el mínimo') + '</div>' : '')
           + '</div></div>'
           + '<div style="position:relative;height:6px;background:#e2e8f0;border-radius:100px;margin:8px 0 3px 27px">'
@@ -8372,15 +8596,19 @@ function buildReportHtml(c, withClose) {
           + '</div>'
           + '<div style="display:flex;justify-content:space-between;font-size:10.5px;color:#94a3b8;margin-left:27px">'
           + '<span>' + det.join(' · ') + '</span>'
-          + (hasMin ? '<span>mínimo del cargo: ' + row.min + '%</span>' : '')
+          + (hasMin ? '<span>mínimo del cargo: ' + row.min + _u + '</span>' : '')
           + '</div></div>';
         if (hasMin && !row.cumple) {
           _rsPuntos.push('<strong>' + htmlEsc(row.label) + ':</strong> '
-            + (row.dimsBajo ? 'bajo el mínimo en ' + htmlEsc(row.dimsBajo.join(', ')) : row.score + '%, bajo el mínimo de ' + row.min + '%')
-            + '. Verifique en la entrevista o con una tarea práctica si refleja una dificultad real para el puesto.');
+            + (row.dimsBajo ? 'bajo el mínimo en ' + htmlEsc(row.dimsBajo.join(', ')) : row.score + _u + ', bajo el mínimo de ' + row.min + _u)
+            + '. Verifique en la entrevista o con una tarea práctica si refleja una dificultad real para el puesto.'
+            + (row.tid === 'bart' ? ' Esta tarea se relaciona poco con conductas riesgosas reales: no la use sola para rechazar.' : ''));
         }
       });
-      var _rsGng = _apt.some(function(r){ return r.tid === 'gonogo'; }) ? ' (en Control de impulsos, porcentaje de rojos en que se frenó)' : '';
+      var _rsNotas = [];
+      if (_apt.some(function(r){ return r.tid === 'gonogo'; })) _rsNotas.push('en Control de impulsos, porcentaje de rojos en que se frenó');
+      if (_apt.some(function(r){ return r.tid === 'bart'; })) _rsNotas.push('en Control del riesgo, 100 menos el promedio de infladas en una escala de 0 a 100');
+      var _rsGng = _rsNotas.length ? ' (' + _rsNotas.join('; ') + ')' : '';
       html += _rsCard(_rsH3('Pruebas de aptitud', (_conMin.length ? 'Porcentaje de respuestas correctas' + _rsGng + ', comparado con el mínimo definido para ' + cargo : 'Porcentaje de respuestas correctas' + _rsGng + ' (el cargo no tiene mínimos definidos)'))
         + _aptHead + _aptRows);
     }
@@ -8392,6 +8620,11 @@ function buildReportHtml(c, withClose) {
       } else if (s.gonogo.estilo === 'rapido_impreciso' && !_resRows.some(function(r){ return r.tid === 'gonogo' && !r.cumple; })) {
         _rsPuntos.push('<strong>Control de impulsos:</strong> respondió rápido pero le costó frenarse ante los rojos. Explore en la entrevista situaciones en que actuó antes de pensar.');
       }
+    }
+
+    // Control del riesgo: no interpretable
+    if (s.bart && completedTests.indexOf('bart') !== -1 && s.bart.valido === false) {
+      _rsPuntos.push('<strong>Control del riesgo:</strong> resultado no interpretable: ' + htmlEsc((s.bart.motivos || []).join('; ').toLowerCase()) + '.');
     }
 
     // ── 2. Integridad laboral (prueba) ──
@@ -8618,6 +8851,12 @@ function buildReportHtml(c, withClose) {
   if (s.gonogo && completedTests.indexOf('gonogo') !== -1) {
     html += '<div class="rpt-tab-panel" id="rpt-panel-gonogo" style="display:' + (firstTab === 'gonogo' ? 'flex' : 'none') + ';flex-direction:column;gap:14px">'
       + _gonogoReportHtml(c, s.gonogo) + '</div>';
+  }
+
+  // ── Control del riesgo ──
+  if (s.bart && completedTests.indexOf('bart') !== -1) {
+    html += '<div class="rpt-tab-panel" id="rpt-panel-bart" style="display:' + (firstTab === 'bart' ? 'flex' : 'none') + ';flex-direction:column;gap:14px">'
+      + _bartReportHtml(c, s.bart) + '</div>';
   }
 
   // ── Integridad laboral ──
@@ -8858,13 +9097,13 @@ function renderWikiTab() {
     '🧠 Tests Cognitivos': ['dc0','comprension'],
     '🧬 Tests de Personalidad': ['pai','disc','pf16'],
     '💡 Tests Situacionales': ['situacional','vigilancia'],
-    '🎯 Control de impulsos': ['gonogo'],
+    '🎯 Control de impulsos': ['gonogo','bart'],
   };
   var WIKI_GROUP_DESC = {
     '🧠 Tests Cognitivos': 'Miden capacidades intelectuales, velocidad de procesamiento y comprensión procedimental.',
     '🧬 Tests de Personalidad': 'Evalúan rasgos de personalidad, estilos conductuales y disposición ética.',
     '💡 Tests Situacionales': 'Miden el juicio aplicado y la toma de decisiones ante escenarios laborales reales.',
-    '🎯 Control de impulsos': 'Medida de conducta (no de opinión): la capacidad de frenar una respuesta automática.',
+    '🎯 Control de impulsos': 'Medidas de conducta (no de opinión): frenar una respuesta automática y no arriesgar más de lo que conviene.',
   };
   var WIKI = {
     dc0: {
@@ -8939,6 +9178,15 @@ function renderWikiTab() {
       ],
       scoring: 'Lo calcula el servidor a partir del registro de ensayos. No interpretable con más de 20 % de omisiones, más de 10 % de respuestas anticipadas (antes de 150 ms) o registro incompleto. Mínimo inicial: 80 %, provisional hasta calibrarlo con datos propios.',
       reference: 'Paradigma Go/No-Go de inhibición de respuesta, en la versión de alta exigencia (25 % de ensayos No-Go). Confiabilidad entre personas moderada (Hedge, Powell y Sumner, 2018, Behavior Research Methods 50, 1166-1186): usar junto con la entrevista.'
+    },
+    bart: {
+      icon: '🎈', name: 'Control del riesgo (tarea de globos, BART)', category: 'Conducta', items: 30, time: '5 min', format: 'Tarea de decisión: inflar o guardar',
+      description: 'Balloon Analogue Risk Task (Lejuez y otros, 2002). La persona infla 30 globos: cada inflada suma un punto, puede guardar los puntos cuando quiera y, si el globo explota, los pierde. Todos los candidatos reciben la misma secuencia de puntos de explosión (entre 2 y 126 infladas, promedio 64), para compararlos en igualdad de condiciones. El candidato la ve como "Globos".',
+      dimensions: [
+        { key:'_self', name:'Control del riesgo', desc:'100 menos el promedio de infladas en los globos guardados (sobre 128). Más alto = más prudente. Se compara con el mínimo del cargo. El informe agrega globos explotados, cambio entre el inicio y el final, ritmo de infladas y un nivel descriptivo (prudente, moderado, alta disposición al riesgo).' },
+      ],
+      scoring: 'Lo calcula el servidor a partir del registro de globos, y verifica que coincida con la secuencia de explosiones. No interpretable si no coincide, está incompleto o la persona no se comprometió con la tarea (más de 10 globos guardados sin inflar o menos de 3 infladas promedio). Mínimo inicial: 50, que equivale a no superar la estrategia de mayor ganancia esperada (64 infladas).',
+      reference: 'Lejuez y otros (2002), Journal of Experimental Psychology: Applied 8, 75-84. Estabilidad test-retest r = 0,77 (White, Lejuez y de Wit, 2008). Metaanálisis de 237 estudios: estable, pero con relación nula a baja con conductas riesgosas reales (Frey, Pantoja y Lob, 2026). No usar como criterio único.'
     },
     pf16: {
       icon: '🧬', name: 'Personalidad laboral (5 dimensiones)', category: 'Personalidad', items: 20, time: '8-10 min', format: 'Acuerdo 1-5',
@@ -9099,6 +9347,7 @@ var BATTERY_TEST_DIMENSIONS = {
   comprension: { icon:'📋', title:'Comprensión de Instrucciones',     keys:['_self'] },
   normativa_ohs:{ icon:'📐', title:'Conocimiento Normativo OHS',       keys:['_self'] },
   gonogo:      { icon:'🎯', title:'Control de impulsos',               keys:['_self'] },
+  bart:        { icon:'🎈', title:'Control del riesgo',                keys:['_self'] },
 };
 
 function renderBateriaTab() {
@@ -9112,7 +9361,7 @@ function renderBateriaTab() {
     '📐 Conocimiento Técnico':         ['normativa_ohs'],
     '🧭 Integridad laboral':          ['integridad'],
     '🎭 Perfil Conductual':    ['disc','pf16'],
-    '🎯 Control de impulsos':  ['gonogo'],
+    '🎯 Control de impulsos':  ['gonogo','bart'],
   };
 
   var TEST_GROUP_DESC = {
@@ -9123,7 +9372,7 @@ function renderBateriaTab() {
     '🎭 Perfil Conductual':    'Pruebas descriptivas: el informe describe el perfil sin compararlo con un perfil esperado ni con mínimos del cargo. Si un rasgo es una fortaleza depende del puesto y de la entrevista.',
     '🎮 Juegos Conductuales':          'Simulaciones conductuales que miden estabilidad emocional, normatividad e integridad sin riesgo de deseabilidad social. · ⚡ Sala de Crisis: respuesta ante múltiples alertas simultáneas y presión temporal. · 🧭 Dilemas de Supervisión: criterio ético, liderazgo e integridad ante situaciones reales del cargo.',
     '⏸ Juegos Cognitivos (en pausa)': 'Juegos disponibles pero desactivados temporalmente. Se pueden activar para perfiles que los requieran.',
-    '🎯 Control de impulsos':  'Evaluativa: tarea de reacción en que la persona debe frenarse ante una señal. Se compara con el mínimo del cargo (inicial 80 %, provisional).',
+    '🎯 Control de impulsos':  'Tareas de conducta, evaluativas: se comparan con el mínimo del cargo (provisional). Reacción: frenarse ante una señal (inicial 80 %). Globos: no arriesgar más de lo que conviene (inicial 50).',
   };
 
   var TEST_SHORT_DESC = {
@@ -9137,6 +9386,7 @@ function renderBateriaTab() {
     situacional:'Escenarios laborales con opciones de respuesta.',
     vigilancia:'Protocolos y detección de irregularidades.',
     gonogo:'~4 min. Círculo verde: tocar rápido; cuadrado rojo: no tocar. Mide la capacidad de frenarse. El candidato la ve como "Reacción y atención".',
+    bart:'~5 min. 30 globos: inflar suma puntos, pero el globo puede explotar. Mide la disposición a asumir riesgos. Baja relación con conducta real: no usar sola para rechazar. El candidato la ve como "Globos".',
   };
 
   var out = '';
@@ -9326,13 +9576,15 @@ function _calibPanelHtml(perfil, tid) {
   var sec = (PERFIL_IDEAL[perfil] || {})[tid];
   var dims = (BATTERY_TEST_DIMENSIONS[tid] || {}).keys || [];
   if (!sec) return '';
+  var U = tid === 'bart' ? '' : ' %';   // Control del riesgo: escala de 0 a 100, no porcentaje
   if (_calibData === null) _calibLoad();
   var cands = (_calibData || []).filter(function(c){ return c.perfil === perfil && c.scores; });
   var DIC = [['recomendado','Recomendados'], ['obs','Recomendados con observaciones'], ['no_recomendable','No recomendables']];
 
   var out = '<div style="padding:12px 16px 16px;background:#fafbfc;border-top:1px dashed #e2e8f0">';
   out += '<div style="font-size:11.5px;color:#64748b;line-height:1.55;margin-bottom:6px">'
-    + (tid === 'gonogo' ? 'El mínimo es el porcentaje de cuadrados rojos en que la persona debe frenarse; bajo ese valor el informe marca "Bajo el mínimo". El valor inicial (80 %) es provisional: esta tarea no tiene normas chilenas. '
+    + (tid === 'bart' ? 'El mínimo se expresa en una escala de 0 a 100, donde más alto es más prudente (100 menos el promedio de infladas en los globos guardados, sobre 128). El valor inicial (50) equivale a no superar la estrategia de mayor ganancia esperada; es provisional. Esta tarea se relaciona poco con conductas riesgosas reales: úsela con cautela. '
+     : tid === 'gonogo' ? 'El mínimo es el porcentaje de cuadrados rojos en que la persona debe frenarse; bajo ese valor el informe marca "Bajo el mínimo". El valor inicial (80 %) es provisional: esta tarea no tiene normas chilenas. '
                         : 'El mínimo es el porcentaje de respuestas correctas que se espera para este cargo; bajo ese valor el informe marca "Bajo el mínimo". ')
     + 'Use los puntajes reales para ajustarlo: si casi todas las personas que usted recomienda quedan bajo el mínimo, probablemente es demasiado exigente; '
     + 'si las no recomendables lo superan sin dificultad, quizá es demasiado bajo.</div>';
@@ -9361,11 +9613,11 @@ function _calibPanelHtml(perfil, tid) {
       + '<input type="number" min="0" max="100" step="5" value="' + cfg.min + '" data-p="' + htmlEsc(perfil) + '" data-t="' + tid + '" data-k="' + k + '"'
       + ' onchange="_calibSetMin(this.dataset.p,this.dataset.t,this.dataset.k,this.value)"'
       + ' style="width:64px;padding:5px 7px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-weight:700;font-family:inherit;text-align:center;color:var(--ink);background:var(--surface)">'
-      + '<span style="font-size:12px;color:#64748b">%</span>';
+      + (U ? '<span style="font-size:12px;color:#64748b">%</span>' : '');
     if (ini && ini.min !== cfg.min) {
       out += '<button type="button" data-p="' + htmlEsc(perfil) + '" data-t="' + tid + '" data-k="' + k + '" data-v="' + ini.min + '"'
         + ' onclick="_calibSetMin(this.dataset.p,this.dataset.t,this.dataset.k,this.dataset.v)"'
-        + ' style="font-size:11px;color:var(--ink3);background:none;border:1px solid var(--border);border-radius:7px;padding:4px 8px;cursor:pointer;font-family:inherit">↺ Valor inicial ' + ini.min + ' %</button>';
+        + ' style="font-size:11px;color:var(--ink3);background:none;border:1px solid var(--border);border-radius:7px;padding:4px 8px;cursor:pointer;font-family:inherit">↺ Valor inicial ' + ini.min + U + '</button>';
     }
     out += '</div></div>';
 
@@ -9380,12 +9632,12 @@ function _calibPanelHtml(perfil, tid) {
     out += '<div style="position:relative;margin-top:10px;height:46px;display:flex;align-items:flex-end;gap:2px;border-bottom:1px solid #cbd5e1">';
     bins.forEach(function(b, bi) {
       var bajo = bi * 10 + 5 < cfg.min;
-      out += '<div title="' + (bi * 10) + '–' + (bi === 9 ? 100 : bi * 10 + 9) + ' %: ' + b + (b === 1 ? ' persona' : ' personas') + '"'
+      out += '<div title="' + (bi * 10) + '–' + (bi === 9 ? 100 : bi * 10 + 9) + U + ': ' + b + (b === 1 ? ' persona' : ' personas') + '"'
         + ' style="flex:1;height:' + (b ? Math.max(8, Math.round(b / maxB * 100)) : 0) + '%;background:' + (bajo ? '#fca5a5' : '#86efac') + ';border-radius:3px 3px 0 0"></div>';
     });
-    out += '<div title="Mínimo: ' + cfg.min + ' %" style="position:absolute;left:' + cfg.min + '%;top:-4px;bottom:-4px;width:2px;background:#0f172a"></div>';
+    out += '<div title="Mínimo: ' + cfg.min + U + '" style="position:absolute;left:' + cfg.min + '%;top:-4px;bottom:-4px;width:2px;background:#0f172a"></div>';
     out += '</div>';
-    out += '<div style="display:flex;justify-content:space-between;font-size:9.5px;color:#94a3b8;margin-top:3px"><span>0 %</span><span>50 %</span><span>100 %</span></div>';
+    out += '<div style="display:flex;justify-content:space-between;font-size:9.5px;color:#94a3b8;margin-top:3px"><span>0' + U + '</span><span>50' + U + '</span><span>100' + U + '</span></div>';
 
     // Lectura de los datos
     var txt;
@@ -9395,7 +9647,7 @@ function _calibPanelHtml(perfil, tid) {
       var srt = vals.slice().sort(function(a, b){ return a - b; });
       var med = Math.round(srt.length % 2 ? srt[(srt.length - 1) / 2] : (srt[srt.length / 2 - 1] + srt[srt.length / 2]) / 2);
       var alc = vals.filter(function(v){ return v >= cfg.min; }).length;
-      txt = '<strong>' + vals.length + '</strong> ' + (vals.length === 1 ? 'evaluación' : 'evaluaciones') + ' de este cargo · mediana <strong>' + med + ' %</strong> · '
+      txt = '<strong>' + vals.length + '</strong> ' + (vals.length === 1 ? 'evaluación' : 'evaluaciones') + ' de este cargo · mediana <strong>' + med + U + '</strong> · '
         + 'con este mínimo lo alcanzan <strong>' + alc + ' de ' + vals.length + '</strong> (' + Math.round(alc / vals.length * 100) + ' %).';
       var dTxt = DIC.filter(function(d){ return dic[d[0]]; }).map(function(d) {
         var l = dic[d[0]], a = l.filter(function(v){ return v >= cfg.min; }).length;
@@ -9426,9 +9678,9 @@ function _calibSetMin(perfil, tid, key, val) {
   var antes = cfg.min;
   cfg.min = v;
   persistParams();
-  _logConfigChange('Mínimo modificado', ((PERFIL_META[perfil] || {}).label || perfil) + ' · ' + (cfg.label || tid) + ': ' + antes + ' % → ' + v + ' %');
+  _logConfigChange('Mínimo modificado', ((PERFIL_META[perfil] || {}).label || perfil) + ' · ' + (cfg.label || tid) + ': ' + antes + (tid === 'bart' ? '' : ' %') + ' → ' + v + (tid === 'bart' ? '' : ' %'));
   renderBateriaTab();
-  toast('✓ Mínimo actualizado: ' + v + ' %', 'ok');
+  toast('✓ Mínimo actualizado: ' + v + (tid === 'bart' ? '' : ' %'), 'ok');
 }
 
 
@@ -12901,7 +13153,7 @@ function _segAnalisisHtml(cands) {
   // Puntajes según resultado
   var grupos = { exito:[], fracaso:[] };
   conSeg.forEach(function(c){ var r = _segResultado(c.scores._seguimiento); if (grupos[r]) grupos[r].push(c); });
-  var filas = [['situacional','Juicio situacional'], ['vigilancia','Aptitud de vigilancia'], ['comprension','Comprensión de instrucciones'], ['normativa_ohs','Normativa OHS'], ['dc0','Aptitud cognitiva'], ['gonogo','Control de impulsos']];
+  var filas = [['situacional','Juicio situacional'], ['vigilancia','Aptitud de vigilancia'], ['comprension','Comprensión de instrucciones'], ['normativa_ohs','Normativa OHS'], ['dc0','Aptitud cognitiva'], ['gonogo','Control de impulsos'], ['bart','Control del riesgo']];
   var media = function(lista, tid){ var v = lista.map(function(c){ var t = c.scores[tid]; return t ? (tid === 'dc0' ? t.total : t.pct) : null; }).filter(function(x){ return typeof x === 'number'; });
     return v.length ? { m:Math.round(v.reduce(function(a, b){ return a + b; }, 0) / v.length), n:v.length } : null; };
   var tabla = filas.map(function(f){
