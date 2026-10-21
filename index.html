@@ -1597,7 +1597,8 @@ body.exam-away #exam-shield{display:flex}
       <button class="nav-btn" id="nav-wiki" onclick="adminTab('wiki',this)"><span>📖</span><span>Wiki de Tests</span></button>
       <button class="nav-btn" id="nav-users" onclick="adminTab('users',this)"><span>👤</span><span>Usuarios</span></button>
       <div id="role-badge" style="font-size:11px;font-weight:700;text-align:center;padding:5px 8px;border-radius:100px;background:#f0fdf4;color:#16a34a;margin:6px 8px 2px;border:1px solid #bbf7d0"></div>
-      <button class="nav-btn" onclick="showShareModal()" style="color:#16a34a;font-weight:600;margin-top:4px"><span>🔗</span><span>Compartir evaluación</span></button>
+      <button class="nav-btn" onclick="showInviteModal()" style="color:#2563eb;font-weight:600;margin-top:4px"><span>✉️</span><span>Invitar a evaluación</span></button>
+      <button class="nav-btn" onclick="showShareModal()" style="color:#16a34a;font-weight:600"><span>🔗</span><span>Compartir evaluación</span></button>
       <button class="nav-btn" id="backup-btn" onclick="downloadFullBackup()" title="Descarga todas las evaluaciones y la configuración en un archivo"><span>💾</span><span style="display:flex;flex-direction:column;align-items:flex-start;line-height:1.25">Respaldo completo<span id="backup-last" style="font-size:10px;font-weight:500;color:#94a3b8"></span></span></button>
       <div id="sidebar-username" style="padding:6px 12px 2px;display:flex;flex-direction:column;gap:3px">
         <span id="sidebar-user-label" style="font-size:11px;color:#94a3b8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
@@ -1638,6 +1639,7 @@ body.exam-away #exam-shield{display:flex}
           <div style="flex:1"></div>
           <div style="display:flex;flex-direction:column;gap:4px;margin-top:20px;border-top:1px solid var(--border);padding-top:12px">
             <button class="nav-btn" onclick="toggleDarkMode()" style="color:var(--ink3)"><span>🌙</span><span>Modo oscuro</span></button>
+            <button class="nav-btn" onclick="closeMobileSidebar();showInviteModal()" style="color:#2563eb"><span>✉️</span><span>Invitar</span></button>
             <button class="nav-btn" onclick="closeMobileSidebar();showShareModal()" style="color:#16a34a"><span>🔗</span><span>Compartir</span></button>
             <button class="nav-btn" onclick="closeMobileSidebar();downloadFullBackup()"><span>💾</span><span>Respaldo completo</span></button>
             <button class="nav-btn" onclick="closeMobileSidebar();adminLogout()" style="color:var(--ink3)"><span>⎋</span><span>Cerrar sesión</span></button>
@@ -2142,6 +2144,7 @@ const LS_CUSTOM_CARGOS     = 'psicoeval_custom_cargos';
 const LS_PARAMS            = 'psicoeval_params';
 const LS_TM_MINS           = 'psicoeval_tm_mins';
 const LS_CONTACTO          = 'psicoeval_contacto';
+const LS_ACCESO            = 'psicoeval_acceso';      // { solo_invitacion } (16_invitaciones.sql)
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ═══════════════════════════════════════════════════════════
@@ -2156,7 +2159,8 @@ var _CFG_KEYS = {
   cargos:        LS_CARGOS,         // │ el candidato las lee
   custom_cargos: LS_CUSTOM_CARGOS,  // │
   tm_mins:       LS_TM_MINS,        // │
-  contacto:      LS_CONTACTO,       // ┘ WhatsApp para avisar que terminó (11_contacto.sql)
+  contacto:      LS_CONTACTO,       // │ WhatsApp para avisar que terminó (11_contacto.sql)
+  acceso:        LS_ACCESO,         // ┘ "Solo con invitación" (16_invitaciones.sql)
   params:        LS_PARAMS,         // ┐ solo panel (el candidato no las ve:
   config_log:    _CONFIG_LOG_KEY    // ┘ le servirían para acomodar respuestas)
 };
@@ -2189,7 +2193,7 @@ function _cfgSetLocal(key, value) {
 // sección queda marcada. No se pisa con la versión del servidor al recargar, se
 // reintenta sola y el panel muestra un aviso hasta que se guarde.
 var _CFG_PENDING_KEY = 'psicoeval_cfg_pendiente';
-var _CFG_NOMBRES = { batteries:'Baterías', cargos:'Cargos activos', custom_cargos:'Cargos personalizados', tm_mins:'Tiempos', contacto:'Mensaje final',
+var _CFG_NOMBRES = { batteries:'Baterías', cargos:'Cargos activos', custom_cargos:'Cargos personalizados', tm_mins:'Tiempos', contacto:'Mensaje final', acceso:'Acceso con invitación',
                      params:'Mínimos por cargo', config_log:'Historial' };
 function _cfgPendientes() {
   try { return JSON.parse(localStorage.getItem(_CFG_PENDING_KEY) || '[]'); } catch(e) { return []; }
@@ -2288,6 +2292,10 @@ async function _cfgPull() {
     _linkPairs = null;
     try { sessionStorage.removeItem(_LINK_SESSION_KEY); } catch(e) {}
   }
+  if (_cfgIsAdmin() && _INV) {
+    _INV = null;
+    try { sessionStorage.removeItem(_INV_KEY); } catch(e) {}
+  }
   try {
     var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
     var to = ctrl ? setTimeout(function(){ ctrl.abort(); }, 8000) : null;
@@ -2384,8 +2392,11 @@ function _cfgReloadAll() {
   loadBatteryConfig();
   loadTmMins();
   restoreParams();
+  loadAcceso();
   if (_linkPairs) _applyLinkPairs(_linkPairs);   // un link de candidato manda en esa pestaña
+  _invAplicarCargo();                            // una invitación fija el cargo
   applyCargoVisibility();
+  _invBanner();
   try {
     if (S.currentView === 'admin' && S.currentAdminTab) {
       var navBtn = document.getElementById('nav-' + S.currentAdminTab);
@@ -3655,6 +3666,9 @@ function gotoRegister() {
     });
     return;
   }
+  if (_INV && _INV.estado === 'cargando' && _INV_LISTO) { _INV_LISTO.then(gotoRegister); return; }
+  var _bloq = _invBloqueo();
+  if (_bloq) { _invAviso(_bloq); _invBanner(); return; }
   applyCargoVisibility();
   showView('register');
   regSetStep(0);
@@ -4144,6 +4158,7 @@ async function addToDB(c) {
     // Con esto el servidor calcula los puntajes (scores solo lleva datos auxiliares)
     answers:    c.answers    || {},
     games:      c.games      || {},
+    invitacion: c._invitacion || null,   // el servidor la valida y la marca como usada
   };
   if (!navigator.onLine) { _setConnState('offline'); throw new Error('Sin conexión a internet'); }
   let savedId;
@@ -4607,12 +4622,12 @@ function regNext(fromStep) {
       if (status && status !== 'none' && status !== 'pending') {
         showRutDuplicateBlock({ estado: status });
       } else {
-        regSetStep(2);
+        _invContinuar(rutNorm);
       }
     }).catch(function() {
       if (btnCont) { btnCont.disabled = false; btnCont.textContent = 'Continuar →'; }
       // Si falla la verificación, dejar pasar (no bloquear por error de red)
-      regSetStep(2);
+      _invContinuar(rutNorm);
     });
 
   } else if (fromStep === 2) {
@@ -4813,6 +4828,7 @@ function submitRegister() {
     rubro, rubro_label: RUBRO_LABELS[rubro] || '',
     historial: historial.length ? historial : null,
     referencia: referencia,
+    _invitacion: (_INV && _INV.estado === 'valida') ? _INV.codigo : null,
   };
 
   const init = (nombre[0]||'') + (apellido[0]||'');
@@ -5935,6 +5951,13 @@ async function finishTests() {
       return;
     }
 
+    // Invitación no válida al enviar (anulada, vencida antes de comenzar, de otro RUT…)
+    if (msg.includes('PSICOEVAL_INVITACION')) {
+      var _ik = (msg.split('PSICOEVAL_INVITACION:')[1] || '').trim().split(/\s/)[0];
+      var _im = _INV_MSG[_ik] || _INV_MSG.error;
+      showSaveError(_im[0], _im[1] + '<br><br><span style="color:#6366f1;font-weight:600">Tus respuestas quedan guardadas en este navegador: si te renuevan la invitación, podrás reenviarlas con Reintentar.</span>');
+      return;
+    }
     // El RUT ya tenía una evaluación (p. ej. la rindió en otro dispositivo mientras tanto)
     if (msg.includes('PSICOEVAL_DUPLICATE')) {
       clearTestProgress();
@@ -5953,6 +5976,7 @@ async function finishTests() {
   }
 
   clearTestProgress();
+  try { sessionStorage.removeItem(_INV_KEY); } catch(e) {}
 
   // ── Success ───────────────────────────────────────────────────────────────
   document.getElementById('done-name').textContent = S.candidate.nombre;
@@ -11097,8 +11121,335 @@ function copyShareLink() {
   }
 }
 
+// ═══════════════════════════════════════════════════════════
+//  INVITACIONES PERSONALES (16_invitaciones.sql)
+//  Link ?i=CÓDIGO. Por RUT: solo sirve para ese RUT. Link único: queda ligado al RUT
+//  de quien lo usa primero. Vence, sirve una sola vez y el servidor la exige al enviar.
+// ═══════════════════════════════════════════════════════════
+var _INV = null;                 // { codigo, estado, perfil, tipo, vence }
+var _INV_LISTO = null;           // promesa de la verificación
+var _INV_KEY = 'psicoeval_invitacion';
+var ACCESO_CFG = { solo_invitacion: false };
+
+function loadAcceso() {
+  try { var v = JSON.parse(localStorage.getItem(LS_ACCESO) || 'null'); ACCESO_CFG = { solo_invitacion: !!(v && v.solo_invitacion) }; } catch(e) {}
+}
+function saveAcceso() {
+  try { localStorage.setItem(LS_ACCESO, JSON.stringify(ACCESO_CFG)); } catch(e) {}
+  _cfgPush('acceso');
+}
+
+var _INV_MSG = {
+  no_existe:         ['Invitación no válida', 'Este link de invitación no existe. Revisa que lo hayas copiado completo o solicita uno nuevo a quien te contactó.'],
+  vencida:           ['Invitación vencida', 'Este link de invitación ya venció. Solicita uno nuevo a quien te contactó.'],
+  usada:             ['Invitación ya utilizada', 'Esta invitación ya se usó para enviar una evaluación. Cada invitación sirve una sola vez.'],
+  anulada:           ['Invitación anulada', 'Esta invitación fue anulada. Si crees que es un error, contacta a quien te la envió.'],
+  rut_no_coincide:   ['Esta invitación no corresponde a tu RUT', 'El link es personal y está asociado a otra persona. Solicita tu propio link a quien te contactó.'],
+  rut_invalido:      ['RUT no válido', 'Revisa el RUT ingresado.'],
+  cargo_no_coincide: ['La invitación es para otro cargo', 'Solicita un link para el cargo correcto a quien te contactó.'],
+  requerida:         ['Necesitas una invitación', 'Para rendir esta evaluación necesitas un link de invitación personal. Solicítalo a quien te contactó.'],
+  error:             ['No se pudo verificar la invitación', 'Revisa tu conexión a internet y vuelve a abrir el link.']
+};
+
+function _invInit() {
+  var cod = null;
+  try { cod = new URLSearchParams(window.location.search).get('i'); } catch(e) {}
+  if (cod) {
+    try { sessionStorage.setItem(_INV_KEY, cod.trim().toUpperCase()); } catch(e) {}
+    try { window.history.replaceState(null, '', window.location.pathname); } catch(e) {}
+    try { sessionStorage.setItem('psicoeval_candidate_link', '1'); } catch(e) {}
+  } else {
+    try { cod = sessionStorage.getItem(_INV_KEY); } catch(e) {}
+  }
+  if (!cod) return false;
+  cod = cod.trim().toUpperCase();
+  _INV = { codigo: cod, estado: 'cargando' };
+  _INV_LISTO = _candidateRpc('psicoeval_invitacion_estado', { p_codigo: cod })
+    .then(function(r) { if (_INV) { _INV = Object.assign({ codigo: cod }, r && r.estado ? r : { estado: 'no_existe' }); _invAplicarCargo(); applyCargoVisibility(); } })
+    .catch(function() { if (_INV) _INV.estado = 'error'; })
+    .then(function() { _invBanner(); });
+  return true;
+}
+
+// La invitación fija el cargo: solo ese queda visible (nunca en una sesión del panel)
+function _invAplicarCargo() {
+  if (!_INV || !_INV.perfil || !PERFIL_META[_INV.perfil]) return;
+  try { if (S.role === 'admin' || S.role === 'viewer') return; } catch(e) {}
+  Object.keys(CARGOS_ACTIVE).forEach(function(k){ CARGOS_ACTIVE[k] = false; });
+  CARGOS_ACTIVE[_INV.perfil] = true;
+}
+
+// Motivo por el que no se puede comenzar, o null
+function _invBloqueo() {
+  if (_INV) return _INV.estado === 'valida' ? null : _INV.estado;
+  return ACCESO_CFG.solo_invitacion ? 'requerida' : null;
+}
+
+function _invFecha(iso) {
+  var d = new Date(iso); if (isNaN(d)) return '';
+  return d.toLocaleDateString('es-CL', { day:'2-digit', month:'2-digit', year:'numeric' }) + ' a las '
+    + d.toLocaleTimeString('es-CL', { hour:'2-digit', minute:'2-digit', hour12:false });
+}
+
+// Aviso en la portada del candidato
+function _invBanner() {
+  var land = document.getElementById('view-landing'); if (!land) return;
+  var el = document.getElementById('inv-banner');
+  try { if (S.role === 'admin' || S.role === 'viewer') { if (el) el.remove(); return; } } catch(e) {}
+  var key = _invBloqueo(), h = '';
+  if (_INV && _INV.estado === 'valida') {
+    var pm = PERFIL_META[_INV.perfil] || {};
+    h = '<div style="background:#eff6ff;border:1.5px solid #bfdbfe;color:#1e3a8a;border-radius:12px;padding:12px 16px;font-size:13.5px;line-height:1.5">'
+      + '✉️ <strong>Invitación personal</strong>' + (pm.label ? ' · ' + htmlEsc(pm.label) : '')
+      + (_INV.vence ? '<br><span style="font-size:12.5px;color:#1e40af">Vigente hasta el ' + _invFecha(_INV.vence) + '. Una vez que comiences, podrás terminarla aunque pase esa hora.</span>' : '') + '</div>';
+  } else if (key && key !== 'cargando' && _INV_MSG[key]) {
+    h = '<div style="background:#fef2f2;border:1.5px solid #fecaca;color:#991b1b;border-radius:12px;padding:12px 16px;font-size:13.5px;line-height:1.5">'
+      + '⛔ <strong>' + _INV_MSG[key][0] + '</strong><br><span style="font-size:12.5px">' + _INV_MSG[key][1] + '</span></div>';
+  }
+  if (!h) { if (el) el.remove(); return; }
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'inv-banner';
+    el.style.cssText = 'max-width:560px;margin:46px auto 0;padding:0 16px';   // bajo los enlaces Modo prueba / Admin
+    land.insertBefore(el, land.firstChild);
+  }
+  el.innerHTML = h;
+}
+
+function _invAviso(key) {
+  var m = _INV_MSG[key] || _INV_MSG.error;
+  var d = document.createElement('div');
+  d.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px';
+  d.innerHTML = '<div style="background:#fff;border-radius:16px;padding:26px 24px;max-width:420px;width:100%;text-align:center;font-family:inherit">'
+    + '<div style="font-size:40px;margin-bottom:10px">⛔</div>'
+    + '<div style="font-size:18px;font-weight:800;color:#0f172a;margin-bottom:8px">' + m[0] + '</div>'
+    + '<div style="font-size:14px;color:#475569;line-height:1.6;margin-bottom:18px">' + m[1] + '</div>'
+    + '<button onclick="this.closest(\'div[style*=fixed]\').remove()" style="padding:11px 28px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">Entendido</button></div>';
+  document.body.appendChild(d);
+}
+
+// Paso del RUT: con invitación, se valida contra el servidor antes de seguir
+function _invContinuar(rut) {
+  if (!_INV) { regSetStep(2); return; }
+  _candidateRpc('psicoeval_invitacion_iniciar', { p_codigo: _INV.codigo, p_rut: rut })
+    .then(function(r) { if (r && r.estado === 'ok') regSetStep(2); else _invAviso((r && r.estado) || 'error'); })
+    .catch(function() { _invAviso('error'); });
+}
+
+// ── Panel: invitaciones ───────────────────────────────────────────────────
+var _invTab = 'rut', _invHoras = 72, _invResultados = [], _invLista = null;
+
+function _invMensaje(link) {
+  return '*Actualmente estamos en la fase de evaluaciones y te invitamos a realizar el siguiente paso de nuestro proceso de selección:*\n\n'
+    + '🔗 Enlace de la evaluación:\n' + link + '\n\n'
+    + '⚠️ *Antes de comenzar, considera lo siguiente:*\n'
+    + '* *Tiempo continuo:* La evaluación debe completarse de principio a fin una vez iniciada. Asegúrate de disponer de al menos 30 minutos sin interrupciones.\n'
+    + '* *Entorno:* Realízala en un lugar tranquilo y silencioso para mantener tu concentración.\n'
+    + '* *Conexión:* Verifica tener una señal estable de internet antes de ingresar.\n\n'
+    + '*Por favor, responde a este mensaje una vez que la hayas completado para continuar con el proceso.* ¡Mucho éxito! 👍';
+}
+function _invLink(codigo) { return window.location.href.split('?')[0].split('#')[0] + '?i=' + encodeURIComponent(codigo); }
+function _invRutTxt(norm) {
+  if (!norm) return '';
+  var cuerpo = norm.slice(0, -1), dv = norm.slice(-1);
+  return cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + '-' + dv;
+}
+function _invHeaders(extra) {
+  return Object.assign({ 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + (S.authToken || SUPA_KEY) }, extra || {});
+}
+function _invCopiar(texto, ok) {
+  var fin = function(){ toast(ok || '✓ Copiado', 'ok'); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(texto).then(fin).catch(function(){ _invCopiarViejo(texto); fin(); });
+  else { _invCopiarViejo(texto); fin(); }
+}
+function _invCopiarViejo(texto) {
+  var ta = document.createElement('textarea'); ta.value = texto; ta.style.cssText = 'position:fixed;opacity:0';
+  document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch(e) {} ta.remove();
+}
+function _invCopiarMensaje(codigo) { _invCopiar(_invMensaje(_invLink(codigo)), '✓ Mensaje copiado: pégalo en WhatsApp'); }
+function _invWhatsapp(codigo) { window.open('https://wa.me/?text=' + encodeURIComponent(_invMensaje(_invLink(codigo))), '_blank'); }
+
+function showInviteModal() {
+  var modal = document.getElementById('inv-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'inv-modal';
+    modal.className = 'overlay';
+    modal.onclick = function(e) { if (e.target === modal) modal.style.display = 'none'; };
+    modal.innerHTML = '<div class="modal" style="max-width:620px;width:100%;max-height:92vh;overflow-y:auto" onclick="event.stopPropagation()" id="inv-modal-body"></div>';
+    document.body.appendChild(modal);
+  }
+  _invResultados = [];
+  _invRender();
+  modal.style.display = 'flex';
+  _invCargarLista();
+}
+
+function _invRender() {
+  var body = document.getElementById('inv-modal-body'); if (!body) return;
+  var esAdmin = S.role === 'admin';
+  var h = '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px">'
+    + '<div><h3 style="font-size:17px;font-weight:800;margin:0">✉️ Invitar a evaluación</h3>'
+    + '<div style="font-size:12px;color:var(--ink3);margin-top:3px;line-height:1.5">Cada invitación sirve una sola vez y vence. Si alguien comparte el link, no le sirve a otra persona.</div></div>'
+    + '<button onclick="document.getElementById(\'inv-modal\').style.display=\'none\'" style="border:none;background:none;font-size:20px;cursor:pointer;color:var(--ink3)">✕</button></div>';
+
+  if (esAdmin) {
+    // Interruptor
+    h += '<label style="display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border:1.5px solid ' + (ACCESO_CFG.solo_invitacion ? '#bfdbfe' : 'var(--border)') + ';background:' + (ACCESO_CFG.solo_invitacion ? '#eff6ff' : 'var(--surface)') + ';border-radius:12px;cursor:pointer;margin-bottom:16px">'
+      + '<input type="checkbox" ' + (ACCESO_CFG.solo_invitacion ? 'checked' : '') + ' onchange="_invSoloInvitacion(this.checked)" style="width:18px;height:18px;margin-top:2px;accent-color:#2563eb;flex-shrink:0">'
+      + '<div><div style="font-size:13.5px;font-weight:700;color:var(--ink)">Solo con invitación</div>'
+      + '<div style="font-size:12px;color:var(--ink3);line-height:1.5;margin-top:2px">' + (ACCESO_CFG.solo_invitacion
+          ? 'Activo: los links generales ya no sirven. Solo se puede rendir con una invitación (o una re-evaluación habilitada en la ficha).'
+          : 'Inactivo: funcionan las invitaciones y también los links generales. Actívelo cuando todas sus evaluaciones usen invitación.') + '</div></div></label>';
+
+    // Tipo
+    var tabBtn = function(id, txt){ var on = _invTab === id; return '<button onclick="_invTab=\'' + id + '\';_invResultados=[];_invRender()" style="flex:1;padding:9px;border-radius:9px;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;'
+      + (on ? 'background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)' : 'background:transparent;color:var(--ink3)') + '">' + txt + '</button>'; };
+    h += '<div style="display:flex;gap:4px;background:var(--surface2);padding:4px;border-radius:11px;margin-bottom:14px">' + tabBtn('rut', '🪪 Por RUT') + tabBtn('link', '🔗 Link único') + '</div>';
+
+    var act = getActiveCargos();
+    var sel = function(id, opts){ return '<select id="' + id + '" style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:9px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--ink)">' + opts + '</select>'; };
+    h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">'
+      + '<div><div style="font-size:11.5px;font-weight:700;color:var(--ink3);margin-bottom:4px">Cargo</div>'
+      + sel('inv-perfil', act.map(function(k){ var pm = PERFIL_META[k] || {}; return '<option value="' + htmlEsc(k) + '">' + htmlEsc(pm.label || k) + '</option>'; }).join('')) + '</div>'
+      + '<div><div style="font-size:11.5px;font-weight:700;color:var(--ink3);margin-bottom:4px">Vigencia</div>'
+      + sel('inv-horas', [[24, '24 horas'], [72, '72 horas (recomendado)'], [168, '7 días']].map(function(o){ return '<option value="' + o[0] + '"' + (o[0] === _invHoras ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('')) + '</div></div>';
+    if (_invTab === 'rut') {
+      h += '<div style="font-size:11.5px;font-weight:700;color:var(--ink3);margin-bottom:4px">RUT de las personas</div>'
+        + '<textarea id="inv-ruts" rows="4" placeholder="12.345.678-9&#10;9.876.543-2" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:9px;font-size:13px;font-family:inherit;resize:vertical;background:var(--surface);color:var(--ink)"></textarea>'
+        + '<div style="font-size:11.5px;color:var(--ink4);margin:4px 0 12px;line-height:1.5">Uno por línea; puede pegarlos desde Excel. El link solo funcionará con ese RUT. Si el RUT ya tenía una invitación sin usar, se reemplaza.</div>';
+    } else {
+      h += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><span style="font-size:11.5px;font-weight:700;color:var(--ink3)">Cantidad de links</span>'
+        + '<input id="inv-cantidad" type="number" min="1" max="20" value="1" style="width:70px;padding:8px;border:1.5px solid var(--border);border-radius:9px;font-size:13px;font-family:inherit;text-align:center;background:var(--surface);color:var(--ink)"></div>'
+        + '<div style="font-size:11.5px;color:var(--ink4);margin-bottom:12px;line-height:1.5">No necesita datos de la persona. Cada link sirve para una sola: queda ligado al RUT de quien lo use primero. Entregue un link distinto a cada persona.</div>';
+    }
+    h += '<button id="inv-generar" onclick="_invGenerar()" class="btn btn-primary" style="width:100%;padding:11px;font-weight:700">Generar invitaciones</button>';
+
+    // Resultados
+    if (_invResultados.length) {
+      h += '<div style="margin-top:14px;border:1.5px solid #bbf7d0;background:#f0fdf4;border-radius:12px;padding:12px">'
+        + '<div style="font-size:12.5px;font-weight:800;color:#15803d;margin-bottom:8px">✓ ' + _invResultados.length + (_invResultados.length === 1 ? ' invitación lista' : ' invitaciones listas') + ': copie el mensaje y envíelo por WhatsApp</div>';
+      _invResultados.forEach(function(r, i) {
+        h += '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-top:' + (i ? '1px solid #dcfce7' : 'none') + ';flex-wrap:wrap">'
+          + '<div style="flex:1;min-width:150px"><div style="font-size:13px;font-weight:700;color:var(--ink)">' + (r.rut ? '🪪 ' + htmlEsc(r.rut) : '🔗 Link único ' + (i + 1)) + '</div>'
+          + '<div style="font-size:11px;color:var(--ink4);font-family:monospace;word-break:break-all">' + htmlEsc(_invLink(r.codigo)) + '</div></div>'
+          + '<button onclick="_invCopiarMensaje(\'' + r.codigo + '\')" class="btn btn-outline btn-sm">📋 Copiar mensaje</button>'
+          + '<button onclick="_invWhatsapp(\'' + r.codigo + '\')" class="btn btn-sm" style="background:#25d366;color:#fff;border:none">WhatsApp</button></div>';
+      });
+      h += '</div>';
+    }
+  }
+
+  // Lista
+  h += '<div style="margin-top:20px;display:flex;justify-content:space-between;align-items:center"><div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3)">Invitaciones recientes</div>'
+    + '<button onclick="_invCargarLista()" style="border:none;background:none;color:var(--accent);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">↻ Actualizar</button></div>';
+  h += '<div id="inv-lista" style="margin-top:6px">' + _invListaHtml() + '</div>';
+  body.innerHTML = h;
+}
+
+function _invEstado(v) {
+  if (v.anulada) return ['Anulada', '#64748b', '#f1f5f9'];
+  if (v.usada_en) return ['Usada', '#15803d', '#f0fdf4'];
+  if (v.iniciada_en) return ['En curso', '#2563eb', '#eff6ff'];
+  if (new Date(v.vence) < new Date()) return ['Vencida', '#b45309', '#fffbeb'];
+  return ['Pendiente', '#7c3aed', '#f5f3ff'];
+}
+
+function _invListaHtml() {
+  if (_invLista === null) return '<div style="font-size:12.5px;color:var(--ink4);padding:10px 0">Cargando…</div>';
+  if (_invLista.error) return '<div style="font-size:12.5px;color:#b91c1c;padding:10px 0">' + htmlEsc(_invLista.error) + '</div>';
+  if (!_invLista.length) return '<div style="font-size:12.5px;color:var(--ink4);padding:10px 0">Aún no hay invitaciones.</div>';
+  var esAdmin = S.role === 'admin';
+  return _invLista.map(function(v) {
+    var e = _invEstado(v), pm = PERFIL_META[v.perfil] || {};
+    var quien = v.tipo === 'rut' ? '🪪 ' + _invRutTxt(v.rut_norm) : '🔗 Link único' + (v.rut_norm ? ' · usado por ' + _invRutTxt(v.rut_norm) : '');
+    var acc = '';
+    if (esAdmin && !v.usada_en && !v.anulada) {
+      if (e[0] !== 'Vencida') acc += '<button onclick="_invCopiarMensaje(\'' + v.codigo + '\')" title="Copiar mensaje de WhatsApp" class="btn btn-ghost btn-sm" style="padding:4px 8px">📋</button>';
+      acc += '<button onclick="_invRenovar(\'' + v.codigo + '\')" title="Renovar: vigente por 72 horas más desde ahora" class="btn btn-ghost btn-sm" style="padding:4px 8px">↻</button>'
+        + '<button onclick="_invAnular(\'' + v.codigo + '\')" title="Anular" class="btn btn-ghost btn-sm" style="padding:4px 8px;color:#b91c1c">✕</button>';
+    }
+    return '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--border);flex-wrap:wrap">'
+      + '<div style="flex:1;min-width:170px"><div style="font-size:12.5px;font-weight:700;color:var(--ink)">' + htmlEsc(quien) + '</div>'
+      + '<div style="font-size:11px;color:var(--ink4)">' + htmlEsc(pm.label || v.perfil) + ' · ' + (v.usada_en ? 'usada el ' + _invFecha(v.usada_en) : 'vence el ' + _invFecha(v.vence)) + '</div></div>'
+      + '<span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:100px;color:' + e[1] + ';background:' + e[2] + '">' + e[0] + '</span>'
+      + '<div style="display:flex;gap:2px">' + acc + '</div></div>';
+  }).join('');
+}
+
+async function _invCargarLista() {
+  _invLista = null;
+  var el = document.getElementById('inv-lista'); if (el) el.innerHTML = _invListaHtml();
+  try {
+    var r = await fetch(SUPA_URL + '/rest/v1/psicoeval_invitaciones?select=*&order=creada.desc&limit=40', { headers: _invHeaders() });
+    if (r.status === 404) throw new Error('Falta ejecutar 16_invitaciones.sql en Supabase.');
+    if (!r.ok) throw new Error('No se pudo cargar la lista (HTTP ' + r.status + ').');
+    _invLista = await r.json();
+  } catch(e) { _invLista = { error: e.message }; }
+  el = document.getElementById('inv-lista'); if (el) el.innerHTML = _invListaHtml();
+}
+
+async function _invGenerar() {
+  var perfil = (document.getElementById('inv-perfil') || {}).value;
+  _invHoras = parseInt((document.getElementById('inv-horas') || {}).value, 10) || 72;
+  var ruts = null, cantidad = 0;
+  if (_invTab === 'rut') {
+    ruts = ((document.getElementById('inv-ruts') || {}).value || '').split(/[\n,;\t]+/).map(function(x){ return x.trim(); }).filter(Boolean);
+    var malos = ruts.filter(function(x){ return x.replace(/[^0-9kK]/g, '').length < 7; });
+    if (!ruts.length) { toast('Ingrese al menos un RUT', 'er'); return; }
+    if (malos.length) { toast('RUT no válido: ' + malos.slice(0, 3).join(', '), 'er'); return; }
+  } else {
+    cantidad = Math.max(1, Math.min(20, parseInt((document.getElementById('inv-cantidad') || {}).value, 10) || 1));
+  }
+  if (!perfil) { toast('Elija un cargo', 'er'); return; }
+  var b = document.getElementById('inv-generar'); if (b) { b.disabled = true; b.textContent = 'Generando…'; }
+  try {
+    var r = await fetch(SUPA_URL + '/rest/v1/rpc/psicoeval_invitar', { method: 'POST', headers: _invHeaders(),
+      body: JSON.stringify({ p_perfil: perfil, p_ruts: ruts, p_cantidad: cantidad, p_horas: _invHoras }) });
+    var data = await r.json().catch(function(){ return null; });
+    if (r.status === 404) throw new Error('Falta ejecutar 16_invitaciones.sql en Supabase.');
+    if (!r.ok) throw new Error((data && data.message) || ('HTTP ' + r.status));
+    _invResultados = data || [];
+    _logConfigChange('Invitaciones creadas', _invResultados.length + ' · ' + ((PERFIL_META[perfil] || {}).label || perfil) + ' · ' + (_invTab === 'rut' ? 'por RUT' : 'link único') + ' · ' + _invHoras + ' h');
+    _invRender();
+    _invCargarLista();
+  } catch(e) {
+    toast('No se pudieron crear: ' + e.message, 'er');
+    if (b) { b.disabled = false; b.textContent = 'Generar invitaciones'; }
+  }
+}
+
+async function _invActualizar(codigo, cambios, ok) {
+  try {
+    var r = await fetch(SUPA_URL + '/rest/v1/psicoeval_invitaciones?codigo=eq.' + encodeURIComponent(codigo),
+      { method: 'PATCH', headers: _invHeaders({ 'Prefer': 'return=representation' }), body: JSON.stringify(cambios) });
+    var rows = await r.json().catch(function(){ return []; });
+    if (!r.ok || !rows.length) throw new Error('HTTP ' + r.status);
+    toast(ok, 'ok');
+    _invCargarLista();
+  } catch(e) { toast('No se pudo actualizar la invitación (' + e.message + ')', 'er'); }
+}
+function _invRenovar(codigo) {
+  _invActualizar(codigo, { vence: new Date(Date.now() + 72 * 3600 * 1000).toISOString() }, '✓ Renovada: vigente por 72 horas más');
+}
+function _invAnular(codigo) {
+  if (!confirm('¿Anular esta invitación? El link dejará de funcionar.')) return;
+  _invActualizar(codigo, { anulada: true }, '✓ Invitación anulada');
+}
+function _invSoloInvitacion(on) {
+  if (on && !confirm('Con "Solo con invitación" activo, los links generales dejan de funcionar. Quien esté rindiendo ahora con un link general no podrá enviar su evaluación. ¿Activar?')) { _invRender(); return; }
+  ACCESO_CFG.solo_invitacion = !!on;
+  saveAcceso();
+  _logConfigChange('Acceso a la evaluación', on ? 'Solo con invitación: activado' : 'Solo con invitación: desactivado');
+  toast(on ? '✓ Ahora solo se puede rendir con invitación' : '✓ Los links generales vuelven a funcionar', 'ok');
+  _invRender();
+  _invCargarLista();
+}
+
 // Apply URL config if present (priority over localStorage)
-var _urlConfigApplied = applyCandidateConfig();
+loadAcceso();
+var _invDesdeLink = _invInit();
+var _urlConfigApplied = applyCandidateConfig() || _invDesdeLink;
 
 // If this is a shared candidate link, show the landing page directly
 if (_urlConfigApplied && sessionStorage.getItem('psicoeval_candidate_link')) {
@@ -11656,6 +12007,8 @@ function _tabResumen(c) {
     ['Comuna', c.comuna || '—'],
     ['Rubro', c.rubro_label || c.rubro || '—'],
     ['Fecha evaluación', c.fecha ? c.fecha.substring(0,10) : '—'],
+    ['Invitación', (function(){ var iv = c.scores && c.scores._invitacion; if (!iv) return 'Sin invitación (link general)';
+      return (iv.tipo === 'rut' ? 'Por RUT' : 'Link único') + (iv.creada_por ? ' · ' + iv.creada_por : '') + (iv.creada ? ' · ' + new Date(iv.creada).toLocaleDateString('es-CL') : ''); })()],
   ];
   var h = '<div style="display:flex;flex-direction:column;gap:13px">';
   h += _miradaFichaHtml(c);
