@@ -2107,6 +2107,7 @@ const TESTS_META = {
   disc:         { name:'Estilos Conductuales (DISC-20)',       icon:'🎭', color:'#7c3aed'        },
   pf16:         { name:'Personalidad 16PF (Abreviado)',       icon:'🧬', color:'#0d9488'        },
   normativa_ohs:    { name:'Conocimiento Normativo OHS',       icon:'📐', color:'#0369a1' },
+  integridad:       { name:'Actitudes en el trabajo',          icon:'🧭', color:'#b45309' },   // integridad laboral (nombre neutro para el candidato)
   juego_semaforo:   { name:'Semáforo',                         icon:'🚦', color:'#16a34a', game:true },
   juego_globos:     { name:'Globos',                           icon:'🎈', color:'#6366f1', game:true },
   juego_memoria:    { name:'Memoria',                          icon:'🧠', color:'#0891b2', game:true },
@@ -2116,15 +2117,15 @@ const TESTS_META = {
 const PERFIL_TESTS_DEFAULT = {
   jefatura:       ['dc0','situacional','comprension','disc','pf16','juego_memoria'],
   administrativo: ['dc0','comprension','disc','pf16'],
-  guardia:        ['situacional','vigilancia','comprension','disc','pf16','juego_semaforo'],
-  supervisor:     ['dc0','situacional','comprension','disc','pf16','juego_globos'],
+  guardia:        ['situacional','vigilancia','comprension','integridad','disc','pf16','juego_semaforo'],
+  supervisor:     ['dc0','situacional','comprension','integridad','disc','pf16','juego_globos'],
   prevencionista: ['dc0','situacional','comprension','disc','pf16'],
   conductor:      ['pai','dc0','vigilancia','comprension','disc','pf16','juego_semaforo'],
   auxiliar_aseo:  ['pai','comprension','disc','pf16'],
 };
 
 // All available tests per cargo (max possible)
-const ALL_TESTS_AVAILABLE = ['dc0','situacional','vigilancia','comprension','normativa_ohs','disc','pf16','juego_semaforo','juego_globos','juego_memoria'];
+const ALL_TESTS_AVAILABLE = ['dc0','situacional','vigilancia','comprension','normativa_ohs','integridad','disc','pf16','juego_semaforo','juego_globos','juego_memoria'];
 
 // Active batteries (loaded from localStorage, falls back to default)
 var PERFIL_TESTS = Object.assign({}, PERFIL_TESTS_DEFAULT);
@@ -2360,6 +2361,7 @@ var _CFG_KEYS = {
   config_log:    _CONFIG_LOG_KEY    // ┘
 };
 var _cfgLoaded = false;
+var _CFG_SYNC_FLAG = 'psicoeval_cfg_sincronizado';   // este navegador ya se sincronizó como admin
 var _cfgReady  = null;   // promesa de la primera descarga
 var _cfgTimers = {};
 
@@ -2442,14 +2444,56 @@ async function _cfgPull() {
     _cfgLoaded = true;
     return;
   }
+  // Primera sincronización de este navegador como admin: los cargos personalizados
+  // que solo existen aquí se SUMAN al servidor en vez de perderse (antes, si otro
+  // navegador había subido primero una lista vacía, el servidor la reemplazaba).
+  // Después de la primera vez manda el servidor, para no resucitar cargos eliminados.
+  var primeraVez = false, local = null;
+  try { primeraVez = _cfgIsAdmin() && !localStorage.getItem(_CFG_SYNC_FLAG); } catch(e) {}
+  if (primeraVez) {
+    local = { custom: _cfgLocalValue('custom_cargos'), batteries: _cfgLocalValue('batteries'),
+              cargos: _cfgLocalValue('cargos'), params: _cfgLocalValue('params') };
+  }
+
   var onServer = {};
   rows.forEach(function(row) {
     if (!_CFG_KEYS[row.key]) return;
     onServer[row.key] = true;
     _cfgSetLocal(row.key, row.value);
   });
+
+  var recuperados = [];
+  if (primeraVez && Array.isArray(local.custom) && onServer.custom_cargos) {
+    var srv = _cfgLocalValue('custom_cargos') || [];
+    recuperados = local.custom.filter(function(c){ return c && c.key && !srv.some(function(x){ return x.key === c.key; }); });
+    if (recuperados.length) {
+      var batt = _cfgLocalValue('batteries') || {}, act = _cfgLocalValue('cargos') || {}, par = _cfgLocalValue('params') || {};
+      recuperados.forEach(function(c) {
+        if (local.batteries && local.batteries[c.key] && !batt[c.key]) batt[c.key] = local.batteries[c.key];
+        if (act[c.key] === undefined) act[c.key] = (local.cargos && local.cargos[c.key] !== undefined) ? !!local.cargos[c.key] : true;
+        if (local.params && local.params[c.key] && !par[c.key]) par[c.key] = local.params[c.key];
+      });
+      _cfgSetLocal('custom_cargos', srv.concat(recuperados));
+      _cfgSetLocal('batteries', batt);
+      _cfgSetLocal('cargos', act);
+      _cfgSetLocal('params', par);
+    }
+  }
+
   _cfgReloadAll();
   _cfgLoaded = true;
+
+  if (recuperados.length) {
+    try {
+      for (var j = 0, ks = ['custom_cargos', 'cargos', 'batteries', 'params']; j < ks.length; j++) await _cfgUpload(ks[j]);
+      toast('✓ Se recuperaron ' + recuperados.length + ' cargo(s) personalizado(s) de este navegador: ' + recuperados.map(function(c){ return c.label; }).join(', '), 'ok');
+    } catch(e) {
+      console.error('No se pudieron subir los cargos recuperados', e);
+      toast('⚠ No se pudieron subir los cargos de este navegador al servidor (' + e.message + ')', 'er');
+      return;   // sin marcar la sincronización: se reintenta en el próximo inicio
+    }
+  }
+  if (primeraVez) { try { localStorage.setItem(_CFG_SYNC_FLAG, new Date().toISOString()); } catch(e) {} }
 
   if (_cfgIsAdmin()) {
     // La batería vigente siempre se sube (aunque nunca se haya personalizado):
@@ -2488,7 +2532,7 @@ function _cfgReloadAll() {
   } catch(e) {}
 }
 
-var TM_MINS_DEFAULTS = { dc0:6, pai:5, situacional:5, vigilancia:3, comprension:4, disc:3, pf16:4, normativa_ohs:6, juego_semaforo:4, juego_globos:5, juego_memoria:5 };
+var TM_MINS_DEFAULTS = { dc0:6, pai:5, situacional:5, vigilancia:3, comprension:4, disc:3, pf16:4, normativa_ohs:6, integridad:5, juego_semaforo:4, juego_globos:5, juego_memoria:5 };
 var TM_MINS_CONFIG = (function(){
   try {
     var saved = localStorage.getItem('psicoeval_tm_mins');
@@ -3540,6 +3584,66 @@ const IWS_ITEMS = [
 
 
 // ═══════════════════════════════════════════════════════════
+//  INTEGRIDAD LABORAL — guardias y seguridad ("Actitudes en el trabajo")
+//  24 ítems · ~5 min · diseño: propuestas/integridad_guardias.md
+//  Solo textos: los puntos de riesgo, las opciones críticas y las reglas de
+//  validez están en Supabase (09_integridad_guardias.sql). El orden de las
+//  opciones debe coincidir con el del servidor.
+// ═══════════════════════════════════════════════════════════
+const INTEG_OPC_DIEZ   = ['0 a 1', '2 a 3', '4 a 5', '6 a 7', '8 a 10'];
+const INTEG_OPC_SANC   = ['Despido', 'Amonestación escrita', 'Conversación privada', 'No hacer nada'];
+const INTEG_OPC_VECES  = ['Nunca', 'Una vez', '2 o 3 veces', 'Más de 3 veces'];
+const INTEG_OPC_VF     = ['Verdadero', 'Falso'];
+const INTEG_ITEMS = [
+  // A · Percepción de los demás
+  { id:'int01', sec:'A', text:'De cada 10 trabajadores, ¿cuántos cree que se han llevado algo de su trabajo sin autorización alguna vez?', opts:INTEG_OPC_DIEZ },
+  { id:'int02', sec:'A', text:'De cada 10 guardias, ¿cuántos cree que alguna vez han dejado pasar a un conocido sin registrarlo?', opts:INTEG_OPC_DIEZ },
+  { id:'int03', sec:'A', text:'De cada 10 trabajadores, ¿cuántos cree que han anotado horas que no trabajaron?', opts:INTEG_OPC_DIEZ },
+  { id:'int04', sec:'A', text:'De cada 10 guardias, ¿cuántos cree que se han quedado dormidos alguna vez durante un turno de noche?', opts:INTEG_OPC_DIEZ },
+  // B · ¿Qué debería pasar?
+  { id:'int05', sec:'B', text:'¿Qué debería pasar? Un guardia con 10 años de buen desempeño deja salir a un amigo con una caja de mercadería sin revisarla.', opts:INTEG_OPC_SANC },
+  { id:'int06', sec:'B', text:'¿Qué debería pasar? Un trabajador se lleva a su casa productos vencidos que iban a ser desechados, sin pedir autorización.', opts:INTEG_OPC_SANC },
+  { id:'int07', sec:'B', text:'¿Qué debería pasar? Un guardia anota en el libro de novedades una ronda que no hizo, porque estaba solo y con mucho trabajo.', opts:INTEG_OPC_SANC },
+  // C · Su experiencia (últimos 3 años, solo en el trabajo)
+  { id:'int08', sec:'C', text:'Casi todas las personas se han llevado alguna vez algo pequeño del trabajo, como un lápiz o una hoja. En su caso, en los últimos 3 años:', opts:INTEG_OPC_VECES },
+  { id:'int09', sec:'C', text:'Es común llegar tarde alguna vez y pedir a un compañero que lo cubra. En su caso, en los últimos 3 años:', opts:INTEG_OPC_VECES },
+  { id:'int10', sec:'C', text:'En turnos muy largos, muchas personas se han quedado dormidas o se han ausentado un rato de su puesto. En su caso, en los últimos 3 años:', opts:INTEG_OPC_VECES },
+  { id:'int11', sec:'C', text:'A veces, para evitar problemas, se deja sin anotar un incidente menor en el registro. En su caso, en los últimos 3 años:', opts:INTEG_OPC_VECES },
+  { id:'int12', sec:'C', text:'En algunos lugares, visitas o proveedores ofrecen propinas, regalos o favores para agilizar un ingreso, una salida o un trámite. En los últimos 3 años, ¿ha aceptado alguno?', opts:INTEG_OPC_VECES },
+  // D · ¿Cuál le describe mejor? (dos frases igual de positivas)
+  { id:'int13', sec:'D', text:'¿Cuál de estas frases le describe mejor?', opts:['Me adapto a lo que pide cada situación', 'Sigo el procedimiento aunque tome más tiempo'] },
+  { id:'int14', sec:'D', text:'¿Cuál de estas frases le describe mejor?', opts:['Informo antes de actuar fuera de lo habitual', 'Resuelvo los problemas en el momento'] },
+  { id:'int15', sec:'D', text:'¿Cuál de estas frases le describe mejor?', opts:['Cuido mucho la buena relación con todos', 'Trato igual a conocidos y desconocidos'] },
+  { id:'int16', sec:'D', text:'¿Cuál de estas frases le describe mejor?', opts:['Verifico aunque conozca a la persona', 'Confío en las personas que conozco'] },
+  { id:'int17', sec:'D', text:'¿Cuál de estas frases le describe mejor?', opts:['Busco la forma más rápida de terminar el trabajo', 'Prefiero hacerlo completo aunque tarde más'] },
+  // E · Situaciones
+  { id:'int18', sec:'E', text:'Su relevo llega 40 minutos tarde. Le avisan que su hijo está enfermo. ¿Qué hace?', opts:[
+      'Se retira avisando por teléfono al supervisor',
+      'Espera al relevo e informa a la central o al supervisor para que lo gestione',
+      'Cierra el puesto y se retira: es una emergencia',
+      'Pide a un guardia de otro puesto que cubra ambos puntos y se retira'] },
+  { id:'int19', sec:'E', text:'Un trabajador antiguo y muy querido sale con una bolsa y le dice: "son mis cosas, ya me revisaron arriba". ¿Qué hace?', opts:[
+      'Lo deja pasar porque es de confianza, y anota la salida',
+      'Revisa igual, explicándole con amabilidad que es el procedimiento',
+      'Llama para confirmar que lo revisaron y, si es así, lo deja pasar sin revisar',
+      'Lo deja pasar sin anotar, para no incomodarlo'] },
+  { id:'int20', sec:'E', text:'Su supervisor le pide no registrar una salida de mercadería: "está autorizada, después llega el papel". ¿Qué hace?', opts:[
+      'Registra la salida y anota que la autorización está pendiente',
+      'No la registra, porque lo pidió un superior',
+      'Pide la autorización escrita antes; si no llega, registra la salida e informa',
+      'La deja salir y la registra cuando llegue el papel'] },
+  { id:'int21', sec:'E', text:'En el turno de noche, un compañero se queda dormido. Es la primera vez y está pasando por problemas familiares. ¿Qué hace?', opts:[
+      'Lo despierta, conversan y lo reporta solo si se repite',
+      'Lo despierta y no dice nada, para no perjudicarlo',
+      'Lo despierta y lo reporta según el procedimiento',
+      'Lo deja descansar y cubre ambos puntos'] },
+  // F · Validez
+  { id:'int22', sec:'F', text:'Nunca he dicho una mentira, ni siquiera pequeña.', opts:INTEG_OPC_VF },
+  { id:'int23', sec:'F', text:'Jamás he llegado tarde a ninguna parte.', opts:INTEG_OPC_VF },
+  { id:'int24', sec:'F', text:'Nunca me he molestado con nadie.', opts:INTEG_OPC_VF },
+].map(function(q){ return { id:q.id, sec:q.sec, text:q.text, opts:q.opts.map(function(t){ return { t:t }; }) }; });
+
+// ═══════════════════════════════════════════════════════════
 //  CONOCIMIENTO NORMATIVO OHS — Prevencionista de Riesgo
 //  Normativa vigente a 2025-2026 (DS 44, Ley 16.744, DS 594,
 //  Ley Karin 21.643, SUSESO/ISTAS-21)
@@ -3683,6 +3787,7 @@ function buildQuestions(perfil) {
   if (active.includes('disc'))          DISC_BLOCKS.forEach(function(b,i){ qs.push({id:'disc_b'+i, testId:'disc', type:'disc_block', dims:b, blockNum:i+1, total:DISC_BLOCKS.length}); });
   if (active.includes('pf16'))          add(PF16_ITEMS, 'pf16', 'likert');
   if (active.includes('normativa_ohs')) add(NORMATIVA_OHS_QS, 'normativa_ohs', 'choice');
+  if (active.includes('integridad'))    add(INTEG_ITEMS, 'integridad', 'choice');
   // Game tests don't need questions - they render their own UI
   return qs;
 }
@@ -5592,7 +5697,11 @@ function renderTestBlock() {
   const legendKeys    = (type === 'pai' || type === 'iws') ? [1,2,3,4] : [1,2,3,4,5];
 
   let instrHtml = '';
-  if (type === 'disc_block') {
+  if (block.testId === 'integridad') {
+    instrHtml = '<div style="padding:12px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;font-size:12.5px;color:#334155;line-height:1.6;margin-bottom:4px">'
+      + 'Responde según lo que realmente piensas o has vivido; no hay respuestas perfectas. '
+      + 'Tus respuestas se contrastan con la entrevista y las referencias laborales.</div>';
+  } else if (type === 'disc_block') {
     instrHtml = '<div style="padding:12px 16px;background:#fef9c3;border:1px solid #fde047;border-radius:8px;font-size:12px;color:#713f12;margin-bottom:4px">'
       + '📌 Para cada bloque, selecciona el descriptor que te representa <strong>MÁS</strong> (verde) y el que te representa <strong>MENOS</strong> (rojo). No puedes elegir el mismo para ambos.</div>';
   } else if (isScale) {
@@ -5852,6 +5961,7 @@ async function _showTestModeResult(c) {
   var scoresHtml = '<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center">';
   Object.keys(scores).forEach(function(k) {
     var m = TESTS_META[k]; if (!m) return;
+    if (k === 'integridad') { scoresHtml += '<div style="font-size:11px">' + _integNivelBadge(scores[k]) + '</div>'; return; }
     var pct = scores[k].pct !== undefined ? scores[k].pct : (scores[k].total !== undefined ? scores[k].total : null);
     if (pct === null) return;
     var c2 = pct >= 70 ? '#16a34a' : pct >= 50 ? '#b45309' : '#dc2626';
@@ -5879,6 +5989,8 @@ async function finishTests() {
 
   S.candidate.tests   = S.selectedTests;
   S.candidate.answers = S.answers;
+  // Tiempo usado en integridad: el servidor marca "no interpretable" si fue < 90 s
+  if (S.blockTimes.integridad) S.candidate.answers = Object.assign({}, S.answers, { _t_integridad: S.blockTimes.integridad });
   S.candidate.games   = S.gameResults || {};
   S.candidate.scores  = scores;
   S.candidate.estado  = 'completed';
@@ -6097,6 +6209,295 @@ const DISC_ZONES = {
   alto:  { label:'Alto',  min:70, max:100, color:'#4f46e5', bg:'#eef2ff', border:'#c7d2fe' },
 };
 const DISC_DIM_LABELS = { D:'Dominancia', I:'Influencia', S:'Estabilidad', C:'Cumplimiento' };
+
+// ═══════════════════════════════════════════════════════════
+//  INFORME DISC — contenido profesional (pestaña DISC del informe y PDF)
+//  Niveles por factor según DISC_ZONES (bajo < 40 · medio 40–69 · alto ≥ 70).
+//  En DISC no hay niveles buenos o malos: se describen preferencias.
+// ═══════════════════════════════════════════════════════════
+const DISC_RPT = {
+  color: { D:'#dc2626', I:'#d97706', S:'#16a34a', C:'#2563eb' },
+  factor: {
+    D: { mide:'Cómo enfrenta los problemas y los desafíos',
+         alto:'Enfrenta los problemas de manera directa y busca resultados rápidos. Asume el control con naturalidad, decide con seguridad y se desenvuelve bien ante desafíos y competencia.',
+         medio:'Equilibra la iniciativa con la colaboración. Puede asumir el control cuando la situación lo requiere, sin buscarlo de forma permanente.',
+         bajo:'Aborda los problemas de forma reflexiva y cooperativa. Prefiere el acuerdo a la confrontación y evita imponer su criterio; puede requerir apoyo ante decisiones rápidas o difíciles.',
+         rasgo:'orientarse a resultados, decidir con rapidez y hacerse cargo de los desafíos',
+         bajoRasgo:'una menor inclinación a confrontar o imponer su criterio, por lo que privilegia el acuerdo' },
+    I: { mide:'Cómo se relaciona con otras personas y las influye',
+         alto:'Se relaciona con facilidad, comunica con entusiasmo y busca influir mediante la persuasión. Disfruta del contacto social y contribuye a un clima positivo.',
+         medio:'Se comunica con soltura en contextos conocidos y equilibra la sociabilidad con el foco en la tarea.',
+         bajo:'Se comunica de forma objetiva y reservada, centrada en hechos más que en emociones. Prefiere el trabajo concentrado y las relaciones selectivas; en un primer contacto puede parecer distante.',
+         rasgo:'comunicarse con entusiasmo, persuadir y construir relaciones',
+         bajoRasgo:'un estilo más reservado y objetivo en el trato con otros' },
+    S: { mide:'Cómo responde al ritmo de trabajo, la constancia y el cambio',
+         alto:'Prefiere un ritmo constante y entornos predecibles. Muestra paciencia, lealtad y persistencia, y aporta estabilidad al equipo; los cambios bruscos pueden generarle incomodidad.',
+         medio:'Se adapta razonablemente a los cambios manteniendo un ritmo de trabajo estable. Combina constancia con cierta flexibilidad.',
+         bajo:'Prefiere la variedad y el cambio, y actúa con sentido de urgencia. Las tareas repetitivas o de larga duración pueden restarle motivación.',
+         rasgo:'trabajar con constancia y paciencia, dando continuidad a lo que emprende',
+         bajoRasgo:'una mayor preferencia por la variedad y el cambio que por la rutina' },
+    C: { mide:'Cómo responde a normas, procedimientos y estándares de calidad',
+         alto:'Valora la precisión, las normas y los estándares de calidad. Analiza antes de actuar, verifica la información y sigue los procedimientos establecidos.',
+         medio:'Respeta las normas y la calidad sin rigidez; ajusta el nivel de detalle a lo que exige cada tarea.',
+         bajo:'Prioriza la flexibilidad y la autonomía por sobre los procedimientos. Improvisa con facilidad, aunque puede pasar por alto detalles o normas que considera poco relevantes.',
+         rasgo:'cuidar la calidad, analizar la información y seguir los procedimientos',
+         bajoRasgo:'una mayor flexibilidad frente a normas y procedimientos, con riesgo de omitir detalles' }
+  },
+  // Estilo de trabajo según el factor primario
+  estilo: {
+    D: { comunica:'Directa, breve y orientada a resultados. Va al punto y prefiere hablar de objetivos más que de procesos.',
+         comunicarse:['Ser concreto: presentar el objetivo y las opciones disponibles.','Centrarse en resultados y plazos, sin detalles innecesarios.','Plantear los desacuerdos con hechos y sin rodeos.','Dar margen para decidir dentro de límites claros.'],
+         decisiones:'Decide con rapidez y seguridad, incluso con información incompleta. Asume riesgos calculados y prefiere actuar antes que esperar.',
+         presion:'Puede volverse más impaciente y exigente, y tender a decidir sin consultar a otros.',
+         motivadores:['Desafíos y metas exigentes','Autonomía y control sobre su trabajo','Resultados visibles y reconocimiento por logros','Oportunidades de avance'],
+         ambiente:'Dinámico, con metas claras, autonomía y margen para tomar decisiones.',
+         equipo:'Tiende a liderar por iniciativa propia: fija dirección, moviliza y exige resultados. Puede necesitar desarrollar la escucha y la delegación.',
+         aporte:'Iniciativa, sentido de urgencia y capacidad para destrabar problemas y conseguir resultados.',
+         gestion:['Definir con claridad objetivos, plazos y margen de autonomía.','Entregar retroalimentación directa y basada en resultados.','Acordar en qué casos debe consultar o seguir el procedimiento.','Canalizar su energía hacia desafíos concretos.'] },
+    I: { comunica:'Expresiva, cálida y entusiasta. Comparte ideas con facilidad, usa ejemplos y busca conectar con su interlocutor.',
+         comunicarse:['Dar espacio a la conversación y mostrar interés personal.','Reconocer sus ideas y aportes.','Confirmar por escrito acuerdos, plazos y detalles.','Evitar un trato excesivamente frío o burocrático.'],
+         decisiones:'Decide de forma intuitiva y optimista, considerando el impacto en las personas; puede subestimar riesgos o detalles.',
+         presion:'Puede desorganizarse, dispersarse o evitar conversaciones difíciles para no perder la aprobación de los demás.',
+         motivadores:['Reconocimiento y visibilidad','Trabajo con personas y en equipo','Ambiente positivo y estimulante','Libertad para proponer ideas'],
+         ambiente:'Colaborativo y sociable, con interacción frecuente, variedad y reconocimiento.',
+         equipo:'Lidera inspirando y motivando; genera entusiasmo y cohesión. Se apoya en otros para el seguimiento y los detalles.',
+         aporte:'Comunicación, capacidad de persuasión, optimismo y construcción de relaciones dentro y fuera del equipo.',
+         gestion:['Fijar metas y entregables claros, con seguimiento periódico.','Reconocer sus logros de manera visible.','Apoyar su organización con herramientas de planificación y control.','Ofrecer instancias de interacción y trabajo colaborativo.'] },
+    S: { comunica:'Tranquila, amable y paciente. Escucha más de lo que habla y busca mantener la armonía; puede reservarse sus desacuerdos.',
+         comunicarse:['Mantener un trato cordial y sin presiones.','Anticipar los cambios y explicar sus razones.','Preguntar activamente su opinión: no siempre la expresará por iniciativa propia.','Entregar instrucciones claras y secuenciadas.'],
+         decisiones:'Decide con cautela, prefiere lo conocido y probado, y busca el acuerdo del grupo antes de actuar.',
+         presion:'Tiende a ceder para evitar conflictos, a guardarse sus preocupaciones o a resistir los cambios de forma pasiva.',
+         motivadores:['Estabilidad y seguridad laboral','Ambiente armónico y de confianza','Reconocimiento sincero por su constancia','Procesos y roles claros'],
+         ambiente:'Estable y predecible, con roles definidos, buen clima y cambios graduales.',
+         equipo:'Aporta como integrante confiable y leal; lidera brindando apoyo, escuchando y sosteniendo al equipo.',
+         aporte:'Constancia, confiabilidad, paciencia y capacidad para dar continuidad y estabilidad a los procesos.',
+         gestion:['Anticipar los cambios con tiempo y explicar sus razones.','Ofrecer seguridad y un rol bien definido.','Promover que exprese sus desacuerdos en un espacio de confianza.','Reconocer su aporte constante, no solo los logros visibles.'] },
+    C: { comunica:'Precisa, formal y basada en datos. Prefiere la comunicación escrita y bien fundamentada, y pregunta hasta comprender todos los detalles.',
+         comunicarse:['Entregar información completa, ordenada y precisa.','Dar tiempo para analizar antes de pedir una respuesta.','Fundamentar con datos y normas más que con opiniones.','Evitar la improvisación y los cambios sin explicación.'],
+         decisiones:'Decide después de analizar la información y evaluar los riesgos; privilegia la precisión por sobre la rapidez.',
+         presion:'Puede aumentar su nivel de crítica y perfeccionismo, o extender el análisis y postergar decisiones.',
+         motivadores:['Calidad y precisión en el trabajo','Normas y expectativas claras','Tiempo para hacer las cosas bien','Reconocimiento por su conocimiento técnico'],
+         ambiente:'Ordenado, con procedimientos claros, estándares de calidad definidos y espacio para el trabajo concentrado.',
+         equipo:'Aporta rigor, control de calidad y análisis; lidera desde el conocimiento técnico y los procedimientos más que desde la cercanía.',
+         aporte:'Precisión, cumplimiento normativo, detección temprana de errores y riesgos, y calidad en los resultados.',
+         gestion:['Entregar instrucciones y criterios de calidad por escrito.','Dar plazos realistas y el tiempo necesario para analizar.','Definir hasta qué nivel de detalle es necesario llegar.','Valorar su aporte técnico y su precisión.'] }
+  },
+  // Preguntas conductuales para explorar en la entrevista cómo se expresa el factor
+  // más alto ('sobre') y el más bajo ('bajo') del perfil
+  preguntas: {
+    D: { sobre:['Cuénteme de una ocasión en que debió acatar una decisión con la que no estaba de acuerdo. ¿Cómo actuó?','¿Cómo reacciona cuando una persona de su equipo trabaja a un ritmo más lento que el suyo?'],
+         bajo: ['Describa una situación en que tuvo que tomar una decisión difícil sin poder consultar. ¿Qué hizo y qué resultado obtuvo?','Cuénteme de una vez en que tuvo que plantear un desacuerdo a su jefatura.'] },
+    I: { sobre:['¿Cómo organiza su trabajo para cumplir plazos cuando tiene varias tareas en paralelo?','Cuénteme de un error que haya cometido por pasar por alto un detalle. ¿Qué aprendió?'],
+         bajo: ['Describa una situación en que tuvo que convencer a alguien de su punto de vista. ¿Cómo lo hizo?','¿Cómo construye la relación con un equipo de trabajo nuevo?'] },
+    S: { sobre:['Cuénteme de un cambio importante en su trabajo. ¿Cómo lo vivió y cómo se adaptó?','¿Qué hace cuando debe cambiar de prioridades varias veces en el mismo día?'],
+         bajo: ['¿Cómo mantiene la motivación en tareas rutinarias o repetitivas?','Cuénteme de un trabajo en que debió sostener la misma tarea por un período prolongado.'] },
+    C: { sobre:['Cuénteme de una vez en que tuvo que entregar un trabajo rápido sin contar con toda la información. ¿Cómo lo resolvió?','¿Cómo decide que un trabajo está suficientemente bien terminado?'],
+         bajo: ['Describa una situación en que debió seguir un procedimiento que consideraba innecesario. ¿Qué hizo?','¿Cómo se asegura de no cometer errores en tareas que exigen precisión?'] }
+  },
+  // Diferencias entre perfil natural (MENOS) y adaptado (MÁS), por factor
+  adapta: {
+    D: { sube:'asume más control e iniciativa de lo que le resulta natural, posiblemente porque percibe que su entorno exige decisión y resultados.',
+         baja:'modera su tendencia natural a conducir y decidir, posiblemente para ajustarse a un entorno que pide colaboración o seguir directrices.' },
+    I: { sube:'intensifica su comunicación y su contacto con otras personas más de lo que le es natural.',
+         baja:'reduce su expresividad y su contacto social, posiblemente porque su entorno privilegia la concentración en la tarea.' },
+    S: { sube:'adopta un ritmo más constante y paciente que el natural, posiblemente para responder a exigencias de estabilidad y continuidad.',
+         baja:'acelera su ritmo y acepta más cambios de los que preferiría de forma natural.' },
+    C: { sube:'se ajusta a normas, procedimientos y niveles de detalle más de lo que le resulta natural.',
+         baja:'flexibiliza su apego natural a normas y detalles, posiblemente para responder a exigencias de rapidez.' }
+  },
+  nota: 'El DISC-20 es un instrumento de elección forzada: en cada uno de los 20 bloques la persona elige el descriptor que más y el que menos la representa. '
+      + 'Por eso los cuatro puntajes se compensan entre sí (su promedio es siempre 50) y deben leerse en relación unos con otros, no como niveles absolutos. '
+      + 'El instrumento describe preferencias de comportamiento en el contexto laboral; no mide capacidades, inteligencia ni salud mental, y no existen perfiles buenos o malos. '
+      + 'Se recomienda interpretarlo junto con la entrevista y las demás pruebas, y no utilizarlo como criterio único de decisión.'
+};
+
+function discZoneOf(v) { return v >= 70 ? 'alto' : v >= 40 ? 'medio' : 'bajo'; }
+
+// ═══════════════════════════════════════════════════════════
+//  INFORME 16PF (abreviado) — contenido descriptivo
+//  Cada dimensión es un continuo entre dos polos; ninguno es "mejor": si un rasgo
+//  es fortaleza depende del puesto y de la entrevista. No hay perfil esperado.
+//  Niveles: bajo < 40 · medio 40–69 · alto ≥ 70.
+// ═══════════════════════════════════════════════════════════
+const PF16_RPT = {
+  orden: ['EX','AN','DU','IN','AC'],
+  dim: {
+    EX: { nombre:'Extraversión', polos:['Reserva','Sociabilidad'], mide:'Orientación hacia el contacto con otras personas',
+          alto:  { txt:'Busca la interacción, participa activamente en grupo y se siente con energía en contextos sociales.', aporta:'Facilidad para relacionarse, integrarse a equipos y generar buen clima.', considerar:'Las tareas aisladas o de concentración prolongada pueden resultarle menos motivadoras.' },
+          medio: { txt:'Equilibra la interacción social con el trabajo individual y se adapta a ambos contextos.', aporta:'Flexibilidad para trabajar en equipo o de forma autónoma.', considerar:'' },
+          bajo:  { txt:'Prefiere el trabajo individual y las relaciones selectivas; se expresa con mesura.', aporta:'Concentración, autonomía y capacidad de escucha.', considerar:'Los contextos con interacción social intensa y sostenida pueden demandarle más energía.' },
+          rasgoAlto:'la sociabilidad',
+          preguntas:{ alto:'¿Cómo se organiza cuando debe trabajar varias horas en una tarea individual, sin contacto con otras personas?',
+                      bajo:'Cuénteme de una situación en que tuvo que relacionarse con muchas personas nuevas. ¿Cómo la abordó?',
+                      indet:'¿En qué tareas se siente con más energía: las que implican trabajar con otras personas o las que realiza de forma individual? Deme un ejemplo de cada una.' } },
+    AN: { nombre:'Ajuste emocional', polos:['Sensibilidad al estrés','Serenidad'], mide:'Cómo vive la presión, la incertidumbre y las críticas',
+          alto:  { txt:'Se describe con calma ante la presión, los imprevistos y las críticas, y con capacidad para recuperarse de las dificultades.', aporta:'Estabilidad en situaciones exigentes o de incertidumbre.', considerar:'Una autodescripción muy alta puede reflejar deseabilidad social; contrástela con ejemplos concretos.' },
+          medio: { txt:'Maneja la presión habitual del trabajo; ante exigencias intensas o prolongadas puede sentir cierta tensión.', aporta:'Ajuste adecuado a las demandas habituales.', considerar:'' },
+          bajo:  { txt:'Se describe con mayor tendencia a preocuparse y a resentir la presión o las críticas.', aporta:'Sensibilidad ante riesgos y autoexigencia.', considerar:'Conviene explorar en la entrevista cómo maneja el estrés y qué apoyos le resultan útiles. No constituye un diagnóstico.' },
+          rasgoAlto:'la calma ante la presión',
+          preguntas:{ alto:'Cuénteme de un momento de mucha presión en el trabajo. ¿Qué sintió y qué hizo concretamente?',
+                      bajo:'¿Qué situaciones de trabajo le generan más tensión y cómo las maneja?' } },
+    DU: { nombre:'Objetividad', polos:['Sensibilidad interpersonal','Orientación a hechos'], mide:'Qué pesa más al decidir: los hechos o el impacto en las personas',
+          alto:  { txt:'Decide a partir de hechos y criterios prácticos, separando lo emocional de lo profesional.', aporta:'Decisiones objetivas y capacidad para dar retroalimentación difícil.', considerar:'Puede dar menos peso al impacto emocional de sus decisiones en otras personas.' },
+          medio: { txt:'Combina el análisis de los hechos con la consideración del impacto en las personas.', aporta:'Equilibrio entre criterio práctico y sensibilidad interpersonal.', considerar:'' },
+          bajo:  { txt:'Considera especialmente el impacto de sus decisiones en las personas y las relaciones.', aporta:'Empatía, cuidado del clima y atención a las necesidades de otros.', considerar:'Las decisiones que afectan negativamente a personas cercanas o la retroalimentación negativa pueden costarle más.' },
+          rasgoAlto:'la toma de decisiones basada en hechos',
+          preguntas:{ alto:'Cuénteme de una decisión correcta que afectó negativamente a alguien. ¿Cómo la comunicó?',
+                      bajo:'Describa una ocasión en que tuvo que entregar una retroalimentación negativa. ¿Cómo lo hizo?' } },
+    IN: { nombre:'Independencia', polos:['Orientación al consenso','Criterio propio'], mide:'Cuánto se guía por su propio criterio frente a la opinión del grupo',
+          alto:  { txt:'Forma sus propias opiniones, las defiende y cuestiona las instrucciones que no le parecen lógicas.', aporta:'Autonomía, iniciativa y capacidad para plantear desacuerdos.', considerar:'En contextos muy jerárquicos o normados puede cuestionar más de lo esperado.' },
+          medio: { txt:'Defiende su posición cuando tiene argumentos y se ajusta al consenso cuando corresponde.', aporta:'Equilibrio entre criterio propio y trabajo en equipo.', considerar:'' },
+          bajo:  { txt:'Valora el consenso y las orientaciones de la jefatura o del grupo antes de decidir.', aporta:'Disposición a colaborar y a seguir directrices.', considerar:'Puede requerir apoyo para plantear desacuerdos o decidir sin validación.' },
+          rasgoAlto:'el criterio propio',
+          preguntas:{ alto:'Cuénteme de una vez en que debió seguir una instrucción con la que no estaba de acuerdo. ¿Qué hizo?',
+                      bajo:'Describa una situación en que mantuvo su opinión aunque el grupo pensaba distinto.' } },
+    AC: { nombre:'Autocontrol', polos:['Espontaneidad','Planificación'], mide:'Cómo se organiza y cuánto se apega a planes y normas',
+          alto:  { txt:'Planifica antes de actuar, se organiza y cumple las normas aun sin supervisión.', aporta:'Orden, cumplimiento y previsibilidad.', considerar:'Los cambios imprevistos o la necesidad de improvisar pueden incomodarle.' },
+          medio: { txt:'Se organiza y respeta las normas, con flexibilidad para ajustarse cuando la situación lo pide.', aporta:'Equilibrio entre orden y adaptabilidad.', considerar:'' },
+          bajo:  { txt:'Actúa con espontaneidad y se adapta sobre la marcha; prefiere la flexibilidad a los planes rígidos.', aporta:'Adaptabilidad y rapidez ante lo imprevisto.', considerar:'En tareas que exigen planificación o apego estricto a procedimientos puede necesitar apoyo.' },
+          rasgoAlto:'la planificación',
+          preguntas:{ alto:'Cuénteme de una situación en que tuvo que cambiar un plan a última hora. ¿Cómo reaccionó?',
+                      bajo:'¿Cómo se asegura de cumplir plazos y procedimientos cuando nadie le supervisa?' } }
+  },
+  nota: 'Prueba breve de autodescripción (20 ítems, 4 por dimensión) que estima cinco dimensiones globales de personalidad inspiradas en el modelo de 16 factores; no corresponde al cuestionario 16PF completo. '
+      + 'Refleja cómo la persona se percibe en el trabajo y es sensible a la tendencia a responder "de acuerdo" y a la deseabilidad social. '
+      + 'No compara con un perfil esperado: si una característica es una fortaleza depende del puesto y de lo observado en la entrevista. No constituye un diagnóstico.'
+};
+
+function pf16ZoneOf(v) { return v >= 70 ? 'alto' : v >= 40 ? 'medio' : 'bajo'; }
+
+// Evaluaciones puntuadas antes de corregir pf_ex4 (sin pf16._v = 2): no se guardaron
+// las respuestas, así que solo se conoce el rango donde está la Extraversión real.
+// Se obtiene probando las 625 combinaciones de respuesta (1–5 en los 4 ítems).
+var _PF16_EX_RANGOS = null;
+function pf16ExRangoAntiguo(viejo) {
+  if (!_PF16_EX_RANGOS) {
+    _PF16_EX_RANGOS = {};
+    var r = function(x){ return Math.floor(x + 0.5); };
+    for (var a = 1; a <= 5; a++) for (var b = 1; b <= 5; b++) for (var c = 1; c <= 5; c++) for (var d = 1; d <= 5; d++) {
+      var antes = r(((a + b + c + (6 - d)) / 4 - 1) / 4 * 100), real = r(((a + b + c + d) / 4 - 1) / 4 * 100);
+      var e = _PF16_EX_RANGOS[antes] || (_PF16_EX_RANGOS[antes] = [real, real]);
+      e[0] = Math.min(e[0], real); e[1] = Math.max(e[1], real);
+    }
+  }
+  var v = Math.round(viejo);
+  // Si faltaron respuestas el valor no calza con las combinaciones: margen máximo del error
+  return _PF16_EX_RANGOS[v] ? _PF16_EX_RANGOS[v].slice() : [Math.max(0, v - 25), Math.min(100, v + 25)];
+}
+
+// Pestaña 16PF del informe (también se usa en el PDF). Descriptiva, sin perfil esperado.
+function _pf16ReportHtml(c, pf, s) {
+  var R = PF16_RPT;
+  var keys = R.orden.filter(function(k){ return pf[k] !== undefined && pf[k] !== null; });
+  var val = function(k){ return Math.round(pf[k]); };
+  var first = htmlEsc(((c.nombre || '').trim().split(/\s+/)[0]) || 'La persona evaluada');
+  var ZL = { alto:'Alto', medio:'Medio', bajo:'Bajo', indet:'No precisable' };
+  // Extraversión de evaluaciones antiguas: rango posible en vez de un valor
+  var exRango = (pf._v !== 2 && pf.EX !== undefined && pf.EX !== null) ? pf16ExRangoAntiguo(pf.EX) : null;
+  var zona = function(k){
+    if (k === 'EX' && exRango) { var z1 = pf16ZoneOf(exRango[0]), z2 = pf16ZoneOf(exRango[1]); return z1 === z2 ? z1 : 'indet'; }
+    return pf16ZoneOf(val(k));
+  };
+  var ACC = '#0f766e';
+  var card = function(inner, extra){ return '<div style="background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:16px 18px;break-inside:avoid;page-break-inside:avoid;' + (extra || '') + '">' + inner + '</div>'; };
+  var h3 = function(t){ return '<div style="font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">' + t + '</div>'; };
+  var html = '';
+
+  // ── Resumen global ──
+  var altos = keys.filter(function(k){ return zona(k) === 'alto'; });
+  var bajos = keys.filter(function(k){ return zona(k) === 'bajo'; });
+  var unir = function(t){ return t.length <= 1 ? t.join('') : t.slice(0, -1).join(', ') + ' y ' + t[t.length - 1]; };
+  var resumen;
+  if (!altos.length && !bajos.length) {
+    resumen = first + ' se describe con un perfil equilibrado: ' + (exRango && zona('EX') === 'indet' ? 'las dimensiones que pueden precisarse' : 'las cinco dimensiones') + ' se ubican en niveles medios, sin rasgos que se destaquen hacia uno u otro polo.';
+  } else {
+    // Altos: "orientación hacia la sociabilidad y el criterio propio"; bajos: "más cerca del polo de reserva"
+    resumen = first + ' se describe en el trabajo';
+    if (altos.length) resumen += ' con una marcada orientación hacia ' + unir(altos.map(function(k){ return R.dim[k].rasgoAlto; }));
+    if (altos.length && bajos.length) resumen += ', y';
+    if (bajos.length) resumen += (bajos.length === 1 ? ' más cerca del polo de ' : ' más cerca de los polos de ')
+      + unir(bajos.map(function(k){ return R.dim[k].polos[0].toLowerCase(); }));
+    var medios = keys.filter(function(k){ return zona(k) === 'medio'; }).length;
+    resumen += medios ? '. Las demás dimensiones se ubican en niveles medios.' : '.';
+  }
+  resumen += ' Se trata de una autodescripción: indica cómo se percibe, y su valor para el puesto debe evaluarse en la entrevista.';
+
+  // Patrones que conviene contrastar (todas las dimensiones extremas en la misma dirección)
+  var aviso = '';
+  var keysVal = keys.filter(function(k){ return !(k === 'EX' && exRango); });
+  if (keysVal.length >= 4 && keysVal.every(function(k){ return val(k) >= 80; })) {
+    aviso = 'Todas las dimensiones son muy altas. Puede reflejar una tendencia a responder "de acuerdo" o a presentar una imagen favorable; contraste con ejemplos concretos en la entrevista.';
+  } else if (keysVal.length >= 4 && keysVal.every(function(k){ return val(k) <= 20; })) {
+    aviso = 'Todas las dimensiones son muy bajas. Puede reflejar una tendencia a responder "en desacuerdo" o poca implicación con la prueba; contraste en la entrevista.';
+  }
+  var inc = (s._incomplete || []).find(function(x){ return x.testId === 'pf16'; });
+
+  html += '<div style="border-radius:12px;padding:18px 20px;background:linear-gradient(135deg,#134e4a,#0f766e);color:#fff">'
+    + '<div style="font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;opacity:.75;margin-bottom:6px">Perfil de personalidad · 5 dimensiones globales</div>'
+    + '<div style="font-size:13.5px;line-height:1.7;max-width:760px">' + resumen + '</div>'
+    + '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:12px">'
+    + keys.map(function(k){ return '<span style="padding:3px 10px;border-radius:100px;background:rgba(255,255,255,.16);font-size:11px;font-weight:700">' + R.dim[k].nombre + ': ' + ZL[zona(k)] + '</span>'; }).join('')
+    + '</div></div>';
+
+  if (exRango) {
+    html += '<div style="padding:10px 14px;border-radius:10px;background:#f8fafc;border:1.5px solid #e2e8f0;color:#475569;font-size:12px;line-height:1.55">'
+      + '<strong>Nota sobre Extraversión:</strong> esta evaluación se puntuó antes de corregir un ítem que se calculaba invertido por error, y sus respuestas no se guardaron. '
+      + 'Por eso no es posible conocer su Extraversión exacta: se muestra el rango donde se encuentra el valor real (entre ' + exRango[0] + ' y ' + exRango[1] + ').</div>';
+  }
+  if (inc) {
+    html += '<div style="padding:10px 14px;border-radius:10px;background:#fffbeb;border:1.5px solid #fde68a;color:#92400e;font-size:12px;line-height:1.55">'
+      + '<strong>Respuestas incompletas:</strong> respondió ' + (inc.total - inc.missing) + ' de ' + inc.total + ' ítems. Interprete el perfil con cautela.</div>';
+  }
+  if (aviso) {
+    html += '<div style="padding:10px 14px;border-radius:10px;background:#fffbeb;border:1.5px solid #fde68a;color:#92400e;font-size:12px;line-height:1.55"><strong>Patrón de respuesta:</strong> ' + aviso + '</div>';
+  }
+
+  // ── Perfil por dimensión: continuo entre dos polos + descripción ──
+  var rows = keys.map(function(k){
+    var d = R.dim[k], v = val(k), z = zona(k);
+    var rango = (k === 'EX' && exRango) ? exRango : null;
+    var t = z === 'indet'
+      ? { txt:'Con este registro no es posible precisar el nivel: el valor real se encuentra entre ' + rango[0] + ' y ' + rango[1] + '. Explore esta dimensión en la entrevista.', aporta:'', considerar:'' }
+      : d[z];
+    var marca = rango
+      ? '<div style="position:absolute;left:' + rango[0] + '%;width:' + Math.max(2, rango[1] - rango[0]) + '%;top:-3px;height:16px;border-radius:8px;background:' + ACC + '33;border:2px dashed ' + ACC + '"></div>'
+      : '<div style="position:absolute;left:calc(' + v + '% - 8px);top:-4px;width:16px;height:16px;border-radius:50%;background:' + ACC + ';border:2.5px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.3)"></div>';
+    var bar = '<div style="position:relative;height:10px;border-radius:100px;background:linear-gradient(90deg,#e2e8f0 0%,#e2e8f0 39%,#f1f5f9 39%,#f1f5f9 70%,#e2e8f0 70%);margin:6px 0 4px">'
+      + '<div style="position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:#94a3b8"></div>'
+      + marca
+      + '</div>';
+    return '<div style="padding:14px 0;border-top:1px solid #f1f5f9;break-inside:avoid;page-break-inside:avoid">'
+      + '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap">'
+      + '<div><span style="font-size:13.5px;font-weight:800;color:#0f172a">' + d.nombre + '</span> <span style="font-size:11px;color:#94a3b8">· ' + d.mide + '</span></div>'
+      + '<div style="font-size:12px;color:#334155">' + (rango ? 'entre <strong style="font-size:16px;color:#0f172a">' + rango[0] + '</strong> y <strong style="font-size:16px;color:#0f172a">' + rango[1] + '</strong>' : '<strong style="font-size:16px;color:#0f172a">' + v + '</strong>') + ' · ' + ZL[z] + '</div></div>'
+      + '<div style="display:flex;justify-content:space-between;font-size:10.5px;color:#64748b;font-weight:700;margin-top:6px"><span>◀ ' + d.polos[0] + '</span><span>' + d.polos[1] + ' ▶</span></div>'
+      + bar
+      + '<div style="font-size:12.5px;line-height:1.65;color:#1e293b;margin-top:6px">' + t.txt + '</div>'
+      + '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">'
+      + (t.aporta ? '<div style="flex:1 1 220px;font-size:11.5px;line-height:1.6;color:#334155;background:#f0fdfa;border-radius:8px;padding:8px 10px"><strong style="color:' + ACC + '">Aporta:</strong> ' + t.aporta + '</div>' : '')
+      + (t.considerar ? '<div style="flex:1 1 220px;font-size:11.5px;line-height:1.6;color:#334155;background:#f8fafc;border-radius:8px;padding:8px 10px"><strong style="color:#475569">A considerar:</strong> ' + t.considerar + '</div>' : '')
+      + '</div></div>';
+  }).join('');
+  html += card(h3('Perfil por dimensión')
+    + '<div style="font-size:11px;color:#64748b;margin-bottom:2px">Cada dimensión va de un polo a otro; ninguno es mejor en sí mismo. La línea central marca el punto medio.</div>'
+    + rows);
+
+  // ── Preguntas para profundizar (solo dimensiones en los extremos) ──
+  var qs = [];
+  keys.forEach(function(k){ var z = zona(k); if (z !== 'medio') qs.push({ k:k, q: R.dim[k].preguntas[z] }); });
+  if (qs.length) {
+    html += card(h3('Preguntas para profundizar en la entrevista')
+      + '<ol style="margin:0;padding-left:18px;font-size:12px;color:#334155;line-height:1.7">'
+      + qs.map(function(x){ return '<li style="margin-bottom:5px">' + x.q + ' <span style="font-size:10px;font-weight:800;color:' + ACC + '">' + R.dim[x.k].nombre + '</span></li>'; }).join('')
+      + '</ol>');
+  }
+
+  // ── Nota técnica ──
+  html += '<div style="padding:12px 16px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0;font-size:11px;line-height:1.65;color:#64748b">'
+    + '<strong style="color:#475569">Nota técnica.</strong> ' + R.nota + '</div>';
+  return html;
+}
+
 const DISC_CARGO_PROFILE_DEFAULT = {
   jefatura:       { D:'alto',  I:'medio', S:'medio', C:'medio' },
   administrativo: { D:'bajo',  I:'medio', S:'alto',  C:'alto'  },
@@ -6495,33 +6896,6 @@ const DIM_DESC = {
     },
   },
   // ── 16PF ────────────────────────────────────────────────────
-  pf16: {
-    EX: {
-      hi:  'Presenta un perfil marcadamente extrovertido. Se muestra cálido, participativo y sociable en el entorno laboral. Busca activamente la interacción con otros y genera buen clima en los equipos. Este perfil favorece roles de atención al público, coordinación de equipos y funciones que requieren redes de contacto.',
-      mid: 'Muestra un equilibrio funcional entre sociabilidad y reserva. Participa en actividades grupales sin dificultad, pero también puede trabajar de forma autónoma cuando la tarea lo requiere. Se adapta razonablemente a distintos contextos sociales laborales.',
-      lo:  'Tiende a la introversión y la reserva en el contexto laboral. Prefiere el trabajo individual y puede experimentar incomodidad en situaciones que exigen alta interacción social sostenida. En roles que requieren atención al público o liderazgo visible, este perfil puede representar una limitación que conviene explorar en entrevista.',
-    },
-    AN: {
-      hi:  'Demuestra sólida estabilidad emocional y baja ansiedad rasgo. Mantiene la compostura ante situaciones de presión, incertidumbre o conflicto. No se desborda emocionalmente frente a las dificultades y recupera el equilibrio con rapidez. Este resultado predice resiliencia sostenida en roles de alta exigencia.',
-      mid: 'Presenta un ajuste emocional adecuado para condiciones normales de trabajo. Ante situaciones de presión prolongada, acumulación de estrés o conflictos repetidos puede experimentar cierta inquietud que afecte transitoriamente su rendimiento. Se beneficiaría de apoyo en períodos de alta demanda.',
-      lo:  'Muestra indicadores de ansiedad rasgo elevada. Puede experimentar preocupación excesiva, tensión o irritabilidad ante situaciones de presión laboral moderada. Este perfil representa un factor de riesgo en roles que implican estrés sostenido, toma de decisiones bajo presión o exposición a situaciones conflictivas.',
-    },
-    DU: {
-      hi:  'Presenta un perfil de alta dureza mental: pragmático, orientado a hechos concretos y capaz de tomar decisiones difíciles sin dejarse influir excesivamente por factores emocionales. Mantiene objetividad incluso en situaciones interpersonalmente complejas. Ideal para roles que requieren firmeza y análisis frío.',
-      mid: 'Combina razonablemente la objetividad con la sensibilidad interpersonal. Toma decisiones basadas en datos pero también considera el impacto humano. Este equilibrio es funcional para la mayoría de los roles, aunque en posiciones que exigen máxima firmeza podría beneficiarse de mayor desapego emocional.',
-      lo:  'Muestra un perfil de alta sensibilidad y baja dureza mental. Las decisiones pueden verse influenciadas por factores emocionales o relacionales. Puede experimentar dificultad para dar feedback negativo, aplicar sanciones o tomar decisiones impopulares. En roles que requieren objetividad rigurosa, se recomienda explorar en entrevista.',
-    },
-    IN: {
-      hi:  'Demuestra alta independencia de criterio. Forma sus propias opiniones, defiende sus posiciones y no cede fácilmente ante la presión grupal. Es capaz de cuestionar instrucciones que considera inadecuadas y tomar iniciativa sin necesitar aprobación externa. Valioso en roles de liderazgo; puede generar fricción en estructuras muy jerárquicas.',
-      mid: 'Presenta un nivel funcional de independencia. Puede defender sus posiciones cuando tiene argumentos sólidos, pero también se adapta al consenso grupal cuando es necesario. Este equilibrio facilita la integración en equipos sin perder capacidad de iniciativa propia.',
-      lo:  'Tiende a la dependencia del grupo o la autoridad para tomar decisiones. Puede evitar expresar desacuerdo, seguir instrucciones sin cuestionarlas o buscar excesivamente la aprobación de otros. En roles que requieren autonomía, liderazgo o toma de decisiones independiente, este perfil puede representar una limitación.',
-    },
-    AC: {
-      hi:  'Presenta alto autocontrol: disciplinado, metódico y adherente a las normas. Planifica antes de actuar, cumple compromisos sin supervisión y mantiene orden en su trabajo. Este perfil predice confiabilidad, cumplimiento de procedimientos y comportamiento predecible en el cargo. Especialmente valioso en roles de seguridad y cumplimiento normativo.',
-      mid: 'Muestra un nivel adecuado de autocontrol para la mayoría de las funciones. Generalmente cumple con las normas y procedimientos, aunque en situaciones de baja supervisión o alta presión puede flexibilizar su adherencia a las reglas. Se recomienda estructura clara y seguimiento periódico.',
-      lo:  'Presenta bajo autocontrol: tendencia a la improvisación, dificultad para ceñirse a procedimientos y posible inconsistencia en el cumplimiento de compromisos. Puede actuar impulsivamente o priorizar la comodidad sobre la disciplina. En roles que exigen cumplimiento estricto de protocolos, este resultado representa un factor de riesgo significativo.',
-    },
-  },
 };
 
 function dimDesc(testId, key, score) {
@@ -6657,7 +7031,12 @@ function _alertBadgesHtml(s) {
       + (ig.copiar || 0) + ' intento(s) de copiar, ' + (ig.captura || 0) + ' de captura';
     h += '<span title="' + htmlEsc(tip) + '" style="display:inline-block;margin-left:6px;padding:1px 7px;border-radius:100px;font-size:10px;font-weight:700;vertical-align:1px;'
       + (lv === 'grave' ? 'background:#fff1f2;color:#be123c;border:1px solid #fecdd3' : 'background:#fffbeb;color:#92400e;border:1px solid #fde68a')
-      + '">⚠ ' + (lv === 'grave' ? 'Integridad' : 'Salida') + '</span>';
+      + '">⚠ ' + (lv === 'grave' ? 'Incidentes' : 'Salida') + '</span>';
+  }
+  var ig = s && s.integridad;
+  if (ig && (ig.nivel === 'riesgo_alto' || ig.nivel === 'explorar' || ig.nivel === 'no_interpretable')) {
+    var ic = { riesgo_alto:['⛔ Integridad: riesgo alto','#fff1f2','#be123c','#fecdd3'], explorar:['Integridad: explorar','#fffbeb','#92400e','#fde68a'], no_interpretable:['Integridad: no interpretable','#f8fafc','#475569','#cbd5e1'] }[ig.nivel];
+    h += '<span title="Resultado de la prueba de integridad laboral" style="display:inline-block;margin-left:6px;padding:1px 7px;border-radius:100px;font-size:10px;font-weight:800;vertical-align:1px;background:' + ic[1] + ';color:' + ic[2] + ';border:1px solid ' + ic[3] + '">' + ic[0] + '</span>';
   }
   var bt = s && s._bateria;
   if (bt && bt.faltantes && bt.faltantes.length) {
@@ -6702,10 +7081,361 @@ function _integSummaryHtml(s) {
   var grave = _integLevel(s) === 'grave';
   var col = grave ? { bg:'#fff1f2', bd:'#fecdd3', tx:'#9f1239' } : { bg:'#fffbeb', bd:'#fde68a', tx:'#92400e' };
   return '<div style="padding:11px 14px;border-radius:10px;background:' + col.bg + ';border:1.5px solid ' + col.bd + ';color:' + col.tx + ';font-size:12.5px;line-height:1.6">'
-    + '<div style="font-weight:800;margin-bottom:3px">⚠️ Incidentes de integridad durante la evaluación</div>'
+    + '<div style="font-weight:800;margin-bottom:3px">⚠️ Incidentes durante la evaluación</div>'
     + items.join(' · ')
     + '<div style="font-size:11.5px;opacity:.85;margin-top:4px">Puede indicar búsqueda de ayuda externa. Una salida breve también puede deberse a una notificación o a un clic fuera de la ventana; contrástelo en la entrevista.</div>'
     + '</div>';
+}
+
+// ═══════════════════════════════════════════════════════════
+//  Pestaña DISC del informe (también se usa en el PDF)
+//  c: candidato · disc: scores.disc · s: scores · combos: perfiles por combinación
+// ═══════════════════════════════════════════════════════════
+function _discReportHtml(c, disc, s, combos) {
+  var R = DISC_RPT, LBL = DISC_DIM_LABELS, COL = R.color;
+  var KEYS = ['D','I','S','C'];
+  var val = function(k){ return Math.round(disc[k] || 0); };
+  var first = htmlEsc(((c.nombre || '').trim().split(/\s+/)[0]) || 'La persona evaluada');
+
+  // Nombre del estilo para un conjunto de puntajes (primario + secundario si supera 55; equilibrado si no hay diferencias)
+  var styleOf = function(v) {
+    var o = KEYS.slice().sort(function(a, b){ return v[b] - v[a]; });
+    if (v[o[0]] - v[o[3]] < 20) return 'Perfil equilibrado';
+    var sc2 = v[o[1]] >= 55 ? o[1] : '';
+    return (combos[o[0] + sc2] || combos[o[0]] || { name: LBL[o[0]] }).name;
+  };
+
+  // Gráfico de barras DISC (escala 0–100, media 50)
+  var barsSvg = function(v, maxW) {
+    var W = 380, H = 250, x0 = 46, x1 = 366, y0 = 18, y1 = 200;
+    var y = function(t){ return y1 - (t / 100) * (y1 - y0); };
+    var g = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" style="max-width:' + (maxW || 420) + 'px;display:block;margin:0 auto" font-family="-apple-system,Segoe UI,sans-serif">';
+    g += '<rect x="' + x0 + '" y="' + y(100) + '" width="' + (x1 - x0) + '" height="' + (y(70) - y(100)) + '" fill="#eef2ff"/>';
+    g += '<rect x="' + x0 + '" y="' + y(39) + '" width="' + (x1 - x0) + '" height="' + (y(0) - y(39)) + '" fill="#f8fafc"/>';
+    [0, 25, 50, 75, 100].forEach(function(t){
+      g += '<text x="' + (x0 - 8) + '" y="' + (y(t) + 3.5) + '" text-anchor="end" font-size="9.5" fill="#94a3b8">' + t + '</text>';
+      g += '<line x1="' + x0 + '" x2="' + x1 + '" y1="' + y(t) + '" y2="' + y(t) + '" stroke="#e2e8f0" stroke-width="1"/>';
+    });
+    g += '<line x1="' + x0 + '" x2="' + x1 + '" y1="' + y(50) + '" y2="' + y(50) + '" stroke="#475569" stroke-width="1.2" stroke-dasharray="5 4"/>';
+    g += '<text x="' + (x1 - 2) + '" y="' + (y(50) - 5) + '" text-anchor="end" font-size="9" fill="#475569">media</text>';
+    var slot = (x1 - x0) / 4, bw = 44;
+    KEYS.forEach(function(k, i){
+      var cx = x0 + slot * i + slot / 2, t = v[k];
+      g += '<rect x="' + (cx - bw / 2) + '" y="' + y(t) + '" width="' + bw + '" height="' + Math.max(1, y(0) - y(t)) + '" fill="' + COL[k] + '" rx="4"/>';
+      g += '<text x="' + cx + '" y="' + (y(t) - 6) + '" text-anchor="middle" font-size="13" font-weight="800" fill="#0f172a">' + t + '</text>';
+      g += '<text x="' + cx + '" y="' + (y1 + 18) + '" text-anchor="middle" font-size="15" font-weight="900" fill="' + COL[k] + '">' + k + '</text>';
+      g += '<text x="' + cx + '" y="' + (y1 + 33) + '" text-anchor="middle" font-size="9.5" fill="#64748b">' + LBL[k] + '</text>';
+    });
+    return g + '</svg>';
+  };
+
+  // ── Patrón: primario, secundario (si supera claramente la media) e intensidad ──
+  var sorted = KEYS.slice().sort(function(a, b){ return val(b) - val(a); });
+  var prim = sorted[0];
+  var sec  = val(sorted[1]) >= 55 ? sorted[1] : null;
+  var low  = sorted[3];
+  var prof = combos[prim + (sec || '')] || combos[prim] || { name: LBL[prim], tagline:'', fortalezas:[], dificultades:[], motivaciones:[], frustraciones:[], trabajaMejorCon:'' };
+  var spread = val(sorted[0]) - val(sorted[3]);
+  var inten = spread >= 40 ? { label:'Perfil marcado', txt:'Las diferencias entre factores son marcadas, por lo que este estilo probablemente se exprese con claridad en su conducta habitual.' }
+            : spread >= 20 ? { label:'Perfil moderado', txt:'Las diferencias entre factores son moderadas: el estilo descrito es su preferencia, aunque puede ajustar su conducta según el contexto.' }
+            :                { label:'Perfil equilibrado', txt:'Los cuatro factores están próximos entre sí. Esto puede reflejar flexibilidad para adaptarse a distintos contextos o respuestas poco diferenciadas; conviene explorarlo en la entrevista.' };
+  // Sin un factor que destaque, no se etiqueta con un estilo fuerte: se describen tendencias leves
+  var flat = spread < 20;
+  var styleName = flat ? 'Perfil equilibrado' : prof.name;
+  var tagline = flat ? 'Ningún factor predomina con claridad. Las descripciones de estilo corresponden a su factor más alto (' + LBL[prim] + ') y deben leerse como tendencias leves.' : prof.tagline;
+
+  // break-inside: en el PDF una tarjeta no queda partida entre dos páginas
+  var card = function(inner, extra){ return '<div style="background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:16px 18px;break-inside:avoid;page-break-inside:avoid;' + (extra || '') + '">' + inner + '</div>'; };
+  var h3 = function(t){ return '<div style="font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">' + t + '</div>'; };
+  var ul = function(arr){ return '<ul style="margin:0;padding-left:17px;font-size:12px;color:#334155;line-height:1.75">' + (arr || []).map(function(t){ return '<li>' + t + '</li>'; }).join('') + '</ul>'; };
+  var chip = function(t, col){ return '<span style="display:inline-block;padding:3px 10px;border-radius:100px;font-size:11px;font-weight:700;background:' + col + '18;color:' + col + ';border:1px solid ' + col + '40">' + t + '</span>'; };
+  var html = '';
+
+  // ── 1. Encabezado ──
+  html += '<div style="border-radius:12px;padding:18px 20px;background:linear-gradient(135deg,#1e1b4b,#3730a3);color:#fff">'
+    + '<div style="font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;opacity:.7;margin-bottom:6px">Estilo conductual DISC</div>'
+    + '<div style="font-size:22px;font-weight:900;letter-spacing:-.01em;margin-bottom:6px">' + htmlEsc(styleName) + '</div>'
+    + (tagline ? '<div style="font-size:12.5px;opacity:.92;line-height:1.55;margin-bottom:12px;max-width:640px">' + tagline + '</div>' : '')
+    + '<div style="display:flex;flex-wrap:wrap;gap:6px">'
+    + '<span style="padding:3px 10px;border-radius:100px;background:rgba(255,255,255,.16);font-size:11px;font-weight:700">' + (flat ? 'Factor más alto: ' : 'Primario: ') + LBL[prim] + ' (' + prim + ')</span>'
+    + (sec ? '<span style="padding:3px 10px;border-radius:100px;background:rgba(255,255,255,.16);font-size:11px;font-weight:700">Secundario: ' + LBL[sec] + ' (' + sec + ')</span>' : '')
+    + '<span style="padding:3px 10px;border-radius:100px;background:rgba(255,255,255,.16);font-size:11px;font-weight:700">' + inten.label + '</span>'
+    + '</div></div>';
+
+  // ── Calidad de los datos ──
+  var inc = (s._incomplete || []).find(function(x){ return x.testId === 'disc'; });
+  if (inc) {
+    html += '<div style="padding:10px 14px;border-radius:10px;background:#fffbeb;border:1.5px solid #fde68a;color:#92400e;font-size:12px;line-height:1.55">'
+      + '<strong>Respuestas incompletas:</strong> respondió ' + (inc.total - inc.missing) + ' de ' + inc.total + ' bloques. Interprete el perfil con cautela.</div>';
+  }
+
+
+  // ── 2. Gráfico compuesto ──
+  var comp = {}; KEYS.forEach(function(k){ comp[k] = val(k); });
+  var svg = barsSvg(comp);
+  var legend = '<div style="font-size:10.5px;color:#64748b;text-align:center;margin-top:6px;line-height:1.6">'
+    + '<span style="display:inline-block;width:10px;height:10px;background:#eef2ff;border:1px solid #c7d2fe;vertical-align:-1px"></span> Zona alta (70–100) · '
+    + '<span style="display:inline-block;width:10px;height:10px;background:#f8fafc;border:1px solid #e2e8f0;vertical-align:-1px"></span> Zona baja (0–39)'
+    + '</div>';
+
+  // ── 3. Resumen ──
+  var resumen = flat
+    ? first + ' presenta un <strong>perfil equilibrado</strong>, sin un factor claramente predominante. Su puntaje más alto es ' + LBL[prim] + ' (' + val(prim) + '), lo que indica una tendencia leve a ' + R.factor[prim].rasgo + '. '
+    : first + ' presenta un estilo de <strong>' + htmlEsc(prof.name) + '</strong>. En el trabajo tiende a ' + R.factor[prim].rasgo
+      + (sec ? ', y también a ' + R.factor[sec].rasgo : '') + '. ';
+  if (val(low) < 40) resumen += 'Su factor más bajo es ' + LBL[low] + ' (' + val(low) + '), lo que sugiere ' + R.factor[low].bajoRasgo + '. ';
+  resumen += inten.txt;
+
+  html += '<div style="display:flex;flex-wrap:wrap;gap:14px">'
+    + card(h3(disc._mas && disc._n >= 8 ? 'Gráfico compuesto (MÁS − MENOS)' : 'Gráfico de perfil') + svg + legend, 'flex:1 1 320px')
+    + card(h3('Resumen del perfil') + '<div style="font-size:13px;line-height:1.75;color:#1e293b">' + resumen + '</div>', 'flex:1 1 300px')
+    + '</div>';
+
+  // ── 2b. Perfil natural (MENOS) y adaptado (MÁS) ──
+  // Escala: la frecuencia esperada (n/4 elecciones) corresponde a 50; el doble, a 100.
+  if (disc._mas && disc._menos && disc._n >= 8) {
+    var n = disc._n, q = n / 4;
+    var clamp = function(t){ return Math.max(0, Math.min(100, Math.round(t))); };
+    var adapt = {}, nat = {};
+    KEYS.forEach(function(k){
+      adapt[k] = clamp(50 + ((disc._mas[k] || 0) - q) / q * 50);
+      nat[k]   = clamp(50 - ((disc._menos[k] || 0) - q) / q * 50);
+    });
+    var cambios = KEYS.map(function(k){ return { k:k, d: adapt[k] - nat[k] }; })
+      .filter(function(x){ return Math.abs(x.d) >= 20; })
+      .sort(function(a, b){ return Math.abs(b.d) - Math.abs(a.d); });
+    var adHtml = cambios.length
+      ? '<ul style="margin:0;padding-left:17px;font-size:12px;color:#334155;line-height:1.75">' + cambios.map(function(x){
+          return '<li><strong style="color:' + COL[x.k] + '">' + LBL[x.k] + '</strong> ' + nat[x.k] + ' → ' + adapt[x.k]
+            + ' (' + (x.d > 0 ? '+' : '') + x.d + '): al adaptarse, ' + R.adapta[x.k][x.d > 0 ? 'sube' : 'baja'] + '</li>';
+        }).join('') + '</ul>'
+      : '';
+    var concl2 = !cambios.length
+      ? 'Su conducta adaptada es coherente con su estilo natural: no se observan ajustes importantes, lo que sugiere comodidad con las exigencias que percibe en su entorno.'
+      : cambios.length === 1
+        ? 'Realiza un ajuste relevante respecto de su estilo natural; el resto de su conducta se mantiene cercana a su forma habitual de actuar.'
+        : 'Realiza ajustes importantes en varios factores. Sostener en el tiempo una conducta muy distinta a la natural puede implicar un mayor desgaste; conviene explorar en la entrevista cómo percibe las exigencias de su trabajo actual.';
+    var mini = function(title, sub, v, note){
+      return '<div style="flex:1 1 260px;min-width:0">'
+        + '<div style="font-size:12.5px;font-weight:800;color:#0f172a">' + title + '</div>'
+        + '<div style="font-size:11px;color:#64748b;margin-bottom:6px">' + sub + '</div>'
+        + barsSvg(v, 340)
+        + '<div style="text-align:center;margin-top:4px;font-size:11.5px;color:#334155">Estilo: <strong>' + htmlEsc(styleOf(v)) + '</strong></div>'
+        + '</div>';
+    };
+    html += card(h3('Perfil natural y adaptado')
+      + '<div style="font-size:12px;color:#475569;line-height:1.65;margin-bottom:12px">'
+      + 'El <strong>perfil adaptado</strong> (descriptores elegidos como MÁS) refleja cómo actúa cuando ajusta su conducta a lo que percibe que exige su entorno laboral. '
+      + 'El <strong>perfil natural</strong> (descriptores elegidos como MENOS) refleja su estilo básico, el que tiende a aparecer cuando no se está adaptando, por ejemplo bajo presión.</div>'
+      + '<div style="display:flex;flex-wrap:wrap;gap:16px">'
+      + mini('Adaptado · MÁS', 'Conducta que muestra en su entorno', adapt)
+      + mini('Natural · MENOS', 'Estilo básico y bajo presión', nat)
+      + '</div>'
+      + '<div style="margin-top:14px;padding-top:12px;border-top:1px solid #f1f5f9">'
+      + (cambios.length ? '<div style="font-size:11px;font-weight:800;color:#0f172a;margin-bottom:6px">Principales ajustes (diferencia de 20 puntos o más)</div>' + adHtml : '')
+      + '<div style="font-size:12.5px;color:#1e293b;line-height:1.65;margin-top:' + (cambios.length ? '8' : '0') + 'px">' + concl2 + '</div>'
+      + '</div>');
+  }
+
+  // ── 4. Interpretación por factor ──
+  var rows = KEYS.map(function(k){
+    var v = val(k), z = discZoneOf(v);
+    return '<tr>'
+      + '<td style="padding:11px 10px;border-top:1px solid #f1f5f9;vertical-align:top;white-space:nowrap">'
+      + '<div style="display:flex;align-items:center;gap:8px"><span style="width:26px;height:26px;border-radius:7px;background:' + COL[k] + ';color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:13px">' + k + '</span>'
+      + '<div><div style="font-weight:700;color:#0f172a;font-size:12.5px">' + LBL[k] + '</div><div style="font-size:10.5px;color:#94a3b8;white-space:normal;max-width:170px">' + R.factor[k].mide + '</div></div></div></td>'
+      + '<td style="padding:11px 10px;border-top:1px solid #f1f5f9;vertical-align:top;text-align:center;white-space:nowrap"><div style="font-size:17px;font-weight:900;color:#0f172a">' + v + '</div>'
+      + chip(DISC_ZONES[z].label, DISC_ZONES[z].color) + '</td>'
+      + '<td style="padding:11px 10px;border-top:1px solid #f1f5f9;vertical-align:top;font-size:12px;line-height:1.65;color:#334155">' + R.factor[k][z] + '</td>'
+      + '</tr>';
+  }).join('');
+  html += card(h3('Interpretación por factor')
+    + '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">' + rows + '</table></div>');
+
+  // ── 6. Estilo en el trabajo (según el factor primario) ──
+  var E = R.estilo[prim];
+  var item = function(icon, t, txt){ return '<div style="padding:12px 14px;border-radius:10px;background:#f8fafc;border:1px solid #f1f5f9">'
+    + '<div style="font-size:11px;font-weight:800;color:#0f172a;margin-bottom:4px">' + icon + ' ' + t + '</div>'
+    + '<div style="font-size:12px;line-height:1.65;color:#475569">' + txt + '</div></div>'; };
+  html += card(h3('Estilo en el trabajo' + (flat ? ' · tendencias leves' : ''))
+    + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px">'
+    + item('💬', 'Comunicación', E.comunica)
+    + item('🧭', 'Toma de decisiones', E.decisiones)
+    + item('⏱', 'Bajo presión', E.presion)
+    + item('🏢', 'Ambiente en que rinde mejor', E.ambiente)
+    + item('👥', 'Liderazgo y trabajo en equipo', E.equipo)
+    + item('⭐', 'Aporte a la organización', E.aporte)
+    + '</div>');
+
+  // ── 7. Fortalezas y posibles limitaciones (según la combinación) ──
+  html += '<div style="display:flex;flex-wrap:wrap;gap:14px">'
+    + card('<div style="font-size:10px;font-weight:800;color:#15803d;text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">Fortalezas</div>' + ul(prof.fortalezas), 'flex:1 1 280px')
+    + card('<div style="font-size:10px;font-weight:800;color:#b45309;text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">Posibles limitaciones</div>' + ul(prof.dificultades), 'flex:1 1 280px')
+    + '</div>';
+
+  // ── 8. Motivación y comunicación ──
+  html += '<div style="display:flex;flex-wrap:wrap;gap:14px">'
+    + card(h3('Lo que le motiva') + ul((prof.motivaciones && prof.motivaciones.length) ? prof.motivaciones : E.motivadores)
+      + ((prof.frustraciones && prof.frustraciones.length) ? '<div style="margin-top:12px">' + h3('Fuentes de tensión') + ul(prof.frustraciones) + '</div>' : ''), 'flex:1 1 280px')
+    + card(h3('Cómo comunicarse con esta persona') + ul(E.comunicarse)
+      + (prof.trabajaMejorCon ? '<div style="margin-top:12px">' + h3('Trabaja mejor con') + '<div style="font-size:12px;line-height:1.65;color:#334155">' + prof.trabajaMejorCon + '</div></div>' : ''), 'flex:1 1 280px')
+    + '</div>';
+
+  // ── 9. Recomendaciones y preguntas para la entrevista ──
+  // Cómo se expresa su factor más alto y su factor más bajo en situaciones concretas
+  var qs = [];
+  R.preguntas[prim].sobre.forEach(function(q){ qs.push({ k:prim, q:q }); });
+  R.preguntas[low].bajo.forEach(function(q){ qs.push({ k:low, q:q }); });
+  html += '<div style="display:flex;flex-wrap:wrap;gap:14px">'
+    + card(h3('Recomendaciones para la supervisión') + ul(E.gestion), 'flex:1 1 280px')
+    + card(h3('Preguntas para profundizar en la entrevista')
+      + '<ol style="margin:0;padding-left:18px;font-size:12px;color:#334155;line-height:1.7">'
+      + qs.map(function(x){ return '<li style="margin-bottom:5px">' + x.q + ' <span style="font-size:10px;font-weight:800;color:' + COL[x.k] + '">' + x.k + '</span></li>'; }).join('')
+      + '</ol>', 'flex:1 1 280px')
+    + '</div>';
+
+  // ── 10. Nota técnica ──
+  html += '<div style="padding:12px 16px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0;font-size:11px;line-height:1.65;color:#64748b">'
+    + '<strong style="color:#475569">Nota técnica.</strong> ' + R.nota + '</div>';
+
+  return html;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  INFORME — Integridad laboral (evaluativa; resultado calculado en el servidor)
+// ═══════════════════════════════════════════════════════════
+const INTEG_NIVELES = {
+  riesgo_alto:      { icon:'🔴', titulo:'Riesgo alto — no recomendable', color:'#be123c', bg:'#fff1f2', bd:'#fecdd3',
+                      txt:'Se recomienda no continuar con la contratación, salvo que la entrevista y las referencias descarten de forma fundada los motivos indicados. La decisión final corresponde al evaluador.' },
+  explorar:         { icon:'🟡', titulo:'Indicadores a explorar', color:'#92400e', bg:'#fffbeb', bd:'#fde68a',
+                      txt:'Hay respuestas que conviene profundizar en la entrevista y contrastar con las referencias antes de decidir.' },
+  sin_indicadores:  { icon:'🟢', titulo:'Sin indicadores de riesgo', color:'#166534', bg:'#f0fdf4', bd:'#bbf7d0',
+                      txt:'Las respuestas son consistentes con una actitud íntegra en el trabajo. Como toda prueba de autoinforme, debe complementarse con la entrevista y las referencias.' },
+  no_interpretable: { icon:'⚪', titulo:'Resultado no interpretable', color:'#475569', bg:'#f8fafc', bd:'#cbd5e1',
+                      txt:'Hay señales de que las respuestas no reflejan la forma real de pensar de la persona (ver motivos). No lo use como evidencia a favor ni en contra: evalúe la integridad en la entrevista y con referencias, o aplique la prueba nuevamente.' }
+};
+const INTEG_SECCIONES = { A:'Percepción de los demás', B:'Indulgencia ante faltas', C:'Conductas admitidas (últimos 3 años)', D:'Preferencias de trabajo', E:'Situaciones de seguridad' };
+const INTEG_PREGUNTAS = {
+  A:'Usted estimó que varias personas incurren en estas conductas. ¿En qué lugares ha visto que ocurra y cómo reaccionó?',
+  B:'Cuénteme de una vez en que un compañero cometió una falta. ¿Qué hizo usted y qué cree que debió pasar?',
+  C:'Cuénteme con detalle las situaciones que mencionó. ¿Qué pasó y cómo se resolvió?',
+  D:'¿En qué casos cree que se justifica no seguir un procedimiento? Deme un ejemplo real.',
+  E:'Cuénteme de una situación real parecida a las planteadas. ¿Qué hizo?',
+  int10:'Cuénteme de las veces en que se quedó dormido o se ausentó de su puesto. ¿Qué pasó y qué consecuencias tuvo?',
+  int11:'¿Qué tipo de incidentes ha dejado sin registrar y por qué?',
+  int12:'Cuénteme sobre las propinas, regalos o favores que aceptó. ¿Quién los ofreció y qué se esperaba a cambio?',
+  int18:'Si su relevo no llega y tiene una emergencia familiar, ¿qué hace? ¿Le ha ocurrido?',
+  int19:'Cuénteme de una vez en que tuvo que controlar a alguien de confianza o con más jerarquía.',
+  int20:'¿Qué haría si un superior le pide omitir un registro? ¿Le ha pasado?',
+  int21:'¿Ha tenido que reportar a un compañero? ¿Cómo lo vivió?',
+  int05:'¿Qué haría si ve a un compañero dejar salir mercadería sin revisión?',
+  int07:'¿Qué opina de anotar en el libro una ronda que no se alcanzó a hacer?'
+};
+
+function _integNivelBadge(ig) {
+  var n = ig && INTEG_NIVELES[ig.nivel];
+  if (!n) return '';
+  return '<span style="display:inline-block;padding:3px 10px;border-radius:100px;font-size:11px;font-weight:800;background:' + n.bg + ';color:' + n.color + ';border:1px solid ' + n.bd + '">' + n.icon + ' ' + n.titulo + '</span>';
+}
+
+// Aviso destacado (todas las pestañas del informe y la ficha) cuando el resultado lo amerita
+function _integTestBannerHtml(s) {
+  var ig = s && s.integridad;
+  if (!ig || (ig.nivel !== 'riesgo_alto' && ig.nivel !== 'no_interpretable')) return '';
+  var n = INTEG_NIVELES[ig.nivel];
+  return '<div style="padding:11px 14px;border-radius:10px;background:' + n.bg + ';border:1.5px solid ' + n.bd + ';color:' + n.color + ';font-size:12.5px;line-height:1.6">'
+    + '<div style="font-weight:800;margin-bottom:2px">' + n.icon + ' Integridad laboral: ' + n.titulo + '</div>' + n.txt
+    + ' <span style="opacity:.85">Detalle en la pestaña "' + TESTS_META.integridad.name + '".</span></div>';
+}
+
+function _integridadReportHtml(c, ig) {
+  if (!ig) return '<div style="padding:16px;color:#64748b;font-size:12.5px">Sin respuestas registradas.</div>';
+  var n = INTEG_NIVELES[ig.nivel] || INTEG_NIVELES.no_interpretable;
+  var byId = {}; INTEG_ITEMS.forEach(function(q){ byId[q.id] = q; });
+  var crit = ig.criticos || [];
+  var card = function(inner){ return '<div style="background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:16px 18px;break-inside:avoid;page-break-inside:avoid">' + inner + '</div>'; };
+  var h3 = function(t){ return '<div style="font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">' + t + '</div>'; };
+  var html = '';
+
+  // ── Resultado ──
+  var val = ig.validez || {};
+  var motivoTxt = {
+    criticos: crit.length + (crit.length === 1 ? ' respuesta crítica' : ' respuestas críticas') + ' (detalle abajo).',
+    imagen_favorable: 'Marcó "Verdadero" en las 3 afirmaciones que casi nadie puede sostener con sinceridad (imagen favorable).',
+    imagen_favorable_triviales: 'Marcó "Verdadero" en ' + (val.imagen_favorable || 0) + ' de 3 afirmaciones de imagen favorable y negó incluso conductas triviales.',
+    tiempo: 'Completó la prueba en ' + Math.round(val.segundos || 0) + ' segundos (menos de 90): probablemente no leyó.',
+    contradicciones: (val.contradicciones || 0) + ' contradicciones entre las frases que eligió y lo que haría en las situaciones.',
+    total_alto: 'Puntaje de riesgo ' + ig.total + ' de ' + ig.max + ' (corte de riesgo alto: 18).',
+    total_medio: 'Puntaje de riesgo ' + ig.total + ' de ' + ig.max + ' (entre 9 y 17).',
+    dilemas: 'En 2 o más situaciones eligió opciones de riesgo intermedio.'
+  };
+  var motivos = (ig.motivos || []).map(function(m){ return motivoTxt[m]; }).filter(Boolean);
+  html += '<div style="border-radius:12px;padding:16px 18px;background:' + n.bg + ';border:1.5px solid ' + n.bd + '">'
+    + '<div style="font-size:10px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:' + n.color + ';opacity:.8;margin-bottom:4px">Integridad laboral · resultado</div>'
+    + '<div style="font-size:20px;font-weight:900;color:' + n.color + ';margin-bottom:6px">' + n.icon + ' ' + n.titulo + '</div>'
+    + '<div style="font-size:12.5px;line-height:1.65;color:#1e293b">' + n.txt + '</div>'
+    + (motivos.length ? '<ul style="margin:10px 0 0;padding-left:18px;font-size:12.5px;line-height:1.7;color:#1e293b">' + motivos.map(function(t){ return '<li>' + t + '</li>'; }).join('') + '</ul>' : '')
+    + '<div style="margin-top:10px;font-size:11.5px;color:#64748b">Puntaje de riesgo: <strong style="color:#0f172a">' + ig.total + '</strong> de ' + ig.max
+    + ' · respondió ' + ig.respondidas + ' de ' + ig.total_items + ' ítems</div>'
+    + '</div>';
+
+  // ── Respuestas que suman riesgo ──
+  var det = (ig.detalle || []).slice().sort(function(a, b){
+    var ca = crit.indexOf(a.id) !== -1, cb = crit.indexOf(b.id) !== -1;
+    return (cb - ca) || (b.puntos - a.puntos);
+  });
+  if (det.length) {
+    html += card(h3('Respuestas que suman riesgo')
+      + det.map(function(d){
+          var q = byId[d.id] || { text:d.id, opts:[] };
+          var esCrit = crit.indexOf(d.id) !== -1;
+          var opt = q.opts[d.opcion] ? q.opts[d.opcion].t : '—';
+          return '<div style="padding:9px 0;border-top:1px solid #f1f5f9;font-size:12.5px;line-height:1.55">'
+            + '<div style="color:#475569">' + htmlEsc(q.text) + '</div>'
+            + '<div style="margin-top:3px"><span style="color:#0f172a;font-weight:700">Respondió: ' + htmlEsc(opt) + '</span> '
+            + (esCrit ? '<span style="font-size:10.5px;font-weight:800;color:#be123c;background:#fff1f2;border:1px solid #fecdd3;border-radius:100px;padding:1px 8px">⛔ crítica</span>'
+                      : '<span style="font-size:10.5px;color:#64748b">+' + d.puntos + '</span>')
+            + '</div></div>';
+        }).join(''));
+  }
+
+  // ── Puntaje por sección ──
+  var sec = ig.secciones || {}, smax = ig.secciones_max || {};
+  html += card(h3('Puntaje de riesgo por sección')
+    + Object.keys(INTEG_SECCIONES).map(function(k){
+        var v = sec[k] || 0, mx = smax[k] || 1, pct = Math.round(v / mx * 100);
+        return '<div style="display:flex;align-items:center;gap:10px;padding:6px 0;font-size:12.5px">'
+          + '<div style="flex:0 0 230px;color:#334155">' + INTEG_SECCIONES[k] + '</div>'
+          + '<div style="flex:1;height:8px;background:#f1f5f9;border-radius:100px;overflow:hidden"><div style="height:100%;width:' + pct + '%;background:' + (pct >= 50 ? '#be123c' : pct > 0 ? '#d97706' : '#cbd5e1') + '"></div></div>'
+          + '<div style="flex:0 0 52px;text-align:right;color:#0f172a;font-weight:700">' + v + ' / ' + mx + '</div></div>';
+      }).join(''));
+
+  // ── Validez ──
+  html += card(h3('Validez de las respuestas')
+    + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;font-size:12px;color:#334155">'
+    + '<div><strong>Imagen favorable:</strong> ' + (val.imagen_favorable || 0) + ' de 3' + (val.triviales_nunca ? ' · negó conductas triviales' : '') + '</div>'
+    + '<div><strong>Contradicciones:</strong> ' + (val.contradicciones || 0) + '</div>'
+    + '<div><strong>Tiempo:</strong> ' + (val.segundos ? Math.floor(val.segundos / 60) + ' min ' + Math.round(val.segundos % 60) + ' s' : 'sin registro') + '</div>'
+    + '</div>');
+
+  // ── Preguntas para la entrevista ──
+  var qs = [], seen = {};
+  det.forEach(function(d){
+    var q = byId[d.id]; if (!q) return;
+    var key = INTEG_PREGUNTAS[d.id] ? d.id : q.sec;
+    if (seen[key] || !INTEG_PREGUNTAS[key]) return;
+    seen[key] = 1; qs.push(INTEG_PREGUNTAS[key]);
+  });
+  if (qs.length) {
+    html += card(h3('Preguntas para la entrevista')
+      + '<ol style="margin:0;padding-left:18px;font-size:12px;color:#334155;line-height:1.7">' + qs.slice(0, 6).map(function(q){ return '<li style="margin-bottom:5px">' + q + '</li>'; }).join('') + '</ol>');
+  }
+
+  html += '<div style="padding:12px 16px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0;font-size:11px;line-height:1.65;color:#64748b">'
+    + '<strong style="color:#475569">Nota técnica.</strong> Prueba de integridad de autoinforme con preguntas indirectas, indulgencia ante faltas, admisiones de conducta laboral, elección forzada, dilemas y escalas de validez. '
+    + 'Las respuestas de riesgo son indicadores, no prueba de una conducta: deben contrastarse con la entrevista y las referencias. Los cortes (9 y 18 puntos) y las respuestas críticas son criterios iniciales que pueden ajustarse y recalcularse. '
+    + 'La recomendación es del sistema; la decisión de contratación corresponde al evaluador.</div>';
+  return html;
 }
 
 function buildReportHtml(c, withClose) {
@@ -6739,26 +7469,125 @@ function buildReportHtml(c, withClose) {
           md:'Motivación laboral adecuada. Cumple con sus funciones de forma consistente, aunque puede requerir reconocimiento externo para sostener el desempeño.',
           lo:'Baja motivación laboral aparente. Puede mostrar dificultades para mantenerse comprometido/a con las tareas, especialmente en períodos sin reconocimiento o variedad.' },
   };
+  // Estilos DISC por combinación de factor primario y secundario.
+  // Redacción neutra en género y descriptiva: se describen conductas y preferencias,
+  // no rasgos de la persona; las limitaciones se formulan como riesgos situacionales.
   var _DISC_PROFILES = {
-    D:  { name:'Dominante',             tagline:'Orientado a la acción, decisivo y directo. Asume el control en situaciones de presión y busca resultados concretos.', fortalezas:['Toma decisiones rápidas incluso con información incompleta.','Lidera con autoridad en situaciones de crisis o alta presión.','Empuja al equipo hacia resultados concretos sin necesitar validación externa.','Afronta conflictos de frente y los resuelve sin postergación.'], dificultades:['Puede ser percibido como impaciente, agresivo o poco empático.','Tiende a pasar por alto detalles o procedimientos cuando está enfocado en el resultado.','Le cuesta delegar: prefiere controlar para asegurarse del resultado.','Baja tolerancia al error ajeno, lo que puede generar tensión en el equipo.'], motivaciones:['Autonomía y autoridad para tomar decisiones.','Desafíos nuevos, metas ambiciosas y competencia.','Reconocimiento por logros concretos y eficiencia.'], frustraciones:['Procesos lentos, burocracia y trámites innecesarios.','Falta de autonomía o microgestión por parte de superiores.','Trabajo rutinario sin desafíos ni variación.'], trabajaMejorCon:'Perfiles S que ejecuten con constancia y C que revisen los detalles: el D toma las decisiones, los otros aseguran que se hagan bien y sin errores.' },
-    I:  { name:'Influyente',            tagline:'Comunicativo, entusiasta y persuasivo. Motiva al equipo y construye relaciones con facilidad.', fortalezas:['Motiva y anima al equipo con facilidad; su energía es contagiosa.','Genera confianza rápidamente en personas nuevas y clientes.','Comunica con claridad y persuasión en presentaciones o trabajo colaborativo.','Resuelve tensiones interpersonales con empatía y humor.'], dificultades:['Puede ser poco detallista y descuidar el seguimiento de tareas.','Tiende a comprometerse con más de lo que puede cumplir por entusiasmo.','Le cuesta mantener la atención en tareas rutinarias o de baja interacción.','Puede socializar en exceso afectando su productividad individual.'], motivaciones:['Reconocimiento público y valoración social.','Variedad, interacción y proyectos nuevos.','Ambientes animados con buenas relaciones interpersonales.'], frustraciones:['Trabajo aislado sin interacción con otras personas.','Falta de reconocimiento o visibilidad.','Rutinas muy estructuradas o trabajo repetitivo.'], trabajaMejorCon:'Perfiles C que aporten estructura y S que den seguimiento: el I genera la energía y la visión, los otros aseguran que se concrete y que los procedimientos se cumplan.' },
-    S:  { name:'Estable',               tagline:'Paciente, constante y leal. Genera estabilidad y previsibilidad en el equipo.', fortalezas:['Altamente confiable: cumple sus compromisos sin necesitar recordatorio.','Actúa como ancla emocional del equipo en momentos de tensión.','Construye relaciones de confianza profunda y duradera.','Excelente escucha activa: hace que los demás se sientan valorados.'], dificultades:['Puede resistirse o tardar en adaptarse a cambios súbitos.','Le cuesta tomar iniciativa o imponer criterio sin que se lo pidan.','Tiende a evitar los conflictos incluso cuando resolverlos es parte de su rol.'], motivaciones:['Seguridad, estabilidad y entorno predecible.','Reconocimiento por su lealtad y constancia.','Relaciones de trabajo cercanas y duraderas.'], frustraciones:['Cambios frecuentes o sin justificación clara.','Incertidumbre prolongada o falta de claridad en los roles.','Presión para decidir muy rápido sin tiempo de evaluar.'], trabajaMejorCon:'Perfiles D que den dirección e I que aporten dinamismo: el S provee la constancia y la ejecución confiable que esos estilos más impulsivos necesitan para no perder el hilo.' },
-    C:  { name:'Cumplidor',             tagline:'Meticuloso, analítico y orientado al cumplimiento. Prioriza la calidad y la precisión sobre la velocidad.', fortalezas:['Detecta errores, inconsistencias y riesgos que otros pasarían por alto.','Produce trabajo de alta calidad con documentación precisa.','Altamente confiable en el seguimiento de protocolos y normativas.','Difícil de persuadir con argumentos débiles: exige evidencia antes de cambiar de posición.'], dificultades:['En entornos de alta velocidad puede ser percibido como lento o excesivamente cauteloso.','Puede paralizarse ante decisiones que requieren actuar con información incompleta.','Tiende al perfeccionismo, generando cuellos de botella en procesos colaborativos.'], motivaciones:['Calidad, exactitud y claridad normativa.','Reconocimiento por su expertise y rigor técnico.','Entornos con procedimientos bien definidos y estables.'], frustraciones:['Imprecisión, trabajo mal hecho o normas ambiguas.','Presión para actuar sin datos suficientes.','Decisiones impulsivas o basadas en intuición sin evidencia.'], trabajaMejorCon:'Perfiles D que tomen las decisiones de acción e I que comuniquen y generen entusiasmo: el C aporta la profundidad analítica y el control de calidad que esos estilos suelen descuidar.' },
-    DI: { name:'Dominante-Influyente',  tagline:'Dinámico y carismático. Combina orientación a resultados con alta influencia interpersonal.', fortalezas:['Lidera con energía: inspira, decide y moviliza al equipo al mismo tiempo.','Genera entusiasmo colectivo hacia metas ambiciosas.','Se mueve rápido en entornos cambiantes sin perder la dirección.','Muy efectivo en roles de ventas, liderazgo visible o coordinación de proyectos.'], dificultades:['Puede ser impaciente con los detalles y descuidar el seguimiento operativo.','Asume demasiados proyectos simultáneos, arriesgando calidad de entrega.','Puede ser percibido como egocéntrico o que opaca a los miembros del equipo.'], motivaciones:['Visibilidad, impacto y liderazgo reconocido.','Proyectos nuevos con alto nivel de desafío y autonomía.','Entornos donde puede influir y tomar decisiones a la vez.'], frustraciones:['Procesos lentos, burocracia o microgestión.','Falta de autonomía para actuar según su criterio.','Tareas rutinarias sin visibilidad o sin impacto en el resultado final.'], trabajaMejorCon:'Perfiles S y C que aporten estructura, seguimiento y control de calidad: el DI genera la energía y la dirección; los otros aseguran que los proyectos lleguen a buen término sin errores.' },
-    DS: { name:'Dominante-Estable',     tagline:'Firme y confiable. Decisivo cuando es necesario, paciente y constante en el seguimiento.', fortalezas:['Ejecuta con convicción y constancia: no abandona hasta lograr el resultado.','Muy poco reactivo emocionalmente: mantiene la calma en situaciones de alta presión.','Confiable en el largo plazo: cumple sin necesidad de supervisión estrecha.'], dificultades:['Puede ser percibido como rígido o poco flexible ante cambios de estrategia.','Le cuesta adaptarse a nuevos entornos o formas de trabajo muy diferentes a las habituales.','Baja expresividad emocional: puede parecer distante o difícil de leer para el equipo.'], motivaciones:['Logros duraderos y reconocimiento por resultados sostenidos.','Estabilidad con capacidad de mando y autonomía.'], frustraciones:['Cambios de dirección sin justificación clara.','Pérdida de control sobre los resultados por factores externos.'], trabajaMejorCon:'Perfiles I que aporten comunicación y dinamismo y C que provean el análisis: el DS da la dirección firme y la ejecución constante; los otros enriquecen la perspectiva y la energía del equipo.' },
-    DC: { name:'Dominante-Cumplidor',   tagline:'Exigente y preciso. Alto estándar de calidad con fuerte orientación al resultado.', fortalezas:['Toma decisiones bien fundamentadas bajo presión: combina rapidez con rigor.','Mantiene estándares de calidad muy altos en su propio trabajo y el del equipo.','Detecta errores y riesgos antes de que se conviertan en problemas.'], dificultades:['Puede ser muy crítico con el equipo, generando tensión por sus altas exigencias.','El perfeccionismo combinado con la urgencia puede paralizar la toma de decisiones.','Baja tolerancia a la imprecisión o al trabajo mediocre.'], motivaciones:['Excelencia técnica, autoridad basada en competencia y resultados bien ejecutados.'], frustraciones:['Trabajo mal hecho, falta de rigor o errores repetidos sin consecuencias.','Decisiones impulsivas tomadas sin datos ni análisis previo.'], trabajaMejorCon:'Perfiles I que gestionen el clima del equipo y S que den constancia en la ejecución: el DC garantiza la calidad técnica y el resultado; los otros aseguran que el equipo no se tensione.' },
-    ID: { name:'Influyente-Dominante',  tagline:'Emprendedor y sociable. Alta energía para liderar con entusiasmo y convicción.', fortalezas:['Visionario y persuasivo: genera entusiasmo en torno a sus ideas y las lleva a la acción.','Toma decisiones rápidas en entornos dinámicos sin paralizarse por el análisis.','Construye redes de apoyo con rapidez y las moviliza hacia sus objetivos.'], dificultades:['Puede asumir demasiados proyectos simultáneos y no terminar ninguno.','Baja tolerancia a la rutina y al trabajo operativo de bajo perfil.','Puede actuar de forma impulsiva y comprometerse sin medir bien las consecuencias.'], motivaciones:['Proyectos nuevos, impacto visible y liderazgo con autonomía.'], frustraciones:['Detalles operativos, procedimientos repetitivos o trabajo administrativo.','Falta de reconocimiento de su visión o iniciativa.'], trabajaMejorCon:'Perfiles S que ejecuten con constancia y C que estructuren y controlen la calidad: el ID aporta la visión y el impulso; los otros aseguran que los proyectos lleguen a buen término sin perder rigor.' },
-    IS: { name:'Influyente-Estable',    tagline:'Cálido y colaborativo. Entusiasmo social con paciencia y constancia grupal.', fortalezas:['Excelente en equipos: construye relaciones duraderas y genera buen clima con naturalidad.','Escucha y motiva a la vez: hace que los demás se sientan valorados y con energía.','Muy buen mediador en situaciones de conflicto interpersonal.'], dificultades:['Puede evitar los conflictos necesarios para no romper la armonía del grupo.','Le cuesta tomar decisiones difíciles que afecten negativamente a personas cercanas.'], motivaciones:['Armonía grupal, conexión social y sentido de pertenencia al equipo.'], frustraciones:['Conflictos interpersonales sostenidos o ambientes de alta competencia interna.'], trabajaMejorCon:'Perfiles D que tomen las decisiones difíciles y C que estructuren los procedimientos: el IS asegura que el equipo esté unido y motivado; los otros aportan la dirección y el rigor.' },
-    IC: { name:'Influyente-Cumplidor',  tagline:'Persuasivo y sistemático. Influye en otros mientras mantiene atención al procedimiento.', fortalezas:['Comunica los procedimientos y las normas de forma clara y convincente.','Construye confianza combinando calidez con rigor técnico.','Organizado y sociable: una combinación poco frecuente y muy valorada en coordinación.'], dificultades:['Puede buscar demasiado consenso antes de actuar, ralentizando la toma de decisiones.','Le cuesta actuar si los datos no están suficientemente claros o los procedimientos son ambiguos.'], motivaciones:['Reconocimiento por la calidad de su trabajo y la calidad de sus relaciones.'], frustraciones:['Improvisación, falta de procedimientos o cambios normativos frecuentes.'], trabajaMejorCon:'Perfiles D que decidan con rapidez y S que aporten constancia en la ejecución: el IC garantiza que la comunicación sea clara y los procedimientos se respeten.' },
-    SD: { name:'Estable-Dominante',     tagline:'Constante con iniciativa. Estabilidad como base para asumir desafíos cuando se requiere.', fortalezas:['Confiable y firme: ejecuta sin necesitar supervisión y mantiene el rumbo bajo presión.','Toma iniciativa cuando la situación lo requiere, sin necesidad de que se lo pidan.'], dificultades:['Puede ser percibido como lento para cambiar de estrategia cuando el entorno lo exige.','Baja expresividad emocional: puede parecer distante o difícil de leer en el trato diario.'], motivaciones:['Control con estabilidad y logros sostenidos en el tiempo.'], frustraciones:['Cambios frecuentes de dirección o de objetivos sin justificación.'], trabajaMejorCon:'Perfiles I que aporten comunicación y dinamismo y C que provean análisis profundo: el SD da la dirección firme y la constancia ejecutiva.' },
-    SI: { name:'Estable-Influyente',    tagline:'Empático y colaborativo. Paciencia y constancia combinadas con calidez y comunicación natural.', fortalezas:['Genera confianza y bienestar en el equipo de forma genuina y duradera.','Leal y sociable: construye relaciones de largo plazo basadas en respeto mutuo.','Muy buen escucha: las personas sienten que sus opiniones son valoradas.'], dificultades:['Puede evitar confrontaciones necesarias para mantener la armonía grupal.','Le cuesta imponer criterio, llamar la atención o dar feedback negativo directo.'], motivaciones:['Armonía grupal, contribuir al bienestar del equipo.'], frustraciones:['Conflictos sostenidos o ambientes de alta competencia interna.'], trabajaMejorCon:'Perfiles D que tomen las decisiones difíciles y C que estructuren los procedimientos: el SI asegura la cohesión y el bienestar del equipo.' },
-    SC: { name:'Estable-Cumplidor',     tagline:'Metódico y confiable. Estabilidad con rigor normativo: muy predecible y consistente.', fortalezas:['Máxima confiabilidad en el seguimiento de protocolos y procedimientos.','Muy bajo índice de error: trabaja con constancia y revisa antes de entregar.'], dificultades:['Muy resistente al cambio: puede bloquear procesos de mejora o innovación por inercia.','Lento para actuar en crisis o situaciones que requieren improvisar fuera del protocolo.'], motivaciones:['Claridad, orden y reconocimiento por su consistencia y precisión.'], frustraciones:['Caos organizacional, cambios frecuentes de procedimiento o ambigüedad normativa.'], trabajaMejorCon:'Perfiles D que den dirección y urgencia e I que aporten dinamismo y energía colectiva: el SC provee la base sólida de confiabilidad y cumplimiento.' },
-    CD: { name:'Cumplidor-Dominante',   tagline:'Analítico y orientado a resultados. Decisiones basadas en datos con alta exigencia de calidad.', fortalezas:['Fundamenta sus decisiones con datos y evidencia: difícil de refutar.','Firme y competente: genera credibilidad técnica y autoridad al mismo tiempo.'], dificultades:['Puede ser percibido como frío, crítico o poco empático en su trato con el equipo.','Le cuesta moverse rápido cuando los datos no están completos, incluso bajo presión.'], motivaciones:['Excelencia técnica, autoridad basada en conocimiento y resultados bien ejecutados.'], frustraciones:['Trabajo mal hecho, falta de rigor o errores repetidos sin consecuencias.'], trabajaMejorCon:'Perfiles I que gestionen el clima del equipo y S que den constancia: el CD garantiza la calidad técnica y el resultado.' },
-    CI: { name:'Cumplidor-Influyente',  tagline:'Detallista y comunicativo. Combina precisión con habilidad de relacionamiento.', fortalezas:['Comunica con claridad y precisión: las personas entienden exactamente lo que se les pide.','Organizado y empático: una combinación valiosa en roles de coordinación o formación.'], dificultades:['Puede buscar demasiado consenso o validación antes de actuar, ralentizando decisiones.','Le cuesta actuar con información incompleta o en escenarios de alta ambigüedad.'], motivaciones:['Reconocimiento por la calidad de su trabajo y la calidad de sus relaciones.'], frustraciones:['Improvisación, presión para decidir sin datos o sin consultar al equipo.'], trabajaMejorCon:'Perfiles D que tomen decisiones de acción con rapidez y S que den constancia en la ejecución: el CI garantiza comunicación precisa y procedimientos respetados.' },
-    CS: { name:'Cumplidor-Estable',     tagline:'Sistemático y confiable. Alta adherencia a normas con constancia y bajo nivel de conflicto.', fortalezas:['Máxima confiabilidad en procesos: constante, preciso y con muy bajo índice de error.','Altamente predecible y consistente: sus superiores y compañeros saben exactamente qué esperar.'], dificultades:['Muy resistente al cambio, puede frenar procesos de mejora o adaptación necesaria.','Puede ser percibido como poco proactivo o sin iniciativa más allá de sus funciones asignadas.'], motivaciones:['Claridad normativa, orden y reconocimiento por su consistencia y precisión.'], frustraciones:['Caos, cambios frecuentes de procedimiento o ambigüedad normativa sostenida.'], trabajaMejorCon:'Perfiles D que aporten dirección y urgencia e I que generen dinamismo y energía: el CS provee la base sólida de rigor y confiabilidad.' },
+    D:  { name:'Dominancia',
+          tagline:'Orientación a la acción y a los resultados. Decide con rapidez, se expresa de forma directa y asume el control en situaciones exigentes.',
+          fortalezas:['Toma decisiones con rapidez, incluso con información incompleta.','Asume la conducción en situaciones de crisis o alta presión.','Impulsa al equipo hacia resultados concretos con autonomía.','Aborda los conflictos de manera directa y sin postergarlos.'],
+          dificultades:['Su ritmo y franqueza pueden percibirse como impaciencia o falta de tacto.','Al concentrarse en el resultado, puede pasar por alto detalles o procedimientos.','Tiende a retener el control y le cuesta delegar.','Su nivel de exigencia ante los errores puede generar tensión en el equipo.'],
+          motivaciones:['Autonomía para tomar decisiones.','Desafíos nuevos y metas exigentes.','Reconocimiento por logros concretos.'],
+          frustraciones:['Procesos lentos o trámites que no agregan valor.','Supervisión excesivamente estrecha.','Tareas rutinarias sin desafío.'],
+          trabajaMejorCon:'Estilos S, que aportan constancia en la ejecución, y C, que cuidan los detalles y la calidad. Este estilo aporta dirección y decisión; los otros aseguran que lo acordado se ejecute bien.' },
+    I:  { name:'Influencia',
+          tagline:'Orientación a las personas y a la comunicación. Se expresa con entusiasmo, persuade con facilidad y contribuye a un buen clima de trabajo.',
+          fortalezas:['Motiva al equipo y transmite energía.','Genera confianza con rapidez en personas nuevas y clientes.','Comunica con claridad y capacidad de persuasión.','Ayuda a resolver tensiones interpersonales con empatía y buen humor.'],
+          dificultades:['Puede prestar menos atención a los detalles y al seguimiento de tareas.','Su entusiasmo puede llevarle a comprometerse con más de lo que alcanza a cumplir.','Puede perder motivación en tareas rutinarias o con poca interacción.','La interacción social puede restar tiempo a las tareas individuales.'],
+          motivaciones:['Reconocimiento y valoración de su aporte.','Variedad, interacción y proyectos nuevos.','Ambientes con buenas relaciones de trabajo.'],
+          frustraciones:['Trabajo aislado, sin contacto con otras personas.','Falta de reconocimiento.','Rutinas muy estructuradas o repetitivas.'],
+          trabajaMejorCon:'Estilos C, que aportan estructura, y S, que dan seguimiento. Este estilo aporta energía y visión; los otros aseguran que las ideas se concreten y que se cumplan los procedimientos.' },
+    S:  { name:'Estabilidad',
+          tagline:'Orientación a la constancia y la colaboración. Trabaja con paciencia, cumple sus compromisos y aporta estabilidad y previsibilidad al equipo.',
+          fortalezas:['Cumple sus compromisos sin necesidad de recordatorios.','Aporta calma al equipo en momentos de tensión.','Construye relaciones de confianza duraderas.','Escucha con atención y hace que las demás personas se sientan consideradas.'],
+          dificultades:['Los cambios repentinos pueden requerirle más tiempo de adaptación.','Puede esperar a que se lo pidan antes de tomar la iniciativa.','Tiende a evitar los conflictos, incluso cuando abordarlos es parte de su rol.'],
+          motivaciones:['Seguridad y un entorno predecible.','Reconocimiento por su constancia.','Relaciones de trabajo cercanas.'],
+          frustraciones:['Cambios frecuentes o sin una explicación clara.','Incertidumbre prolongada o roles poco definidos.','Presión para decidir sin tiempo para evaluar.'],
+          trabajaMejorCon:'Estilos D, que dan dirección, e I, que aportan dinamismo. Este estilo aporta la constancia y la ejecución confiable que permiten dar continuidad a lo que los otros impulsan.' },
+    C:  { name:'Cumplimiento',
+          tagline:'Orientación a la calidad y la precisión. Analiza antes de actuar, sigue las normas y prioriza hacer las cosas bien por sobre hacerlas rápido.',
+          fortalezas:['Detecta errores, inconsistencias y riesgos con anticipación.','Entrega trabajo de alta calidad y bien documentado.','Sigue protocolos y normativas de manera consistente.','Fundamenta sus posiciones en evidencia y la solicita antes de cambiar de opinión.'],
+          dificultades:['En entornos de alta velocidad, su cautela puede percibirse como lentitud.','Le cuesta decidir cuando la información está incompleta.','Su búsqueda de precisión puede retrasar entregas en trabajos colaborativos.'],
+          motivaciones:['Calidad, exactitud y normas claras.','Reconocimiento por su conocimiento técnico y su rigor.','Procedimientos bien definidos.'],
+          frustraciones:['Imprecisión, errores o normas ambiguas.','Presión para actuar sin datos suficientes.','Decisiones tomadas sin análisis previo.'],
+          trabajaMejorCon:'Estilos D, que impulsan la acción, e I, que comunican y generan entusiasmo. Este estilo aporta la profundidad de análisis y el control de calidad que complementan a los demás.' },
+    DI: { name:'Dominancia-Influencia',
+          tagline:'Dinamismo y capacidad de convocatoria. Combina orientación a resultados con influencia sobre las personas.',
+          fortalezas:['Conduce con energía: decide, inspira y moviliza al equipo.','Genera entusiasmo en torno a metas exigentes.','Se desenvuelve con agilidad en entornos cambiantes sin perder el rumbo.','Destaca en funciones comerciales, de liderazgo visible o de coordinación de proyectos.'],
+          dificultades:['Puede restar atención a los detalles y al seguimiento operativo.','Tiende a abarcar muchos proyectos a la vez, con riesgo para la calidad.','Su presencia puede restar espacio a la participación de otras personas del equipo.'],
+          motivaciones:['Visibilidad, impacto y reconocimiento de su liderazgo.','Proyectos nuevos con desafío y autonomía.','Espacios donde pueda influir y decidir.'],
+          frustraciones:['Procesos lentos o supervisión excesiva.','Falta de autonomía para actuar según su criterio.','Tareas rutinarias sin impacto visible.'],
+          trabajaMejorCon:'Estilos S y C, que aportan estructura, seguimiento y control de calidad. Este estilo aporta energía y dirección; los otros aseguran que los proyectos lleguen a buen término.' },
+    DS: { name:'Dominancia-Estabilidad',
+          tagline:'Firmeza y constancia. Decide cuando es necesario y sostiene el esfuerzo con paciencia hasta lograr el resultado.',
+          fortalezas:['Ejecuta con convicción y persistencia hasta completar lo que inicia.','Mantiene la calma en situaciones de alta presión.','Cumple de forma confiable sin necesidad de supervisión estrecha.'],
+          dificultades:['Puede mostrar poca flexibilidad ante cambios de estrategia.','Los entornos o métodos muy distintos a los habituales pueden requerirle más tiempo de adaptación.','Expresa poco sus emociones, lo que puede dificultar que el equipo interprete sus reacciones.'],
+          motivaciones:['Logros sostenidos y reconocimiento por resultados consistentes.','Estabilidad con autonomía para conducir.'],
+          frustraciones:['Cambios de dirección sin justificación clara.','Pérdida de control sobre los resultados por factores externos.'],
+          trabajaMejorCon:'Estilos I, que aportan comunicación y dinamismo, y C, que aportan análisis. Este estilo aporta dirección firme y ejecución constante.' },
+    DC: { name:'Dominancia-Cumplimiento',
+          tagline:'Exigencia y precisión. Combina un alto estándar de calidad con una fuerte orientación al resultado.',
+          fortalezas:['Toma decisiones fundamentadas bajo presión, combinando rapidez y rigor.','Mantiene estándares de calidad altos en su trabajo y en el del equipo.','Anticipa errores y riesgos antes de que se transformen en problemas.'],
+          dificultades:['Su nivel de exigencia puede generar tensión en el equipo.','La combinación de urgencia y búsqueda de precisión puede dificultar algunas decisiones.','Tolera poco la imprecisión o el trabajo que no cumple el estándar.'],
+          motivaciones:['Excelencia técnica, autoridad basada en la competencia y resultados bien ejecutados.'],
+          frustraciones:['Trabajo poco riguroso o errores que se repiten.','Decisiones tomadas sin datos ni análisis previo.'],
+          trabajaMejorCon:'Estilos I, que cuidan el clima del equipo, y S, que dan constancia a la ejecución. Este estilo aporta calidad técnica y foco en el resultado.' },
+    ID: { name:'Influencia-Dominancia',
+          tagline:'Iniciativa y sociabilidad. Lidera con entusiasmo y convicción, y moviliza a otras personas hacia sus ideas.',
+          fortalezas:['Genera entusiasmo en torno a sus ideas y las lleva a la acción.','Decide con rapidez en entornos dinámicos.','Construye redes de apoyo y las moviliza hacia los objetivos.'],
+          dificultades:['Puede iniciar más proyectos de los que alcanza a cerrar.','Puede perder motivación en tareas rutinarias u operativas.','En ocasiones se compromete antes de evaluar todas las consecuencias.'],
+          motivaciones:['Proyectos nuevos, impacto visible y liderazgo con autonomía.'],
+          frustraciones:['Tareas administrativas o procedimientos repetitivos.','Falta de reconocimiento de sus ideas e iniciativas.'],
+          trabajaMejorCon:'Estilos S, que ejecutan con constancia, y C, que estructuran y controlan la calidad. Este estilo aporta visión e impulso; los otros aseguran que los proyectos se completen con rigor.' },
+    IS: { name:'Influencia-Estabilidad',
+          tagline:'Calidez y colaboración. Combina entusiasmo en el trato con paciencia y constancia en el trabajo en equipo.',
+          fortalezas:['Construye relaciones duraderas y favorece un buen clima de equipo.','Escucha y motiva a la vez: las personas se sienten valoradas.','Contribuye a mediar en conflictos interpersonales.'],
+          dificultades:['Puede postergar conversaciones difíciles para preservar la armonía del grupo.','Le cuesta tomar decisiones que afecten negativamente a personas cercanas.'],
+          motivaciones:['Armonía, conexión y sentido de pertenencia al equipo.'],
+          frustraciones:['Conflictos interpersonales prolongados o alta competencia interna.'],
+          trabajaMejorCon:'Estilos D, que asumen las decisiones difíciles, y C, que estructuran los procedimientos. Este estilo aporta cohesión y motivación al equipo.' },
+    IC: { name:'Influencia-Cumplimiento',
+          tagline:'Persuasión con método. Influye en otras personas sin descuidar los procedimientos.',
+          fortalezas:['Comunica normas y procedimientos de manera clara y convincente.','Genera confianza combinando cercanía con rigor técnico.','Combina organización y sociabilidad, algo muy valioso en funciones de coordinación.'],
+          dificultades:['Puede buscar mucho consenso antes de actuar, lo que alarga los tiempos de decisión.','Le cuesta avanzar cuando los datos no son claros o los procedimientos son ambiguos.'],
+          motivaciones:['Reconocimiento por la calidad de su trabajo y de sus relaciones.'],
+          frustraciones:['Improvisación, falta de procedimientos o cambios normativos frecuentes.'],
+          trabajaMejorCon:'Estilos D, que deciden con rapidez, y S, que aportan constancia en la ejecución. Este estilo asegura una comunicación clara y el respeto de los procedimientos.' },
+    SD: { name:'Estabilidad-Dominancia',
+          tagline:'Constancia con iniciativa. Trabaja desde la estabilidad y asume desafíos cuando la situación lo requiere.',
+          fortalezas:['Ejecuta sin necesidad de supervisión y mantiene el rumbo bajo presión.','Toma la iniciativa cuando la situación lo requiere, sin esperar instrucciones.'],
+          dificultades:['Puede tardar en cambiar de estrategia cuando el entorno lo exige.','Expresa poco sus emociones, lo que puede dificultar que el equipo interprete sus reacciones.'],
+          motivaciones:['Control con estabilidad y logros sostenidos en el tiempo.'],
+          frustraciones:['Cambios frecuentes de dirección u objetivos sin justificación.'],
+          trabajaMejorCon:'Estilos I, que aportan comunicación y dinamismo, y C, que aportan análisis en profundidad. Este estilo aporta dirección firme y constancia en la ejecución.' },
+    SI: { name:'Estabilidad-Influencia',
+          tagline:'Empatía y colaboración. Combina paciencia y constancia con calidez y una comunicación cercana.',
+          fortalezas:['Genera confianza y bienestar en el equipo de forma genuina.','Construye relaciones de largo plazo basadas en el respeto mutuo.','Escucha con atención: las personas sienten que sus opiniones son consideradas.'],
+          dificultades:['Puede evitar confrontaciones necesarias para mantener la armonía.','Le cuesta poner límites o entregar retroalimentación negativa de forma directa.'],
+          motivaciones:['Armonía en el grupo y contribuir al bienestar del equipo.'],
+          frustraciones:['Conflictos prolongados o alta competencia interna.'],
+          trabajaMejorCon:'Estilos D, que asumen las decisiones difíciles, y C, que estructuran los procedimientos. Este estilo aporta cohesión y bienestar al equipo.' },
+    SC: { name:'Estabilidad-Cumplimiento',
+          tagline:'Método y confiabilidad. Combina constancia con rigor normativo, con un desempeño consistente y predecible.',
+          fortalezas:['Sigue protocolos y procedimientos con gran confiabilidad.','Comete pocos errores: trabaja con constancia y revisa antes de entregar.'],
+          dificultades:['Puede mostrar resistencia a los cambios, lo que ralentiza procesos de mejora.','Puede tardar en reaccionar ante crisis que exigen actuar fuera del protocolo.'],
+          motivaciones:['Claridad, orden y reconocimiento por su consistencia y precisión.'],
+          frustraciones:['Desorden organizacional, cambios frecuentes de procedimiento o normas ambiguas.'],
+          trabajaMejorCon:'Estilos D, que aportan dirección y sentido de urgencia, e I, que aportan dinamismo. Este estilo aporta una base sólida de confiabilidad y cumplimiento.' },
+    CD: { name:'Cumplimiento-Dominancia',
+          tagline:'Análisis con foco en el resultado. Decide a partir de datos y mantiene una alta exigencia de calidad.',
+          fortalezas:['Fundamenta sus decisiones con datos y evidencia sólida.','Genera credibilidad técnica y conduce con firmeza.'],
+          dificultades:['Su estilo directo y analítico puede percibirse como distante o poco empático.','Le cuesta avanzar con rapidez cuando la información está incompleta, incluso bajo presión.'],
+          motivaciones:['Excelencia técnica, autoridad basada en el conocimiento y resultados bien ejecutados.'],
+          frustraciones:['Trabajo poco riguroso o errores que se repiten.'],
+          trabajaMejorCon:'Estilos I, que cuidan el clima del equipo, y S, que aportan constancia. Este estilo asegura la calidad técnica y el resultado.' },
+    CI: { name:'Cumplimiento-Influencia',
+          tagline:'Precisión con habilidad de relación. Combina atención al detalle con una comunicación clara y cercana.',
+          fortalezas:['Comunica con claridad y precisión: las personas entienden exactamente lo que se espera.','Combina organización y empatía, algo muy valioso en funciones de coordinación o formación.'],
+          dificultades:['Puede buscar mucho consenso o validación antes de actuar.','Le cuesta avanzar con información incompleta o en escenarios ambiguos.'],
+          motivaciones:['Reconocimiento por la calidad de su trabajo y de sus relaciones.'],
+          frustraciones:['Improvisación o presión para decidir sin datos ni consulta al equipo.'],
+          trabajaMejorCon:'Estilos D, que impulsan la acción, y S, que aportan constancia en la ejecución. Este estilo asegura una comunicación precisa y el respeto de los procedimientos.' },
+    CS: { name:'Cumplimiento-Estabilidad',
+          tagline:'Sistematicidad y confiabilidad. Combina alta adherencia a las normas con constancia y bajo nivel de conflicto.',
+          fortalezas:['Trabaja de forma constante y precisa, con muy pocos errores.','Su desempeño es consistente: jefaturas y equipo saben qué esperar.'],
+          dificultades:['Puede mostrar resistencia a los cambios, lo que ralentiza procesos de mejora o adaptación.','Puede tomar poca iniciativa más allá de sus funciones definidas.'],
+          motivaciones:['Normas claras, orden y reconocimiento por su consistencia y precisión.'],
+          frustraciones:['Desorden, cambios frecuentes de procedimiento o normas ambiguas.'],
+          trabajaMejorCon:'Estilos D, que aportan dirección y sentido de urgencia, e I, que aportan dinamismo. Este estilo aporta una base sólida de rigor y confiabilidad.' },
   };
 
-  var TAB_ORDER = ['dc0','pai','disc','pf16','situacional','vigilancia','comprension','normativa_ohs'];
+  var TAB_ORDER = ['integridad','dc0','pai','disc','pf16','situacional','vigilancia','comprension','normativa_ohs'];
   var completedTests = TAB_ORDER.filter(function(tid){ return tests.indexOf(tid) !== -1 && s[tid]; });
   var _ideal = PERFIL_IDEAL[c.perfil] || null;
   var firstTab = (_ideal && completedTests.length) ? 'resumen' : (completedTests[0] || '');
@@ -6768,6 +7597,9 @@ function buildReportHtml(c, withClose) {
   if (_ideal) {
     var _allRTids = completedTests.concat(['juego_semaforo','juego_globos','juego_memoria'].filter(function(jt){ return tests.indexOf(jt)!==-1 && s[jt]; }));
     _allRTids.forEach(function(tid) {
+      // DISC y 16PF son descriptivos: si un rasgo es fortaleza o no depende del
+      // lugar de trabajo y de la entrevista, así que no suman al ajuste global
+      if (tid === 'disc' || tid === 'pf16') return;
       var idSec = _ideal[tid]; if (!idSec) return;
       var ts = s[tid] || {};
       if (idSec.min !== undefined) {
@@ -6792,6 +7624,7 @@ function buildReportHtml(c, withClose) {
     });
   }
   var _gFit = _totalPeso>0 ? Math.round(_totalFitPeso/_totalPeso) : null;
+  if (!_resRows.length && firstTab === 'resumen') firstTab = completedTests[0] || '';
   var _rBad = _resRows.filter(function(r){return r.score<r.min*0.85;}).length;
   var _rOk  = _resRows.filter(function(r){return r.score>=r.min;}).length;
   var _gVerdict = _rBad===0 && _rOk>=Math.ceil(_resRows.length*0.7) ? 'Apto — dentro del perfil esperado'
@@ -6841,12 +7674,12 @@ function buildReportHtml(c, withClose) {
   html += '</div>';
 
   // ── Integridad (visible en todas las pestañas) ──
-  var _integHtml = _integSummaryHtml(s) + _bateriaHtml(s);
+  var _integHtml = _integTestBannerHtml(s) + _integSummaryHtml(s) + _bateriaHtml(s);
   if (_integHtml) html += '<div style="padding:12px 24px 0;background:#fff;flex-shrink:0;display:flex;flex-direction:column;gap:8px">' + _integHtml + '</div>';
 
   // ── Tab bar ──
   html += '<div style="background:#fff;border-bottom:1px solid #e2e8f0;display:flex;overflow-x:auto;flex-shrink:0;padding:0 20px">';
-  if (_ideal && completedTests.length) {
+  if (_ideal && _resRows.length) {
     html += '<button class="rpt-tab-btn" onclick="switchReportTab(\'resumen\',this)" style="padding:12px 15px;border:none;border-bottom:2px solid ' + (firstTab==='resumen'?'var(--accent)':'transparent') + ';background:transparent;cursor:pointer;font-size:12px;font-weight:' + (firstTab==='resumen'?'700':'500') + ';color:' + (firstTab==='resumen'?'var(--accent)':'#94a3b8') + ';white-space:nowrap;flex-shrink:0">📊 Resumen</button>';
   }
   completedTests.forEach(function(tid) {
@@ -6996,63 +7829,8 @@ function buildReportHtml(c, withClose) {
     var disc = s.disc;
     var _flxd = firstTab === 'disc' ? 'flex' : 'none';
     html += '<div class="rpt-tab-panel" id="rpt-panel-disc" style="display:' + _flxd + ';flex-direction:column;gap:14px">';
-    // Determine dominant profile key
-    var _discDims = ['D','I','S','C'].map(function(k){ return {key:k, score:disc[k]||0}; });
-    var _discSorted = _discDims.slice().sort(function(a,b){return b.score-a.score;});
-    var _discAlto = _discSorted.filter(function(d){return d.score>=65;});
-    var _discPKeys = (_discAlto.length>=2 ? _discAlto.slice(0,2) : _discSorted.slice(0,2)).map(function(d){return d.key;});
-    var _discPKey = _discPKeys.join('');
-    var _pd = _DISC_PROFILES[_discPKey] || _DISC_PROFILES[_discPKeys[0]] || {name:'Perfil mixto',tagline:'',fortalezas:[],dificultades:[],motivaciones:[],frustraciones:[],trabajaMejorCon:''};
-    var _liH = function(arr){ return arr.map(function(t){return '<li style="margin-bottom:3px">'+t+'</li>';}).join(''); };
-    // Profile badge card
-    html += '<div style="border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(79,70,229,.13)">'
-      + '<div style="background:linear-gradient(135deg,#4f46e5,#7c3aed);padding:14px 18px;color:#fff">'
-      + '<div style="font-size:9.5px;font-weight:600;opacity:.75;letter-spacing:.6px;text-transform:uppercase;margin-bottom:5px">PERFIL CONDUCTUAL</div>'
-      + '<div style="font-size:19px;font-weight:900;margin-bottom:5px">' + _pd.name + '</div>'
-      + '<div style="font-size:11.5px;opacity:.9;line-height:1.5">' + _pd.tagline + '</div>'
-      + '</div>'
-      + '<div style="background:#fafbff;padding:14px 18px;border:1.5px solid #e0e7ff;border-top:none;border-radius:0 0 12px 12px">'
-      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">'
-      + '<div><div style="font-size:9.5px;font-weight:800;color:#16a34a;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Fortalezas</div>'
-      + '<ul style="margin:0;padding-left:15px;font-size:10.5px;color:#1e293b;line-height:1.7">' + _liH(_pd.fortalezas) + '</ul></div>'
-      + '<div><div style="font-size:9.5px;font-weight:800;color:#dc2626;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Dificultades</div>'
-      + '<ul style="margin:0;padding-left:15px;font-size:10.5px;color:#1e293b;line-height:1.7">' + _liH(_pd.dificultades) + '</ul></div>'
-      + '</div>'
-      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">'
-      + '<div style="background:#f0fdf4;border-radius:8px;padding:10px 12px"><div style="font-size:9.5px;font-weight:800;color:#15803d;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Motivaciones</div>'
-      + '<ul style="margin:0;padding-left:15px;font-size:10.5px;color:#1e293b;line-height:1.7">' + _liH(_pd.motivaciones) + '</ul></div>'
-      + '<div style="background:#fef2f2;border-radius:8px;padding:10px 12px"><div style="font-size:9.5px;font-weight:800;color:#b91c1c;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Frustraciones</div>'
-      + '<ul style="margin:0;padding-left:15px;font-size:10.5px;color:#1e293b;line-height:1.7">' + _liH(_pd.frustraciones) + '</ul></div>'
-      + '</div>'
-      + '<div style="background:#eff6ff;border-radius:8px;padding:10px 12px"><div style="font-size:9.5px;font-weight:800;color:#1d4ed8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Trabaja mejor con</div>'
-      + '<div style="font-size:10.5px;color:#1e293b;line-height:1.6">' + _pd.trabajaMejorCon + '</div></div>'
-      + '</div></div>';
-    // Radar chart
-    var dDims = [{label:'Dominancia (D)',value:disc.D||0},{label:'Influencia (I)',value:disc.I||0},{label:'Estabilidad (S)',value:disc.S||0},{label:'Cumplimiento (C)',value:disc.C||0}];
-    html += '<div style="background:#fff;border-radius:14px;border:1px solid #e2e8f0;padding:16px;display:flex;justify-content:center">' + radarChartSvg(dDims,{size:320,fill:'rgba(124,58,237,.13)',stroke:'#7c3aed'}) + '</div>';
-    // Dimension detail cards
-    html += '<div style="display:flex;flex-direction:column;gap:10px">';
-    [['D','Dominancia (D)'],['I','Influencia (I)'],['S','Estabilidad (S)'],['C','Cumplimiento (C)']].forEach(function(d) {
-      var score = disc[d[0]] !== undefined ? disc[d[0]] : null; if (score === null) return;
-      var lv = scoreLevel(score);
-      html += '<div style="background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:14px 16px">';
-      html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">';
-      html += '<div style="font-size:14px;font-weight:700;color:#0f172a">' + d[1] + '</div>';
-      html += '<span style="font-size:15px;font-weight:900;color:' + lv.color + '">' + Math.round(score) + ' <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px;background:' + lv.color + '18">' + lv.label + '</span></span>';
-      html += '</div>';
-      var _discDi = _ideal && _ideal.disc && _ideal.disc[d[0]];
-      if (_discDi) {
-        html += _rngBar(score, _discDi.min, _discDi.max||100);
-      } else {
-        html += '<div style="height:6px;background:#e2e8f0;border-radius:100px;overflow:hidden;margin-bottom:10px">';
-        html += '<div style="height:100%;width:' + Math.round(score) + '%;background:' + lv.color + ';border-radius:100px"></div></div>';
-      }
-      var dd = dimDesc('disc', d[0], score);
-      if (dd) html += '<div style="font-size:12px;line-height:1.65;color:#475569">' + dd + '</div>';
-      if (_discDi) html += _reqNote(_discDi.req);
-      html += '</div>';
-    });
-    html += '</div></div>';
+    html += _discReportHtml(c, disc, s, _DISC_PROFILES);
+    html += '</div>';
   }
 
   // ── 16PF ─────────────────────────────────────────────────────────
@@ -7060,41 +7838,15 @@ function buildReportHtml(c, withClose) {
     var pf16 = s.pf16;
     var _flxpf = firstTab === 'pf16' ? 'flex' : 'none';
     html += '<div class="rpt-tab-panel" id="rpt-panel-pf16" style="display:' + _flxpf + ';flex-direction:column;gap:14px">';
-    // Radar (larger viewBox to avoid label clipping)
-    var pDims = [
-      {label:'Extraversión',value:pf16.EX||0},
-      {label:'Aj. Emocional',value:pf16.AN||0},
-      {label:'Dureza Mental',value:pf16.DU||0},
-      {label:'Independencia',value:pf16.IN||0},
-      {label:'Autocontrol',value:pf16.AC||0}
-    ];
-    html += '<div style="background:#fff;border-radius:14px;border:1px solid #e2e8f0;padding:16px">';
-    html += '<div style="font-size:15px;font-weight:800;color:#0f172a;margin-bottom:12px">🧬 Personalidad 16PF — Factores clave</div>';
-    html += '<div style="display:flex;justify-content:center">' + radarChartSvg(pDims,{size:380,fill:'rgba(99,102,241,.15)',stroke:'#6366f1'}) + '</div>';
+    html += _pf16ReportHtml(c, pf16, s);
     html += '</div>';
-    // Factor detail cards
-    html += '<div style="display:flex;flex-direction:column;gap:10px">';
-    [['EX','Extraversión'],['AN','Ajuste Emocional'],['DU','Dureza Mental'],['IN','Independencia'],['AC','Autocontrol']].forEach(function(d) {
-      var score = pf16[d[0]] !== undefined ? pf16[d[0]] : null; if (score === null) return;
-      var lv = scoreLevel(score);
-      html += '<div style="background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:14px 16px">';
-      html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">';
-      html += '<div style="font-size:14px;font-weight:700;color:#0f172a">' + d[1] + '</div>';
-      html += '<span style="font-size:15px;font-weight:900;color:' + lv.color + '">' + Math.round(score) + ' <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px;background:' + lv.color + '18">' + lv.label + '</span></span>';
-      html += '</div>';
-      var _pf16Di = _ideal && _ideal.pf16 && _ideal.pf16[d[0]];
-      if (_pf16Di) {
-        html += _rngBar(score, _pf16Di.min, _pf16Di.max||100);
-      } else {
-        html += '<div style="height:6px;background:#e2e8f0;border-radius:100px;overflow:hidden;margin-bottom:10px">';
-        html += '<div style="height:100%;width:' + Math.round(score) + '%;background:' + lv.color + ';border-radius:100px"></div></div>';
-      }
-      var dd = dimDesc('pf16', d[0], score);
-      if (dd) html += '<div style="font-size:12px;line-height:1.65;color:#475569">' + dd + '</div>';
-      if (_pf16Di) html += _reqNote(_pf16Di.req);
-      html += '</div>';
-    });
-    html += '</div></div>';
+  }
+
+  // ── Integridad laboral ──
+  if (s.integridad) {
+    var _flxi = firstTab === 'integridad' ? 'flex' : 'none';
+    html += '<div class="rpt-tab-panel" id="rpt-panel-integridad" style="display:' + _flxi + ';flex-direction:column;gap:14px">'
+      + _integridadReportHtml(c, s.integridad) + '</div>';
   }
 
   // ── Simple tests (situacional, vigilancia, comprension, normativa_ohs) ──
@@ -7619,7 +8371,8 @@ function renderBateriaTab() {
     '📊 Aptitud Cognitiva':           ['dc0','comprension'],
     '💡 Evaluación Situacional':       ['situacional','vigilancia'],
     '📐 Conocimiento Técnico':         ['normativa_ohs'],
-    '🎭 Perfil Conductual — Radar':    ['disc','pf16'],
+    '🧭 Integridad laboral':          ['integridad'],
+    '🎭 Perfil Conductual':    ['disc','pf16'],
 
   };
 
@@ -7627,7 +8380,8 @@ function renderBateriaTab() {
     '📊 Aptitud Cognitiva':           'Miden capacidad de razonamiento. Se puntúan de 0–100 por porcentaje de respuestas correctas.',
     '💡 Evaluación Situacional':       'Escenarios laborales y protocolos. Evalúan criterio ante situaciones reales del cargo.',
     '📐 Conocimiento Técnico':         'Evalúa dominio de normativa y conocimiento especializado del cargo. Disponible solo para perfiles que lo requieran. Actualmente: Prevencionista de Riesgo.',
-    '🎭 Perfil Conductual — Radar':    'No se puntúan de 0–100. Se evalúan por zona de intensidad esperada (bajo/medio/alto). Se muestran como gráfico de radar.',
+    '🧭 Integridad laboral':          'Evaluativa: entrega un nivel de riesgo (sin indicadores, a explorar, riesgo alto o no interpretable) con los motivos. Puede fundamentar un rechazo; la decisión final es del evaluador.',
+    '🎭 Perfil Conductual':    'Pruebas descriptivas: el informe describe el perfil sin compararlo con un perfil esperado ni sumar al ajuste global. Si un rasgo es una fortaleza depende del puesto y de la entrevista.',
     '🎮 Juegos Conductuales':          'Simulaciones conductuales que miden estabilidad emocional, normatividad e integridad sin riesgo de deseabilidad social. · ⚡ Sala de Crisis: respuesta ante múltiples alertas simultáneas y presión temporal. · 🧭 Dilemas de Supervisión: criterio ético, liderazgo e integridad ante situaciones reales del cargo.',
     '⏸ Juegos Cognitivos (en pausa)': 'Juegos disponibles pero desactivados temporalmente. Se pueden activar para perfiles que los requieran.',
   };
@@ -7636,6 +8390,7 @@ function renderBateriaTab() {
     dc0:'Razonamiento verbal, numérico y lógico-abstracto.',
     comprension:'Interpretar instrucciones multi-condición.',
     normativa_ohs:'15 preguntas sobre DS 44, Ley 16.744, DS 594 y Ley Karin. Recomendado para Prevencionista de Riesgo.',
+    integridad:'24 ítems, ~5 min. Actitudes ante hurto, registros, protocolos, sobornos y presiones. Para guardias y seguridad. El candidato la ve como "Actitudes en el trabajo".',
     pai:'⚠ Reemplazado por juegos conductuales en Supervisor. Disponible para otros perfiles.',
     disc:'Dominancia, Influencia, Estabilidad, Cumplimiento.',
     pf16:'Extraversión, ajuste emocional, dureza, independencia y autocontrol.',
@@ -7651,7 +8406,7 @@ function renderBateriaTab() {
     '📊 Aptitud Cognitiva':           { accent:'#0369a1', bg:'#f0f9ff', border:'#bae6fd' },
     '💡 Evaluación Situacional':       { accent:'#d97706', bg:'#fffbeb', border:'#fde68a' },
     '📐 Conocimiento Técnico':         { accent:'#0f766e', bg:'#f0fdfa', border:'#99f6e4' },
-    '🎭 Perfil Conductual — Radar':    { accent:'#0891b2', bg:'#ecfeff', border:'#a5f3fc' },
+    '🎭 Perfil Conductual':    { accent:'#0891b2', bg:'#ecfeff', border:'#a5f3fc' },
     '🎮 Juegos Conductuales':          { accent:'#dc2626', bg:'#fef2f2', border:'#fecaca' },
     '⏸ Juegos Cognitivos (en pausa)': { accent:'#94a3b8', bg:'#f8fafc', border:'#e2e8f0' },
   };
@@ -7683,7 +8438,8 @@ function renderBateriaTab() {
       var shortDesc = TEST_SHORT_DESC[tid] || '';
 
       // Toggle row
-      var canExpand = isOn && !isPaused && (tid === 'disc' || tid === 'pf16');
+      // DISC y 16PF no tienen perfil esperado por cargo (son descriptivos): nada que configurar
+      var canExpand = false;
       var isExpanded = canExpand && !!_expandedTests[perfil + '__' + tid];
       var borderBottom = i < testIds.length - 1 ? '1px solid #f1f5f9' : 'none';
       var rowBg = isPaused ? '#fafafa' : '#fff';
@@ -7864,6 +8620,7 @@ function renderBateriaTab() {
     { id:'situacional',  label:'Evaluación Situacional',  icon:'💡' },
     { id:'vigilancia',   label:'Vigilancia y Protocolos', icon:'👁' },
     { id:'normativa_ohs',label:'Conocimiento Normativo OHS', icon:'📐' },
+    { id:'integridad',   label:'Integridad laboral',      icon:'🧭' },
     { id:'disc',         label:'Perfil DISC',             icon:'🎯' },
     { id:'pf16',         label:'16PF Abreviado',          icon:'🧬' },
   ];
@@ -10744,7 +11501,7 @@ function _tabResumen(c) {
     ['Fecha evaluación', c.fecha ? c.fecha.substring(0,10) : '—'],
   ];
   var h = '<div style="display:flex;flex-direction:column;gap:13px">';
-  var _integH = _integSummaryHtml(sc) + _bateriaHtml(sc);
+  var _integH = _integTestBannerHtml(sc) + _integSummaryHtml(sc) + _bateriaHtml(sc);
   if (_integH) h += _integH;
   // Contact card
   h += '<div style="background:var(--surface);border-radius:11px;border:1px solid var(--border);overflow:hidden">';
