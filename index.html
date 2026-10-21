@@ -572,12 +572,8 @@ input,select,textarea{font-family:inherit;outline:none}
 }
 
 /* ── Level chip tooltip ── */
-#lvl-tooltip{position:fixed;z-index:9999;pointer-events:none;opacity:0;transition:opacity .12s;
   background:#1d1d1f;color:#fff;border-radius:10px;padding:10px 14px;max-width:240px;
   box-shadow:0 4px 16px rgba(0,0,0,.18);font-size:11px;line-height:1.5}
-#lvl-tooltip .tt-level{font-size:13px;font-weight:800;margin-bottom:3px}
-#lvl-tooltip .tt-label{font-weight:700;margin-bottom:2px}
-#lvl-tooltip .tt-desc{color:rgba(255,255,255,.75)}
 .q-scale-row.answered {
   border-color: rgba(52,199,89,.3);
   background: var(--mint-l);
@@ -2042,7 +2038,6 @@ body.exam-away #exam-shield{display:flex}
   </div>
 </div>
 
-<div id="lvl-tooltip"></div>
 
 <script>
 
@@ -2064,36 +2059,6 @@ function htmlEsc(s) {
     .replace(/'/g, '&#39;');
 }
 
-// ── Level chip tooltip system ──
-var LVL_TIP_DATA = {
-  1: { label:'Muy Bajo', color:'#94a3b8', emoji:'🔴', desc:'No cumple con el mínimo requerido. Representa un riesgo significativo para el desempeño en esta dimensión. Se recomienda profundizar en entrevista.' },
-  2: { label:'Bajo', color:'#64748b', emoji:'🟠', desc:'Por debajo de lo esperado. El candidato muestra competencias insuficientes en esta área. Requiere desarrollo o supervisión cercana.' },
-  3: { label:'Medio', color:'#f59e0b', emoji:'🟡', desc:'Nivel esperado. Cumple con el estándar mínimo para la mayoría de los cargos. Desempeño funcional sin destacar.' },
-  4: { label:'Alto', color:'#3b82f6', emoji:'🔵', desc:'Sobre lo esperado. El candidato demuestra competencias sólidas. Buen ajuste para roles de mayor responsabilidad.' },
-  5: { label:'Muy Alto', color:'#10b981', emoji:'🟢', desc:'Nivel de excelencia. Supera ampliamente lo requerido. Fortaleza destacada que puede ser aprovechada como referente.' },
-};
-
-function showLvlTip(el, lv) {
-  var tip = document.getElementById('lvl-tooltip');
-  if (!tip) return;
-  var d = LVL_TIP_DATA[lv];
-  if (!d) return;
-  tip.innerHTML = '<div class="tt-level" style="color:' + d.color + '">' + d.emoji + ' Nivel ' + lv + ' — ' + d.label + '</div>'
-    + '<div class="tt-desc">' + d.desc + '</div>';
-  var rect = el.getBoundingClientRect();
-  tip.style.left = Math.max(8, Math.min(rect.left + rect.width/2 - 120, window.innerWidth - 260)) + 'px';
-  tip.style.top  = (rect.top - tip.offsetHeight - 8) + 'px';
-  tip.style.opacity = '1';
-  // If tooltip goes above viewport, show below
-  if (rect.top - tip.offsetHeight - 8 < 4) {
-    tip.style.top = (rect.bottom + 8) + 'px';
-  }
-}
-
-function hideLvlTip() {
-  var tip = document.getElementById('lvl-tooltip');
-  if (tip) tip.style.opacity = '0';
-}
 
 // ═══════════════════════════════════════════════════════════
 //  TEST METADATA
@@ -2336,8 +2301,6 @@ const SESSION_KEY          = 'psicoeval_session';
 const LS_BATTERIES         = 'psicoeval_batteries';
 const LS_CARGOS            = 'psicoeval_cargos';
 const LS_CUSTOM_CARGOS     = 'psicoeval_custom_cargos';
-const LS_DISC_PROFILE      = 'psicoeval_disc_profile';
-const LS_PF16_PROFILE      = 'psicoeval_pf16_profile';
 const LS_PARAMS            = 'psicoeval_params';
 const LS_TM_MINS           = 'psicoeval_tm_mins';
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2354,10 +2317,8 @@ var _CFG_KEYS = {
   cargos:        LS_CARGOS,         // │ el candidato las lee
   custom_cargos: LS_CUSTOM_CARGOS,  // │
   tm_mins:       LS_TM_MINS,        // ┘
-  params:        LS_PARAMS,         // ┐
-  disc_profile:  LS_DISC_PROFILE,   // │ solo panel (el candidato no las ve:
-  pf16_profile:  LS_PF16_PROFILE,   // │ le servirían para acomodar respuestas)
-  webhook_url:   _WEBHOOK_KEY,      // │
+  params:        LS_PARAMS,         // ┐ solo panel (el candidato no las ve:
+  webhook_url:   _WEBHOOK_KEY,      // │ le servirían para acomodar respuestas)
   config_log:    _CONFIG_LOG_KEY    // ┘
 };
 var _cfgLoaded = false;
@@ -2397,7 +2358,7 @@ function _cfgSetLocal(key, value) {
 // reintenta sola y el panel muestra un aviso hasta que se guarde.
 var _CFG_PENDING_KEY = 'psicoeval_cfg_pendiente';
 var _CFG_NOMBRES = { batteries:'Baterías', cargos:'Cargos activos', custom_cargos:'Cargos personalizados', tm_mins:'Tiempos',
-                     params:'Perfil ideal', disc_profile:'Perfil DISC', pf16_profile:'Perfil 16PF', webhook_url:'Webhook', config_log:'Historial' };
+                     params:'Mínimos por cargo', webhook_url:'Webhook', config_log:'Historial' };
 function _cfgPendientes() {
   try { return JSON.parse(localStorage.getItem(_CFG_PENDING_KEY) || '[]'); } catch(e) { return []; }
 }
@@ -2589,7 +2550,6 @@ async function _cfgPull() {
 function _cfgReloadAll() {
   loadCargosConfig();
   loadBatteryConfig();
-  loadProfileConfig();
   loadTmMins();
   restoreParams();
   if (_linkPairs) _applyLinkPairs(_linkPairs);   // un link de candidato manda en esa pestaña
@@ -2684,7 +2644,6 @@ function saveCargosConfig() {
 loadCargosConfig();
 // Re-load battery config AFTER custom cargos exist so their saved batteries are restored
 loadBatteryConfig();
-loadProfileConfig();
 
 function getAllCargos() {
   return BUILTIN_CARGOS.concat(CUSTOM_CARGOS.map(function(c){ return c.key; }));
@@ -2719,44 +2678,29 @@ function registerCustomCargo(c, skipSave) {
   if (!PERFIL_IDEAL[key]) {
     PERFIL_IDEAL[key] = {
       pai: {
-        EE: { min:55, max:100, peso:2, label:'Est. Emocional',    req:'Regulación emocional.' },
-        AS: { min:50, max:100, peso:2, label:'Adapt. Social',     req:'Trabajo en equipo.' },
-        ON: { min:60, max:100, peso:3, label:'Orient. Normativa', req:'Adherencia a normas.' },
-        ME: { min:55, max:100, peso:2, label:'Manejo del Estrés', req:'Rendimiento bajo presión.' },
-        IL: { min:65, max:100, peso:4, label:'Integridad',        req:'Conducta ética.' },
-        ML: { min:55, max:100, peso:2, label:'Motivación',        req:'Compromiso laboral.' },
+        EE: { min:55, max:100, label:'Est. Emocional',    req:'Regulación emocional.' },
+        AS: { min:50, max:100, label:'Adapt. Social',     req:'Trabajo en equipo.' },
+        ON: { min:60, max:100, label:'Orient. Normativa', req:'Adherencia a normas.' },
+        ME: { min:55, max:100, label:'Manejo del Estrés', req:'Rendimiento bajo presión.' },
+        IL: { min:65, max:100, label:'Integridad',        req:'Conducta ética.' },
+        ML: { min:55, max:100, label:'Motivación',        req:'Compromiso laboral.' },
       },
       dc0: {
-        V: { min:55, max:100, peso:2, label:'Verbal',            req:'Comprensión de instrucciones.' },
-        N: { min:50, max:100, peso:2, label:'Numérico',          req:'Manejo de cifras.' },
-        L: { min:55, max:100, peso:2, label:'Lógico-Abstracto',  req:'Razonamiento lógico.' },
+        V: { min:55, max:100, label:'Verbal',            req:'Comprensión de instrucciones.' },
+        N: { min:50, max:100, label:'Numérico',          req:'Manejo de cifras.' },
+        L: { min:55, max:100, label:'Lógico-Abstracto',  req:'Razonamiento lógico.' },
       },
-      comprension: { min:70, max:100, peso:4, label:'Comprensión de Instrucciones', req:'Sigue instrucciones con precisión.' },
+      comprension: { min:70, max:100, label:'Comprensión de Instrucciones', req:'Sigue instrucciones con precisión.' },
     };
   }
   // Copiar configuración de todos los tests compartidos desde jefatura (incluye juegos conductuales)
-  ['disc','pf16','situacional','vigilancia'].forEach(function(tid) {
+  ['situacional','vigilancia'].forEach(function(tid) {
     if (!PERFIL_IDEAL[key][tid]) {
       var src = PERFIL_IDEAL['jefatura'] && PERFIL_IDEAL['jefatura'][tid];
       if (src) PERFIL_IDEAL[key][tid] = JSON.parse(JSON.stringify(src));
     }
   });
-  // Ensure minLv
-  var ideal = PERFIL_IDEAL[key];
-  Object.keys(ideal).forEach(function(secId) {
-    var sec = ideal[secId];
-    if (!sec) return;
-    if (sec.min !== undefined && sec.minLv === undefined) {
-      sec.minLv = scoreToLevel5(sec.min);
-    } else {
-      Object.keys(sec).forEach(function(k2) {
-        var cfg = sec[k2];
-        if (cfg && cfg.min !== undefined && cfg.minLv === undefined) {
-          cfg.minLv = scoreToLevel5(cfg.min);
-        }
-      });
-    }
-  });
+
 }
 
 function toggleCargo(key) {
@@ -2863,6 +2807,7 @@ function openCargoBattery(key) {
   var pm = PERFIL_META[key];
   if (!pm) return;
   _paramPerfil = key;
+  _calibData = null;   // puntajes frescos al abrir la batería
   // Update header with cargo context
   var titleEl = document.getElementById('bateria-cargo-title');
   var descEl = document.getElementById('bateria-cargo-desc');
@@ -6171,104 +6116,84 @@ async function finishTests() {
 //  Cada dimensión tiene un rango ideal [min, max] para el cargo.
 //  El "ajuste" es qué tan cerca está el score de ese rango.
 // ═══════════════════════════════════════════════════════════
+// Mínimos por cargo de las pruebas evaluativas (porcentaje de respuestas correctas).
+// Son valores iniciales, no normas: se ajustan en Panel → Cargos → batería, donde se
+// ve cómo se distribuyen los puntajes reales del cargo. DISC y 16PF no tienen mínimos.
 const PERFIL_IDEAL = {
   jefatura: {
-    _pesos: { disc: 4, pf16: 4 },
     dc0: {
-      V:  { min:60, max:100, peso:2, label:'Verbal',             req:'Comunicación efectiva y comprensión de directrices.' },
-      N:  { min:55, max:100, peso:2, label:'Numérico',           req:'Análisis de indicadores y presupuestos.' },
-      L:  { min:60, max:100, peso:3, label:'Lógico-Abstracto',   req:'Toma de decisiones complejas con información incompleta.' },
+      V:  { min:60, max:100, label:'Verbal',             req:'Comunicación efectiva y comprensión de directrices.' },
+      N:  { min:55, max:100, label:'Numérico',           req:'Análisis de indicadores y presupuestos.' },
+      L:  { min:60, max:100, label:'Lógico-Abstracto',   req:'Toma de decisiones complejas con información incompleta.' },
     },
-    situacional: { min:70, max:100, peso:4, label:'Juicio Situacional',          req:'Decisiones correctas ante escenarios de liderazgo.' },
-    comprension: { min:75, max:100, peso:4, label:'Comprensión de Instrucciones', req:'Interpreta y aplica correctamente instrucciones complejas y procedimientos de gestión.' },
-    juego_memoria: { min:60, max:100, peso:3, label:'Memoria de Trabajo',        req:'Retención y recuperación de información en contextos de alta demanda cognitiva y toma de decisiones.' },
+    situacional: { min:70, max:100, label:'Juicio Situacional',          req:'Decisiones correctas ante escenarios de liderazgo.' },
+    comprension: { min:75, max:100, label:'Comprensión de Instrucciones', req:'Interpreta y aplica correctamente instrucciones complejas y procedimientos de gestión.' },
+    juego_memoria: { min:60, max:100, label:'Memoria de Trabajo',        req:'Retención y recuperación de información en contextos de alta demanda cognitiva y toma de decisiones.' },
   },
 
   administrativo: {
-    _pesos: { disc: 2, pf16: 3 },
     dc0: {
-      V:  { min:60, max:100, peso:3, label:'Verbal',            req:'Redacción y comprensión de documentos.' },
-      N:  { min:60, max:100, peso:3, label:'Numérico',          req:'Manejo de cifras, archivos y registros.' },
-      L:  { min:50, max:100, peso:2, label:'Lógico-Abstracto',  req:'Aplicación correcta de procedimientos.' },
+      V:  { min:60, max:100, label:'Verbal',            req:'Redacción y comprensión de documentos.' },
+      N:  { min:60, max:100, label:'Numérico',          req:'Manejo de cifras, archivos y registros.' },
+      L:  { min:50, max:100, label:'Lógico-Abstracto',  req:'Aplicación correcta de procedimientos.' },
     },
-    comprension: { min:75, max:100, peso:5, label:'Comprensión de Instrucciones', req:'Sigue instrucciones multi-condición con precisión; aplica procedimientos sin omitir pasos clave.' },
+    comprension: { min:75, max:100, label:'Comprensión de Instrucciones', req:'Sigue instrucciones multi-condición con precisión; aplica procedimientos sin omitir pasos clave.' },
   },
 
   guardia: {
-    _pesos: { disc: 2, pf16: 4 },
-    situacional:    { min:70, max:100, peso:5, label:'Juicio Situacional',          req:'Decisiones correctas en incidentes de seguridad.' },
-    vigilancia:     { min:65, max:100, peso:5, label:'Apt. Vigilancia',             req:'Atención sostenida y aplicación de protocolos.' },
-    comprension:    { min:80, max:100, peso:5, label:'Comprensión de Instrucciones', req:'Aplica protocolos de seguridad con precisión; sin ambigüedad ante instrucciones multi-condición.' },
-    juego_semaforo: { min:60, max:100, peso:4, label:'Control de Impulsos',         req:'Tiempo de reacción y capacidad de inhibir respuestas anticipadas. Crítico para vigilancia activa y manejo de incidentes.' },
+    situacional:    { min:70, max:100, label:'Juicio Situacional',          req:'Decisiones correctas en incidentes de seguridad.' },
+    vigilancia:     { min:65, max:100, label:'Apt. Vigilancia',             req:'Atención sostenida y aplicación de protocolos.' },
+    comprension:    { min:80, max:100, label:'Comprensión de Instrucciones', req:'Aplica protocolos de seguridad con precisión; sin ambigüedad ante instrucciones multi-condición.' },
+    juego_semaforo: { min:60, max:100, label:'Control de Impulsos',         req:'Tiempo de reacción y capacidad de inhibir respuestas anticipadas. Crítico para vigilancia activa y manejo de incidentes.' },
     },
   supervisor: {
-    _pesos: { disc: 3, pf16: 3 },
     dc0: {
-      V: { min:60, max:100, peso:3, label:'Verbal',           req:'Comprende y transmite instrucciones operativas con claridad.' },
-      N: { min:50, max:100, peso:2, label:'Numérico',         req:'Manejo básico de indicadores de producción y métricas de turno.' },
-      L: { min:60, max:100, peso:3, label:'Lógico-Abstracto', req:'Diagnóstico de problemas operativos y aplicación de procedimientos.' },
+      V: { min:60, max:100, label:'Verbal',           req:'Comprende y transmite instrucciones operativas con claridad.' },
+      N: { min:50, max:100, label:'Numérico',         req:'Manejo básico de indicadores de producción y métricas de turno.' },
+      L: { min:60, max:100, label:'Lógico-Abstracto', req:'Diagnóstico de problemas operativos y aplicación de procedimientos.' },
     },
-    situacional:  { min:70, max:100, peso:5, label:'Juicio Situacional', req:'Toma decisiones correctas ante escenarios típicos de supervisión operativa.' },
-    comprension:  { min:75, max:100, peso:4, label:'Comprensión de Instrucciones', req:'Interpreta y aplica procedimientos operativos complejos con precisión.' },
-    disc:         { S: { min:60, max:100, peso:3, label:'Estabilidad (DISC)', req:'Alta estabilidad y constancia en el turno.' }, C: { min:65, max:100, peso:4, label:'Cumplimiento (DISC)', req:'Adherencia a protocolos y normas operativas.' }, D: { min:40, max:80, peso:2, label:'Dominancia (DISC)', req:'Iniciativa moderada sin impulsividad.' }, I: { min:30, max:70, peso:1, label:'Influencia (DISC)', req:'Comunicación básica con equipo.' } },
-    juego_globos: { min:40, max:75, peso:2, label:'Tolerancia al Riesgo', req:'Disposición moderada al riesgo; equilibrio entre precaución e iniciativa operativa.' },
+    situacional:  { min:70, max:100, label:'Juicio Situacional', req:'Toma decisiones correctas ante escenarios típicos de supervisión operativa.' },
+    comprension:  { min:75, max:100, label:'Comprensión de Instrucciones', req:'Interpreta y aplica procedimientos operativos complejos con precisión.' },
+    juego_globos: { min:40, max:75, label:'Tolerancia al Riesgo', req:'Disposición moderada al riesgo; equilibrio entre precaución e iniciativa operativa.' },
   },
   prevencionista: {
-    _pesos: { disc: 2, pf16: 4 },
     dc0: {
-      V: { min:65, max:100, peso:3, label:'Verbal',           req:'Redacción de informes técnicos e interpretación de normativas de seguridad.' },
-      N: { min:55, max:100, peso:2, label:'Numérico',         req:'Análisis de estadísticas de accidentabilidad e índices de riesgo.' },
-      L: { min:65, max:100, peso:3, label:'Lógico-Abstracto', req:'Diagnóstico de causas raíz y análisis de escenarios de riesgo.' },
+      V: { min:65, max:100, label:'Verbal',           req:'Redacción de informes técnicos e interpretación de normativas de seguridad.' },
+      N: { min:55, max:100, label:'Numérico',         req:'Análisis de estadísticas de accidentabilidad e índices de riesgo.' },
+      L: { min:65, max:100, label:'Lógico-Abstracto', req:'Diagnóstico de causas raíz y análisis de escenarios de riesgo.' },
     },
-    normativa_ohs: { min:70, max:100, peso:6, label:'Conocimiento Normativo OHS', req:'Dominio de la normativa vigente (DS 44, Ley 16.744, DS 594, Ley Karin). Base técnica indispensable para el ejercicio del cargo.' },
-    situacional: { min:72, max:100, peso:5, label:'Juicio Situacional',          req:'Toma decisiones correctas ante escenarios de riesgo e incidentes en terreno.' },
-    comprension: { min:80, max:100, peso:5, label:'Comprensión de Instrucciones', req:'Interpreta y aplica normativas técnicas con precisión. Sin margen de error en la aplicación de protocolos de seguridad.' },
+    normativa_ohs: { min:70, max:100, label:'Conocimiento Normativo OHS', req:'Dominio de la normativa vigente (DS 44, Ley 16.744, DS 594, Ley Karin). Base técnica indispensable para el ejercicio del cargo.' },
+    situacional: { min:72, max:100, label:'Juicio Situacional',          req:'Toma decisiones correctas ante escenarios de riesgo e incidentes en terreno.' },
+    comprension: { min:80, max:100, label:'Comprensión de Instrucciones', req:'Interpreta y aplica normativas técnicas con precisión. Sin margen de error en la aplicación de protocolos de seguridad.' },
   },
   conductor: {
-    _pesos: { disc: 2, pf16: 4 },
     pai: {
-      EE: { min:65, max:100, peso:4, label:'Estabilidad Emocional', req:'Calma y control emocional ante situaciones de tráfico de alta tensión o incidentes en ruta.' },
-      AS: { min:50, max:100, peso:2, label:'Adaptación Social',     req:'Relación adecuada con pasajeros, custodios y supervisores durante la jornada.' },
-      ON: { min:70, max:100, peso:4, label:'Orient. Normativa',     req:'Respeto estricto a normas de tránsito y protocolos internos de la empresa.' },
-      ME: { min:65, max:100, peso:4, label:'Manejo del Estrés',     req:'Conducción segura bajo tráfico adverso, rutas de alta presión o condiciones climáticas difíciles.' },
-      IL: { min:65, max:100, peso:4, label:'Integridad Laboral',    req:'Responsabilidad sobre vehículos, pasajeros, carga o materiales de valor.' },
-      ML: { min:55, max:100, peso:2, label:'Motivación Laboral',    req:'Compromiso con puntualidad, continuidad y cuidado del vehículo asignado.' },
+      EE: { min:65, max:100, label:'Estabilidad Emocional', req:'Calma y control emocional ante situaciones de tráfico de alta tensión o incidentes en ruta.' },
+      AS: { min:50, max:100, label:'Adaptación Social',     req:'Relación adecuada con pasajeros, custodios y supervisores durante la jornada.' },
+      ON: { min:70, max:100, label:'Orient. Normativa',     req:'Respeto estricto a normas de tránsito y protocolos internos de la empresa.' },
+      ME: { min:65, max:100, label:'Manejo del Estrés',     req:'Conducción segura bajo tráfico adverso, rutas de alta presión o condiciones climáticas difíciles.' },
+      IL: { min:65, max:100, label:'Integridad Laboral',    req:'Responsabilidad sobre vehículos, pasajeros, carga o materiales de valor.' },
+      ML: { min:55, max:100, label:'Motivación Laboral',    req:'Compromiso con puntualidad, continuidad y cuidado del vehículo asignado.' },
     },
-    dc0:            { min:55, max:100, peso:3, label:'Aptitud Cognitiva',             req:'Procesamiento de información, lectura de guías de ruta, reportes de incidentes y cumplimiento de protocolos escritos.' },
-    vigilancia:      { min:72, max:100, peso:6, label:'Apt. Vigilancia',             req:'Atención sostenida y detección de anomalías durante la conducción. Indicador principal del cargo.' },
-    comprension:     { min:70, max:100, peso:4, label:'Comprensión de Instrucciones', req:'Aplica correctamente rutas, protocolos de acceso y procedimientos ante incidentes.' },
-    juego_semaforo:  { min:60, max:100, peso:4, label:'Reacción Vial',               req:'Tiempo de reacción y control de impulsos. Clave para respuesta ante imprevistos en conducción.' },
+    dc0:            { min:55, max:100, label:'Aptitud Cognitiva',             req:'Procesamiento de información, lectura de guías de ruta, reportes de incidentes y cumplimiento de protocolos escritos.' },
+    vigilancia:      { min:72, max:100, label:'Apt. Vigilancia',             req:'Atención sostenida y detección de anomalías durante la conducción. Indicador principal del cargo.' },
+    comprension:     { min:70, max:100, label:'Comprensión de Instrucciones', req:'Aplica correctamente rutas, protocolos de acceso y procedimientos ante incidentes.' },
+    juego_semaforo:  { min:60, max:100, label:'Reacción Vial',               req:'Tiempo de reacción y control de impulsos. Clave para respuesta ante imprevistos en conducción.' },
   },
 
   auxiliar_aseo: {
-    _pesos: { disc: 2, pf16: 3 },
     pai: {
-      EE: { min:55, max:100, peso:3, label:'Estabilidad Emocional', req:'Regulación emocional adecuada para trabajar de forma autónoma y sostenida.' },
-      ON: { min:65, max:100, peso:5, label:'Orient. Normativa',     req:'Adherencia a protocolos de limpieza, uso de productos y normas de seguridad.' },
-      ME: { min:55, max:100, peso:3, label:'Manejo del Estrés',     req:'Rendimiento constante ante ritmos de trabajo exigentes o ambientes de alta demanda.' },
-      IL: { min:70, max:100, peso:5, label:'Integridad Laboral',    req:'Responsabilidad ante el acceso a espacios privados, equipos y pertenencias de terceros.' },
-      ML: { min:55, max:100, peso:2, label:'Motivación Laboral',    req:'Compromiso con la calidad del trabajo y continuidad en el cargo.' },
+      EE: { min:55, max:100, label:'Estabilidad Emocional', req:'Regulación emocional adecuada para trabajar de forma autónoma y sostenida.' },
+      ON: { min:65, max:100, label:'Orient. Normativa',     req:'Adherencia a protocolos de limpieza, uso de productos y normas de seguridad.' },
+      ME: { min:55, max:100, label:'Manejo del Estrés',     req:'Rendimiento constante ante ritmos de trabajo exigentes o ambientes de alta demanda.' },
+      IL: { min:70, max:100, label:'Integridad Laboral',    req:'Responsabilidad ante el acceso a espacios privados, equipos y pertenencias de terceros.' },
+      ML: { min:55, max:100, label:'Motivación Laboral',    req:'Compromiso con la calidad del trabajo y continuidad en el cargo.' },
     },
-    comprension: { min:65, max:100, peso:4, label:'Comprensión de Instrucciones', req:'Aplica correctamente instrucciones de limpieza, dosificación de productos y protocolos de trabajo.' },
+    comprension: { min:65, max:100, label:'Comprensión de Instrucciones', req:'Aplica correctamente instrucciones de limpieza, dosificación de productos y protocolos de trabajo.' },
   },
 };
-// ── Shared ideal entries for new tests (all profiles) ───────
-['jefatura','administrativo','guardia','supervisor','prevencionista','conductor','auxiliar_aseo'].forEach(function(pf) {
-  if (!PERFIL_IDEAL[pf]) return;
-  if (!PERFIL_IDEAL[pf].disc) PERFIL_IDEAL[pf].disc = {
-    D: { min:50, max:90, peso:2, label:'Dominancia (DISC)',   req:'Iniciativa y orientación a resultados.' },
-    I: { min:40, max:80, peso:2, label:'Influencia (DISC)',   req:'Comunicación y trabajo en equipo.' },
-    S: { min:55, max:100,peso:3, label:'Estabilidad (DISC)',  req:'Constancia y calma ante rutinas.' },
-    C: { min:60, max:100,peso:3, label:'Cumplimiento (DISC)', req:'Respeto a normas y procedimientos.' },
-  };
-  if (!PERFIL_IDEAL[pf].pf16) PERFIL_IDEAL[pf].pf16 = {
-    EX: { min:45, max:100, peso:2, label:'Extraversión',         req:'Capacidad de interacción social, calidez y participación grupal.' },
-    AN: { min:55, max:100, peso:3, label:'Ajuste Emocional',     req:'Estabilidad emocional, baja ansiedad y tolerancia a la presión.' },
-    DU: { min:45, max:85,  peso:2, label:'Dureza Mental',        req:'Objetividad, pragmatismo y orientación a hechos concretos.' },
-    IN: { min:45, max:85,  peso:2, label:'Independencia',        req:'Autonomía de criterio, disposición a defender posiciones propias.' },
-    AC: { min:60, max:100, peso:3, label:'Autocontrol',           req:'Disciplina, cumplimiento de normas y control sobre impulsos.' },
-  };
-});
+// Copia de los mínimos iniciales, antes de aplicar los ajustes guardados
+const PERFIL_IDEAL_INICIAL = JSON.parse(JSON.stringify(PERFIL_IDEAL));
 
 
 // ═══════════════════════════════════════════════════════════
@@ -6569,85 +6494,6 @@ function _pf16ReportHtml(c, pf, s) {
   return html;
 }
 
-const DISC_CARGO_PROFILE_DEFAULT = {
-  jefatura:       { D:'alto',  I:'medio', S:'medio', C:'medio' },
-  administrativo: { D:'bajo',  I:'medio', S:'alto',  C:'alto'  },
-  guardia:        { D:'medio', I:'bajo',  S:'alto',  C:'alto'  },
-  supervisor:     { D:'medio', I:'medio', S:'medio', C:'alto'  },
-  prevencionista: { D:'medio', I:'medio', S:'alto',  C:'alto'  },
-  conductor:      { D:'bajo',  I:'bajo',  S:'alto',  C:'alto'  },
-  auxiliar_aseo:  { D:'bajo',  I:'bajo',  S:'alto',  C:'alto'  },
-};
-var DISC_CARGO_PROFILE = JSON.parse(JSON.stringify(DISC_CARGO_PROFILE_DEFAULT));
-
-// ═══════════════════════════════════════════════════════════
-//  16PF — PERFILES POR POLO (Bajo/Medio/Alto)
-// ═══════════════════════════════════════════════════════════
-const PF16_POLES = {
-  EX: { key:'EX', label:'Extraversión',    lo:'Reservado · Independiente socialmente', hi:'Extrovertido · Orientado al trabajo en equipo' },
-  AN: { key:'AN', label:'Ajuste Emocional',lo:'Ansioso · Alta reactividad emocional',  hi:'Sereno · Estable bajo presión' },
-  DU: { key:'DU', label:'Dureza Mental',   lo:'Sensible · Empático · Considerado',     hi:'Analítico · Objetivo · Pragmático' },
-  IN: { key:'IN', label:'Independencia',   lo:'Conformista · Deferente · Grupal',      hi:'Autónomo · Criterio propio · Decisivo' },
-  AC: { key:'AC', label:'Autocontrol',     lo:'Espontáneo · Flexible · Adaptable',     hi:'Disciplinado · Metódico · Normativo' },
-};
-const PF16_CARGO_PROFILE_DEFAULT = {
-  jefatura:       { EX:'alto',  AN:'alto', DU:'medio', IN:'alto',  AC:'medio' },
-  administrativo: { EX:'medio', AN:'alto', DU:'medio', IN:'medio', AC:'alto'  },
-  guardia:        { EX:'bajo',  AN:'alto', DU:'alto',  IN:'bajo',  AC:'alto'  },
-  supervisor:     { EX:'medio', AN:'alto', DU:'alto',  IN:'alto',  AC:'alto'  },
-  prevencionista: { EX:'medio', AN:'alto', DU:'alto',  IN:'medio', AC:'alto'  },
-  conductor:      { EX:'bajo',  AN:'alto', DU:'alto',  IN:'bajo',  AC:'alto'  },
-  auxiliar_aseo:  { EX:'bajo',  AN:'alto', DU:'medio', IN:'bajo',  AC:'alto'  },
-};
-var PF16_CARGO_PROFILE = JSON.parse(JSON.stringify(PF16_CARGO_PROFILE_DEFAULT));
-
-function getScoreZone(score) {
-  if (score >= 70) return 'alto';
-  if (score >= 40) return 'medio';
-  return 'bajo';
-}
-function zoneMatchScore(score, expectedZone) {
-  // Límites numéricos de cada zona
-  var ZONE_RANGE = { bajo:[0,39], medio:[40,69], alto:[70,100] };
-  var r = ZONE_RANGE[expectedZone];
-  if (!r) return 50;
-  var lo = r[0], hi = r[1];
-  // Dentro de la zona esperada → ajuste perfecto
-  if (score >= lo && score <= hi) return 100;
-  // Fuera: penalización proporcional a la distancia desde el límite de la zona
-  var gap = score < lo ? (lo - score) : (score - hi);
-  var ref = hi - lo; // ancho de la zona como referencia
-  return Math.max(0, Math.round(100 - (gap / ref) * 100));
-}
-
-function loadProfileConfig() {
-  try {
-    var d = localStorage.getItem(LS_DISC_PROFILE);
-    if (d) { var p = JSON.parse(d); Object.keys(p).forEach(function(k){ DISC_CARGO_PROFILE[k] = p[k]; }); }
-    var p16 = localStorage.getItem(LS_PF16_PROFILE);
-    if (p16) { var pp = JSON.parse(p16); Object.keys(pp).forEach(function(k){ PF16_CARGO_PROFILE[k] = pp[k]; }); }
-  } catch(e) {}
-}
-function saveProfileConfig() {
-  try {
-    localStorage.setItem(LS_DISC_PROFILE, JSON.stringify(DISC_CARGO_PROFILE));
-    localStorage.setItem(LS_PF16_PROFILE, JSON.stringify(PF16_CARGO_PROFILE));
-  } catch(e) {}
-  _cfgPush('disc_profile');
-  _cfgPush('pf16_profile');
-}
-function pickDiscZone(perfil, dim, zone) {
-  if (!DISC_CARGO_PROFILE[perfil]) DISC_CARGO_PROFILE[perfil] = { D:'medio', I:'medio', S:'medio', C:'medio' };
-  DISC_CARGO_PROFILE[perfil][dim] = zone;
-  saveProfileConfig();
-  renderBateriaTab();
-}
-function pickPf16Zone(perfil, factor, zone) {
-  if (!PF16_CARGO_PROFILE[perfil]) PF16_CARGO_PROFILE[perfil] = { EX:'medio', AN:'alto', DU:'medio', IN:'medio', AC:'medio' };
-  PF16_CARGO_PROFILE[perfil][factor] = zone;
-  saveProfileConfig();
-  renderBateriaTab();
-}
 
 
 function scoreLevel(v) {
@@ -7662,38 +7508,34 @@ function buildReportHtml(c, withClose) {
   var _ideal = PERFIL_IDEAL[c.perfil] || null;
   var firstTab = completedTests.length ? 'resumen' : '';
 
-  // ── Compute Resumen fit rows ──
-  var _resRows = [], _totalPeso = 0, _totalFitPeso = 0;
+  // ── Filas de aptitud: puntaje frente al mínimo del cargo ──
+  var _resRows = [];
   if (_ideal) {
     var _allRTids = completedTests.concat(['juego_semaforo','juego_globos','juego_memoria'].filter(function(jt){ return tests.indexOf(jt)!==-1 && s[jt]; }));
     _allRTids.forEach(function(tid) {
-      // DISC y 16PF son descriptivos: si un rasgo es fortaleza o no depende del
-      // lugar de trabajo y de la entrevista, así que no se comparan con mínimos
+      // DISC y 16PF son descriptivos: no se comparan con mínimos
       if (tid === 'disc' || tid === 'pf16') return;
       var idSec = _ideal[tid]; if (!idSec) return;
       var ts = s[tid] || {};
       if (idSec.min !== undefined) {
         var raw = tid==='dc0' ? (ts.total||null) : (ts.pct!==undefined ? ts.pct : ts.score!==undefined ? ts.score : null);
         if (raw===null||raw===undefined) return;
-        var rSig = _fitSig(raw, idSec.min);
-        _resRows.push({tid:tid,icon:(TESTS_META[tid]||{}).icon||'',label:idSec.label||(TESTS_META[tid]||{}).name||tid,score:Math.round(raw),ok:ts.correct,n:ts.total,min:idSec.min,max:idSec.max||100,req:idSec.req||'',sig:rSig,peso:idSec.peso||1});
-        _totalPeso+=idSec.peso||1; _totalFitPeso+=(idSec.peso||1)*Math.min(100,raw);
+        _resRows.push({tid:tid,icon:(TESTS_META[tid]||{}).icon||'',label:idSec.label||(TESTS_META[tid]||{}).name||tid,score:Math.round(raw),ok:ts.correct,n:ts.total,min:idSec.min,max:idSec.max||100,req:idSec.req||'',cumple:raw>=idSec.min});
       } else {
-        var dKeys = Object.keys(idSec).filter(function(k){ return k!=='_pesos' && idSec[k] && idSec[k].min!==undefined; });
+        // Prueba con dimensiones (DC-0, PAI): promedio de las dimensiones y lista de las que quedan bajo su mínimo
+        var dKeys = Object.keys(idSec).filter(function(k){ return idSec[k] && idSec[k].min!==undefined && ts[k]!==undefined && ts[k]!==null; });
         if (!dKeys.length) return;
-        var dP=0,dFP=0,dOk=0;
-        dKeys.forEach(function(k){ var cfg=idSec[k]; var sc=ts[k]; if(sc===undefined||sc===null)return; dP+=cfg.peso||1; dFP+=(cfg.peso||1)*Math.min(100,sc); if(sc>=cfg.min)dOk++; });
-        if(!dP) return;
-        var aggSc=Math.round(dFP/dP);
-        var aggMn=Math.round(dKeys.reduce(function(a,k){ var cfg=idSec[k]; return a+(cfg.peso||1)*cfg.min; },0)/dP);
-        var rSig2=_fitSig(aggSc,aggMn);
+        var bajo = dKeys.filter(function(k){ return ts[k] < idSec[k].min; });
+        var prom = function(f){ return Math.round(dKeys.reduce(function(a,k){ return a+f(k); },0)/dKeys.length); };
         var tm2=TESTS_META[tid]||{};
-        _resRows.push({tid:tid,icon:tm2.icon||'',label:tm2.name||tid,score:aggSc,min:aggMn,max:100,dimNote:dOk+'/'+dKeys.length+' dimensiones dentro del rango',req:'',sig:rSig2,peso:dP});
-        _totalPeso+=dP; _totalFitPeso+=dFP;
+        _resRows.push({tid:tid,icon:tm2.icon||'',label:tm2.name||tid,score:prom(function(k){ return Math.min(100,ts[k]); }),min:prom(function(k){ return idSec[k].min; }),max:100,
+          dimNote:(dKeys.length-bajo.length)+' de '+dKeys.length+' dimensiones sobre su mínimo',
+          dimsBajo:bajo.map(function(k){ return (idSec[k].label||k)+' '+Math.round(ts[k])+'% (mín. '+idSec[k].min+'%)'; }),
+          req:'',cumple:!bajo.length});
       }
     });
   }
-  var _rOk = _resRows.filter(function(r){ return r.score >= r.min; }).length;
+  var _rOk = _resRows.filter(function(r){ return r.cumple; }).length;
 
   function scoreBar(label, score) {
     var lv = scoreLevel(score);
@@ -7768,7 +7610,7 @@ function buildReportHtml(c, withClose) {
     }
     var r = _resRows.filter(function(x){ return x.tid === tid; })[0];
     if (!r) return '';
-    return r.score >= r.min ? '#16a34a' : r.score >= r.min * 0.85 ? '#d97706' : '#dc2626';
+    return r.cumple ? '#16a34a' : r.score >= r.min * 0.85 ? '#d97706' : '#dc2626';
   };
   var _tabTitulo = {};
   html += '<div class="rpt-tabs">';
@@ -7825,7 +7667,7 @@ function buildReportHtml(c, withClose) {
     }
     if (_apt.length) {
       var _conMin = _apt.filter(function(r){ return r.min !== null && r.min !== undefined; });
-      var _bajo = _conMin.filter(function(r){ return r.score < r.min; });
+      var _bajo = _conMin.filter(function(r){ return !r.cumple; });
       var _aptHead = '';
       if (_conMin.length) {
         var _aCol = !_bajo.length ? '#15803d' : _bajo.length === _conMin.length ? '#b91c1c' : '#b45309';
@@ -7841,7 +7683,8 @@ function buildReportHtml(c, withClose) {
       var _aptRows = '';
       _apt.forEach(function(row){
         var hasMin = row.min !== null && row.min !== undefined;
-        var sg = hasMin ? _fitSig(row.score, row.min) : { color:'#475569', bg:'#f1f5f9', label:'' };
+        var sg = !hasMin ? { color:'#475569', bg:'#f1f5f9', label:'' }
+               : (!row.cumple && row.score >= row.min) ? _fitSig(row.min * 0.9, row.min) : _fitSig(row.score, row.min);
         var p = Math.max(0, Math.min(100, row.score));
         var det = [];
         if (row.ok !== undefined && row.n) det.push(row.ok + ' de ' + row.n + ' correctas');
@@ -7855,7 +7698,7 @@ function buildReportHtml(c, withClose) {
           + '</div>'
           + '<div style="text-align:right;flex-shrink:0">'
           + '<div style="font-size:17px;font-weight:900;color:' + sg.color + ';line-height:1.1">' + row.score + '<span style="font-size:11px;font-weight:700">%</span></div>'
-          + (hasMin ? '<div style="font-size:10px;font-weight:700;color:' + sg.color + '">' + (row.score >= row.min ? 'Sobre el mínimo' : 'Bajo el mínimo') + '</div>' : '')
+          + (hasMin ? '<div style="font-size:10px;font-weight:700;color:' + sg.color + '">' + (row.cumple ? 'Sobre el mínimo' : 'Bajo el mínimo') + '</div>' : '')
           + '</div></div>'
           + '<div style="position:relative;height:6px;background:#e2e8f0;border-radius:100px;margin:8px 0 3px 27px">'
           + '<div style="position:absolute;left:0;top:0;height:100%;width:' + p + '%;background:' + sg.color + ';border-radius:100px"></div>'
@@ -7865,8 +7708,10 @@ function buildReportHtml(c, withClose) {
           + '<span>' + det.join(' · ') + '</span>'
           + (hasMin ? '<span>mínimo del cargo: ' + row.min + '%</span>' : '')
           + '</div></div>';
-        if (hasMin && row.score < row.min) {
-          _rsPuntos.push('<strong>' + htmlEsc(row.label) + ':</strong> ' + row.score + '%, bajo el mínimo de ' + row.min + '%. Verifique en la entrevista o con una tarea práctica si refleja una dificultad real para el puesto.');
+        if (hasMin && !row.cumple) {
+          _rsPuntos.push('<strong>' + htmlEsc(row.label) + ':</strong> '
+            + (row.dimsBajo ? 'bajo el mínimo en ' + htmlEsc(row.dimsBajo.join(', ')) : row.score + '%, bajo el mínimo de ' + row.min + '%')
+            + '. Verifique en la entrevista o con una tarea práctica si refleja una dificultad real para el puesto.');
         }
       });
       html += _rsCard(_rsH3('Pruebas de aptitud', _conMin.length ? 'Porcentaje de respuestas correctas, comparado con el mínimo definido para ' + cargo : 'Porcentaje de respuestas correctas (el cargo no tiene mínimos definidos)')
@@ -8284,63 +8129,6 @@ function switchParamTab(perfil, btn) {
   renderBateriaTab();
 }
 
-// Conversión escala 1-5 ↔ 0-100
-// 1=0-19, 2=20-39, 3=40-59, 4=60-79, 5=80-100
-function toDisplay(val100) { return Math.min(5, Math.max(1, Math.ceil(val100 / 20))); }
-function toInternal(val5)  { return val5 === 1 ? 0 : (val5 - 1) * 20; }
-function toInternalMax(val5) { return val5 === 5 ? 100 : val5 * 20 - 1; }
-
-const NIVEL_LABELS = {1:'Muy Bajo',2:'Bajo',3:'Medio',4:'Alto',5:'Muy Alto'};
-const NIVEL_COLORS = {1:'#8b0000',2:'#c04b1c',3:'#a07528',4:'#3a7850',5:'#1c5d8c'};
-
-// Simple +/- stepper for 1-5 scale
-function scaleSelector(fieldId, currentVal, type) {
-  var NAMES = {1:'Muy\nBajo', 2:'Bajo', 3:'Medio', 4:'Alto', 5:'Muy\nAlto'};
-  var activeColor = type==='peso' ? '#0f2d52' : '#10b981';
-  var h = '<div style="display:flex;gap:4px">';
-  for (var i = 1; i <= 5; i++) {
-    var active = (i === currentVal);
-    h += '<button type="button"'
-      + ' id="sbtn_' + fieldId + '_' + type + '_' + i + '"'
-      + ' onclick="selectParam(\'' + fieldId + '\',\'' + type + '\',' + i + ')"'
-      + ' style="flex:1;padding:6px 2px;border-radius:8px;border:2px solid '
-      + (active ? activeColor : '#e2e8f0') + ';background:'
-      + (active ? activeColor : '#f8fafc') + ';cursor:pointer;transition:all .12s;text-align:center;line-height:1.2">'
-      + '<div style="font-size:13px;font-weight:800;color:' + (active ? '#fff' : '#94a3b8') + '">' + i + '</div>'
-      + '</button>';
-  }
-  h += '</div>';
-  return h;
-}
-
-
-function selectParam(fieldId, type, val) {
-  val = +val;
-  var activeColor = type==='peso' ? '#0f2d52' : '#10b981';
-  var NAMES = {1:'Muy Bajo',2:'Bajo',3:'Medio',4:'Alto',5:'Muy Alto'};
-  for (var i = 1; i <= 5; i++) {
-    var btn = document.getElementById('sbtn_' + fieldId + '_' + type + '_' + i);
-    if (!btn) continue;
-    var active = (i === val);
-    btn.style.background  = active ? activeColor : '#f8fafc';
-    btn.style.borderColor = active ? activeColor : '#e2e8f0';
-    var numDiv = btn.querySelector('div');
-    if (numDiv) numDiv.style.color = active ? '#fff' : '#94a3b8';
-  }
-  var hidden = document.getElementById('hid_' + fieldId + '_' + type);
-  if (hidden) hidden.value = val;
-  // Update range preview bar if present
-  var bar = document.getElementById('rbar_' + fieldId);
-  if (bar) {
-    var minV = parseInt((document.getElementById('hid_' + fieldId + '_min')||{value:1}).value)||1;
-    var maxV = parseInt((document.getElementById('hid_' + fieldId + '_max')||{value:5}).value)||5;
-    bar.style.left  = ((minV-1)/4*100)+'%';
-    bar.style.width = ((maxV-minV)/4*100)+'%';
-  }
-}
-
-
-
 function toggleBatteryTest(cb) {
   var tid = cb.dataset.tid;
   var perfil = cb.dataset.perfil;
@@ -8594,20 +8382,13 @@ var BATTERY_TEST_DIMENSIONS = {
   situacional: { icon:'💡', title:'Juicio Situacional',                keys:['_self'] },
   vigilancia:  { icon:'🛡', title:'Aptitud Vigilancia',               keys:['_self'] },
   comprension: { icon:'📋', title:'Comprensión de Instrucciones',     keys:['_self'] },
-  disc:        { icon:'🎭', title:'Estilos Conductuales (DISC-20)',    keys:['D','I','S','C'] },
-  pf16:        { icon:'🧬', title:'Personalidad 16PF (Abreviado)',      keys:['EX','AN','DU','IN','AC'] },
+  normativa_ohs:{ icon:'📐', title:'Conocimiento Normativo OHS',       keys:['_self'] },
 };
 
 function renderBateriaTab() {
-  _pickLevelMap = {};
   var perfil = _paramPerfil;
   var active = PERFIL_TESTS[perfil] || PERFIL_TESTS_DEFAULT[perfil] || [];
 
-  var LN = ['','Muy Bajo','Bajo','Medio','Alto','Muy Alto'];
-  var LC = ['','#ef4444','#f97316','#eab308','#3b82f6','#10b981'];
-  var LBG = ['','#fef2f2','#fff7ed','#fefce8','#eff6ff','#f0fdf4'];
-  var ZONE_COLORS = { reject:'#fee2e2', caution:'#fef9c3', approve:'#dcfce7' };
-  var ZONE_BORDERS = { reject:'#fca5a5', caution:'#fde68a', approve:'#86efac' };
 
   var TEST_GROUPS = {
     '📊 Aptitud Cognitiva':           ['dc0','comprension'],
@@ -8680,8 +8461,8 @@ function renderBateriaTab() {
       var shortDesc = TEST_SHORT_DESC[tid] || '';
 
       // Toggle row
-      // DISC y 16PF no tienen perfil esperado por cargo (son descriptivos): nada que configurar
-      var canExpand = false;
+      // Mínimo del cargo: solo pruebas evaluativas activas (DISC y 16PF son descriptivas)
+      var canExpand = isOn && !isPaused && !!dimInfo && !!(PERFIL_IDEAL[perfil] || {})[tid];
       var isExpanded = canExpand && !!_expandedTests[perfil + '__' + tid];
       var borderBottom = i < testIds.length - 1 ? '1px solid #f1f5f9' : 'none';
       var rowBg = isPaused ? '#fafafa' : '#fff';
@@ -8715,7 +8496,7 @@ function renderBateriaTab() {
       // Expand chevron (only when active and has dims)
       if (canExpand) {
         out += '<button type="button" onclick="toggleBatteryExpand(\'' + perfil + '\',\'' + tid + '\')"'
-             + ' title="' + (isExpanded ? 'Ocultar configuración' : 'Configurar parámetros') + '"'
+             + ' title="' + (isExpanded ? 'Ocultar mínimo del cargo' : 'Mínimo del cargo y puntajes obtenidos') + '"'
              + ' style="padding:0 16px;height:100%;min-height:46px;border:none;border-left:1px solid #f1f5f9;background:' + (isExpanded ? '#eef2ff' : '#fff') + ';cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;border-radius:0;flex-shrink:0"'
              + ' onmouseover="this.style.background=\'' + (isExpanded ? '#e0e7ff' : '#f8fafc') + '\'" onmouseout="this.style.background=\'' + (isExpanded ? '#eef2ff' : '#fff') + '\'">'
              + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="' + (isExpanded ? '#4338ca' : '#94a3b8') + '" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transition:transform .2s;transform:rotate(' + (isExpanded ? '180' : '0') + 'deg)"><polyline points="6 9 12 15 18 9"/></svg>'
@@ -8723,130 +8504,7 @@ function renderBateriaTab() {
       }
       out += '</div>';
 
-      // ── Dimension config with zone bars ──
-      if (isExpanded) {
-        if (tid === 'disc') {
-          // ── DISC zone profile config ──
-          var discCfg = DISC_CARGO_PROFILE[perfil] || DISC_CARGO_PROFILE_DEFAULT[perfil] || {};
-          out += '<div style="padding:12px 16px 16px;background:#fafbfc;border-top:1px dashed #e2e8f0">';
-          out += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#94a3b8;margin-bottom:12px">Zona esperada por dimensión para este cargo</div>';
-          out += '<div style="display:flex;flex-direction:column;gap:8px">';
-          ['D','I','S','C'].forEach(function(dk) {
-            var curZone = discCfg[dk] || 'medio';
-            out += '<div style="display:flex;align-items:center;gap:12px">';
-            out += '<div style="font-size:12px;font-weight:700;color:#1e293b;min-width:100px">' + DISC_DIM_LABELS[dk] + '</div>';
-            out += '<div style="display:flex;gap:4px">';
-            ['bajo','medio','alto'].forEach(function(z) {
-              var zc = DISC_ZONES[z];
-              var isA = z === curZone;
-              out += '<button type="button" onclick="pickDiscZone(\'' + perfil + '\',\'' + dk + '\',\'' + z + '\')"'
-                   + ' style="padding:4px 14px;border-radius:100px;border:1.5px solid ' + (isA ? zc.color : '#e2e8f0') + ';background:' + (isA ? zc.bg : '#fff') + ';cursor:pointer;font-size:11px;font-weight:' + (isA ? '700' : '500') + ';color:' + (isA ? zc.color : '#94a3b8') + ';transition:all .12s">'
-                   + zc.label + '</button>';
-            });
-            out += '</div></div>';
-          });
-          out += '</div></div>';
-        } else if (tid === 'pf16') {
-          // ── 16PF pole profile config ──
-          var pf16Cfg = PF16_CARGO_PROFILE[perfil] || PF16_CARGO_PROFILE_DEFAULT[perfil] || {};
-          out += '<div style="padding:12px 16px 16px;background:#fafbfc;border-top:1px dashed #e2e8f0">';
-          out += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#94a3b8;margin-bottom:12px">Polo esperado por factor para este cargo</div>';
-          out += '<div style="display:flex;flex-direction:column;gap:8px">';
-          ['EX','AN','DU','IN','AC'].forEach(function(fk) {
-            var curZone = pf16Cfg[fk] || 'medio';
-            var poleD = PF16_POLES[fk] || { label:fk, lo:'Bajo', hi:'Alto' };
-            out += '<div style="display:flex;align-items:flex-start;gap:12px">';
-            out += '<div style="min-width:120px"><div style="font-size:12px;font-weight:700;color:#1e293b">' + poleD.label + '</div>';
-            out += '<div style="font-size:9px;color:#94a3b8;line-height:1.3;margin-top:1px">' + poleD.lo.split('·')[0].trim() + ' ↔ ' + poleD.hi.split('·')[0].trim() + '</div></div>';
-            out += '<div style="display:flex;gap:4px">';
-            ['bajo','medio','alto'].forEach(function(z) {
-              var zc = DISC_ZONES[z];
-              var isA = z === curZone;
-              out += '<button type="button" onclick="pickPf16Zone(\'' + perfil + '\',\'' + fk + '\',\'' + z + '\')"'
-                   + ' style="padding:4px 14px;border-radius:100px;border:1.5px solid ' + (isA ? zc.color : '#e2e8f0') + ';background:' + (isA ? zc.bg : '#fff') + ';cursor:pointer;font-size:11px;font-weight:' + (isA ? '700' : '500') + ';color:' + (isA ? zc.color : '#94a3b8') + ';transition:all .12s">'
-                   + (z === 'bajo' ? 'Bajo' : z === 'medio' ? 'Neutro' : 'Alto') + '</button>';
-            });
-            out += '</div></div>';
-          });
-          out += '</div></div>';
-        } else if (dimInfo && secData) {
-          // ── Original dimension config (for other tests) ──
-          out += '<div style="padding:4px 16px 16px;background:#fafbfc;border-top:1px dashed #e2e8f0">';
-
-          dimInfo.keys.forEach(function(k, ki) {
-            var cfg = k === '_self' ? secData : (secData[k] || null);
-            if (!cfg) return;
-            var fid = 'b_' + perfil + '_' + tid + '_' + k;
-            _pickLevelMap[fid] = { perfil:perfil, tid:tid, key:k };
-            var curLv = cfg.minLv || scoreToLevel5(cfg.min) || 3;
-            var col = LC[curLv];
-
-            out += '<div id="row_' + fid + '" style="padding:12px 0;' + (ki < dimInfo.keys.length - 1 ? 'border-bottom:1px solid #f0f0f0;' : '') + '">';
-
-            // Row: Label + Level selector
-            out += '<div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:8px">';
-            out += '<div style="flex:1;min-width:0">'
-                 + '<div style="font-size:13px;font-weight:700;color:#0f172a">' + cfg.label + '</div>'
-                 + '<div style="font-size:10px;color:#94a3b8;line-height:1.4;margin-top:2px">' + (cfg.req || '') + '</div>'
-                 + '</div>';
-
-            // Level chips
-            out += '<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">';
-            out += '<span style="font-size:10px;color:#94a3b8;margin-right:2px">Mín:</span>';
-            for (var lv = 1; lv <= 5; lv++) {
-              var isActive = lv === curLv;
-              out += '<button type="button" id="chip_' + fid + '_' + lv + '"'
-                   + ' data-fid="' + fid + '" data-lv="' + lv + '"'
-                   + ' onclick="pickLevel(this.dataset.fid,+this.dataset.lv)"'
-                   + ' onmouseenter="showLvlTip(this,' + lv + ')" onmouseleave="hideLvlTip()"'
-                   + ' style="width:28px;height:28px;border-radius:7px;border:' + (isActive ? '2px solid ' + LC[lv] : '1.5px solid #e2e8f0') + ';cursor:pointer;font-size:11px;font-weight:700;transition:all .12s;'
-                   + 'background:' + (isActive ? LC[lv] : '#fff') + ';color:' + (isActive ? '#fff' : '#94a3b8') + ';">'
-                   + lv + '</button>';
-            }
-            // Badge
-            out += '<div id="lbl_' + fid + '" style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px;background:' + LBG[curLv] + ';color:' + col + ';margin-left:4px;white-space:nowrap">'
-                 + LN[curLv] + '</div>';
-            out += '</div></div>';
-
-            // ── Zone bar ──
-            var rejectW = Math.max(0, (curLv - 1) * 20);
-            var cautionW = 20; // one level = caution
-            var approveW = Math.max(0, 100 - rejectW - cautionW);
-            if (curLv === 1) { rejectW = 0; cautionW = 20; approveW = 80; }
-            if (curLv >= 5) { rejectW = 80; cautionW = 20; approveW = 0; }
-
-            out += '<div style="position:relative;height:20px;border-radius:6px;overflow:hidden;display:flex;margin-bottom:4px;border:1px solid #e2e8f0">';
-            // Reject zone
-            if (rejectW > 0) {
-              out += '<div style="width:' + rejectW + '%;background:' + ZONE_COLORS.reject + ';display:flex;align-items:center;justify-content:center;border-right:1px solid ' + ZONE_BORDERS.reject + '">'
-                   + '<span style="font-size:8px;font-weight:700;color:#dc2626;opacity:.7">DESCARTE</span></div>';
-            }
-            // Caution zone
-            out += '<div style="width:' + cautionW + '%;background:' + ZONE_COLORS.caution + ';display:flex;align-items:center;justify-content:center;border-right:1px solid ' + ZONE_BORDERS.caution + '">'
-                 + '<span style="font-size:8px;font-weight:700;color:#a16207;opacity:.7">PRECAUCIÓN</span></div>';
-            // Approve zone
-            if (approveW > 0) {
-              out += '<div style="width:' + approveW + '%;background:' + ZONE_COLORS.approve + ';display:flex;align-items:center;justify-content:center">'
-                   + '<span style="font-size:8px;font-weight:700;color:#16a34a;opacity:.7">APROBADO</span></div>';
-            }
-            out += '</div>';
-
-            // Legend
-            out += '<div style="display:flex;justify-content:space-between;align-items:center">';
-            out += '<div style="display:flex;gap:8px;font-size:9px;color:#94a3b8">';
-            for (var ll = 1; ll <= 5; ll++) {
-              out += '<span>' + ll + '·' + LN[ll] + '</span>';
-            }
-            out += '</div>';
-            out += '</div>';
-
-            out += '<input type="hidden" id="hid_' + fid + '_min" value="' + curLv + '">';
-            out += '</div>'; // row
-          });
-
-          out += '</div>'; // config panel
-        }
-      }
+      if (isExpanded) out += _calibPanelHtml(perfil, tid);
 
       out += '</div>'; // test wrapper
     });
@@ -8918,66 +8576,143 @@ function resetTmMins() {
   toast('✓ Tiempos restaurados a valores por defecto', 'ok');
 }
 
-// ── Template presets ──
-function applyTemplate(tpl, perfil) {
-  if (!tpl) return;
-  var ideal = PERFIL_IDEAL[perfil]; if (!ideal) return;
-  var TEMPLATES = {
-    operativo:  { _default:3, AN:4, AC:4, ON:4, ME:3, IM:4, NP:3, pct:3 },
-    analitico:  { _default:3, V:4, N:4, L:4, pct:4, EX:2, DU:4, AC:4 },
-    liderazgo:  { _default:4, EX:4, AN:4, IN:4, DU:3, SU:4, CR:4 },
-    seguridad:  { _default:3, AC:5, ON:5, IL:5, IM:4, ME:4, AN:4, pct:4 },
-    minimo:     { _default:2 },
-    exigente:   { _default:4 },
-  };
-  var tplData = TEMPLATES[tpl]; if (!tplData) return;
-  var def = tplData._default || 3;
+// ═══════════════════════════════════════════════════════════
+//  MÍNIMOS DEL CARGO Y CALIBRACIÓN (Panel → Cargos → batería)
+//  Junto a cada mínimo se muestran los puntajes reales del cargo y, si hay
+//  entrevistas con dictamen, cuántos recomendados y no recomendables lo alcanzan.
+// ═══════════════════════════════════════════════════════════
+var _calibData = null, _calibCargando = false;
 
-  // Apply to all dimensions
-  Object.keys(ideal).forEach(function(secId) {
-    var sec = ideal[secId];
-    if (!sec) return;
-    if (sec.min !== undefined) {
-      var lv = tplData.pct || def;
-      sec.minLv = lv; sec.min = (lv-1)*20; sec.max = 100;
+function _calibLoad() {
+  if (_calibCargando) return;
+  _calibCargando = true;
+  getDB().then(function(all){ _calibData = all || []; })
+    .catch(function(){ _calibData = []; })
+    .then(function(){ _calibCargando = false; if (document.getElementById('bateria-content')) renderBateriaTab(); });
+}
+
+function _calibPuntaje(s, tid, key) {
+  var ts = s && s[tid]; if (!ts) return null;
+  var v = key === '_self' ? (tid === 'dc0' ? ts.total : ts.pct) : ts[key];
+  return (typeof v === 'number' && isFinite(v)) ? v : null;
+}
+
+// Último dictamen registrado en las entrevistas del candidato
+function _calibDictamen(s) {
+  var ev = ((s && s._entrevistas) || []).filter(function(e){ return e && e.dictamen; });
+  return ev.length ? ev[ev.length - 1].dictamen : '';
+}
+
+function _calibPanelHtml(perfil, tid) {
+  var sec = (PERFIL_IDEAL[perfil] || {})[tid];
+  var dims = (BATTERY_TEST_DIMENSIONS[tid] || {}).keys || [];
+  if (!sec) return '';
+  if (_calibData === null) _calibLoad();
+  var cands = (_calibData || []).filter(function(c){ return c.perfil === perfil && c.scores; });
+  var DIC = [['recomendado','Recomendados'], ['obs','Recomendados con observaciones'], ['no_recomendable','No recomendables']];
+
+  var out = '<div style="padding:12px 16px 16px;background:#fafbfc;border-top:1px dashed #e2e8f0">';
+  out += '<div style="font-size:11.5px;color:#64748b;line-height:1.55;margin-bottom:6px">'
+    + 'El mínimo es el porcentaje de respuestas correctas que se espera para este cargo; bajo ese valor el informe marca "Bajo el mínimo". '
+    + 'Use los puntajes reales para ajustarlo: si casi todas las personas que usted recomienda quedan bajo el mínimo, probablemente es demasiado exigente; '
+    + 'si las no recomendables lo superan sin dificultad, quizá es demasiado bajo.</div>';
+
+  dims.forEach(function(k, i) {
+    var cfg = k === '_self' ? sec : sec[k];
+    if (!cfg || cfg.min === undefined) return;
+    var ini = (PERFIL_IDEAL_INICIAL[perfil] || {})[tid];
+    ini = ini && (k === '_self' ? ini : ini[k]);
+    var vals = [], dic = {};
+    cands.forEach(function(c) {
+      var v = _calibPuntaje(c.scores, tid, k);
+      if (v === null) return;
+      vals.push(v);
+      var d = _calibDictamen(c.scores);
+      if (d) (dic[d] = dic[d] || []).push(v);
+    });
+
+    out += '<div style="padding:12px 0;' + (i ? 'border-top:1px solid #eef0f3;' : '') + '">';
+    // Nombre + mínimo editable
+    out += '<div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap">';
+    out += '<div style="flex:1;min-width:180px"><div style="font-size:13px;font-weight:700;color:#0f172a">' + htmlEsc(cfg.label || '') + '</div>'
+      + (cfg.req ? '<div style="font-size:10.5px;color:#94a3b8;line-height:1.4;margin-top:2px">' + htmlEsc(cfg.req) + '</div>' : '') + '</div>';
+    out += '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0">'
+      + '<span style="font-size:11px;color:#64748b">Mínimo</span>'
+      + '<input type="number" min="0" max="100" step="5" value="' + cfg.min + '" data-p="' + htmlEsc(perfil) + '" data-t="' + tid + '" data-k="' + k + '"'
+      + ' onchange="_calibSetMin(this.dataset.p,this.dataset.t,this.dataset.k,this.value)"'
+      + ' style="width:64px;padding:5px 7px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-weight:700;font-family:inherit;text-align:center;color:var(--ink);background:var(--surface)">'
+      + '<span style="font-size:12px;color:#64748b">%</span>';
+    if (ini && ini.min !== cfg.min) {
+      out += '<button type="button" data-p="' + htmlEsc(perfil) + '" data-t="' + tid + '" data-k="' + k + '" data-v="' + ini.min + '"'
+        + ' onclick="_calibSetMin(this.dataset.p,this.dataset.t,this.dataset.k,this.dataset.v)"'
+        + ' style="font-size:11px;color:var(--ink3);background:none;border:1px solid var(--border);border-radius:7px;padding:4px 8px;cursor:pointer;font-family:inherit">↺ Valor inicial ' + ini.min + ' %</button>';
+    }
+    out += '</div></div>';
+
+    // Distribución de puntajes (10 tramos) con la línea del mínimo
+    if (_calibData === null) {
+      out += '<div style="font-size:11.5px;color:#94a3b8;margin-top:10px">Cargando puntajes de las evaluaciones…</div></div>';
+      return;
+    }
+    var bins = [0,0,0,0,0,0,0,0,0,0];
+    vals.forEach(function(v){ bins[Math.min(9, Math.max(0, Math.floor(v / 10)))]++; });
+    var maxB = Math.max.apply(null, bins) || 1;
+    out += '<div style="position:relative;margin-top:10px;height:46px;display:flex;align-items:flex-end;gap:2px;border-bottom:1px solid #cbd5e1">';
+    bins.forEach(function(b, bi) {
+      var bajo = bi * 10 + 5 < cfg.min;
+      out += '<div title="' + (bi * 10) + '–' + (bi === 9 ? 100 : bi * 10 + 9) + ' %: ' + b + (b === 1 ? ' persona' : ' personas') + '"'
+        + ' style="flex:1;height:' + (b ? Math.max(8, Math.round(b / maxB * 100)) : 0) + '%;background:' + (bajo ? '#fca5a5' : '#86efac') + ';border-radius:3px 3px 0 0"></div>';
+    });
+    out += '<div title="Mínimo: ' + cfg.min + ' %" style="position:absolute;left:' + cfg.min + '%;top:-4px;bottom:-4px;width:2px;background:#0f172a"></div>';
+    out += '</div>';
+    out += '<div style="display:flex;justify-content:space-between;font-size:9.5px;color:#94a3b8;margin-top:3px"><span>0 %</span><span>50 %</span><span>100 %</span></div>';
+
+    // Lectura de los datos
+    var txt;
+    if (!vals.length) {
+      txt = 'Aún no hay evaluaciones de este cargo con esta prueba. Cuando las haya, aquí verá cómo se distribuyen los puntajes.';
     } else {
-      Object.keys(sec).forEach(function(k) {
-        if (sec[k] && sec[k].min !== undefined) {
-          var lv = tplData[k] || def;
-          sec[k].minLv = lv; sec[k].min = (lv-1)*20; sec[k].max = 100;
-        }
+      var srt = vals.slice().sort(function(a, b){ return a - b; });
+      var med = Math.round(srt.length % 2 ? srt[(srt.length - 1) / 2] : (srt[srt.length / 2 - 1] + srt[srt.length / 2]) / 2);
+      var alc = vals.filter(function(v){ return v >= cfg.min; }).length;
+      txt = '<strong>' + vals.length + '</strong> ' + (vals.length === 1 ? 'evaluación' : 'evaluaciones') + ' de este cargo · mediana <strong>' + med + ' %</strong> · '
+        + 'con este mínimo lo alcanzan <strong>' + alc + ' de ' + vals.length + '</strong> (' + Math.round(alc / vals.length * 100) + ' %).';
+      var dTxt = DIC.filter(function(d){ return dic[d[0]]; }).map(function(d) {
+        var l = dic[d[0]], a = l.filter(function(v){ return v >= cfg.min; }).length;
+        return d[1] + ': <strong>' + a + ' de ' + l.length + '</strong>';
       });
+      if (dTxt.length) txt += '<br>Sobre el mínimo, según su dictamen en la entrevista: ' + dTxt.join(' · ') + '.';
+      if (vals.length < 30) txt += '<br><span style="color:#94a3b8">Con menos de 30 evaluaciones, tome estos datos solo como orientación.</span>';
     }
+    out += '<div style="font-size:11.5px;color:#475569;line-height:1.6;margin-top:8px">' + txt + '</div>';
+    out += '</div>';
   });
+  return out + '</div>';
+}
+
+function _calibSetMin(perfil, tid, key, val) {
+  var sec = (PERFIL_IDEAL[perfil] || {})[tid];
+  var cfg = sec && (key === '_self' ? sec : sec[key]);
+  if (!cfg) return;
+  var v = Math.round(Number(val));
+  if (val === '' || !isFinite(v)) { renderBateriaTab(); return; }
+  v = Math.max(0, Math.min(100, v));
+  if (v === cfg.min) { renderBateriaTab(); return; }
+  var antes = cfg.min;
+  cfg.min = v;
   persistParams();
+  _logConfigChange('Mínimo modificado', ((PERFIL_META[perfil] || {}).label || perfil) + ' · ' + (cfg.label || tid) + ': ' + antes + ' % → ' + v + ' %');
   renderBateriaTab();
-  toast('✓ Plantilla "' + tpl + '" aplicada', 'ok');
+  toast('✓ Mínimo actualizado: ' + v + ' %', 'ok');
 }
 
 
-function pickLevel(fid, lv) {
-  // Parse fid: "b_{perfil}_{tid}_{key}" — use stored mapping instead of parsing
-  var meta = _pickLevelMap && _pickLevelMap[fid];
-  if (meta) {
-    var secData = PERFIL_IDEAL[meta.perfil] && PERFIL_IDEAL[meta.perfil][meta.tid];
-    if (secData) {
-      var cfg = meta.key === '_self' ? secData : secData[meta.key];
-      if (cfg && cfg.min !== undefined) {
-        cfg.minLv = lv;
-        cfg.min = (lv - 1) * 20;
-        cfg.max = 100;
-      }
-    }
-  }
-  persistParams();
-  renderBateriaTab();
-}
-var _pickLevelMap = {};
 var _expandedTests = {};
 
 function toggleBatteryExpand(perfil, tid) {
   var key = perfil + '__' + tid;
   _expandedTests[key] = !_expandedTests[key];
+  if (_expandedTests[key] && !_calibData) _calibLoad();
   renderBateriaTab();
 }
 
@@ -8995,11 +8730,11 @@ function persistParams() {
         if (!sec) return;
         snapshot[pf][secId] = {};
         if (sec.min !== undefined) {
-          snapshot[pf][secId]._self = { min: sec.min, max: sec.max, minLv: sec.minLv };
+          snapshot[pf][secId]._self = { min: sec.min, max: sec.max };
         } else {
           Object.keys(sec).forEach(function(k) {
             if (sec[k] && sec[k].min !== undefined) {
-              snapshot[pf][secId][k] = { min: sec[k].min, max: sec[k].max, minLv: sec[k].minLv };
+              snapshot[pf][secId][k] = { min: sec[k].min, max: sec[k].max };
             }
           });
         }
@@ -9026,13 +8761,11 @@ function restoreParams() {
         if (saved._self !== undefined) {
           if (saved._self.min !== undefined) sec.min = saved._self.min;
           if (saved._self.max !== undefined) sec.max = saved._self.max;
-          if (saved._self.minLv !== undefined) sec.minLv = saved._self.minLv;
         } else {
           Object.keys(saved).forEach(function(k) {
             if (sec[k]) {
               if (saved[k].min !== undefined) sec[k].min = saved[k].min;
               if (saved[k].max !== undefined) sec[k].max = saved[k].max;
-              if (saved[k].minLv !== undefined) sec[k].minLv = saved[k].minLv;
             }
           });
         }
