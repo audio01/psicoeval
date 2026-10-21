@@ -769,21 +769,38 @@ input,select,textarea{font-family:inherit;outline:none}
 .kanban-card:hover{box-shadow:0 4px 18px rgba(0,0,0,.10);transform:translateY(-1px);border-color:var(--accent)}
 .kanban-card.dragging{opacity:.45;cursor:grabbing;box-shadow:0 8px 32px rgba(0,0,0,.18)}
 /* ── ATS: Candidate Drawer ─────────────────────────────── */
-#cand-drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.38);backdrop-filter:blur(3px);z-index:400;display:none;justify-content:flex-end}
+/* Ficha del candidato: ventana centrada y amplia (como una página de Notion), con pestañas arriba */
+#cand-drawer-overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);backdrop-filter:blur(3px);z-index:400;display:none;justify-content:center;align-items:center;padding:24px}
 #cand-drawer-overlay.open{display:flex}
-#cand-drawer{width:500px;max-width:100vw;background:var(--bg);box-shadow:-6px 0 40px rgba(0,0,0,.18);display:flex;flex-direction:column;height:100%;overflow:hidden;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1),width .25s ease}
-#cand-drawer-overlay.open #cand-drawer{transform:translateX(0)}
-#cand-drawer.ev-wide{width:860px}
-.drawer-tabs{display:flex;border-bottom:2px solid var(--border);background:var(--surface);overflow-x:auto;flex-shrink:0}
-.drawer-tab-btn{padding:11px 14px;font-size:12px;font-weight:600;color:var(--ink3);border:none;background:none;cursor:pointer;border-bottom:2.5px solid transparent;margin-bottom:-2px;white-space:nowrap;font-family:inherit;transition:color .15s}
-.drawer-tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
-.drawer-body{flex:1;overflow-y:auto;padding:18px 20px}
-.drawer-body.ev-body{padding:0;overflow:hidden;display:flex}
-.ev-aside{width:240px;flex-shrink:0;background:#0f172a;border-right:1.5px solid #1e293b;overflow-y:auto;padding:16px}
-.ev-aside .ev-kpi-chip{background:#1e293b;border-color:#334155}
-.ev-aside .ev-score-bar{background:#334155}
-.ev-aside .ev-card{background:#1e293b;border-color:#334155}
-.ev-main{flex:1;overflow-y:auto;padding:18px 20px;display:flex;flex-direction:column;gap:14px}
+#cand-drawer{width:min(1180px,100%);height:100%;max-height:calc(100vh - 48px);background:var(--bg);border-radius:16px;box-shadow:0 24px 70px rgba(0,0,0,.28);display:flex;flex-direction:column;overflow:hidden;transform:translateY(14px) scale(.985);opacity:0;transition:transform .22s cubic-bezier(.4,0,.2,1),opacity .22s ease}
+#cand-drawer-overlay.open #cand-drawer{transform:none;opacity:1}
+#drawer-header > div{padding-left:28px!important;padding-right:28px!important}
+.drawer-tabs{display:flex;gap:4px;padding:0 24px;border-bottom:1px solid var(--border);background:var(--bg);overflow-x:auto;flex-shrink:0}
+.drawer-tab-btn{padding:12px 14px;font-size:13.5px;font-weight:600;color:var(--ink3);border:none;background:none;cursor:pointer;border-bottom:2.5px solid transparent;margin-bottom:-1px;white-space:nowrap;font-family:inherit;transition:color .15s,background .15s;border-radius:8px 8px 0 0}
+.drawer-tab-btn:hover{color:var(--ink);background:var(--surface2)}
+.drawer-tab-btn.active{color:var(--ink);border-bottom-color:var(--ink)}
+/* Pestañas de lectura: columna centrada de ancho cómodo */
+.drawer-body{flex:1;overflow-y:auto;padding:24px max(28px, calc((100% - 860px) / 2)) 40px}
+/* Entrevistas: pauta a la izquierda (ancha) y panel de datos a la derecha */
+.drawer-body.ev-body{padding:0;overflow:hidden;display:flex;flex-direction:row-reverse}
+.ev-aside{width:300px;flex-shrink:0;background:var(--surface2);border-left:1px solid var(--border);overflow-y:auto;padding:20px}
+.ev-main{flex:1;overflow-y:auto;padding:22px 32px 40px;display:flex;flex-direction:column;gap:16px}
+.ev-main > *{width:100%;max-width:820px;margin-left:auto;margin-right:auto;box-sizing:border-box}
+.ev-main .ev-sec{padding:18px}
+.ev-main .ev-sec-title{font-size:11.5px}
+.ev-main .ev-field input,.ev-main .ev-field select,.ev-main .ev-field textarea{font-size:13px;padding:8px 10px}
+@media (max-width:900px){
+  .drawer-body.ev-body{flex-direction:column;overflow-y:auto}
+  .ev-aside{width:auto;border-left:none;border-bottom:1px solid var(--border);overflow:visible}
+  .ev-main{overflow:visible;padding:18px 16px 32px}
+}
+@media (max-width:700px){
+  #cand-drawer-overlay{padding:0}
+  #cand-drawer{max-height:100vh;border-radius:0}
+  #drawer-header > div{padding-left:16px!important;padding-right:16px!important}
+  .drawer-tabs{padding:0 8px}
+  .drawer-body{padding:18px 16px 32px}
+}
 .ev-sec{background:var(--surface);border-radius:11px;border:1px solid var(--border);padding:14px}
 .ev-sec-title{font-size:10.5px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px;display:flex;align-items:center;gap:6px}
 .ev-field label{font-size:10.5px;font-weight:700;color:var(--ink3);display:block;margin-bottom:3px;text-transform:uppercase;letter-spacing:.4px}
@@ -11977,13 +11994,8 @@ function _switchDrawerTab(tab, c) {
   var bodyEl = document.getElementById('drawer-body');
   if (!bodyEl) return;
   var drawerEl = document.getElementById('cand-drawer');
-  if (tab === 'entrevistas') {
-    if (drawerEl) drawerEl.classList.add('ev-wide');
-    bodyEl.className = 'drawer-body ev-body';
-  } else {
-    if (drawerEl) drawerEl.classList.remove('ev-wide');
-    bodyEl.className = 'drawer-body';
-  }
+  bodyEl.className = tab === 'entrevistas' ? 'drawer-body ev-body' : 'drawer-body';
+  bodyEl.scrollTop = 0;
   if (tab === 'resumen') bodyEl.innerHTML = _tabResumen(c);
   else if (tab === 'evaluaciones') bodyEl.innerHTML = _tabEvaluaciones(c);
   else if (tab === 'entrevistas') bodyEl.innerHTML = _tabEntrevistasDrawer(c);
@@ -12413,20 +12425,13 @@ function _tabEntrevistasDrawer(c) {
   var dc0  = sc.dc0  || {};
   var disc = sc.disc || {};
 
-  // ── LEFT: dark clinical sidebar ──────────────────────────────────
+  // ── Panel de datos (derecha) ──────────────────────────────────
   var aside = '<div class="ev-aside">';
 
-  // Avatar + nombre
-  var initials = ((c.nombre||'?')[0] + (c.apellido||'?')[0]).toUpperCase();
-  aside += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">';
-  aside += '<div style="width:42px;height:42px;border-radius:50%;background:#6366f1;color:#fff;font-size:15px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">' + initials + '</div>';
-  aside += '<div><div style="font-size:13px;font-weight:700;color:#f1f5f9;line-height:1.3">' + htmlEsc(c.nombre||'') + ' ' + htmlEsc(c.apellido||'') + '</div>'
-         + '<div style="font-size:11px;color:#64748b;margin-top:2px">' + htmlEsc(c.cargo||c.perfil||'—') + '</div></div></div>';
-
-  // Key data chips (dark)
-  var dkv = 'display:flex;flex-direction:column;gap:1px;padding:6px 9px;background:#1e293b;border-radius:8px;border:1px solid #334155';
-  var dkl = 'font-size:9px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.5px';
-  var dkv2 = 'font-size:11.5px;font-weight:600;color:#cbd5e1';
+  // Datos clave
+  var dkv = 'display:flex;flex-direction:column;gap:1px;padding:6px 9px;background:var(--surface);border-radius:8px;border:1px solid var(--border)';
+  var dkl = 'font-size:9px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px';
+  var dkv2 = 'font-size:11.5px;font-weight:600;color:var(--ink2)';
   aside += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px">';
   aside += '<div style="' + dkv + '"><span style="' + dkl + '">Edad</span><span style="' + dkv2 + '">' + (c.edad ? c.edad + ' años' : '—') + '</span></div>';
   aside += '<div style="' + dkv + '"><span style="' + dkl + '">Comuna</span><span style="' + dkv2 + ';font-size:11px">' + htmlEsc(c.comuna||'—') + '</span></div>';
@@ -12434,62 +12439,62 @@ function _tabEntrevistasDrawer(c) {
   aside += '<div style="' + dkv + ';grid-column:1/-1"><span style="' + dkl + '">Rubro</span><span style="' + dkv2 + ';font-size:11px">' + htmlEsc(c.rubro_label||c.rubro||'—') + '</span></div>';
   aside += '</div>';
 
-  // Score bars (neon dark style)
+  // Barras de puntaje
   var hasTests = sc.pai || sc.dc0 || sc.disc;
   if (hasTests) {
-    aside += '<div style="font-size:9px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.6px;margin-bottom:9px">Evaluaciones</div>';
+    aside += '<div style="font-size:9px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:9px">Evaluaciones</div>';
     function darkBar(label, val, color) {
       if (!val && val !== 0) return '';
       var pct = Math.min(100, Math.round(val));
       return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:7px">'
-           + '<span style="font-size:9px;color:#64748b;width:68px;flex-shrink:0">' + label + '</span>'
-           + '<div style="flex:1;height:4px;background:#1e293b;border-radius:2px;overflow:hidden">'
+           + '<span style="font-size:9px;color:var(--ink3);width:68px;flex-shrink:0">' + label + '</span>'
+           + '<div style="flex:1;height:5px;background:var(--border);border-radius:2px;overflow:hidden">'
            + '<div style="width:' + pct + '%;height:100%;background:' + color + ';border-radius:2px"></div></div>'
            + '<span style="font-size:10px;font-weight:700;color:' + color + ';min-width:22px;text-align:right">' + val + '</span>'
            + '</div>';
     }
-    if (sc.dc0 && dc0.total) aside += darkBar('Cognitivo', dc0.total, '#22d3ee');
+    if (sc.dc0 && dc0.total) aside += darkBar('Cognitivo', dc0.total, '#0891b2');
     if (sc.pai) {
-      if (pai.ME) aside += darkBar('M. Estrés', pai.ME, '#86efac');
-      if (pai.EE) aside += darkBar('Est. Emoc.', pai.EE, '#fde68a');
-      if (pai.IL) aside += darkBar('Integridad', pai.IL, '#a5b4fc');
+      if (pai.ME) aside += darkBar('M. Estrés', pai.ME, '#16a34a');
+      if (pai.EE) aside += darkBar('Est. Emoc.', pai.EE, '#d97706');
+      if (pai.IL) aside += darkBar('Integridad', pai.IL, '#4f46e5');
     }
     if (sc.disc && disc.dominant) {
       aside += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:7px">'
-             + '<span style="font-size:9px;color:#64748b;width:68px;flex-shrink:0">DISC</span>'
+             + '<span style="font-size:9px;color:var(--ink3);width:68px;flex-shrink:0">DISC</span>'
              + '<div style="background:#6366f1;color:#fff;border-radius:6px;padding:2px 9px;font-size:11px;font-weight:800">' + disc.dominant + '</div></div>';
     }
   }
 
   // Separator
-  aside += '<div style="height:1px;background:#1e293b;margin:12px 0"></div>';
+  aside += '<div style="height:1px;background:var(--surface);margin:12px 0"></div>';
 
   // History mini-list
   if (entrevistas.length) {
-    aside += '<div style="font-size:9px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.6px;margin-bottom:7px">Historial (' + entrevistas.length + ')</div>';
+    aside += '<div style="font-size:9px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:7px">Historial (' + entrevistas.length + ')</div>';
     var modIcons2  = { online:'🖥', presencial:'🏢', terreno:'🌍' };
     var tipoIcons2 = { rrhh:'🧑‍💼', tecnica:'🔧', psicolaboral:'🧠', panel:'👥' };
     entrevistas.slice().reverse().forEach(function(ev) {
       var dictM = _EV_DICTAMEN.find(function(d){ return d.val === ev.dictamen; });
       var fFmt = ev.fecha || '—';
       try { fFmt = new Date(ev.fecha+'T12:00').toLocaleDateString('es-CL',{day:'2-digit',month:'short'}); } catch(e){}
-      aside += '<div style="background:#1e293b;border:1px solid #334155;border-radius:9px;padding:8px 10px;margin-bottom:6px">';
+      aside += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:8px 10px;margin-bottom:6px">';
       aside += '<div style="display:flex;justify-content:space-between;align-items:center;gap:4px">';
-      aside += '<div style="font-size:11.5px;font-weight:700;color:#e2e8f0">' + fFmt + '</div>';
-      aside += '<button onclick="deleteEntrevistaEntry(\'' + c.id + '\',' + ev.id + ')" title="Eliminar" style="background:none;border:none;cursor:pointer;font-size:12px;color:#475569;padding:1px 3px;line-height:1;border-radius:3px" onmouseover="this.style.color=\'#f87171\'" onmouseout="this.style.color=\'#475569\'">🗑</button>';
+      aside += '<div style="font-size:11.5px;font-weight:700;color:var(--ink2)">' + fFmt + '</div>';
+      aside += '<button onclick="deleteEntrevistaEntry(\'' + c.id + '\',' + ev.id + ')" title="Eliminar" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--ink3);padding:1px 3px;line-height:1;border-radius:3px" onmouseover="this.style.color=\'#f87171\'" onmouseout="this.style.color=\'var(--ink3)\'">🗑</button>';
       aside += '</div>';
-      aside += '<div style="font-size:10.5px;color:#64748b;margin-top:2px">';
+      aside += '<div style="font-size:10.5px;color:var(--ink3);margin-top:2px">';
       if (ev.tipo) aside += (tipoIcons2[ev.tipo]||'') + ' ';
       aside += (modIcons2[ev.modalidad]||'') + ' ' + (ev.modalidad||'');
       if (ev.entrevistador) aside += ' · ' + htmlEsc(ev.entrevistador);
       aside += '</div>';
       if (dictM) aside += '<div style="margin-top:4px;font-size:10px;font-weight:700;color:' + dictM.color + '">' + dictM.icon + ' ' + dictM.label + '</div>';
       var _evProm = _evPromedio(_evCompsDe(ev));
-      if (_evProm !== null) aside += '<div style="margin-top:3px;font-size:10px;color:#94a3b8">Competencias: <strong style="color:#e2e8f0">' + String(_evProm).replace('.', ',') + ' / 5</strong></div>';
+      if (_evProm !== null) aside += '<div style="margin-top:3px;font-size:10px;color:var(--ink3)">Competencias: <strong style="color:var(--ink2)">' + String(_evProm).replace('.', ',') + ' / 5</strong></div>';
       aside += '</div>';
     });
   } else {
-    aside += '<div style="text-align:center;padding:16px 8px;color:#475569;font-size:11.5px;background:#1e293b;border-radius:8px;border:1px dashed #334155">Sin entrevistas<br>registradas aún</div>';
+    aside += '<div style="text-align:center;padding:16px 8px;color:var(--ink3);font-size:11.5px;background:var(--surface);border-radius:8px;border:1px dashed var(--border)">Sin entrevistas<br>registradas aún</div>';
   }
   aside += '</div>'; // /ev-aside
 
