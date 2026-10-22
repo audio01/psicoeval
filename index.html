@@ -10490,6 +10490,12 @@ function _porArchivarBadge(c) {
 // En el archivo: los descartados y los postulantes archivados por inactividad.
 // No aparecen en el tablero ni en las vistas habituales; sí en la vista "Archivo" y al buscar.
 function _bdEnArchivo(c) { return getPipelineEtapa(c) === 'descartado' || _bdArchivado(c); }
+// Al buscar aparecen también los del archivo: se marcan para que se note
+function _enArchivoBadge(c) {
+  if ((_BD.filtros || {}).archivo === 'archivados' || !_bdEnArchivo(c)) return '';
+  var desc = getPipelineEtapa(c) === 'descartado';
+  return '<span title="' + (desc ? 'Descartado: está en el Archivo' : 'Sin movimiento hace más de ' + _BD_ARCH_DIAS + ' días: está en el Archivo') + '" style="display:inline-block;margin-left:6px;padding:1px 7px;border-radius:100px;font-size:10px;font-weight:700;vertical-align:1px;white-space:nowrap;background:#f1f5f9;color:#475569;border:1px solid #cbd5e1">🗄 En archivo</span>';
+}
 function _bdArchivado(c) {
   return getPipelineEtapa(c) === 'postulante' && Date.now() - _ultimoMovimiento(c) > _BD_ARCH_DIAS * 864e5;
 }
@@ -10556,10 +10562,12 @@ var _BD_CAMPOS = {
 };
 function _bdFiltrar(all) {
   var q = (_bdBuscarTxt || '').toLowerCase().trim();
+  var qRut = _rutNorm(q);   // el RUT se encuentra con o sin puntos y guion
   return all.filter(function(c) {
     if (q) {
       var txt = [c.nombre, c.apellido, c.email, c.rut, c.cargo, c.comuna, c.rubro].map(function(v){ return v || ''; }).join(' ').toLowerCase();
-      if (txt.indexOf(q) === -1) return false;
+      var porRut = qRut.length >= 6 && /^[\d.\-\skK]+$/.test(q) && _rutNorm(c.rut).indexOf(qRut) === 0;
+      if (txt.indexOf(q) === -1 && !porRut) return false;
     }
     // Sin filtro de archivo ni búsqueda, los archivados no se muestran
     var fl = _BD.filtros || {};
@@ -10715,7 +10723,7 @@ function _bdTabla(lista) {
     if (n > _bdLimite) return '';
     var id = htmlEsc(c.id), nombre = htmlEsc(((c.nombre || '') + ' ' + (c.apellido || '')).trim());
     return '<tr data-id="' + id + '" class="bd-tr" onclick="openCandDrawer(\'' + id + '\')"><td>' + _bdChk(c) + '</td>'
-      + '<td><div class="bd-nom">' + nombre + _alertBadgesHtml(c.scores) + _rutRepBadge(c) + _porArchivarBadge(c) + '</div><div class="bd-sub">' + htmlEsc(c.email || '') + '</div></td>'
+      + '<td><div class="bd-nom">' + nombre + _alertBadgesHtml(c.scores) + _rutRepBadge(c) + _porArchivarBadge(c) + _enArchivoBadge(c) + '</div><div class="bd-sub">' + htmlEsc(c.email || '') + '</div></td>'
       + props.map(function(p){ return '<td>' + _bdCelda(c, p[0]) + '</td>'; }).join('')
       + '<td class="bd-acc" onclick="event.stopPropagation()">'
       + (c.estado === 'completed' ? '<a onclick="viewCandReport(\'' + id + '\')" title="Ver informe">📋</a><a onclick="downloadPdfReport(\'' + id + '\')" title="Descargar PDF">⬇</a>' : '')
@@ -10764,7 +10772,7 @@ function _bdTablero(lista) {
       var id = htmlEsc(c.id), pm = PERFIL_META[c.perfil] || {};
       var ent = ((c.scores && c.scores._entrevistas) || []).length;
       h += '<div class="kanban-card" id="kcard-' + id + '"' + (arrastra ? ' draggable="true" ondragstart="kDragStart(event,\'' + id + '\')" ondragend="kDragEnd(event)"' : '') + ' onclick="openCandDrawer(\'' + id + '\')">'
-        + '<div style="display:flex;gap:8px;align-items:flex-start"><div style="flex:1;min-width:0"><div class="bd-nom">' + htmlEsc(((c.nombre || '') + ' ' + (c.apellido || '')).trim()) + _rutRepBadge(c) + _porArchivarBadge(c) + '</div>'
+        + '<div style="display:flex;gap:8px;align-items:flex-start"><div style="flex:1;min-width:0"><div class="bd-nom">' + htmlEsc(((c.nombre || '') + ' ' + (c.apellido || '')).trim()) + _rutRepBadge(c) + _porArchivarBadge(c) + _enArchivoBadge(c) + '</div>'
         + (_BD.props.cargo ? '<div class="bd-sub">' + (pm.icon || '') + ' ' + htmlEsc(c.cargo || pm.label || '') + '</div>' : '') + '</div>' + _bdChk(c) + '</div>'
         + (_BD.props.resultado && c.estado === 'completed' ? '<div style="margin-top:7px">' + _miradaChipsHtml(_bdMirada(c)) + '</div>' : '')
         + (_BD.props.etapa && campo !== 'etapa' ? '<div style="margin-top:6px">' + _bdCelda(c, 'etapa') + '</div>' : '')
