@@ -833,6 +833,9 @@ input,select,textarea{font-family:inherit;outline:none}
 .bd-board{min-height:300px}
 .bd-board .kanban-col{flex:1 1 0;min-width:165px;width:auto}
 .bd-board .kanban-card span{white-space:normal!important}
+.bd-board .kanban-col.bd-descartar{flex:0 0 112px;min-width:112px;min-height:150px;border-style:dashed;border-color:#fecaca;background:transparent;justify-content:center;align-items:center;gap:6px;text-align:center;color:#dc2626;font-size:12px;font-weight:700;line-height:1.5;padding:12px 8px}
+.bd-board .kanban-col.bd-descartar small{font-size:10.5px;font-weight:500;color:var(--ink4)}
+.bd-board .kanban-col.bd-descartar.drag-over{background:#fef2f2;border-color:#dc2626}
 .bd-vacio{text-align:center;padding:18px 8px;color:var(--ink4);font-size:11px;border:1.5px dashed var(--border);border-radius:8px}
 .bd-card-pie{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:10.5px;color:var(--ink4)}
 .kanban-card .row-chk{margin-top:2px;flex-shrink:0}
@@ -10468,7 +10471,8 @@ var _BD_DEF = { vista:'tabla', filtros:{}, orden:'fecha_desc', agrupar:'', colum
 var _BD_FIJAS = [
   { id:'todos',   nombre:'Todos',       icon:'👥', cfg:{ vista:'tabla' } },
   { id:'tablero', nombre:'Tablero',     icon:'🗂', cfg:{ vista:'tablero' } },
-  { id:'revisar', nombre:'Por revisar', icon:'🔎', cfg:{ vista:'tabla', filtros:{ estado:'completed', dictamen:'sin' } } }
+  { id:'revisar', nombre:'Por revisar', icon:'🔎', cfg:{ vista:'tabla', filtros:{ estado:'completed', dictamen:'sin' } } },
+  { id:'archivo', nombre:'Archivo',     icon:'🗄', cfg:{ vista:'tabla', filtros:{ archivo:'archivados' }, agrupar:'etapa' } }
 ];
 var _BD_ORDEN = [['fecha_desc','Más recientes primero'], ['fecha_asc','Más antiguos primero'], ['nombre_asc','Nombre (A → Z)'], ['resultado_desc','Mejor resultado primero'], ['etapa','Etapa del proceso']];
 var _BD_AGRUPAR = [['','Sin agrupar'], ['etapa','Etapa'], ['cargo','Cargo'], ['dictamen','Dictamen'], ['estado','Estado']];
@@ -10494,6 +10498,9 @@ function _porArchivarBadge(c) {
   if (d === null) return '';
   return '<span title="Sin movimiento hace ' + (_BD_ARCH_DIAS - d) + ' días. Si no cambia de etapa, se archiva y deja de verse en Candidatos." style="display:inline-block;margin-left:6px;padding:1px 7px;border-radius:100px;font-size:10px;font-weight:700;vertical-align:1px;white-space:nowrap;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa">⏳ Se archiva ' + (d === 1 ? 'mañana' : 'en ' + d + ' días') + '</span>';
 }
+// En el archivo: los descartados y los postulantes archivados por inactividad.
+// No aparecen en el tablero ni en las vistas habituales; sí en la vista "Archivo" y al buscar.
+function _bdEnArchivo(c) { return getPipelineEtapa(c) === 'descartado' || _bdArchivado(c); }
 function _bdArchivado(c) {
   return getPipelineEtapa(c) === 'postulante' && Date.now() - _ultimoMovimiento(c) > _BD_ARCH_DIAS * 864e5;
 }
@@ -10551,8 +10558,8 @@ var _BD_CAMPOS = {
                 ok:function(c, v){ var m = _miradaDe(c); if (!m.apt.length) return false; return v === 'ok' ? !m.bajo.length : m.bajo.length > 0; } },
   integridad: { label:'Integridad', ops:function(){ return [['riesgo_alto', 'Riesgo alto'], ['explorar', 'A explorar'], ['sin_indicadores', 'Sin indicadores'], ['no_interpretable', 'No interpretable']]; },
                 ok:function(c, v){ return ((c.scores || {}).integridad || {}).nivel === v; } },
-  archivo:    { label:'Archivo', ops:function(){ return [['activos', 'Solo activos'], ['pronto', 'Se archivan esta semana'], ['archivados', 'Solo archivados'], ['todos', 'Activos y archivados']]; },
-                ok:function(c, v){ if (v === 'pronto') return _diasParaArchivo(c) !== null; return v === 'todos' || (v === 'archivados') === _bdArchivado(c); } },
+  archivo:    { label:'Archivo', ops:function(){ return [['activos', 'Solo activos'], ['pronto', 'Se archivan esta semana'], ['archivados', 'Archivo (descartados e inactivos)'], ['todos', 'Activos y archivo']]; },
+                ok:function(c, v){ if (v === 'pronto') return _diasParaArchivo(c) !== null; return v === 'todos' || (v === 'archivados') === _bdEnArchivo(c); } },
   invitacion: { label:'Invitación', ops:function(){ return [['con', 'Con invitación'], ['sin', 'Sin invitación']]; },
                 ok:function(c, v){ var i = !!(c.scores && c.scores._invitacion); return v === 'con' ? i : !i; } }
 };
@@ -10564,7 +10571,8 @@ function _bdFiltrar(all) {
       if (txt.indexOf(q) === -1) return false;
     }
     // Sin filtro de archivo ni búsqueda, los archivados no se muestran
-    if (!q && !(_BD.filtros || {}).archivo && _bdArchivado(c)) return false;
+    var fl = _BD.filtros || {};
+    if (!q && !fl.archivo && !(fl.etapa === 'descartado' && getPipelineEtapa(c) === 'descartado') && _bdEnArchivo(c)) return false;
     return Object.keys(_BD.filtros || {}).every(function(k){ var f = _BD_CAMPOS[k]; return !f || f.ok(c, _BD.filtros[k]); });
   });
 }
@@ -10616,11 +10624,11 @@ function _bdCuerpoPintar(all) {
   var lista = _bdOrdenar(_bdFiltrar(all));
   var cnt = document.getElementById('bd-count');
   if (cnt) {
-    var arch = (!(_BD.filtros || {}).archivo && !(_bdBuscarTxt || '').trim()) ? all.filter(_bdArchivado).length : 0;
+    var arch = (!(_BD.filtros || {}).archivo && !(_bdBuscarTxt || '').trim()) ? all.filter(_bdEnArchivo).length : 0;
     cnt.innerHTML = (lista.length === all.length ? all.length + ' candidatos' : lista.length + ' de ' + all.length)
       + (function(){ var pr = (_BD.filtros || {}).archivo ? 0 : all.filter(function(c){ return _diasParaArchivo(c) !== null; }).length;
           return pr ? ' · <a class="bd-arch" style="color:#c2410c" onclick="_BD.filtros.archivo=\'pronto\';_bdCambio()">⏳ ' + pr + ' se archiva' + (pr > 1 ? 'n' : '') + ' esta semana</a>' : ''; })()
-      + (arch ? ' · <a class="bd-arch" onclick="_BD.filtros.archivo=\'archivados\';_bdCambio()" title="Postulantes sin movimiento hace más de ' + _BD_ARCH_DIAS + ' días. No se borran.">🗄 ' + arch + ' archivados</a>' : '');
+      + (arch ? ' · <a class="bd-arch" onclick="_bdAbrirVista(\'archivo\')" title="Descartados y postulantes sin movimiento hace más de ' + _BD_ARCH_DIAS + ' días. No se borran.">🗄 ' + arch + ' en archivo</a>' : '');
   }
   cuerpo.innerHTML = _BD.vista === 'tablero' ? _bdTablero(lista) : _bdTabla(lista);
   updateBulkBar();
@@ -10749,10 +10757,18 @@ function _bdPos(c) {
 function _bdTablero(lista) {
   var campo = _BD.columnas === 'dictamen' ? 'dictamen' : 'etapa', arrastra = campo === 'etapa';
   var manual = arrastra && _BD.orden === 'fecha_desc';
+  var verArchivo = (_BD.filtros || {}).archivo === 'archivados' || (_BD.filtros || {}).archivo === 'todos';
   var h = '<div class="kanban-board bd-board">';
   _bdGrupos(campo).forEach(function(g) {
     var del = lista.filter(function(c){ return _bdValorGrupo(c, campo) === g.id; });
     if (manual) del.sort(function(a, b){ return _bdPos(a) - _bdPos(b); });
+    // Descartados: van al archivo. En el tablero queda solo una zona para soltar
+    if (arrastra && g.id === 'descartado' && !del.length && !verArchivo) {
+      h += '<div class="kanban-col bd-descartar" id="kcol-descartado" ondragover="event.preventDefault();this.classList.add(\'drag-over\')" ondragleave="if(!this.contains(event.relatedTarget)){this.classList.remove(\'drag-over\')}" ondrop="kDrop(event,\'descartado\')">'
+        + '<div>❌<br>Soltar aquí<br>para descartar</div><small>Pasa al archivo</small>'
+        + '<div class="kanban-cards" id="kcards-descartado" style="display:none"></div></div>';
+      return;
+    }
     h += '<div class="kanban-col" id="kcol-' + g.id + '"' + (arrastra ? ' ondragover="event.preventDefault();this.classList.add(\'drag-over\');kOver(event,\'' + g.id + '\')" ondragleave="if(!this.contains(event.relatedTarget)){this.classList.remove(\'drag-over\')}" ondrop="kDrop(event,\'' + g.id + '\')"' : '') + '>'
       + '<div class="kanban-col-header" style="color:' + g.color + '"><span>' + g.label + '</span><span style="margin-left:auto;font-size:11px;background:' + g.bg + ';border:1.5px solid ' + g.border + ';color:' + g.color + ';border-radius:100px;padding:1px 8px">' + del.length + '</span></div>'
       + '<div class="kanban-cards" id="kcards-' + g.id + '">';
@@ -12536,6 +12552,7 @@ function _tabResumen(c) {
     }).join('<br>') + '</b></div>';
   var _dpa = _diasParaArchivo(c);
   if (_dpa !== null) h += '<div class="rs-kv"><span>Archivo</span><b style="color:#c2410c">⏳ Se archiva ' + (_dpa === 1 ? 'mañana' : 'en ' + _dpa + ' días') + ' si no cambia de etapa.</b></div>';
+  if (getPipelineEtapa(c) === 'descartado') h += '<div class="rs-kv"><span>Archivo</span><b style="color:var(--ink3);font-weight:500">🗄 En el archivo por estar descartado. Vuelve a Candidatos al cambiarlo de etapa.</b></div>';
   if (_bdArchivado(c)) h += '<div class="rs-kv"><span>Archivo</span><b style="color:var(--ink3);font-weight:500">🗄 Archivado: sin movimiento hace más de ' + _BD_ARCH_DIAS + ' días. Vuelve a Candidatos al cambiarlo de etapa.</b></div>';
   h += '</div>';
 
