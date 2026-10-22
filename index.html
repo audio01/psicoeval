@@ -13927,11 +13927,11 @@ async function abrirInformeRH(id) {
     + '<div class="field"><label>Recomendación de contratación</label>' + chips('recomendacion', [['plazo_fijo','Plazo fijo'],['indefinido','Indefinido'],['no_contratar','No contratar']], d.recomendacion) + '</div>'
     + '<div class="field"><label>Detalle de la recomendación <span style="text-transform:none;font-weight:500">(opcional)</span></label>' + input('detalle', d.detalle, 'Ej: con inducción clara y seguimiento cercano en terreno de la jefatura directa') + '</div>'
     + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><button class="rs-btn prim" id="rh-btn-ia" onclick="_rhRedactar()">✨ Redactar integración con IA</button>'
-    + '<span style="font-size:11.5px;color:var(--ink4)">Usa las fortalezas, debilidades, niveles y la recomendación. No envía nombre, RUT ni datos de contacto. Revise el texto antes de generar el PDF.</span></div>'
+    + '<span style="font-size:11.5px;color:var(--ink4)">Redacta las Observaciones finales y el Refuerzo de habilidades a partir de fortalezas, debilidades, niveles y la recomendación. No envía nombre, RUT ni datos de contacto. Revise el texto antes de generar el PDF.</span></div>'
     + '<div class="field"><label>Observaciones finales</label>'
     + '<div style="font-size:12px;color:var(--ink3);margin:2px 0 6px">El PDF comienza con: <em>"Al momento de la evaluación, se concluye que [nombre] se encuentra en la categoría de [categoría] para el cargo de [cargo] en la instalación [instalación]."</em> Escriba aquí el resto; deje una línea en blanco entre párrafos.</div>'
     + area('observaciones', d.observaciones, 8) + '</div>'
-    + '<div class="field"><label>Refuerzo de habilidades que debe observar el supervisor</label>' + area('refuerzo', d.refuerzo, 3, 'Ej: Acompañamiento explícito en cambios de protocolo…') + '</div>'
+    + '<div class="field"><label>Refuerzo de habilidades que debe observar el supervisor <span style="text-transform:none;font-weight:500">(una acción por línea)</span></label>' + area('refuerzo', d.refuerzo, 4, 'Ej: Acompañamiento explícito en cambios de protocolo…') + '</div>'
     + '<div style="font-size:11.5px;color:var(--ink4)">Las secciones B (entrevista operacional) y C (verificación de domicilio) salen en blanco para que las complete el supervisor.</div>'
     + '</div>'
     + '<div class="rh-pie">' + (guardado ? '<a class="rs-link" onclick="_rhRestablecer()" style="margin-right:auto">Volver a la propuesta del panel</a>' : '<span style="margin-right:auto"></span>')
@@ -13953,8 +13953,8 @@ function _rhLeer() {
 async function _rhRedactar() {
   var d = _rhLeer(), c = _rhCand;
   if (!d.recomendacion) { toast('Elija primero la recomendación de contratación.', 'er'); return; }
-  var ta = document.getElementById('rh-observaciones');
-  if (ta && ta.value.trim() && !(await appConfirm('¿Reemplazar el texto actual de Observaciones finales por la redacción de la IA?'))) return;
+  var ta = document.getElementById('rh-observaciones'), tr = document.getElementById('rh-refuerzo');
+  if (((ta && ta.value.trim()) || (tr && tr.value.trim())) && !(await appConfirm('¿Reemplazar las Observaciones finales y el Refuerzo de habilidades por la redacción de la IA?'))) return;
   var btn = document.getElementById('rh-btn-ia');
   if (btn) { btn.disabled = true; btn.textContent = '✨ Redactando…'; }
   try {
@@ -13972,6 +13972,7 @@ async function _rhRedactar() {
     if (!r.ok || !j.texto) throw new Error(j.error || (r.status === 404 ? 'La función de redacción aún no está instalada en Supabase.' : 'Error ' + r.status));
     var nom = ((c.nombre || '') + ' ' + (c.apellido || '')).trim();
     if (ta) ta.value = j.texto.replace(/\[NOMBRE\]/g, nom);
+    if (tr && Array.isArray(j.refuerzo) && j.refuerzo.length) tr.value = j.refuerzo.join('\n');
     toast('✨ Texto redactado: revíselo antes de generar el PDF', 'ok');
   } catch(e) { toast('No se pudo redactar: ' + e.message, 'er'); }
   finally { if (btn) { btn.disabled = false; btn.textContent = '✨ Redactar integración con IA'; } }
