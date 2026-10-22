@@ -12623,14 +12623,17 @@ function _tabEntrevistasDrawer(c) {
       + '</div></section>';
   };
 
-  // 1. Inicio
+  // 1. Inicio: por defecto, lo último usado en este navegador y la hora actual
+  var pref = _evPreferencias();
+  var horaAhora = String(_hoy.getHours()).padStart(2, '0') + ':' + String(_hoy.getMinutes()).padStart(2, '0');
+  var opcion = function(val, txt, sel){ return '<option value="' + val + '"' + (val === sel ? ' selected' : '') + '>' + txt + '</option>'; };
   var p1 = '<div class="ev-hint">Presente el objetivo de la conversación y su duración aproximada (30 a 40 minutos).</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
     + '<div class="ev-field"><label>Fecha</label><input type="date" id="ef-fecha" value="' + today + '"></div>'
-    + '<div class="ev-field"><label>Hora</label><input type="time" id="ef-hora"></div>'
-    + '<div class="ev-field"><label>Tipo</label><select id="ef-tipo"><option value="rrhh">🧑‍💼 RRHH</option><option value="psicolaboral">🧠 Psicolaboral</option><option value="tecnica">🔧 Técnica</option><option value="panel">👥 Panel</option></select></div>'
-    + '<div class="ev-field"><label>Modalidad</label><select id="ef-modalidad"><option value="presencial">🏢 Presencial</option><option value="online">🖥 Online</option><option value="terreno">🌍 En terreno</option></select></div>'
-    + '<div class="ev-field" style="grid-column:1/-1"><label>Entrevistador/a</label><input type="text" id="ef-entrevistador" placeholder="Nombre del evaluador/a"></div>'
+    + '<div class="ev-field"><label>Hora</label><input type="time" id="ef-hora" value="' + horaAhora + '"></div>'
+    + '<div class="ev-field"><label>Tipo</label><select id="ef-tipo">' + opcion('rrhh', '🧑‍💼 RRHH', pref.tipo) + opcion('psicolaboral', '🧠 Psicolaboral', pref.tipo) + opcion('tecnica', '🔧 Técnica', pref.tipo) + opcion('panel', '👥 Panel', pref.tipo) + '</select></div>'
+    + '<div class="ev-field"><label>Modalidad</label><select id="ef-modalidad">' + opcion('presencial', '🏢 Presencial', pref.modalidad) + opcion('online', '🖥 Online', pref.modalidad) + opcion('terreno', '🌍 En terreno', pref.modalidad) + '</select></div>'
+    + '<div class="ev-field" style="grid-column:1/-1"><label>Entrevistador/a</label><input type="text" id="ef-entrevistador" value="' + htmlEsc(pref.entrevistador) + '" placeholder="Nombre del evaluador/a"></div>'
     + '</div>';
   main += paso(1, 'Datos de la sesión', p1);
 
@@ -12749,6 +12752,13 @@ function _tabEntrevistasDrawer(c) {
 // ═══════════════════════════════════════════════════════════
 //  PAUTA DE ENTREVISTA: pasos, borrador automático y cierre
 // ═══════════════════════════════════════════════════════════
+// Datos de la sesión por defecto: los de la última entrevista guardada en este navegador
+var _EV_PREF_KEY = 'psicoeval_ev_preferencias';
+function _evPreferencias() {
+  var d = { tipo: 'psicolaboral', modalidad: 'online', entrevistador: 'Claudio Pedreros' };
+  try { var g = JSON.parse(localStorage.getItem(_EV_PREF_KEY) || 'null'); if (g) Object.keys(d).forEach(function(k){ if (g[k]) d[k] = g[k]; }); } catch(e) {}
+  return d;
+}
 var _EV_PASOS = [['Inicio', '🗓'], ['Trayectoria', '💼'], ['Competencias', '⭐'], ['Desde las pruebas', '🧪'], ['Cierre y dictamen', '📝']];
 var _evCompIdx = 0, _evBorradorTimer = null, _evBorradorTs = null;
 
@@ -12865,7 +12875,7 @@ function _evBorradorGuardar() {
   Object.keys(_EV_SCREEN_OPTS).forEach(function(k){ var g = document.getElementById('ev-pg-' + k); if (g && g.dataset.value) d.pills[k] = g.dataset.value; });
   d.dictamen = (m.querySelector('input[name="ev-dictamen"]:checked') || {}).value || '';
   // Un formulario sin nada escrito no se guarda como borrador
-  var escrito = Object.keys(d.campos).some(function(id){ var v = d.campos[id]; return v === true || (typeof v === 'string' && v.trim() && !/^ef-(fecha|tipo|modalidad|exp\d-(cargo|empresa|tiempo|motivo))$/.test(id)); })
+  var escrito = Object.keys(d.campos).some(function(id){ var v = d.campos[id]; return v === true || (typeof v === 'string' && v.trim() && !/^ef-(fecha|hora|tipo|modalidad|entrevistador|exp\d-(cargo|empresa|tiempo|motivo))$/.test(id)); })
     || Object.keys(d.niveles).some(function(k){ return d.niveles[k].n > 0; }) || d.dictamen || Object.keys(d.pills).length;
   if (!escrito) return;
   try { localStorage.setItem(_EV_BORRADOR + m.dataset.cand, JSON.stringify(d)); _evBorradorTs = d.ts; } catch(e) {}
@@ -13009,6 +13019,7 @@ async function saveEntrevistaDrawer(candId) {
   try {
     var sc = await _patchScoresField(candId, '_entrevistas', function(prev){ return (prev || []).concat([entry]); });
     _evBorradorBorrar(candId);
+    try { localStorage.setItem(_EV_PREF_KEY, JSON.stringify({ tipo: tipo, modalidad: modal, entrevistador: entrev })); } catch(e) {}
     var all = await getDB();
     var c = all.find(function(x){ return x.id === candId; });
     toast('🗓 Entrevista guardada ✓', 'ok');
