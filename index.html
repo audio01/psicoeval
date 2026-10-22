@@ -778,6 +778,58 @@ input,select,textarea{font-family:inherit;outline:none}
 .kanban-card{background:var(--bg);border-radius:10px;border:1.5px solid var(--border);padding:11px 12px;cursor:grab;transition:box-shadow .15s,transform .15s,border-color .15s;user-select:none}
 .kanban-card:hover{box-shadow:0 4px 18px rgba(0,0,0,.10);transform:translateY(-1px);border-color:var(--accent)}
 .kanban-card.dragging{opacity:.45;cursor:grabbing;box-shadow:0 8px 32px rgba(0,0,0,.18)}
+/* ── Candidatos: tabla y tablero estilo Notion ── */
+.bd-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.bd-vistas{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--border);margin-bottom:10px}
+.bd-vt-list{display:flex;gap:2px;flex-wrap:wrap}
+.bd-vt{padding:8px 12px;border:none;background:none;font-size:13px;font-weight:600;color:var(--ink3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;font-family:inherit;border-radius:8px 8px 0 0}
+.bd-vt:hover{color:var(--ink);background:var(--surface2)}
+.bd-vt.on{color:var(--ink);border-bottom-color:var(--ink)}
+.bd-vt-new{color:var(--ink4)}
+.bd-vt-acc{display:flex;align-items:center;gap:6px;font-size:12px}
+.bd-sucio{color:#b45309;font-weight:600}
+.bd-lnk{border:none;background:none;color:var(--accent);font-weight:700;font-size:12px;cursor:pointer;font-family:inherit;padding:4px 6px;border-radius:6px}
+.bd-lnk:hover{background:var(--accent-l)}
+.bd-lnk.gris{color:var(--ink3)}.bd-lnk.rojo{color:#b91c1c}
+.bd-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.bd-bar-l,.bd-bar-r{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.bd-buscar{width:240px;padding:7px 11px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);font-size:13px;font-family:inherit;color:var(--ink)}
+.bd-chip{display:inline-flex;align-items:center;gap:5px;padding:5px 6px 5px 10px;border-radius:100px;background:var(--accent-l);color:var(--accent);font-size:12px;cursor:pointer;border:1px solid var(--accent-m)}
+.bd-chip b{font-weight:700}
+.bd-chip-x{width:16px;height:16px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px}
+.bd-chip-x:hover{background:rgba(0,0,0,.08)}
+.bd-add,.bd-btn{padding:6px 10px;border-radius:8px;border:1px dashed var(--border);background:none;font-size:12.5px;font-weight:600;color:var(--ink3);cursor:pointer;font-family:inherit}
+.bd-btn{border-style:solid;background:var(--surface)}
+.bd-add:hover,.bd-btn:hover{color:var(--ink);border-color:var(--ink4)}
+.bd-count{font-size:12px;color:var(--ink4);margin-left:4px}
+.bd-seg{display:inline-flex;background:var(--surface2);border-radius:9px;padding:3px}
+.bd-seg button{border:none;background:none;padding:5px 11px;border-radius:7px;font-size:12.5px;font-weight:600;color:var(--ink3);cursor:pointer;font-family:inherit}
+.bd-seg button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.bd-menu{position:fixed;z-index:9000;min-width:220px;max-height:60vh;overflow-y:auto;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 10px 32px rgba(0,0,0,.16);padding:6px}
+.bd-mt{font-size:10.5px;font-weight:800;color:var(--ink4);text-transform:uppercase;letter-spacing:.5px;padding:6px 8px 4px}
+.bd-mi{display:flex;align-items:center;gap:6px;width:100%;text-align:left;border:none;background:none;padding:7px 8px;border-radius:7px;font-size:13px;color:var(--ink);cursor:pointer;font-family:inherit}
+.bd-mi:hover{background:var(--surface2)}
+.bd-mi-ck{width:14px;color:var(--accent);font-weight:800}
+.bd-card{overflow:auto}
+.bd-tbl td{padding:9px 12px;vertical-align:middle}
+.bd-tbl th{padding:9px 12px;white-space:nowrap}
+.bd-th-ord{cursor:pointer;user-select:none}
+.bd-th-ord:hover{color:var(--ink)}
+.bd-tr{cursor:pointer}
+.bd-nom{font-size:13px;font-weight:700;color:var(--ink)}
+.bd-sub{font-size:11px;color:var(--ink3);margin-top:1px}
+.bd-pill{display:inline-block;padding:2px 9px;border-radius:100px;font-size:11px;font-weight:700;white-space:nowrap;border:1px solid transparent}
+.bd-acc{white-space:nowrap;text-align:right}
+.bd-acc a{margin-left:9px;cursor:pointer;font-size:14px;opacity:.65}
+.bd-acc a:hover{opacity:1}
+.bd-grp td{background:var(--surface2);cursor:pointer;padding:7px 12px;font-size:12px}
+.bd-grp-ch{display:inline-block;width:14px;color:var(--ink3)}
+.bd-grp-n{font-size:12px;color:var(--ink4);font-weight:700;margin-left:4px}
+.bd-board{min-height:300px}
+.bd-vacio{text-align:center;padding:18px 8px;color:var(--ink4);font-size:11px;border:1.5px dashed var(--border);border-radius:8px}
+.bd-card-pie{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:10.5px;color:var(--ink4)}
+.kanban-card .row-chk{margin-top:2px;flex-shrink:0}
+@media (max-width:700px){ .bd-buscar{width:100%} .bd-bar-r{width:100%} }
 /* ── ATS: Candidate Drawer ─────────────────────────────── */
 /* Ficha del candidato: ventana centrada y amplia (como una página de Notion), con pestañas arriba */
 #cand-drawer-overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);backdrop-filter:blur(3px);z-index:400;display:none;justify-content:center;align-items:center;padding:12px}
@@ -1692,7 +1744,6 @@ body.exam-away #exam-shield{display:flex}
       <button class="sb-cta" id="sb-invitar" onclick="showInviteModal()">✉️ Invitar a evaluación</button>
       <button class="nav-btn active" id="nav-dashboard" onclick="adminTab('dashboard',this)"><span>📊</span><span>Dashboard</span></button>
       <button class="nav-btn" id="nav-candidates" onclick="adminTab('candidates',this)"><span>👥</span><span>Candidatos</span></button>
-      <button class="nav-btn" id="nav-pipeline" onclick="adminTab('pipeline',this)"><span>🗂</span><span>Pipeline</span></button>
       <button class="nav-btn" id="nav-analisis" onclick="adminTab('analisis',this)"><span>📈</span><span>Análisis</span></button>
       <button class="nav-btn" id="nav-cargos" onclick="adminTab('cargos',this)"><span>🏢</span><span>Cargos</span></button>
       <button class="nav-btn" id="nav-params" onclick="adminTab('params',this)" style="display:none"></button>
@@ -1735,7 +1786,6 @@ body.exam-away #exam-shield{display:flex}
           <div style="display:flex;flex-direction:column;gap:2px">
             <button class="nav-btn" onclick="mobileNav('dashboard')"><span>📊</span><span>Dashboard</span></button>
             <button class="nav-btn" onclick="mobileNav('candidates')"><span>👥</span><span>Candidatos</span></button>
-            <button class="nav-btn" onclick="mobileNav('pipeline')"><span>🗂</span><span>Pipeline</span></button>
             <button class="nav-btn" onclick="mobileNav('analisis')"><span>📈</span><span>Análisis</span></button>
             <button class="nav-btn" onclick="mobileNav('cargos')"><span>🏢</span><span>Cargos</span></button>
             <button class="nav-btn" onclick="mobileNav('wiki')"><span>📖</span><span>Wiki de Tests</span></button>
@@ -1763,59 +1813,20 @@ body.exam-away #exam-shield{display:flex}
       </div>
       <!-- Candidates -->
       <div id="tab-candidates" style="display:none">
-        <!-- Header -->
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px">
+        <div class="bd-head">
           <div>
-            <h2 style="font-size:26px;font-weight:800;margin-bottom:4px">Candidatos</h2>
-            <p style="font-size:13px;color:var(--ink3)">Gestión, informes y datos de evaluación</p>
+            <h2 style="font-size:24px;font-weight:800;margin-bottom:2px">Candidatos</h2>
+            <p style="font-size:13px;color:var(--ink3)">Tabla y tablero del proceso de selección</p>
           </div>
           <div style="display:flex;gap:8px" id="cand-action-btns">
-            <button class="btn btn-outline btn-sm" onclick="exportCSV()" style="color:var(--accent);border-color:var(--accent)">⬇ Exportar CSV</button>
+            <button class="btn btn-outline btn-sm" onclick="exportCSV()">⬇ Exportar CSV</button>
             <button class="btn btn-outline btn-sm" id="btn-refresh-cand" onclick="refreshCandView()">↻ Actualizar</button>
           </div>
         </div>
-
-        <!-- ── Candidatos ── -->
-        <div id="cand-sub-tabla">
-        <!-- Cargo tabs (rendered dynamically) -->
-        <div id="cand-cargo-tabs" style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:16px">
-        </div>
-        <!-- Search + filter -->
-        <div style="display:flex;gap:10px;margin-bottom:8px;flex-wrap:wrap">
-          <input id="search-input" placeholder="🔍 Buscar por nombre, email, RUT, cargo…" oninput="renderCandidatesTable()"
-            style="flex:1;min-width:180px;padding:9px 13px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);font-size:13px;font-family:inherit" aria-label="Buscar candidatos">
-          <select id="filter-status" onchange="renderCandidatesTable()" style="padding:9px 36px 9px 13px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);font-size:13px;font-family:inherit;color:var(--ink);-webkit-appearance:none;-moz-appearance:none;appearance:none;background-image:url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2716%27 height=%2716%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%238e8e93%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpolyline points=%276 9 12 15 18 9%27/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 10px center;cursor:pointer">
-            <option value="">Todos los estados</option>
-            <option value="completed">Completados</option>
-            <option value="in_progress">En progreso</option>
-            <option value="pending">Pendientes</option>
-          </select>
-        </div>
-        <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
-          <label style="font-size:11px;font-weight:600;color:var(--ink4);white-space:nowrap">Desde:</label>
-          <input id="filter-date-from" type="date" onchange="renderCandidatesTable()"
-            style="padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);font-size:12px;font-family:inherit;color:var(--ink)">
-          <label style="font-size:11px;font-weight:600;color:var(--ink4);white-space:nowrap">Hasta:</label>
-          <input id="filter-date-to" type="date" onchange="renderCandidatesTable()"
-            style="padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);font-size:12px;font-family:inherit;color:var(--ink)">
-          <select id="filter-pipeline" onchange="renderCandidatesTable()" style="padding:7px 28px 7px 10px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);font-size:12px;font-family:inherit;color:var(--ink);-webkit-appearance:none;background-image:url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2716%27 height=%2716%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%238e8e93%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpolyline points=%276 9 12 15 18 9%27/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 6px center;cursor:pointer" title="Filtrar por etapa del pipeline">
-            <option value="">Todas las etapas</option>
-            <option value="postulante">📋 Postulante</option>
-            <option value="entrevista">💬 Entrevista Laboral</option>
-            <option value="seleccionado">✅ Seleccionado</option>
-            <option value="descartado">❌ Descartado</option>
-          </select>
-          <select id="filter-rating" onchange="renderCandidatesTable()" style="padding:7px 28px 7px 10px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);font-size:12px;font-family:inherit;color:var(--ink2);cursor:pointer">
-            <option value="">Todos los dictámenes</option>
-            <option value="recomendado">✅ Recomendado</option>
-            <option value="obs">⚠️ Con observaciones</option>
-            <option value="no_recomendable">❌ No recomendable</option>
-            <option value="sin">Sin dictamen</option>
-          </select>
-          <button id="btn-clear-filters" onclick="clearCandFilters()" style="padding:7px 12px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);font-size:11px;font-weight:600;color:var(--ink3);cursor:pointer;font-family:inherit">✕ Limpiar</button>
-          <span id="filter-results-count" style="font-size:11px;color:var(--ink4);margin-left:4px"></span>
-        </div>
-        <!-- Bulk bar -->
+        <!-- Vistas guardadas -->
+        <div class="bd-vistas" id="bd-vistas"></div>
+        <!-- Búsqueda, filtros, tipo de vista, orden, agrupación y propiedades -->
+        <div class="bd-bar" id="bd-bar"></div>
         <div id="bulk-bar" style="display:none;align-items:center;gap:10px;padding:11px 16px;background:var(--accent-l);border:1.5px solid var(--accent-m);border-radius:10px;margin-bottom:10px;flex-wrap:wrap">
           <span id="bulk-count" style="font-size:13px;font-weight:700;color:var(--accent)">0 seleccionados</span>
           <button id="btn-compare" class="btn btn-sm" onclick="openCompareModal()" style="background:var(--ink);color:#fff;display:none">⚖ Comparar candidatos</button>
@@ -1831,38 +1842,8 @@ body.exam-away #exam-shield{display:flex}
           <button class="btn btn-outline btn-sm" onclick="deleteAll()" style="border-color:#8b0000;color:#8b0000">⚠ Eliminar TODOS</button>
           <button class="btn btn-outline btn-sm" onclick="clearSelection()">✕ Cancelar</button>
         </div>
-        <div class="card" style="overflow:hidden">
-          <table class="tbl"><thead><tr>
-            <th style="width:36px;padding:10px 12px"><input type="checkbox" id="chk-all" onchange="toggleAllChecks(this.checked)" style="cursor:pointer;width:15px;height:15px"></th>
-            <th onclick="sortCandTable('nombre')" style="cursor:pointer;user-select:none" title="Ordenar por nombre">Candidato <span id="sort-icon-nombre" style="font-size:10px;color:var(--ink4)">↕</span></th><th>Cargo</th><th>Resultado</th><th>Etapa</th><th onclick="sortCandTable('estado')" style="cursor:pointer;user-select:none" title="Ordenar por estado">Estado <span id="sort-icon-estado" style="font-size:10px;color:var(--ink4)">↕</span></th><th onclick="sortCandTable('fecha')" style="cursor:pointer;user-select:none" title="Ordenar por fecha">Fecha <span id="sort-icon-fecha" style="font-size:10px;color:var(--ink4)">↕</span></th><th>Acciones</th>
-          </tr></thead><tbody id="cand-tbody"></tbody></table>
-        </div>
-        <div id="cand-pagination"></div>
-        </div><!-- /cand-sub-tabla -->
-
+        <div id="bd-cuerpo"></div>
       </div><!-- /tab-candidates -->
-
-      <!-- ── Pipeline Kanban ─────────────────────────────────────── -->
-      <div id="tab-pipeline" style="display:none">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;flex-wrap:wrap;gap:12px">
-          <div>
-            <h2 style="font-size:22px;font-weight:800;margin-bottom:2px">Pipeline de Selección</h2>
-            <p style="font-size:13px;color:var(--ink3)">Arrastra las tarjetas entre columnas para avanzar candidatos en el proceso</p>
-          </div>
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-            <select id="pipeline-filter-cargo" onchange="renderKanban()" style="padding:8px 32px 8px 12px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);font-size:12px;font-family:inherit;color:var(--ink);-webkit-appearance:none;background-image:url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2716%27 height=%2716%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%238e8e93%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpolyline points=%276 9 12 15 18 9%27/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 8px center;cursor:pointer">
-              <option value="all">Todos los cargos</option>
-            </select>
-            <button class="btn btn-ghost btn-sm" onclick="renderKanban()" style="font-size:12px">↻ Actualizar</button>
-          </div>
-        </div>
-        <!-- Pipeline summary metrics -->
-        <div id="pipeline-metrics" style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap"></div>
-        <!-- Kanban board -->
-        <div class="kanban-board" id="kanban-board">
-          <div style="padding:20px;color:var(--ink3);font-size:13px">Cargando pipeline…</div>
-        </div>
-      </div>
 
       <!-- ── Análisis ────────────────────────────────────────────── -->
       <div id="tab-analisis" style="display:none;padding-bottom:40px">
@@ -2256,7 +2237,8 @@ const LS_CUSTOM_CARGOS     = 'psicoeval_custom_cargos';
 const LS_PARAMS            = 'psicoeval_params';
 const LS_TM_MINS           = 'psicoeval_tm_mins';
 const LS_CONTACTO          = 'psicoeval_contacto';
-const LS_ACCESO            = 'psicoeval_acceso';      // { solo_invitacion } (16_invitaciones.sql)
+const LS_ACCESO            = 'psicoeval_acceso';
+const LS_VISTAS            = 'psicoeval_vistas';      // vistas guardadas de Candidatos (18_vistas.sql)      // { solo_invitacion } (16_invitaciones.sql)
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ═══════════════════════════════════════════════════════════
@@ -2273,7 +2255,8 @@ var _CFG_KEYS = {
   tm_mins:       LS_TM_MINS,        // │
   contacto:      LS_CONTACTO,       // │ WhatsApp para avisar que terminó (11_contacto.sql)
   acceso:        LS_ACCESO,         // ┘ "Solo con invitación" (16_invitaciones.sql)
-  params:        LS_PARAMS,         // ┐ solo panel (el candidato no las ve:
+  vistas:        LS_VISTAS,         // ┐ solo panel: vistas guardadas de Candidatos
+  params:        LS_PARAMS,         // │ (el candidato no las ve:
   config_log:    _CONFIG_LOG_KEY    // ┘ le servirían para acomodar respuestas)
 };
 var _cfgLoaded = false;
@@ -2305,7 +2288,7 @@ function _cfgSetLocal(key, value) {
 // sección queda marcada. No se pisa con la versión del servidor al recargar, se
 // reintenta sola y el panel muestra un aviso hasta que se guarde.
 var _CFG_PENDING_KEY = 'psicoeval_cfg_pendiente';
-var _CFG_NOMBRES = { batteries:'Baterías', cargos:'Cargos activos', custom_cargos:'Cargos personalizados', tm_mins:'Tiempos', contacto:'Mensaje final', acceso:'Acceso con invitación',
+var _CFG_NOMBRES = { batteries:'Baterías', cargos:'Cargos activos', custom_cargos:'Cargos personalizados', tm_mins:'Tiempos', contacto:'Mensaje final', acceso:'Acceso con invitación', vistas:'Vistas de Candidatos',
                      params:'Mínimos por cargo', config_log:'Historial' };
 function _cfgPendientes() {
   try { return JSON.parse(localStorage.getItem(_CFG_PENDING_KEY) || '[]'); } catch(e) { return []; }
@@ -2505,6 +2488,7 @@ function _cfgReloadAll() {
   loadTmMins();
   restoreParams();
   loadAcceso();
+  loadVistas();
   if (_linkPairs) _applyLinkPairs(_linkPairs);   // un link de candidato manda en esa pestaña
   _invAplicarCargo();                            // una invitación fija el cargo
   applyCargoVisibility();
@@ -2963,17 +2947,8 @@ function applyCargoVisibility() {
 
 // Render battery profile tabs dynamically (only active cargos)
 // Render candidate tab cargo filters dynamically
-function renderCandidateCargoTabs(cands) {
-  var container = document.getElementById('cand-cargo-tabs');
-  if (!container) return;
-  var active = _cargosParaFiltro(cands || _dbCache || []);
-  var h = '<button id="ctab-all" onclick="setCandTab(\'all\',this)" style="padding:9px 18px;border:none;background:none;font-size:13px;font-weight:700;color:var(--accent);border-bottom:2px solid var(--accent);margin-bottom:-2px;cursor:pointer">Todos</button>';
-  active.forEach(function(pf) {
-    var pm = PERFIL_META[pf];
-    h += '<button id="ctab-' + pf + '" onclick="setCandTab(\'' + pf + '\',this)" style="padding:9px 18px;border:none;background:none;font-size:13px;font-weight:500;color:var(--ink3);border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer">' + pm.icon + ' ' + pm.label + '</button>';
-  });
-  container.innerHTML = h;
-}
+// Las pestañas por cargo de la tabla antigua se reemplazaron por el filtro Cargo (Candidatos)
+function renderCandidateCargoTabs() {}
 
 // ═══════════════════════════════════════════════════════════
 // ═══════════════════════════════════════════════════════════
@@ -9338,10 +9313,7 @@ function updateBulkBar() {
     count.textContent = checked.length + ' seleccionado' + (checked.length > 1 ? 's' : '');
     // Show compare button only when 2-5 completed candidates are selected
     if (btnCmp) {
-      const completedChecked = Array.from(checked).filter(chk => {
-        const row = document.querySelector(`tr[data-id="${chk.dataset.id}"]`);
-        return row && row.querySelector('.badge-green');
-      });
+      const completedChecked = Array.from(checked).filter(chk => chk.dataset.done === '1');
       btnCmp.style.display = completedChecked.length >= 2 ? 'inline-flex' : 'none';
       btnCmp.textContent = '⚖ Comparar ' + (completedChecked.length >= 2 ? completedChecked.length + ' candidatos' : '');
     }
@@ -9938,6 +9910,8 @@ async function downloadFullBackup() {
 }
 
 function adminTab(id, btn) {
+  // Pipeline se unió a Candidatos: se abre como la vista Tablero
+  if (id === 'pipeline') { id = 'candidates'; btn = document.getElementById('nav-candidates'); _bdAbrirVista('tablero', true); }
   S.currentAdminTab = id;
   _backupLabel();
   saveSession();
@@ -9951,7 +9925,6 @@ function adminTab(id, btn) {
   else if (id === 'users') { renderUsersTab(); var _cc = document.getElementById('contacto-card'); if (_cc) _cc.innerHTML = _contactoCardHtml(); }
   else if (id === 'cargos') renderCargosTab();
   else if (id === 'wiki') renderWikiTab();
-  else if (id === 'pipeline') renderKanban();
   else if (id === 'analisis') renderAnalisisTab();
 }
 
@@ -10079,7 +10052,7 @@ async function renderDashboard() {
     + kpi('Evaluaciones completadas', completadas.length, delta, 'var(--ink)')
     + kpi('Sin dictamen', sinDict, completadas.length ? 'Evaluaciones del período en proceso, aún sin dictamen de entrevista' : 'No hay evaluaciones en el período', sinDict ? '#b45309' : 'var(--ink)')
     + kpi('Recomendados', conDict.length ? Math.round(recomendados / conDict.length * 100) + ' %' : '—', conDict.length ? recomendados + ' de ' + conDict.length + ' con dictamen (incluye "con observaciones")' : 'Aún no hay dictámenes en el período', '#15803d')
-    + kpi('Sin terminar', sinTerminar, sinTerminar ? 'Comenzaron la evaluación y no la completaron' : 'Nadie dejó la evaluación a medias', sinTerminar ? '#b45309' : 'var(--ink)', sinTerminar ? "_candPerfil='" + perfil + "';adminTab('candidates',document.getElementById('nav-candidates'));var f=document.getElementById('filter-status');if(f){f.value='pending';renderCandidatesTable();}" : '')
+    + kpi('Sin terminar', sinTerminar, sinTerminar ? 'Comenzaron la evaluación y no la completaron' : 'Nadie dejó la evaluación a medias', sinTerminar ? '#b45309' : 'var(--ink)', sinTerminar ? "_bdIrConFiltros({estado:'pending'" + (perfil && perfil !== 'all' ? ",cargo:'" + perfil + "'" : '') + "})" : '')
     + '</div>';
 
   // ── Por revisar (seguimientos: siempre; lo demás: dentro del período) ──
@@ -10163,70 +10136,10 @@ function _initDashCharts(cands, dias) {
   });
 }
 
-// ── Candidates cargo tab ─────────────────────────────────────
-let _candPerfil = 'all';
-var _candPage = 1;
-const _CAND_PAGE_SIZE = 25;
 
-// ── Ordenamiento de tabla de candidatos ─────────────────────────────────────
-let _candSortField = 'fecha';   // campo activo
-let _candSortAsc   = false;     // false = desc (más reciente primero por defecto)
 
-function sortCandTable(field) {
-  if (_candSortField === field) {
-    _candSortAsc = !_candSortAsc; // toggle dirección
-  } else {
-    _candSortField = field;
-    _candSortAsc   = field === 'nombre'; // nombres: A→Z por defecto; resto desc
-  }
-  // Actualizar iconos en encabezados
-  ['nombre','estado','fecha'].forEach(function(f) {
-    var ic = document.getElementById('sort-icon-' + f);
-    if (!ic) return;
-    if (f === field) {
-      ic.textContent = _candSortAsc ? '↑' : '↓';
-      ic.style.color = 'var(--accent)';
-    } else {
-      ic.textContent = '↕';
-      ic.style.color = 'var(--ink4)';
-    }
-  });
-  renderCandidatesTable();
-}
-
-function _applyCandSort(cands) {
-  const f   = _candSortField;
-  const asc = _candSortAsc;
-  const _ESTADO_ORDER = { completed: 0, in_progress: 1, pending: 2 };
-  return cands.slice().sort(function(a, b) {
-    let va, vb;
-    if (f === 'nombre') {
-      va = ((a.nombre || '') + ' ' + (a.apellido || '')).toLowerCase();
-      vb = ((b.nombre || '') + ' ' + (b.apellido || '')).toLowerCase();
-    } else if (f === 'estado') {
-      va = _ESTADO_ORDER[a.estado] ?? 9;
-      vb = _ESTADO_ORDER[b.estado] ?? 9;
-    } else { // fecha y hora (la más reciente primero por defecto)
-      va = (_momentoCand(a) || new Date(0)).getTime();
-      vb = (_momentoCand(b) || new Date(0)).getTime();
-    }
-    if (va < vb) return asc ? -1 : 1;
-    if (va > vb) return asc ? 1 : -1;
-    return 0;
-  });
-}
 // ─────────────────────────────────────────────────────────────────────────────
 
-function setCandTab(perfil, btn) {
-  _candPerfil = perfil;
-  document.querySelectorAll('[id^="ctab-"]').forEach(b => {
-    const active = b === btn;
-    b.style.color      = active ? 'var(--accent)' : 'var(--ink3)';
-    b.style.fontWeight = active ? '700' : '500';
-    b.style.borderBottomColor = active ? 'var(--accent)' : 'transparent';
-  });
-  renderCandidatesTable();
-}
 
 async function exportCSV() {
   const btn = document.querySelector('[onclick="exportCSV()"]');
@@ -10347,169 +10260,367 @@ async function exportCSV() {
   toast(completed.length + ' candidatos exportados ✓', 'ok');
 }
 
-async function renderCandidatesTable() {
-  const tbody = document.getElementById('cand-tbody');
-  if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:28px;color:var(--ink3)">Cargando candidatos…</td></tr>';
-  const allCands = await getDB();
-  const search        = (document.getElementById('search-input')?.value||'').toLowerCase().trim();
-  const filter        = document.getElementById('filter-status')?.value||'';
-  const filterFrom    = document.getElementById('filter-date-from')?.value||'';
-  const filterTo      = document.getElementById('filter-date-to')?.value||'';
-  const filterPipeline = document.getElementById('filter-pipeline')?.value||'';
-  const filterDict    = document.getElementById('filter-rating')?.value || '';
-  // Cuando hay término de búsqueda, ignorar el filtro de cargo (búsqueda global)
-  const _isGlobalSearch = search.length > 0 && _candPerfil !== 'all';
-  const cands = allCands.filter(c => {
-    // Campos buscables ampliados: nombre, apellido, email, RUT, cargo, comuna, rubro
-    const txt = [c.nombre, c.apellido, c.email, c.rut, c.cargo, c.comuna, c.rubro]
-      .map(v => v || '').join(' ').toLowerCase();
-    const matchSearch = !search || txt.includes(search);
-    const matchStatus = !filter || c.estado === filter;
-    // Si hay búsqueda activa → mostrar en todos los cargos automáticamente
-    const matchPerfil = _isGlobalSearch || _candPerfil === 'all' || c.perfil === _candPerfil;
-    // Date range filter
-    var matchFrom = true, matchTo = true;
-    if (filterFrom || filterTo) {
-      var cDate = c.fecha ? c.fecha.substring(0,10) : '';
-      if (filterFrom && cDate) matchFrom = cDate >= filterFrom;
-      if (filterTo   && cDate) matchTo   = cDate <= filterTo;
+async function renderCandidatesTable() { return _bdRender(); }
+
+
+// ═══════════════════════════════════════════════════════════
+//  CANDIDATOS: tabla y tablero con filtros, vistas, agrupación y propiedades
+//  (estilo base de datos de Notion). Las vistas guardadas se comparten con todos
+//  los usuarios del panel (clave 'vistas' de psicoeval_config, 18_vistas.sql).
+// ═══════════════════════════════════════════════════════════
+var _BD_PROPS = [['cargo','Cargo'], ['resultado','Resultado'], ['etapa','Etapa'], ['dictamen','Dictamen'], ['estado','Estado'], ['fecha','Fecha'], ['comuna','Comuna'], ['invitacion','Invitación']];
+var _BD_DEF = { vista:'tabla', filtros:{}, orden:'fecha_desc', agrupar:'', columnas:'etapa',
+                props:{ cargo:1, resultado:1, etapa:1, dictamen:1, estado:0, fecha:1, comuna:0, invitacion:0 } };
+var _BD_FIJAS = [
+  { id:'todos',   nombre:'Todos',       icon:'👥', cfg:{ vista:'tabla' } },
+  { id:'tablero', nombre:'Tablero',     icon:'🗂', cfg:{ vista:'tablero' } },
+  { id:'revisar', nombre:'Por revisar', icon:'🔎', cfg:{ vista:'tabla', filtros:{ estado:'completed', dictamen:'sin' } } }
+];
+var _BD_ORDEN = [['fecha_desc','Más recientes primero'], ['fecha_asc','Más antiguos primero'], ['nombre_asc','Nombre (A → Z)'], ['resultado_desc','Mejor resultado primero'], ['etapa','Etapa del proceso']];
+var _BD_AGRUPAR = [['','Sin agrupar'], ['etapa','Etapa'], ['cargo','Cargo'], ['dictamen','Dictamen'], ['estado','Estado']];
+var _BD_KEY = 'psicoeval_bd';
+var _BD = null, _bdVistaId = 'todos', _bdBuscarTxt = '', _bdLimite = 60, _bdPlegados = {}, _bdTimer = null;
+var _VISTAS = [];
+
+function loadVistas() {
+  try { var v = JSON.parse(localStorage.getItem(LS_VISTAS) || '[]'); _VISTAS = Array.isArray(v) ? v : []; } catch(e) { _VISTAS = []; }
+}
+function saveVistas() {
+  try { localStorage.setItem(LS_VISTAS, JSON.stringify(_VISTAS)); } catch(e) {}
+  _cfgPush('vistas');
+}
+loadVistas();
+
+function _bdCopia(o) { return JSON.parse(JSON.stringify(o)); }
+function _bdCfgDe(id) {
+  var v = _BD_FIJAS.concat(_VISTAS).filter(function(x){ return x.id === id; })[0];
+  var cfg = _bdCopia(_BD_DEF);
+  if (v && v.cfg) Object.keys(v.cfg).forEach(function(k){ cfg[k] = (typeof v.cfg[k] === 'object' && v.cfg[k] && !Array.isArray(v.cfg[k])) ? Object.assign({}, cfg[k], _bdCopia(v.cfg[k])) : v.cfg[k]; });
+  if (v && v.cfg && v.cfg.filtros) cfg.filtros = _bdCopia(v.cfg.filtros);
+  return cfg;
+}
+function _bdInit() {
+  var g = null;
+  try { g = JSON.parse(localStorage.getItem(_BD_KEY) || 'null'); } catch(e) {}
+  _bdVistaId = (g && g.vistaId) || 'todos';
+  if (!_BD_FIJAS.concat(_VISTAS).some(function(x){ return x.id === _bdVistaId; })) _bdVistaId = 'todos';
+  _BD = (g && g.bd) ? Object.assign(_bdCfgDe(_bdVistaId), g.bd) : _bdCfgDe(_bdVistaId);
+}
+function _bdGuardarLocal() { try { localStorage.setItem(_BD_KEY, JSON.stringify({ vistaId: _bdVistaId, bd: _BD })); } catch(e) {} }
+function _bdSucio() { return JSON.stringify(_BD) !== JSON.stringify(_bdCfgDe(_bdVistaId)); }
+function _bdCambio() { _bdLimite = 60; _bdGuardarLocal(); _bdRender(); }
+
+function _bdAbrirVista(id, sinRender) {
+  _bdVistaId = id; _BD = _bdCfgDe(id); _bdLimite = 60;
+  _bdGuardarLocal();
+  if (!sinRender) _bdRender();
+}
+
+// ── Filtros ──
+function _bdDictamen(c) { return (((c.scores && c.scores._entrevistas) || []).filter(function(e){ return e && e.dictamen; }).pop() || {}).dictamen || ''; }
+var _BD_CAMPOS = {
+  cargo:      { label:'Cargo', ops:function(){ return _cargosParaFiltro(_dbCache || []).map(function(k){ var pm = PERFIL_META[k] || {}; return [k, (pm.icon || '') + ' ' + (pm.label || k)]; }); },
+                ok:function(c, v){ return c.perfil === v; } },
+  etapa:      { label:'Etapa', ops:function(){ return PIPELINE_STAGES.map(function(s){ return [s.id, s.icon + ' ' + s.label]; }); },
+                ok:function(c, v){ return getPipelineEtapa(c) === v; } },
+  dictamen:   { label:'Dictamen', ops:function(){ return _EV_DICTAMEN.map(function(d){ return [d.val, d.icon + ' ' + d.label]; }).concat([['sin', 'Sin dictamen']]); },
+                ok:function(c, v){ var d = _bdDictamen(c); return v === 'sin' ? !d : d === v; } },
+  estado:     { label:'Estado', ops:function(){ return [['completed', 'Completada'], ['in_progress', 'En curso'], ['pending', 'Pendiente']]; },
+                ok:function(c, v){ return c.estado === v; } },
+  fecha:      { label:'Fecha', ops:function(){ return [['1', 'Hoy'], ['7', 'Últimos 7 días'], ['30', 'Últimos 30 días'], ['90', 'Últimos 90 días']]; },
+                ok:function(c, v){ var d = _momentoCand(c); if (!d) return false; var lim = new Date(); lim.setHours(0, 0, 0, 0); lim.setDate(lim.getDate() - (+v - 1)); return d >= lim; } },
+  resultado:  { label:'Aptitud', ops:function(){ return [['ok', 'Sobre el mínimo en todo'], ['bajo', 'Bajo el mínimo en alguna']]; },
+                ok:function(c, v){ var m = _miradaDe(c); if (!m.apt.length) return false; return v === 'ok' ? !m.bajo.length : m.bajo.length > 0; } },
+  integridad: { label:'Integridad', ops:function(){ return [['riesgo_alto', 'Riesgo alto'], ['explorar', 'A explorar'], ['sin_indicadores', 'Sin indicadores'], ['no_interpretable', 'No interpretable']]; },
+                ok:function(c, v){ return ((c.scores || {}).integridad || {}).nivel === v; } },
+  invitacion: { label:'Invitación', ops:function(){ return [['con', 'Con invitación'], ['sin', 'Sin invitación']]; },
+                ok:function(c, v){ var i = !!(c.scores && c.scores._invitacion); return v === 'con' ? i : !i; } }
+};
+function _bdFiltrar(all) {
+  var q = (_bdBuscarTxt || '').toLowerCase().trim();
+  return all.filter(function(c) {
+    if (q) {
+      var txt = [c.nombre, c.apellido, c.email, c.rut, c.cargo, c.comuna, c.rubro].map(function(v){ return v || ''; }).join(' ').toLowerCase();
+      if (txt.indexOf(q) === -1) return false;
     }
-    const matchPipeline = !filterPipeline || getPipelineEtapa(c) === filterPipeline;
-    const _dictC        = ((c.scores && c.scores._entrevistas || []).filter(function(e){ return e && e.dictamen; }).pop() || {}).dictamen || '';
-    const matchRating   = !filterDict || (filterDict === 'sin' ? !_dictC : _dictC === filterDict);
-    return matchSearch && matchStatus && matchPerfil && matchFrom && matchTo && matchPipeline && matchRating;
+    return Object.keys(_BD.filtros || {}).every(function(k){ var f = _BD_CAMPOS[k]; return !f || f.ok(c, _BD.filtros[k]); });
   });
-
-  // Banner de búsqueda global
-  var _gsBanner = document.getElementById('global-search-banner');
-  if (_isGlobalSearch && cands.length > 0) {
-    if (!_gsBanner) {
-      _gsBanner = document.createElement('div');
-      _gsBanner.id = 'global-search-banner';
-      _gsBanner.style.cssText = 'display:flex;align-items:center;gap:8px;padding:7px 14px;'
-        + 'background:var(--accent-l);border:1px solid var(--accent-m);border-radius:8px;'
-        + 'margin-bottom:10px;font-size:12px;color:var(--accent);font-weight:600';
-      _gsBanner.innerHTML = '🌐 Buscando en todos los cargos';
-      const subTabla = document.getElementById('cand-sub-tabla');
-      const bulkBar  = document.getElementById('bulk-bar');
-      if (subTabla && bulkBar) subTabla.insertBefore(_gsBanner, bulkBar);
-    }
-  } else if (_gsBanner) {
-    _gsBanner.remove();
-  }
-
-  // Pestañas: cargos activos y también los que tengan candidatos (aunque estén inactivos)
-  if (_cargosParaFiltro(allCands).some(function(p){ return !document.getElementById('ctab-' + p); })) {
-    renderCandidateCargoTabs(allCands);
-    document.querySelectorAll('[id^="ctab-"]').forEach(function(bt) {
-      var on = bt.id === 'ctab-' + (_candPerfil || 'all');
-      bt.style.color = on ? 'var(--accent)' : 'var(--ink3)'; bt.style.fontWeight = on ? '700' : '500';
-      bt.style.borderBottomColor = on ? 'var(--accent)' : 'transparent';
-    });
-  }
-  const _tabCargos = ['all'].concat(_cargosParaFiltro(allCands));
-  _tabCargos.forEach(p => {
-    const btn = document.getElementById('ctab-' + p);
-    if (!btn) return;
-    const n = p === 'all' ? allCands.length : allCands.filter(c => c.perfil === p).length;
-    // Obtener etiqueta: primero desde PERFIL_META (cubre built-ins + custom), fallback 'Todos'
-    const pm = PERFIL_META[p];
-    const label = p === 'all' ? 'Todos' : (pm ? pm.icon + ' ' + pm.label : p);
-    btn.textContent = label + (n > 0 ? ' (' + n + ')' : '');
+}
+function _bdOrdenar(lista) {
+  var o = _BD.orden, ord = {};
+  PIPELINE_STAGES.forEach(function(s, i){ ord[s.id] = i; });
+  var res = function(c){ var m = _miradaDe(c); return m.apt.length ? m.aptOk / m.apt.length : -1; };
+  var t = function(c){ var d = _momentoCand(c); return d ? d.getTime() : 0; };
+  return lista.slice().sort(function(a, b) {
+    if (o === 'nombre_asc') return ((a.nombre || '') + ' ' + (a.apellido || '')).localeCompare((b.nombre || '') + ' ' + (b.apellido || ''), 'es');
+    if (o === 'fecha_asc') return t(a) - t(b);
+    if (o === 'resultado_desc') return (res(b) - res(a)) || (t(b) - t(a));
+    if (o === 'etapa') return (ord[getPipelineEtapa(a)] - ord[getPipelineEtapa(b)]) || (t(b) - t(a));
+    return t(b) - t(a);
   });
+}
 
-  // Update results count
-  var countEl = document.getElementById('filter-results-count');
-  if (countEl) countEl.textContent = cands.length !== allCands.length ? cands.length + ' resultado' + (cands.length!==1?'s':'') + ' de ' + allCands.length : '';
+// ── Grupos (agrupar en tabla, columnas en tablero) ──
+function _bdGrupos(campo) {
+  if (campo === 'etapa') return PIPELINE_STAGES.map(function(s){ return { id:s.id, label:s.icon + ' ' + s.label, color:s.color, bg:s.bg, border:s.border }; });
+  if (campo === 'dictamen') return _EV_DICTAMEN.map(function(d){ return { id:d.val, label:d.icon + ' ' + d.label, color:d.color, bg:d.bg, border:d.border }; })
+    .concat([{ id:'sin', label:'Sin dictamen', color:'#64748b', bg:'#f8fafc', border:'#e2e8f0' }]);
+  if (campo === 'estado') return [['completed', 'Completada', '#15803d', '#f0fdf4', '#bbf7d0'], ['in_progress', 'En curso', '#b45309', '#fffbeb', '#fde68a'], ['pending', 'Pendiente', '#64748b', '#f8fafc', '#e2e8f0']]
+    .map(function(x){ return { id:x[0], label:x[1], color:x[2], bg:x[3], border:x[4] }; });
+  if (campo === 'cargo') return _cargosParaFiltro(_dbCache || []).map(function(k){ var pm = PERFIL_META[k] || {}; return { id:k, label:(pm.icon || '') + ' ' + (pm.label || k), color:'#334155', bg:'#f8fafc', border:'#e2e8f0' }; });
+  return [];
+}
+function _bdValorGrupo(c, campo) {
+  if (campo === 'etapa') return getPipelineEtapa(c);
+  if (campo === 'dictamen') return _bdDictamen(c) || 'sin';
+  if (campo === 'estado') return c.estado;
+  if (campo === 'cargo') return c.perfil;
+  return '';
+}
 
-  if (!tbody) return;
-  if (cands.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--ink3)">No hay candidatos que coincidan</td></tr>`;
-    return;
-  }
-  const sortedCands = _applyCandSort(cands);
-  const totalPages  = Math.ceil(sortedCands.length / _CAND_PAGE_SIZE) || 1;
-  if (_candPage > totalPages) _candPage = totalPages;
-  const pageStart   = (_candPage - 1) * _CAND_PAGE_SIZE;
-  const pageCands   = sortedCands.slice(pageStart, pageStart + _CAND_PAGE_SIZE);
+// ── Dibujo ──
+async function _bdRender() {
+  if (!_BD) _bdInit();
+  var cuerpo = document.getElementById('bd-cuerpo'); if (!cuerpo) return;
+  if (!cuerpo.innerHTML) cuerpo.innerHTML = '<div style="padding:30px;color:var(--ink3);font-size:13px">Cargando candidatos…</div>';
+  var all = await getDB();
+  _bdVistasPintar();
+  _bdBarPintar();
+  _bdCuerpoPintar(all);
+}
+async function _bdRenderCuerpo() { _bdCuerpoPintar(await getDB()); }
+function _bdCuerpoPintar(all) {
+  var cuerpo = document.getElementById('bd-cuerpo'); if (!cuerpo) return;
+  var lista = _bdOrdenar(_bdFiltrar(all));
+  var cnt = document.getElementById('bd-count');
+  if (cnt) cnt.textContent = lista.length === all.length ? all.length + ' candidatos' : lista.length + ' de ' + all.length;
+  cuerpo.innerHTML = _BD.vista === 'tablero' ? _bdTablero(lista) : _bdTabla(lista);
+  updateBulkBar();
+}
 
-  // Render pagination controls
-  var pagEl = document.getElementById('cand-pagination');
-  if (pagEl) {
-    if (totalPages <= 1) {
-      pagEl.innerHTML = '';
-    } else {
-      var pHtml = '<div style="display:flex;align-items:center;gap:6px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap">';
-      pHtml += '<span style="font-size:11px;color:var(--ink4)">' + (pageStart+1) + '–' + Math.min(pageStart+_CAND_PAGE_SIZE, sortedCands.length) + ' de ' + sortedCands.length + '</span>';
-      pHtml += '<button onclick="candGoPage(' + Math.max(1,_candPage-1) + ')" ' + (_candPage<=1?'disabled':'') + ' style="padding:5px 10px;border:1.5px solid var(--border);border-radius:7px;background:var(--surface);font-size:12px;cursor:pointer;color:var(--ink)">‹</button>';
-      for (var pi = 1; pi <= totalPages; pi++) {
-        var isAct = pi === _candPage;
-        pHtml += '<button onclick="candGoPage(' + pi + ')" style="padding:5px 10px;border:1.5px solid ' + (isAct?'var(--accent)':'var(--border)') + ';border-radius:7px;background:' + (isAct?'var(--accent)':'var(--surface)') + ';color:' + (isAct?'#fff':'var(--ink)') + ';font-size:12px;font-weight:' + (isAct?'700':'400') + ';cursor:pointer">' + pi + '</button>';
-      }
-      pHtml += '<button onclick="candGoPage(' + Math.min(totalPages,_candPage+1) + ')" ' + (_candPage>=totalPages?'disabled':'') + ' style="padding:5px 10px;border:1.5px solid var(--border);border-radius:7px;background:var(--surface);font-size:12px;cursor:pointer;color:var(--ink)">›</button>';
-      pHtml += '</div>';
-      pagEl.innerHTML = pHtml;
-    }
-  }
-
-  tbody.innerHTML = pageCands.map(c => {
-    const id   = htmlEsc(c.id);
-    const nom  = htmlEsc(c.nombre);
-    const ape  = htmlEsc(c.apellido);
-    const eml  = htmlEsc(c.email);
-    const tel  = c.telefono  ? htmlEsc(c.telefono)  : '';
-    const edu  = c.educacion_label || c.educacion ? htmlEsc(c.educacion_label || c.educacion) : '';
-    const exp  = c.experiencia_label || c.experiencia ? htmlEsc(c.experiencia_label || c.experiencia) : '';
-    const cargo = htmlEsc(c.cargo || '—');
-    const fecha = htmlEsc(_momentoTxt(c));
-    const edad  = c.edad ? htmlEsc(String(c.edad)) : '';
-    const fullName = htmlEsc(c.nombre + ' ' + c.apellido);
-    return `
-    <tr data-id="${id}">
-      <td><input type="checkbox" class="row-chk" data-id="${id}" onchange="updateBulkBar()" style="cursor:pointer;width:16px;height:16px"></td>
-      <td>
-        <a onclick="openCandDrawer('${id}')" style="cursor:pointer;font-weight:700;color:var(--ink)" title="Abrir ficha">${nom} ${ape}</a>${_alertBadgesHtml(c.scores)}
-        <br><span style="color:var(--ink3);font-size:11px">${eml}</span>
-        ${edad || tel ? `<br><span style="color:var(--ink4);font-size:10px">${edad ? edad + ' años' : ''}${edad && tel ? ' · ' : ''}${tel ? '+56 ' + tel : ''}</span>` : ''}
-      </td>
-      <td>${cargo}</td>
-      <td>${_miradaChipsHtml(_miradaDe(c))}</td>
-      <td>${(function(){ var pm = getPipelineMeta(getPipelineEtapa(c)); return '<span style="display:inline-block;padding:2px 8px;border-radius:100px;font-size:10.5px;font-weight:700;white-space:nowrap;color:' + pm.color + ';background:' + pm.bg + ';border:1px solid ' + pm.border + '">' + pm.icon + ' ' + pm.label + '</span>'; })()}</td>
-      <td>${statusBadge(c.estado)}</td>
-      <td style="color:var(--ink3)">${fecha}</td>
-      <td style="white-space:nowrap">
-        ${c.estado==='completed'
-          ? `<a onclick="viewCandReport('${id}')" style="color:var(--accent);font-weight:600">📋 Informe</a>
-             <a onclick="downloadPdfReport('${id}')" style="color:var(--ink2);margin-left:10px">⬇ PDF</a>`
-          : `<span style="font-size:11px;color:var(--ink3)">Sin informe</span>`}
-        <a onclick="copyCandLink('${htmlEsc(c.perfil||'')}','${htmlEsc(c.cargo||'')}')" style="color:#16a34a;margin-left:10px;font-size:12px" title="Copiar enlace de evaluación para este cargo">🔗</a>
-        <a onclick="openReevalModal('${id}','${fullName}')" style="color:#f59e0b;margin-left:10px;font-size:12px" title="Permitir que el candidato repita la evaluación">🔄 Re-eval</a>
-        <a onclick="openDelModal('${id}','${fullName}')" style="color:#e11d48;margin-left:10px;font-size:12px">Eliminar</a>
-      </td>
-    </tr>`;
+function _bdVistasPintar() {
+  var el = document.getElementById('bd-vistas'); if (!el) return;
+  var admin = S.role === 'admin', sucio = _bdSucio();
+  var esPropia = _VISTAS.some(function(v){ return v.id === _bdVistaId; });
+  var h = _BD_FIJAS.concat(_VISTAS).map(function(v){
+    return '<button class="bd-vt' + (v.id === _bdVistaId ? ' on' : '') + '" onclick="_bdAbrirVista(\'' + v.id + '\')">' + (v.icon || '📄') + ' ' + htmlEsc(v.nombre) + '</button>';
   }).join('');
+  if (admin) h += '<button class="bd-vt bd-vt-new" onclick="_bdNuevaVista()">＋ Nueva vista</button>';
+  var der = '';
+  if (sucio) {
+    der += '<span class="bd-sucio">● Cambios sin guardar</span>';
+    if (admin && esPropia) der += '<button class="bd-lnk" onclick="_bdGuardarVista()">Guardar</button>';
+    if (admin) der += '<button class="bd-lnk" onclick="_bdNuevaVista()">Guardar como vista nueva</button>';
+    der += '<button class="bd-lnk gris" onclick="_bdAbrirVista(_bdVistaId)">Descartar</button>';
+  } else if (admin && esPropia) {
+    der += '<button class="bd-lnk gris" onclick="_bdRenombrarVista()">Renombrar</button><button class="bd-lnk rojo" onclick="_bdEliminarVista()">Eliminar vista</button>';
+  }
+  el.innerHTML = '<div class="bd-vt-list">' + h + '</div>' + (der ? '<div class="bd-vt-acc">' + der + '</div>' : '');
+}
+
+function _bdBarPintar() {
+  var el = document.getElementById('bd-bar'); if (!el) return;
+  var chips = Object.keys(_BD.filtros || {}).map(function(k){
+    var f = _BD_CAMPOS[k]; if (!f) return '';
+    var op = f.ops().filter(function(o){ return o[0] === _BD.filtros[k]; })[0];
+    return '<span class="bd-chip" onclick="_bdMenuValor(this,\'' + k + '\')">' + f.label + ': <b>' + htmlEsc(op ? op[1] : _BD.filtros[k]) + '</b>'
+      + '<span class="bd-chip-x" title="Quitar filtro" onclick="event.stopPropagation();_bdQuitar(\'' + k + '\')">✕</span></span>';
+  }).join('');
+  var tab = _BD.vista === 'tablero';
+  el.innerHTML = '<div class="bd-bar-l">'
+    + '<input class="bd-buscar" id="bd-buscar" placeholder="🔍 Buscar nombre, RUT, correo…" value="' + htmlEsc(_bdBuscarTxt) + '" oninput="_bdBuscar(this.value)">'
+    + chips + '<button class="bd-add" onclick="_bdMenuCampos(this)">＋ Filtro</button>'
+    + '<span class="bd-count" id="bd-count"></span></div>'
+    + '<div class="bd-bar-r">'
+    + '<div class="bd-seg"><button class="' + (tab ? '' : 'on') + '" onclick="_bdSetVista(\'tabla\')">▦ Tabla</button><button class="' + (tab ? 'on' : '') + '" onclick="_bdSetVista(\'tablero\')">▥ Tablero</button></div>'
+    + '<button class="bd-btn" onclick="_bdMenuOrden(this)">↕ Ordenar</button>'
+    + '<button class="bd-btn" onclick="_bdMenuAgrupar(this)">' + (tab ? '▥ Columnas' : '☰ Agrupar') + (tab ? ': ' + (_BD.columnas === 'dictamen' ? 'Dictamen' : 'Etapa') : (_BD.agrupar ? ': ' + _BD_AGRUPAR.filter(function(a){ return a[0] === _BD.agrupar; })[0][1] : '')) + '</button>'
+    + '<button class="bd-btn" onclick="_bdMenuProps(this)">⚙ Propiedades</button>'
+    + '</div>';
+}
+
+function _bdCelda(c, p) {
+  var pm = PERFIL_META[c.perfil] || {};
+  if (p === 'cargo') return htmlEsc(c.cargo || pm.label || c.perfil || '—');
+  if (p === 'resultado') return _miradaChipsHtml(_bdMirada(c));
+  if (p === 'etapa') { var em = getPipelineMeta(getPipelineEtapa(c)); return '<span class="bd-pill" style="color:' + em.color + ';background:' + em.bg + ';border-color:' + em.border + '">' + em.icon + ' ' + em.label + '</span>'; }
+  if (p === 'dictamen') return _dictamenBadgeHtml(c);
+  if (p === 'estado') return statusBadge(c.estado);
+  if (p === 'fecha') return '<span style="color:var(--ink3);white-space:nowrap">' + htmlEsc(_momentoTxt(c)) + '</span>';
+  if (p === 'comuna') return htmlEsc(c.comuna || '—');
+  if (p === 'invitacion') { var iv = c.scores && c.scores._invitacion; return iv ? (iv.tipo === 'rut' ? '🪪 Por RUT' : '🔗 Link único') : '<span style="color:var(--ink4)">—</span>'; }
+  return '';
+}
+// Resultado sin el dictamen cuando el dictamen ya se muestra aparte
+function _bdMirada(c) { var m = _miradaDe(c); return _BD.props.dictamen ? Object.assign({}, m, { dictamen:'' }) : m; }
+function _bdChk(c) {
+  return '<input type="checkbox" class="row-chk" data-id="' + htmlEsc(c.id) + '" data-done="' + (c.estado === 'completed' ? '1' : '0') + '" onclick="event.stopPropagation()" onchange="updateBulkBar()">';
+}
+
+function _bdTabla(lista) {
+  var props = _BD_PROPS.filter(function(p){ return _BD.props[p[0]]; });
+  var ncol = props.length + 3;
+  var th = function(lbl, ord){ return '<th' + (ord ? ' class="bd-th-ord" onclick="_bdSetOrden(\'' + ord + '\')"' : '') + '>' + lbl + (ord && _BD.orden.indexOf(ord.split('_')[0]) === 0 ? ' <span style="color:var(--accent)">' + (_BD.orden === 'fecha_asc' || _BD.orden === 'nombre_asc' ? '↑' : '↓') + '</span>' : '') + '</th>'; };
+  var h = '<div class="card bd-card"><table class="tbl bd-tbl"><thead><tr><th style="width:34px"><input type="checkbox" id="chk-all" onchange="toggleAllChecks(this.checked)"></th>'
+    + th('Candidato', 'nombre_asc') + props.map(function(p){ return th(p[1], p[0] === 'fecha' ? (_BD.orden === 'fecha_desc' ? 'fecha_asc' : 'fecha_desc') : p[0] === 'resultado' ? 'resultado_desc' : p[0] === 'etapa' ? 'etapa' : ''); }).join('')
+    + '<th></th></tr></thead><tbody>';
+  if (!lista.length) return h + '<tr><td colspan="' + ncol + '" style="text-align:center;padding:36px;color:var(--ink3)">No hay candidatos que coincidan con los filtros</td></tr></tbody></table></div>';
+  var n = 0, fila = function(c) {
+    n++;
+    if (n > _bdLimite) return '';
+    var id = htmlEsc(c.id), nombre = htmlEsc(((c.nombre || '') + ' ' + (c.apellido || '')).trim());
+    return '<tr data-id="' + id + '" class="bd-tr" onclick="openCandDrawer(\'' + id + '\')"><td>' + _bdChk(c) + '</td>'
+      + '<td><div class="bd-nom">' + nombre + _alertBadgesHtml(c.scores) + '</div><div class="bd-sub">' + htmlEsc(c.email || '') + '</div></td>'
+      + props.map(function(p){ return '<td>' + _bdCelda(c, p[0]) + '</td>'; }).join('')
+      + '<td class="bd-acc" onclick="event.stopPropagation()">'
+      + (c.estado === 'completed' ? '<a onclick="viewCandReport(\'' + id + '\')" title="Ver informe">📋</a><a onclick="downloadPdfReport(\'' + id + '\')" title="Descargar PDF">⬇</a>' : '')
+      + '<a onclick="openReevalModal(\'' + id + '\',\'' + nombre + '\')" title="Permitir que repita la evaluación">🔄</a>'
+      + '<a onclick="openDelModal(\'' + id + '\',\'' + nombre + '\')" title="Eliminar" style="color:#e11d48">🗑</a></td></tr>';
+  };
+  if (_BD.agrupar) {
+    _bdGrupos(_BD.agrupar).forEach(function(g) {
+      var del = lista.filter(function(c){ return _bdValorGrupo(c, _BD.agrupar) === g.id; });
+      if (!del.length) return;
+      var k = _BD.agrupar + ':' + g.id, pleg = !!_bdPlegados[k];
+      h += '<tr class="bd-grp" onclick="_bdPlegar(\'' + k + '\')"><td colspan="' + ncol + '"><span class="bd-grp-ch">' + (pleg ? '▸' : '▾') + '</span>'
+        + '<span class="bd-pill" style="color:' + g.color + ';background:' + g.bg + ';border-color:' + g.border + '">' + g.label + '</span> <span class="bd-grp-n">' + del.length + '</span></td></tr>';
+      if (!pleg) h += del.map(fila).join('');
+    });
+  } else {
+    h += lista.map(fila).join('');
+  }
+  h += '</tbody></table></div>';
+  if (lista.length > _bdLimite) h += '<div style="text-align:center;margin-top:12px"><button class="btn btn-outline btn-sm" onclick="_bdLimite+=60;_bdRenderCuerpo()">Mostrar más (' + (lista.length - _bdLimite) + ' restantes)</button></div>';
+  return h;
+}
+
+function _bdTablero(lista) {
+  var campo = _BD.columnas === 'dictamen' ? 'dictamen' : 'etapa', arrastra = campo === 'etapa';
+  var h = '<div class="kanban-board bd-board">';
+  _bdGrupos(campo).forEach(function(g) {
+    var del = lista.filter(function(c){ return _bdValorGrupo(c, campo) === g.id; });
+    h += '<div class="kanban-col" id="kcol-' + g.id + '"' + (arrastra ? ' ondragover="event.preventDefault();this.classList.add(\'drag-over\')" ondragleave="if(!this.contains(event.relatedTarget)){this.classList.remove(\'drag-over\')}" ondrop="kDrop(event,\'' + g.id + '\')"' : '') + '>'
+      + '<div class="kanban-col-header" style="color:' + g.color + '"><span>' + g.label + '</span><span style="margin-left:auto;font-size:11px;background:' + g.bg + ';border:1.5px solid ' + g.border + ';color:' + g.color + ';border-radius:100px;padding:1px 8px">' + del.length + '</span></div>'
+      + '<div class="kanban-cards" id="kcards-' + g.id + '">';
+    if (!del.length) h += '<div class="bd-vacio">Sin candidatos</div>';
+    del.slice(0, _bdLimite).forEach(function(c) {
+      var id = htmlEsc(c.id), pm = PERFIL_META[c.perfil] || {};
+      var ent = ((c.scores && c.scores._entrevistas) || []).length;
+      h += '<div class="kanban-card" id="kcard-' + id + '"' + (arrastra ? ' draggable="true" ondragstart="kDragStart(event,\'' + id + '\')" ondragend="kDragEnd(event)"' : '') + ' onclick="openCandDrawer(\'' + id + '\')">'
+        + '<div style="display:flex;gap:8px;align-items:flex-start"><div style="flex:1;min-width:0"><div class="bd-nom">' + htmlEsc(((c.nombre || '') + ' ' + (c.apellido || '')).trim()) + '</div>'
+        + (_BD.props.cargo ? '<div class="bd-sub">' + (pm.icon || '') + ' ' + htmlEsc(c.cargo || pm.label || '') + '</div>' : '') + '</div>' + _bdChk(c) + '</div>'
+        + (_BD.props.resultado && c.estado === 'completed' ? '<div style="margin-top:7px">' + _miradaChipsHtml(_bdMirada(c)) + '</div>' : '')
+        + (_BD.props.etapa && campo !== 'etapa' ? '<div style="margin-top:6px">' + _bdCelda(c, 'etapa') + '</div>' : '')
+        + (_BD.props.dictamen && campo !== 'dictamen' && _bdDictamen(c) ? '<div style="margin-top:6px">' + _dictamenBadgeHtml(c) + '</div>' : '')
+        + '<div class="bd-card-pie">'
+        + (_BD.props.estado ? statusBadge(c.estado) : '')
+        + (ent ? '<span>🗓 ' + ent + '</span>' : '')
+        + (_BD.props.comuna && c.comuna ? '<span>' + htmlEsc(c.comuna) + '</span>' : '')
+        + (_BD.props.fecha ? '<span style="margin-left:auto">' + htmlEsc(_momentoTxt(c).slice(0, 10)) + '</span>' : '')
+        + '</div></div>';
+    });
+    if (del.length > _bdLimite) h += '<button class="btn btn-ghost btn-sm" onclick="_bdLimite+=60;_bdRenderCuerpo()">Mostrar más (' + (del.length - _bdLimite) + ')</button>';
+    h += '</div></div>';
+  });
+  return h + '</div>';
+}
+
+// ── Acciones ──
+function _bdBuscar(v) { _bdBuscarTxt = v; clearTimeout(_bdTimer); _bdTimer = setTimeout(function(){ _bdLimite = 60; _bdRenderCuerpo(); }, 180); }
+function _bdSetVista(v) { _BD.vista = v; _bdCambio(); }
+function _bdSetOrden(o) { _BD.orden = o; _bdCambio(); }
+function _bdQuitar(k) { delete _BD.filtros[k]; _bdCambio(); }
+function _bdPlegar(k) { _bdPlegados[k] = !_bdPlegados[k]; _bdRenderCuerpo(); }
+
+function _bdCerrarMenu() { var m = document.getElementById('bd-menu'); if (m) m.remove(); }
+function _bdMenu(anchor, items) {
+  _bdCerrarMenu();
+  var r = anchor.getBoundingClientRect();
+  var m = document.createElement('div');
+  m.id = 'bd-menu'; m.className = 'bd-menu';
+  m.style.top = Math.min(r.bottom + 4, window.innerHeight - 40) + 'px';
+  m.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 270)) + 'px';
+  m.onclick = function(e){ e.stopPropagation(); };
+  items.forEach(function(it) {
+    if (it.titulo) { var t = document.createElement('div'); t.className = 'bd-mt'; t.textContent = it.titulo; m.appendChild(t); return; }
+    var b = document.createElement('button');
+    b.className = 'bd-mi' + (it.on ? ' on' : '');
+    b.innerHTML = '<span class="bd-mi-ck">' + (it.on ? '✓' : '') + '</span>' + it.label;
+    b.onclick = function(e){ e.stopPropagation(); if (!it.mantener) _bdCerrarMenu(); it.fn(); };
+    m.appendChild(b);
+  });
+  document.body.appendChild(m);
+  setTimeout(function(){ document.addEventListener('click', _bdCerrarMenu, { once: true }); }, 0);
+}
+function _bdMenuCampos(anchor) {
+  _bdMenu(anchor, [{ titulo:'Filtrar por' }].concat(Object.keys(_BD_CAMPOS).map(function(k){
+    return { label:_BD_CAMPOS[k].label + (_BD.filtros[k] ? ' ·' : ''), fn:function(){ _bdMenuValor(anchor, k); } };
+  })));
+}
+function _bdMenuValor(anchor, k) {
+  var f = _BD_CAMPOS[k];
+  setTimeout(function(){
+    _bdMenu(anchor, [{ titulo:f.label }].concat(f.ops().map(function(o){
+      return { label:htmlEsc(o[1]), on:_BD.filtros[k] === o[0], fn:function(){ _BD.filtros[k] = o[0]; _bdCambio(); } };
+    })).concat(_BD.filtros[k] ? [{ label:'<span style="color:#b91c1c">Quitar filtro</span>', fn:function(){ _bdQuitar(k); } }] : []));
+  }, 0);
+}
+function _bdMenuOrden(anchor) {
+  _bdMenu(anchor, [{ titulo:'Ordenar por' }].concat(_BD_ORDEN.map(function(o){ return { label:o[1], on:_BD.orden === o[0], fn:function(){ _bdSetOrden(o[0]); } }; })));
+}
+function _bdMenuAgrupar(anchor) {
+  if (_BD.vista === 'tablero') {
+    _bdMenu(anchor, [{ titulo:'Columnas del tablero' },
+      { label:'Etapa del proceso (se puede arrastrar)', on:_BD.columnas !== 'dictamen', fn:function(){ _BD.columnas = 'etapa'; _bdCambio(); } },
+      { label:'Dictamen de entrevista', on:_BD.columnas === 'dictamen', fn:function(){ _BD.columnas = 'dictamen'; _bdCambio(); } }]);
+  } else {
+    _bdMenu(anchor, [{ titulo:'Agrupar por' }].concat(_BD_AGRUPAR.map(function(a){ return { label:a[1], on:(_BD.agrupar || '') === a[0], fn:function(){ _BD.agrupar = a[0]; _bdCambio(); } }; })));
+  }
+}
+function _bdMenuProps(anchor) {
+  _bdMenu(anchor, [{ titulo:'Propiedades visibles' }].concat(_BD_PROPS.map(function(p){
+    return { label:p[1], on:!!_BD.props[p[0]], mantener:true, fn:function(){
+      _BD.props[p[0]] = _BD.props[p[0]] ? 0 : 1; _bdGuardarLocal(); _bdVistasPintar(); _bdRenderCuerpo(); _bdMenuProps(anchor);
+    } };
+  })));
+}
+
+// ── Vistas guardadas (compartidas) ──
+// Abrir Candidatos (vista Todos) con filtros puestos, por ejemplo desde el Dashboard
+function _bdIrConFiltros(f) {
+  _bdAbrirVista('todos', true);
+  _BD.filtros = f || {}; _bdGuardarLocal();
+  adminTab('candidates', document.getElementById('nav-candidates'));
+}
+function _bdNuevaVista() {
+  var nombre = (window.prompt('Nombre de la vista (por ejemplo: "Guardias esta semana")', '') || '').trim();
+  if (!nombre) return;
+  var v = { id:'v' + Date.now(), nombre:nombre.slice(0, 40), icon:_BD.vista === 'tablero' ? '🗂' : '📄', cfg:_bdCopia(_BD) };
+  _VISTAS.push(v); saveVistas();
+  _logConfigChange('Vista de Candidatos creada', v.nombre);
+  _bdVistaId = v.id; _bdGuardarLocal(); _bdRender();
+  toast('✓ Vista "' + v.nombre + '" guardada para todos los usuarios', 'ok');
+}
+function _bdGuardarVista() {
+  var v = _VISTAS.filter(function(x){ return x.id === _bdVistaId; })[0]; if (!v) return;
+  v.cfg = _bdCopia(_BD); v.icon = _BD.vista === 'tablero' ? '🗂' : '📄'; saveVistas();
+  _logConfigChange('Vista de Candidatos modificada', v.nombre);
+  _bdRender(); toast('✓ Vista guardada', 'ok');
+}
+function _bdRenombrarVista() {
+  var v = _VISTAS.filter(function(x){ return x.id === _bdVistaId; })[0]; if (!v) return;
+  var n = (window.prompt('Nuevo nombre de la vista', v.nombre) || '').trim(); if (!n) return;
+  v.nombre = n.slice(0, 40); saveVistas(); _bdVistasPintar();
+}
+async function _bdEliminarVista() {
+  var v = _VISTAS.filter(function(x){ return x.id === _bdVistaId; })[0]; if (!v) return;
+  if (!(await appConfirm('¿Eliminar la vista "' + v.nombre + '" para todos los usuarios?'))) return;
+  _VISTAS = _VISTAS.filter(function(x){ return x.id !== v.id; }); saveVistas();
+  _logConfigChange('Vista de Candidatos eliminada', v.nombre);
+  _bdAbrirVista('todos');
 }
 
 
-function clearCandFilters() {
-  var el;
-  el = document.getElementById('search-input');      if(el) el.value = '';
-  el = document.getElementById('filter-status');     if(el) el.value = '';
-  el = document.getElementById('filter-date-from');  if(el) el.value = '';
-  el = document.getElementById('filter-date-to');    if(el) el.value = '';
-  el = document.getElementById('filter-pipeline');   if(el) el.value = '';
-  el = document.getElementById('filter-rating');     if(el) el.value = '';
-  _candPage = 1;
-  renderCandidatesTable();
-}
-
-function candGoPage(page) {
-  _candPage = page;
-  renderCandidatesTable();
-  // Scroll table into view
-  var el = document.getElementById('cand-sub-tabla');
-  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
 
 function copyCandLink(perfil, cargo) {
   // Generate the general evaluation link (same for all candidates of same cargo)
@@ -11706,94 +11817,7 @@ function pipeBadgeHtml(etapaId) {
 // ── Drag & Drop state ────────────────────────────────────────────
 var _dragCandId = null;
 
-async function renderKanban() {
-  // Populate cargo filter
-  var sel = document.getElementById('pipeline-filter-cargo');
-  if (sel && sel.options.length <= 1) {
-    _cargosParaFiltro(_dbCache || []).forEach(function(k) {
-      var pm = PERFIL_META[k]; if (!pm) return;
-      var opt = document.createElement('option');
-      opt.value = k; opt.textContent = pm.icon + ' ' + pm.label;
-      sel.appendChild(opt);
-    });
-  }
-
-  var board = document.getElementById('kanban-board');
-  if (!board) return;
-  board.innerHTML = '<div style="padding:20px;color:var(--ink3);font-size:13px">Cargando pipeline…</div>';
-
-  var allCands = await getDB();
-  var filterCargo = document.getElementById('pipeline-filter-cargo')?.value || 'all';
-  var cands = filterCargo === 'all' ? allCands : allCands.filter(function(c){ return c.perfil === filterCargo; });
-
-  // Group by stage
-  var byStage = {};
-  PIPELINE_STAGES.forEach(function(s){ byStage[s.id] = []; });
-  cands.forEach(function(c) {
-    var e = getPipelineEtapa(c);
-    if (!byStage[e]) e = 'postulante';
-    byStage[e].push(c);
-  });
-
-  // Pipeline summary metrics
-  var metricsEl = document.getElementById('pipeline-metrics');
-  if (metricsEl) {
-    metricsEl.innerHTML = PIPELINE_STAGES.map(function(s) {
-      var cnt = (byStage[s.id] || []).length;
-      return '<div style="display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:100px;background:' + s.bg + ';border:1.5px solid ' + s.border + '">'
-        + '<span style="font-size:13px">' + s.icon + '</span>'
-        + '<span style="font-size:12px;font-weight:700;color:' + s.color + '">' + cnt + '</span>'
-        + '<span style="font-size:11px;color:' + s.color + ';opacity:.8">' + s.label + '</span>'
-        + '</div>';
-    }).join('');
-  }
-
-  // Build Kanban columns
-  var h = '';
-  PIPELINE_STAGES.forEach(function(s) {
-    var cards = byStage[s.id] || [];
-    h += '<div class="kanban-col" id="kcol-' + s.id + '"'
-       + ' ondragover="event.preventDefault();this.classList.add(\'drag-over\')"'
-       + ' ondragleave="if(!this.contains(event.relatedTarget)){this.classList.remove(\'drag-over\')}"'
-       + ' ondrop="kDrop(event,\'' + s.id + '\')">';
-    h += '<div class="kanban-col-header" style="color:' + s.color + '">'
-       + '<span>' + s.icon + '</span><span>' + s.label + '</span>'
-       + '<span style="margin-left:auto;font-size:11px;background:' + s.bg + ';border:1.5px solid ' + s.border + ';color:' + s.color + ';border-radius:100px;padding:1px 8px">' + cards.length + '</span>'
-       + '</div>';
-    h += '<div class="kanban-cards" id="kcards-' + s.id + '">';
-    if (cards.length === 0) {
-      h += '<div style="text-align:center;padding:18px 8px;color:var(--ink4);font-size:11px;border:1.5px dashed var(--border);border-radius:8px">Sin candidatos</div>';
-    }
-    cards.forEach(function(c) {
-      var pm = PERFIL_META[c.perfil] || {};
-      var entrevs = (c.scores && c.scores._entrevistas) || [];
-      h += '<div class="kanban-card" id="kcard-' + c.id + '" draggable="true"'
-         + ' ondragstart="kDragStart(event,\'' + c.id + '\')"'
-         + ' ondragend="kDragEnd(event)"'
-         + ' onclick="openCandDrawer(\'' + c.id + '\')">';
-      h += '<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:2px">' + htmlEsc(c.nombre + ' ' + c.apellido) + '</div>';
-      if (c.cargo || pm.label) {
-        h += '<div style="font-size:11px;color:var(--ink3);margin-bottom:7px">' + (pm.icon || '') + ' ' + htmlEsc(c.cargo || pm.label || '') + '</div>';
-      }
-      if (c.estado === 'completed') h += '<div style="margin-bottom:6px">' + _miradaChipsHtml(_miradaDe(c)) + '</div>';
-      h += '<div style="display:flex;align-items:center;justify-content:flex-end;gap:4px">';
-      var tagBg = c.estado === 'completed' ? '#f0fdf4' : c.estado === 'in_progress' ? '#fffbeb' : '#f8fafc';
-      var tagColor = c.estado === 'completed' ? '#16a34a' : c.estado === 'in_progress' ? '#d97706' : '#94a3b8';
-      var tagLabel = c.estado === 'completed' ? '✓ Eval.' : c.estado === 'in_progress' ? 'En curso' : 'Pendiente';
-      h += '<span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:100px;background:' + tagBg + ';color:' + tagColor + '">' + tagLabel + '</span>';
-      h += '</div>';
-      if (entrevs.length) {
-        h += '<div style="font-size:10px;color:var(--ink3);margin-top:5px">🗓 ' + entrevs.length + ' entrevista' + (entrevs.length > 1 ? 's' : '') + '</div>';
-      }
-      if (c.fecha) {
-        h += '<div style="font-size:10px;color:var(--ink4);margin-top:3px">📅 ' + htmlEsc(c.fecha.substring(0,10)) + '</div>';
-      }
-      h += '</div>';
-    });
-    h += '</div></div>';
-  });
-  board.innerHTML = h;
-}
+async function renderKanban() { return _bdRender(); }
 
 function kDragStart(event, id) {
   _dragCandId = id;
@@ -11838,6 +11862,7 @@ async function kDrop(event, newStage) {
   try {
     await _setPipelineEtapa(id, newStage);
     toast(getPipelineMeta(newStage).icon + ' Movido a ' + getPipelineMeta(newStage).label, 'ok');
+    _bdRenderCuerpo();
     if (newStage === 'seleccionado') _ofrecerContratacion(id);
     // Update pipeline metrics
     var metricsEl = document.getElementById('pipeline-metrics');
