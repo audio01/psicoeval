@@ -8130,7 +8130,7 @@ function buildReportHtml(c, withClose) {
     return r.cumple ? '#16a34a' : r.score >= r.min * 0.85 ? '#d97706' : '#dc2626';
   };
   // Entrevista en el informe (pestaña, tarjeta del Resumen y PDF): pendiente, se activa más adelante
-  var _evUlt = _EV_EN_INFORME ? _evUltima(s) : null;
+  var _evUlt = _EV_EN_INFORME && _verEntrevistas() ? _evUltima(s) : null;
   var _tabTitulo = {};
   html += '<div class="rpt-tabs">';
   _TAB_GRUPOS.forEach(function(g) {
@@ -12242,14 +12242,18 @@ function _renderDrawerHeader(c) {
     + '</div>';
 }
 
+// La entrevista (pauta, notas y apuntes del psicólogo) solo la ve el administrador
+function _verEntrevistas() { try { return S.role === 'admin'; } catch(e) { return false; } }
+
 function _switchDrawerTab(tab, c) {
+  if (tab === 'entrevistas' && !_verEntrevistas()) tab = 'resumen';
   _drawerActiveTab = tab;
   var tabs = [
     { id:'resumen',      icon:'📋', label:'Resumen' },
     { id:'evaluaciones', icon:'📊', label:'Evaluaciones' },
     { id:'entrevistas',  icon:'🗓', label:'Entrevistas' },
     { id:'seguimiento',  icon:'⏱', label:'Seguimiento' },
-  ];
+  ].filter(function(t){ return t.id !== 'entrevistas' || _verEntrevistas(); });
   var tabsEl = document.getElementById('drawer-tabs');
   if (tabsEl) {
     tabsEl.innerHTML = tabs.map(function(t) {
@@ -12291,7 +12295,10 @@ async function _fichaVerPrueba(tid) {
 // Lo que conviene hacer ahora con este candidato
 function _rsProximoPaso(c, m) {
   var etapa = getPipelineEtapa(c);
-  var btn = function(txt, fn, prim){ return '<button class="rs-btn' + (prim ? ' prim' : '') + '" onclick="' + fn + '">' + txt + '</button>'; };
+  var btn = function(txt, fn, prim){
+    if (S.role !== 'admin') return '';   // el lector no puede registrar ni cambiar etapas
+    return '<button class="rs-btn' + (prim ? ' prim' : '') + '" onclick="' + fn + '">' + txt + '</button>';
+  };
   var wa = _rsWhatsapp(c);
   var t, d, acc = '', tono = 'info';
   if (!m.completada) {
@@ -12403,7 +12410,7 @@ function _tabResumen(c) {
   // Antecedentes (lo que no está en el encabezado)
   var kv = [['RUT', c.rut], ['Experiencia', exp], ['Rubro', c.rubro_label || c.rubro], ['Evaluación', _momentoTxt(c)],
             ['Invitación', iv ? (iv.tipo === 'rut' ? 'Por RUT' : 'Link único') + (iv.creada_por ? ' · ' + iv.creada_por : '') : 'Link general'],
-            ['Entrevistas', ents.length ? ents.length + (ult && ult.fecha ? ' · última ' + ult.fecha.split('-').reverse().join('-') : '') + (ult && ult.entrevistador ? ' · ' + ult.entrevistador : '') : 'Ninguna']];
+            ['Entrevistas', !_verEntrevistas() ? '' : ents.length ? ents.length + (ult && ult.fecha ? ' · última ' + ult.fecha.split('-').reverse().join('-') : '') + (ult && ult.entrevistador ? ' · ' + ult.entrevistador : '') : 'Ninguna']];
   h += '<div class="rs-card"><div class="rs-lbl">Antecedentes</div>';
   kv.forEach(function(x){ if (x[1]) h += '<div class="rs-kv"><span>' + x[0] + '</span><b>' + htmlEsc(String(x[1])) + '</b></div>'; });
   var otras = _mismoRut(c);
