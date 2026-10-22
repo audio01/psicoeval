@@ -1637,7 +1637,6 @@ body.exam-away #exam-shield{display:flex}
           <span id="session-timer-icon" style="font-size:11px">🟢</span>
           <span id="session-timer-label" style="font-size:11px;color:#94a3b8;font-weight:600">Sesión activa</span>
         </div>
-        <button class="nav-btn sb-mini" onclick="showShareModal()" title="Link general por cargo, sin invitación personal"><span>🔗</span><span>Link general</span></button>
         <button class="nav-btn sb-mini" id="backup-btn" onclick="downloadFullBackup()" title="Descarga todas las evaluaciones y la configuración en un archivo"><span>💾</span><span>Respaldo <span id="backup-last" style="font-size:11px;font-weight:500;color:var(--ink4)"></span></span></button>
         <button id="dark-mode-btn" class="nav-btn sb-mini" onclick="toggleDarkMode()" aria-label="Alternar modo oscuro">
           <span id="dark-toggle-icon">🌙</span><span id="dark-toggle-label">Modo oscuro</span>
@@ -1672,7 +1671,6 @@ body.exam-away #exam-shield{display:flex}
           </div>
           <div style="flex:1"></div>
           <div style="display:flex;flex-direction:column;gap:4px;margin-top:20px;border-top:1px solid var(--border);padding-top:12px">
-            <button class="nav-btn sb-mini" onclick="closeMobileSidebar();showShareModal()"><span>🔗</span><span>Link general</span></button>
             <button class="nav-btn sb-mini" onclick="closeMobileSidebar();downloadFullBackup()"><span>💾</span><span>Respaldo</span></button>
             <button class="nav-btn sb-mini" onclick="toggleDarkMode()"><span>🌙</span><span>Modo oscuro</span></button>
             <button class="nav-btn sb-mini" onclick="closeMobileSidebar();adminLogout()"><span>⎋</span><span>Cerrar sesión</span></button>
