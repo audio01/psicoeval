@@ -13860,10 +13860,8 @@ function _rhSugerencias(c) {
   var dic = _dictamenDe(s);
   var cat = dic === 'recomendado' ? 'apto' : dic === 'obs' ? 'obs' : dic === 'no_recomendable' ? 'no_apto' : '';
   var ref = c.referencia || s._referencia || {};
-  var conSint = ((s._entrevistas || []).filter(function(e){ return e && (e.sintesis || e.motivo); }).pop()) || {};
   var nom = ((c.nombre || '') + ' ' + (c.apellido || '')).trim();
   var catTxt = (_RH_CAT.filter(function(x){ return x[0] === cat; })[0] || [])[1];
-  var obs = [conSint.sintesis, conSint.motivo].filter(Boolean).join('\n\n');
   var nv = {}; Object.keys(niveles).forEach(function(k){ nv[k] = niveles[k].v; });
   return {
     lista:'', zonal:'', instalacion:'', recomendacion:'', detalle:'', categoria:cat, publico:'',
@@ -13873,17 +13871,19 @@ function _rhSugerencias(c) {
     empresa:ref.empresa || (h0 && h0.empresa) || '',
     corrobora:[ref.nombre, ref.cargo].filter(Boolean).join(', '),
     fono:ref.telefono || '', aportados:s._ref_notas || '',
-    observaciones:obs.trim(), refuerzo:'',
+    observaciones:'', refuerzo:'',
     psicologo:(ev && ev.entrevistador) || _evPreferencias().entrevistador || ''
   };
 }
 
-var _rhCand = null;
+var _rhCand = null, _rhFuentes = {};
 async function abrirInformeRH(id) {
   var all = await getDB();
   var c = all.find(function(x){ return x.id === id; }); if (!c) return;
   _rhCand = c;
-  var sug = _rhSugerencias(c), g = (c.scores && c.scores._informe_rh) || {};
+  var sug = _rhSugerencias(c);
+  _rhFuentes = sug.fuentes;
+  var g = (c.scores && c.scores._informe_rh) || {};
   var d = Object.assign({}, sug, g, { niveles: Object.assign({}, sug.niveles, g.niveles || {}) });
   var guardado = !!Object.keys(g).length;
   var chips = function(name, ops, val) {
@@ -13916,6 +13916,8 @@ async function abrirInformeRH(id) {
     + '<div class="field"><label>Instalación</label>' + input('instalacion', d.instalacion, 'Ej: Rehau') + '</div>'
     + '<div class="field"><label>Atención a público</label>' + chips('publico', [['si','Recomendable'],['no','No Recomendable']], d.publico) + '</div>'
     + '<table class="rh-tbl"><thead><tr><th>Competencia</th><th>Nivel ideal</th><th>Nivel obtenido</th><th>Sugerencia</th></tr></thead><tbody>' + filas + '</tbody></table>'
+    + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:4px 0 2px"><button class="rs-btn prim" id="rh-btn-analizar" onclick="_rhAnalizar()">✨ Analizar fortalezas y debilidades con IA</button>'
+    + '<span style="font-size:11.5px;color:var(--ink4)">Cruza los niveles por competencia con todo lo anotado en la entrevista y propone fortalezas y debilidades en lenguaje para RRHH, sin citar sus apuntes. No envía nombre, RUT ni datos de contacto (se ocultan también dentro de las notas).</span></div>'
     + '<div class="field"><label>Fortalezas <span style="text-transform:none;font-weight:500">(una por línea)</span></label>' + area('fortalezas', d.fortalezas, 5) + '</div>'
     + '<div class="field"><label>Debilidades <span style="text-transform:none;font-weight:500">(una por línea)</span></label>' + area('debilidades', d.debilidades, 3) + '</div>'
     + sec('Antecedentes laborales')
@@ -13927,7 +13929,7 @@ async function abrirInformeRH(id) {
     + '<div class="field"><label>Recomendación de contratación</label>' + chips('recomendacion', [['plazo_fijo','Plazo fijo'],['indefinido','Indefinido'],['no_contratar','No contratar']], d.recomendacion) + '</div>'
     + '<div class="field"><label>Detalle de la recomendación <span style="text-transform:none;font-weight:500">(opcional)</span></label>' + input('detalle', d.detalle, 'Ej: con inducción clara y seguimiento cercano en terreno de la jefatura directa') + '</div>'
     + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><button class="rs-btn prim" id="rh-btn-ia" onclick="_rhRedactar()">✨ Redactar integración con IA</button>'
-    + '<span style="font-size:11.5px;color:var(--ink4)">Redacta las Observaciones finales y el Refuerzo de habilidades a partir de fortalezas, debilidades, niveles, la recomendación y todo lo anotado en la entrevista. No envía nombre, RUT ni datos de contacto (se ocultan también dentro de las notas). Revise el texto antes de generar el PDF.</span></div>'
+    + '<span style="font-size:11.5px;color:var(--ink4)">Redacta las Observaciones finales y el Refuerzo de habilidades solo a partir de las fortalezas, debilidades, niveles y la recomendación que usted validó (no usa sus apuntes). No envía nombre, RUT ni datos de contacto. Revise el texto antes de generar el PDF.</span></div>'
     + '<div class="field"><label>Observaciones finales</label>'
     + '<div style="font-size:12px;color:var(--ink3);margin:2px 0 6px">El PDF comienza con: <em>"Al momento de la evaluación, se concluye que [nombre] se encuentra en la categoría de [categoría] para el cargo de [cargo] en la instalación [instalación]."</em> Escriba aquí el resto; deje una línea en blanco entre párrafos.</div>'
     + area('observaciones', d.observaciones, 8) + '</div>'
@@ -13948,7 +13950,7 @@ function _rhLeer() {
            niveles:niveles, fortalezas:v('fortalezas'), debilidades:v('debilidades'), empresa:v('empresa'), corrobora:v('corrobora'),
            fono:v('fono'), aportados:v('aportados'), observaciones:v('observaciones'), refuerzo:v('refuerzo'), actualizado:new Date().toISOString() };
 }
-// Lo observado en las entrevistas, como texto para la redacción con IA. Se ocultan el
+// Lo observado en las entrevistas, como texto para el análisis con IA de fortalezas y debilidades. Se ocultan el
 // nombre, el RUT, correos y teléfonos que aparezcan en las notas; no va el entrevistador.
 function _rhEntrevistaTexto(c) {
   var evs = (((c.scores || {})._entrevistas) || []).filter(Boolean).slice()
@@ -14005,8 +14007,7 @@ async function _rhRedactar() {
         cargo: c.cargo || (PERFIL_META[c.perfil] || {}).label || '', categoria: d.categoria,
         fortalezas: d.fortalezas, debilidades: d.debilidades,
         niveles: _RH_COMP.map(function(k){ return { competencia: k.label, ideal: k.ideal, obtenido: d.niveles[k.key] || '' }; }),
-        recomendacion: d.recomendacion, detalle: d.detalle,
-        entrevista: _rhEntrevistaTexto(c)
+        recomendacion: d.recomendacion, detalle: d.detalle
       })
     });
     var j = await r.json().catch(function(){ return {}; });
@@ -14017,6 +14018,36 @@ async function _rhRedactar() {
     toast('✨ Texto redactado: revíselo antes de generar el PDF', 'ok');
   } catch(e) { toast('No se pudo redactar: ' + e.message, 'er'); }
   finally { if (btn) { btn.disabled = false; btn.textContent = '✨ Redactar integración con IA'; } }
+}
+
+// Análisis con IA: propone fortalezas y debilidades cruzando niveles y entrevista
+async function _rhAnalizar() {
+  var d = _rhLeer(), c = _rhCand;
+  var tf = document.getElementById('rh-fortalezas'), td = document.getElementById('rh-debilidades');
+  if (((tf && tf.value.trim()) || (td && td.value.trim())) && !(await appConfirm('¿Reemplazar las Fortalezas y Debilidades por el análisis de la IA?'))) return;
+  var btn = document.getElementById('rh-btn-analizar');
+  if (btn) { btn.disabled = true; btn.textContent = '✨ Analizando…'; }
+  try {
+    var r = await fetch(SUPA_URL + '/functions/v1/psicoeval-redactar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + S.authToken },
+      body: JSON.stringify({
+        modo: 'analizar',
+        cargo: c.cargo || (PERFIL_META[c.perfil] || {}).label || '',
+        niveles: _RH_COMP.map(function(k){ var f = _rhFuentes[k.key]; return { competencia: k.label, ideal: k.ideal, obtenido: d.niveles[k.key] || '', fuente: f && f.v === d.niveles[k.key] ? f.fuente : '' }; }),
+        fortalezas: d.fortalezas, debilidades: d.debilidades,
+        entrevista: _rhEntrevistaTexto(c)
+      })
+    });
+    var j = await r.json().catch(function(){ return {}; });
+    if (!r.ok || !Array.isArray(j.fortalezas)) throw new Error(j.error || (r.status === 404 ? 'La función de redacción aún no está instalada en Supabase.' : 'Error ' + r.status));
+    var nom = ((c.nombre || '') + ' ' + (c.apellido || '')).trim();
+    var poner = function(x){ return String(x).replace(/\[NOMBRE\]/g, nom); };
+    if (tf) tf.value = j.fortalezas.map(poner).join('\n');
+    if (td) td.value = (j.debilidades || []).map(poner).join('\n');
+    toast('✨ Fortalezas y debilidades propuestas: revíselas antes de redactar', 'ok');
+  } catch(e) { toast('No se pudo analizar: ' + e.message, 'er'); }
+  finally { if (btn) { btn.disabled = false; btn.textContent = '✨ Analizar fortalezas y debilidades con IA'; } }
 }
 
 async function _rhGuardar(silencioso) {
