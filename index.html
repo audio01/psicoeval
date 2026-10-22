@@ -2196,6 +2196,7 @@ const LS_PARAMS            = 'psicoeval_params';
 const LS_TM_MINS           = 'psicoeval_tm_mins';
 const LS_CONTACTO          = 'psicoeval_contacto';
 const LS_ACCESO            = 'psicoeval_acceso';
+const LS_RH_IDEALES        = 'psicoeval_rh_ideales'; // niveles ideales del Informe RH por cargo (los define el psicólogo)
 const LS_VISTAS            = 'psicoeval_vistas';      // vistas guardadas de Candidatos (18_vistas.sql)      // { solo_invitacion } (16_invitaciones.sql)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -13809,6 +13810,27 @@ var _RH_COMP = [
   { key:'razonamiento',   label:'Razonamiento General',               ideal:'Medio' }
 ];
 var _RH_NIVELES = ['Alto', 'Medio', 'Bajo'];
+// Niveles ideales: los define el psicólogo según su organización. Se recuerdan por cargo
+// en este computador para no tener que ingresarlos de nuevo en el siguiente informe.
+function _rhCargoBase(c) { return c.cargo || (PERFIL_META[c.perfil] || {}).label || ''; }
+function _rhIdealesGuardados() { try { return JSON.parse(localStorage.getItem(LS_RH_IDEALES) || '{}') || {}; } catch(e) { return {}; } }
+function _rhIdealesDe(cargo) {
+  var r = {}, g = _rhIdealesGuardados()[String(cargo || '').trim().toLowerCase()] || {};
+  _RH_COMP.forEach(function(k){ r[k.key] = _RH_NIVELES.indexOf(g[k.key]) >= 0 ? g[k.key] : k.ideal; });
+  return r;
+}
+function _rhRecordarIdeales(cargo, ideales) {
+  var k = String(cargo || '').trim().toLowerCase(); if (!k) return;
+  try { var g = _rhIdealesGuardados(); g[k] = ideales; localStorage.setItem(LS_RH_IDEALES, JSON.stringify(g)); } catch(e) {}
+}
+// Al cambiar el cargo del informe se cargan los ideales que usó antes para ese cargo
+function _rhCargoCambio() {
+  var cargo = ((document.getElementById('rh-cargo') || {}).value || '').trim();
+  if (!_rhIdealesGuardados()[cargo.toLowerCase()]) return;
+  var id = _rhIdealesDe(cargo);
+  _RH_COMP.forEach(function(k){ var el = document.getElementById('rh-i-' + k.key); if (el) el.value = id[k.key]; });
+  toast('Niveles ideales de "' + cargo + '" cargados', 'ok');
+}
 var _RH_CAT = [['apto', 'Apto'], ['obs', 'Apto con Observaciones'], ['no_apto', 'No Apto']];
 // Prueba que sugiere cada competencia
 var _RH_FUENTE = { autocontrol:'gonogo', alerta:'vigilancia', criterio:'situacional', razonamiento:'comprension' };
@@ -13849,11 +13871,11 @@ function _rhSugerencias(c) {
   _evCompsDe(ev).forEach(function(x) {
     if ((x.key === 'comunicacion' || x.key === 'equipo') && x.nivel) niveles[x.key] = { v: x.nivel >= 4 ? 'Alto' : x.nivel === 3 ? 'Medio' : 'Bajo', fuente: 'Entrevista: ' + x.nivel + ' de 5' };
   });
-  var fort = [], deb = [];
+  var fort = [], deb = [], ideales = _rhIdealesDe(_rhCargoBase(c));
   _RH_COMP.forEach(function(k) {
     var n = niveles[k.key]; if (!n) return;
     if (n.v === 'Bajo' && _RH_DEB[k.key]) deb.push(_RH_DEB[k.key]);
-    else if (_RH_NIVELES.indexOf(n.v) <= _RH_NIVELES.indexOf(k.ideal) && _RH_FORT[k.key]) fort.push(_RH_FORT[k.key]);
+    else if (_RH_NIVELES.indexOf(n.v) <= _RH_NIVELES.indexOf(ideales[k.key]) && _RH_FORT[k.key]) fort.push(_RH_FORT[k.key]);
   });
   var h0 = Array.isArray(c.historial) && c.historial[0];
   if (h0 && /guardia|vigilan|seguridad|conserje|portero|control de acceso/i.test(h0.cargo || '')) fort.push('Experiencia como ' + h0.cargo.toLowerCase() + (h0.empresa ? ' en ' + h0.empresa : '') + '.');
@@ -13864,6 +13886,7 @@ function _rhSugerencias(c) {
   var catTxt = (_RH_CAT.filter(function(x){ return x[0] === cat; })[0] || [])[1];
   var nv = {}; Object.keys(niveles).forEach(function(k){ nv[k] = niveles[k].v; });
   return {
+    cargo:_rhCargoBase(c), ideales:ideales,
     lista:'', zonal:'', instalacion:'', recomendacion:'', detalle:'', categoria:cat, publico:'',
     fecha:(_momentoTxt(c) || '').slice(0, 10).replace(/-/g, '/'),
     niveles:nv, fuentes:niveles,
@@ -13885,6 +13908,8 @@ async function abrirInformeRH(id) {
   _rhFuentes = sug.fuentes;
   var g = (c.scores && c.scores._informe_rh) || {};
   var d = Object.assign({}, sug, g, { niveles: Object.assign({}, sug.niveles, g.niveles || {}) });
+  if (g.cargo && !g.ideales) d.ideales = _rhIdealesDe(g.cargo);
+  d.ideales = Object.assign({}, sug.ideales, d.ideales || {});
   var guardado = !!Object.keys(g).length;
   var chips = function(name, ops, val) {
     return '<div class="reg-chips">' + ops.map(function(o){ return '<label class="reg-chip"><input type="radio" name="rh-' + name + '" value="' + o[0] + '"' + (o[0] === val ? ' checked' : '') + '><span>' + o[1] + '</span></label>'; }).join('') + '</div>';
@@ -13893,7 +13918,9 @@ async function abrirInformeRH(id) {
   var input = function(id, val, ph) { return '<input id="rh-' + id + '" value="' + htmlEsc(val || '') + '" placeholder="' + (ph || '') + '" class="rh-in">'; };
   var filas = _RH_COMP.map(function(k) {
     var f = sug.fuentes[k.key];
-    return '<tr><td>' + k.label + '</td><td style="text-align:center;color:var(--ink3)">' + k.ideal + '</td><td>'
+    return '<tr><td>' + k.label + '</td><td>'
+      + '<select id="rh-i-' + k.key + '" class="rh-in" style="padding:5px 8px">'
+      + _RH_NIVELES.map(function(n){ return '<option' + (d.ideales[k.key] === n ? ' selected' : '') + '>' + n + '</option>'; }).join('') + '</select></td><td>'
       + '<select id="rh-n-' + k.key + '" class="rh-in" style="padding:5px 8px"><option value="">—</option>'
       + _RH_NIVELES.map(function(n){ return '<option' + (d.niveles[k.key] === n ? ' selected' : '') + '>' + n + '</option>'; }).join('') + '</select></td>'
       + '<td style="font-size:11px;color:var(--ink4)">' + (f ? '💡 ' + htmlEsc(f.fuente) : 'Lo define usted') + '</td></tr>';
@@ -13913,7 +13940,9 @@ async function abrirInformeRH(id) {
     + '<div class="rh-grid2"><div class="field"><label>Fecha de evaluación</label>' + input('fecha', d.fecha, 'dd/mm/aaaa') + '</div>'
     + '<div class="field"><label>Psicólogo que realiza el informe</label>' + input('psicologo', d.psicologo) + '</div></div>'
     + '<div class="field"><label>Categoría</label>' + chips('categoria', _RH_CAT, d.categoria) + '</div>'
-    + '<div class="field"><label>Instalación</label>' + input('instalacion', d.instalacion, 'Ej: Rehau') + '</div>'
+    + '<div class="rh-grid2"><div class="field"><label>Cargo del informe</label>' + input('cargo', d.cargo, 'Ej: Jefe de Turno').replace('<input ', '<input onchange="_rhCargoCambio()" ')
+    + (d.cargo !== sug.cargo ? '<div style="font-size:11.5px;color:var(--ink4);margin-top:3px">Postuló a: ' + htmlEsc(sug.cargo) + '</div>' : '<div style="font-size:11.5px;color:var(--ink4);margin-top:3px">Si lo evalúa para otro cargo, cámbielo aquí. No modifica su postulación.</div>') + '</div>'
+    + '<div class="field"><label>Instalación</label>' + input('instalacion', d.instalacion, 'Ej: Rehau') + '</div></div>'
     + '<div class="field"><label>Atención a público</label>' + chips('publico', [['si','Recomendable'],['no','No Recomendable']], d.publico) + '</div>'
     + '<table class="rh-tbl"><thead><tr><th>Competencia</th><th>Nivel ideal</th><th>Nivel obtenido</th><th>Sugerencia</th></tr></thead><tbody>' + filas + '</tbody></table>'
     + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:4px 0 2px"><button class="rs-btn prim" id="rh-btn-analizar" onclick="_rhAnalizar()">✨ Analizar fortalezas y debilidades con IA</button>'
@@ -13945,8 +13974,9 @@ async function abrirInformeRH(id) {
 function _rhLeer() {
   var v = function(id){ return ((document.getElementById('rh-' + id) || {}).value || '').trim(); };
   var r = function(n){ var x = document.querySelector('input[name="rh-' + n + '"]:checked'); return x ? x.value : ''; };
-  var niveles = {}; _RH_COMP.forEach(function(k){ var x = v('n-' + k.key); if (x) niveles[k.key] = x; });
-  return { lista:r('lista'), zonal:r('zonal'), instalacion:v('instalacion'), recomendacion:r('recomendacion'), detalle:v('detalle'), categoria:r('categoria'), publico:r('publico'), fecha:v('fecha'), psicologo:v('psicologo'),
+  var niveles = {}, ideales = {};
+  _RH_COMP.forEach(function(k){ var x = v('n-' + k.key); if (x) niveles[k.key] = x; ideales[k.key] = v('i-' + k.key) || k.ideal; });
+  return { cargo:v('cargo'), ideales:ideales, lista:r('lista'), zonal:r('zonal'), instalacion:v('instalacion'), recomendacion:r('recomendacion'), detalle:v('detalle'), categoria:r('categoria'), publico:r('publico'), fecha:v('fecha'), psicologo:v('psicologo'),
            niveles:niveles, fortalezas:v('fortalezas'), debilidades:v('debilidades'), empresa:v('empresa'), corrobora:v('corrobora'),
            fono:v('fono'), aportados:v('aportados'), observaciones:v('observaciones'), refuerzo:v('refuerzo'), actualizado:new Date().toISOString() };
 }
@@ -14004,9 +14034,9 @@ async function _rhRedactar() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + S.authToken },
       body: JSON.stringify({
-        cargo: c.cargo || (PERFIL_META[c.perfil] || {}).label || '', categoria: d.categoria,
+        cargo: d.cargo || _rhCargoBase(c), categoria: d.categoria,
         fortalezas: d.fortalezas, debilidades: d.debilidades,
-        niveles: _RH_COMP.map(function(k){ return { competencia: k.label, ideal: k.ideal, obtenido: d.niveles[k.key] || '' }; }),
+        niveles: _RH_COMP.map(function(k){ return { competencia: k.label, ideal: d.ideales[k.key], obtenido: d.niveles[k.key] || '' }; }),
         recomendacion: d.recomendacion, detalle: d.detalle
       })
     });
@@ -14033,8 +14063,8 @@ async function _rhAnalizar() {
       headers: { 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + S.authToken },
       body: JSON.stringify({
         modo: 'analizar',
-        cargo: c.cargo || (PERFIL_META[c.perfil] || {}).label || '',
-        niveles: _RH_COMP.map(function(k){ var f = _rhFuentes[k.key]; return { competencia: k.label, ideal: k.ideal, obtenido: d.niveles[k.key] || '', fuente: f && f.v === d.niveles[k.key] ? f.fuente : '' }; }),
+        cargo: d.cargo || _rhCargoBase(c),
+        niveles: _RH_COMP.map(function(k){ var f = _rhFuentes[k.key]; return { competencia: k.label, ideal: d.ideales[k.key], obtenido: d.niveles[k.key] || '', fuente: f && f.v === d.niveles[k.key] ? f.fuente : '' }; }),
         fortalezas: d.fortalezas, debilidades: d.debilidades,
         entrevista: _rhEntrevistaTexto(c)
       })
@@ -14054,6 +14084,7 @@ async function _rhGuardar(silencioso) {
   var d = _rhLeer();
   try {
     await _patchPrivado(_rhCand.id, 'informe_rh', d);
+    _rhRecordarIdeales(d.cargo, d.ideales);
     if (!silencioso) toast('Informe RH guardado ✓', 'ok');
     return d;
   } catch(e) { toast('No se pudo guardar: ' + e.message, 'er'); return null; }
@@ -14070,7 +14101,7 @@ function _rhFrase(c, d, html) {
   var cat = (_RH_CAT.filter(function(x){ return x[0] === d.categoria; })[0] || [])[1];
   if (!cat) return '';
   var nom = ((c.nombre || '') + ' ' + (c.apellido || '')).trim();
-  var cargo = c.cargo || (PERFIL_META[c.perfil] || {}).label || '';
+  var cargo = d.cargo || _rhCargoBase(c);
   return 'Al momento de la evaluación, se concluye que ' + b(nom) + ' se encuentra en la categoría de ' + b(cat.charAt(0) + cat.slice(1).toLowerCase())
     + ' para el cargo de ' + b(cargo) + (d.instalacion ? ' en la instalación ' + b(d.instalacion) : '') + '.';
 }
@@ -14100,7 +14131,7 @@ async function _rhPdf() {
     + '<tr><td class="az b">Categoría:</td><td class="ops">' + pila(_RH_CAT, d.categoria) + '</td></tr>'
     + '<tr><td class="az b">Atención a Público:</td><td class="ops">' + pila([['si','Recomendable'],['no','No Recomendable']], d.publico) + '</td></tr></table>'
     + '<table class="comp"><tr class="az b"><td>Competencia</td><td>Nivel Ideal</td><td>Nivel Obtenido</td></tr>'
-    + _RH_COMP.map(function(k){ return '<tr><td class="az b">' + k.label + '</td><td class="b">' + k.ideal + '</td><td>' + e(d.niveles[k.key] || '') + '</td></tr>'; }).join('') + '</table>';
+    + _RH_COMP.map(function(k){ return '<tr><td class="az b">' + k.label + '</td><td class="b">' + e((d.ideales || {})[k.key] || k.ideal) + '</td><td>' + e(d.niveles[k.key] || '') + '</td></tr>'; }).join('') + '</table>';
   var p2 = '<h4>FORTALEZAS</h4><table class="dt"><tr><td class="az w20">Fortalezas</td><td>' + vinetas(d.fortalezas) + '</td></tr></table>'
     + '<h4>DEBILIDADES</h4><table class="dt"><tr><td class="az w20">Debilidades</td><td>' + vinetas(d.debilidades) + '</td></tr></table>';
   var p3 = '<h4 class="sep">ANTECEDENTES LABORALES</h4><table class="dt just"><tr><td class="az w35">Empresa en que trabajó anteriormente:</td><td>' + e(d.empresa) + '</td></tr>'
