@@ -4179,6 +4179,10 @@ document.addEventListener('keydown', function(e) {
 const CAND_EDU_LABELS = { basica:'Educación Básica', media_incompleta:'Media incompleta', media:'4º Medio completo', tecnica:'Técnico Superior', universitaria:'Universitaria', postgrado:'Postgrado', ejercito_retiro:'Retirado/a Ejército (carrera completa)', ejercito_baja:'Retirado/a Ejército (antes de completar)', carabineros_retiro:'Retirado/a Carabineros (carrera completa)', carabineros_baja:'Retirado/a Carabineros (antes de completar)', armada_retiro:'Retirado/a Armada (carrera completa)', armada_baja:'Retirado/a Armada (antes de completar)' };
 const CAND_RUBRO_LABELS = { seguridad:'Seguridad', comercio:'Comercio', administracion:'Administración', salud:'Salud', construccion:'Construcción', logistica:'Logística', educacion:'Educación', tecnologia:'Tecnología', otro:'Otro' };
 function _withLabels(c) {
+  // La columna historial es texto en Supabase: llega como JSON en un string
+  if (c && typeof c.historial === 'string') {
+    try { var _h = JSON.parse(c.historial); c.historial = Array.isArray(_h) ? _h : null; } catch(e) { c.historial = null; }
+  }
   if (c && c.educacion && !c.educacion_label) c.educacion_label = CAND_EDU_LABELS[c.educacion] || c.educacion;
   if (c && c.rubro && !c.rubro_label) c.rubro_label = CAND_RUBRO_LABELS[c.rubro] || c.rubro;
   return c;
@@ -12084,7 +12088,14 @@ function _switchDrawerTab(tab, c) {
   bodyEl.scrollTop = 0;
   if (tab === 'resumen') bodyEl.innerHTML = _tabResumen(c);
   else if (tab === 'evaluaciones') bodyEl.innerHTML = _tabEvaluaciones(c);
-  else if (tab === 'entrevistas') { bodyEl.innerHTML = _tabEntrevistasDrawer(c); _evInit(c); }
+  else if (tab === 'entrevistas') {
+    try { bodyEl.innerHTML = _tabEntrevistasDrawer(c); _evInit(c); }
+    catch(e) {
+      console.error('Pauta de entrevista', e);
+      bodyEl.className = 'drawer-body';
+      bodyEl.innerHTML = '<div style="padding:30px;text-align:center;color:#b91c1c;font-size:13px">No se pudo abrir la pauta de entrevista para este candidato.<br><span style="color:var(--ink4);font-size:12px">Detalle: ' + htmlEsc(e.message || String(e)) + '</span></div>';
+    }
+  }
   else if (tab === 'seguimiento') bodyEl.innerHTML = _tabSeguimiento(c);
 }
 
@@ -12590,7 +12601,7 @@ function _tabEntrevistasDrawer(c) {
 
   // ── Pauta: 5 pasos en el orden de la entrevista, con índice fijo y barra para finalizar ──
   var _dp = _evDesdePruebas(c);
-  var hist = (c.historial || []).filter(function(x){ return x && (x.empresa || x.cargo); }).slice(0, 2);
+  var hist = (Array.isArray(c.historial) ? c.historial : []).filter(function(x){ return x && (x.empresa || x.cargo); }).slice(0, 2);
   var main = '<div class="ev-main" id="ev-main" data-cand="' + c.id + '">';
 
   // Índice
