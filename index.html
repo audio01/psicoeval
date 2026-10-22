@@ -1883,20 +1883,20 @@ body.exam-away #exam-shield{display:flex}
         <div class="bd-vistas" id="bd-vistas"></div>
         <!-- Búsqueda, filtros, tipo de vista, orden, agrupación y propiedades -->
         <div class="bd-bar" id="bd-bar"></div>
-        <div id="bulk-bar" style="display:none;align-items:center;gap:10px;padding:11px 16px;background:var(--accent-l);border:1.5px solid var(--accent-m);border-radius:10px;margin-bottom:10px;flex-wrap:wrap">
+        <div id="bulk-bar" style="display:none;align-items:center;gap:10px;padding:9px 14px;background:var(--accent-l);border:1.5px solid var(--accent-m);border-radius:10px;margin-bottom:10px;flex-wrap:wrap">
           <span id="bulk-count" style="font-size:13px;font-weight:700;color:var(--accent)">0 seleccionados</span>
+          <a id="bulk-all" onclick="toggleAllChecks(true)" style="font-size:12px;font-weight:600;color:var(--accent);cursor:pointer;text-decoration:underline"></a>
+          <span style="flex:1"></span>
           <button id="btn-compare" class="btn btn-sm" onclick="openCompareModal()" style="background:var(--ink);color:#fff;display:none">⚖ Comparar candidatos</button>
-          <select id="bulk-stage-select" style="padding:6px 28px 6px 10px;border:1.5px solid var(--accent-m);border-radius:8px;background:var(--surface);font-size:12px;font-family:inherit;color:var(--ink);-webkit-appearance:none;background-image:url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2716%27 height=%2716%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%238e8e93%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpolyline points=%276 9 12 15 18 9%27/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 6px center;cursor:pointer">
-            <option value="">Mover a etapa…</option>
+          <select id="bulk-stage-select" onchange="bulkMoveStage()" title="Mover los seleccionados a otra etapa" style="padding:6px 28px 6px 10px;border:1.5px solid var(--accent-m);border-radius:8px;background:var(--surface);font-size:12px;font-weight:600;font-family:inherit;color:var(--ink);-webkit-appearance:none;background-image:url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2716%27 height=%2716%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%238e8e93%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpolyline points=%276 9 12 15 18 9%27/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 6px center;cursor:pointer">
+            <option value="">↗ Mover a etapa…</option>
             <option value="postulante">📋 Postulante</option>
             <option value="entrevista">💬 Entrevista Laboral</option>
             <option value="seleccionado">✅ Seleccionado</option>
             <option value="descartado">❌ Descartado</option>
           </select>
-          <button class="btn btn-sm" onclick="bulkMoveStage()" style="background:var(--accent);color:#fff">↗ Mover</button>
-          <button class="btn btn-sm" onclick="deleteSelected()" style="background:#e11d48;color:#fff">🗑 Eliminar</button>
-          <button class="btn btn-outline btn-sm" onclick="deleteAll()" style="border-color:#8b0000;color:#8b0000">⚠ Eliminar TODOS</button>
-          <button class="btn btn-outline btn-sm" onclick="clearSelection()">✕ Cancelar</button>
+          <button id="bulk-del" class="btn btn-outline btn-sm" onclick="deleteSelected()" style="border-color:#fecdd3;color:#be123c;background:var(--surface)">🗑 Eliminar</button>
+          <button class="btn btn-outline btn-sm" onclick="clearSelection()" title="Quitar la selección">✕</button>
         </div>
         <div id="bd-cuerpo"></div>
       </div><!-- /tab-candidates -->
@@ -9391,10 +9391,15 @@ function updateBulkBar() {
   if (checked.length > 0) {
     bar.style.display = 'flex';
     count.textContent = checked.length + ' seleccionado' + (checked.length > 1 ? 's' : '');
+    // Seleccionar todos los visibles, solo si quedan sin marcar
+    var tot = document.querySelectorAll('.row-chk').length, all = document.getElementById('bulk-all');
+    if (all) { all.textContent = 'Seleccionar los ' + tot; all.style.display = tot > checked.length ? '' : 'none'; }
+    var del = document.getElementById('bulk-del');
+    if (del) del.textContent = '🗑 Eliminar' + (checked.length > 1 ? ' ' + checked.length : '');
     // Show compare button only when 2-5 completed candidates are selected
     if (btnCmp) {
       const completedChecked = Array.from(checked).filter(chk => chk.dataset.done === '1');
-      btnCmp.style.display = completedChecked.length >= 2 ? 'inline-flex' : 'none';
+      btnCmp.style.display = completedChecked.length >= 2 && completedChecked.length <= 5 ? 'inline-flex' : 'none';
       btnCmp.textContent = '⚖ Comparar ' + (completedChecked.length >= 2 ? completedChecked.length + ' candidatos' : '');
     }
   } else {
@@ -9515,8 +9520,10 @@ function clearSelection() {
 }
 
 async function bulkMoveStage() {
-  const etapa = document.getElementById('bulk-stage-select')?.value;
-  if (!etapa) { toast('Selecciona una etapa primero', 'er'); return; }
+  const sel = document.getElementById('bulk-stage-select');
+  const etapa = sel?.value;
+  if (sel) sel.value = '';
+  if (!etapa) return;
   const checked = [...document.querySelectorAll('.row-chk:checked')];
   if (!checked.length) { toast('Selecciona candidatos primero', 'er'); return; }
   const meta = getPipelineMeta(etapa);
@@ -9544,18 +9551,6 @@ async function deleteSelected() {
   renderDashboard();
 }
 
-async function deleteAll() {
-  const all = await getDB();
-  if (!all.length) { toast('No hay candidatos para eliminar.', 'er'); return; }
-  if (!(await appConfirm('⚠ Esto eliminará TODOS los ' + all.length + ' candidatos de la base de datos. ¿Estás seguro/a?'))) return;
-  let ok = 0;
-  for (const c of all) { if (await deleteFromDB(c.id)) ok++; }
-  if (ok === all.length) toast('Todos los candidatos eliminados.', 'ok');
-  else toast('Se eliminaron ' + ok + ' de ' + all.length + '. Revisa tu conexión o permisos e intenta de nuevo.', 'er');
-  clearSelection();
-  renderCandidatesTable();
-  renderDashboard();
-}
 
 
 
