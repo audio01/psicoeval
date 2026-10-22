@@ -1637,10 +1637,6 @@ body.exam-away #exam-shield{display:flex}
           <span id="session-timer-icon" style="font-size:11px">🟢</span>
           <span id="session-timer-label" style="font-size:11px;color:#94a3b8;font-weight:600">Sesión activa</span>
         </div>
-        <button class="nav-btn sb-mini" id="backup-btn" onclick="downloadFullBackup()" title="Descarga todas las evaluaciones y la configuración en un archivo"><span>💾</span><span>Respaldo <span id="backup-last" style="font-size:11px;font-weight:500;color:var(--ink4)"></span></span></button>
-        <button id="dark-mode-btn" class="nav-btn sb-mini" onclick="toggleDarkMode()" aria-label="Alternar modo oscuro">
-          <span id="dark-toggle-icon">🌙</span><span id="dark-toggle-label">Modo oscuro</span>
-        </button>
         <button id="logout-btn" class="nav-btn sb-mini" onclick="adminLogout()"><span>⎋</span><span>Cerrar sesión</span></button>
       </div>
     </aside>
@@ -1671,8 +1667,6 @@ body.exam-away #exam-shield{display:flex}
           </div>
           <div style="flex:1"></div>
           <div style="display:flex;flex-direction:column;gap:4px;margin-top:20px;border-top:1px solid var(--border);padding-top:12px">
-            <button class="nav-btn sb-mini" onclick="closeMobileSidebar();downloadFullBackup()"><span>💾</span><span>Respaldo</span></button>
-            <button class="nav-btn sb-mini" onclick="toggleDarkMode()"><span>🌙</span><span>Modo oscuro</span></button>
             <button class="nav-btn sb-mini" onclick="closeMobileSidebar();adminLogout()"><span>⎋</span><span>Cerrar sesión</span></button>
           </div>
         </div>
@@ -1830,6 +1824,17 @@ body.exam-away #exam-shield{display:flex}
               <div style="font-size:12px;color:var(--ink3);margin-top:2px">Al terminar, el candidato puede avisar por WhatsApp con un mensaje ya escrito ("Hola, soy… Terminé la evaluación"). Deje el número vacío para no mostrar el botón.</div>
             </div>
             <div id="contacto-card"></div>
+          </div>
+        </div>
+        <!-- Respaldo completo -->
+        <div style="margin-top:36px;border-top:1px solid var(--border);padding-top:24px">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+            <div style="max-width:520px">
+              <div style="font-size:16px;font-weight:700">Respaldo completo</div>
+              <div style="font-size:12px;color:var(--ink3);margin-top:2px">Descarga en un archivo todas las evaluaciones, sus respuestas y la configuración. Contiene datos personales y psicológicos: guárdelo en un lugar seguro. El plan gratuito de Supabase no hace respaldos automáticos.</div>
+              <div style="font-size:12px;margin-top:6px">Último respaldo en este equipo: <span id="backup-last" style="font-weight:600"></span></div>
+            </div>
+            <button class="btn btn-outline" id="backup-btn" onclick="downloadFullBackup()">💾 Descargar respaldo</button>
           </div>
         </div>
       </div>
@@ -9780,7 +9785,7 @@ function _backupLabel() {
   var el = document.getElementById('backup-last'); if (!el) return;
   var d = _backupDias();
   var atrasado = d === null || d >= _BACKUP_DIAS_AVISO;
-  el.textContent = d === null ? '· nunca' : d === 0 ? '· hoy' : '· hace ' + d + (d === 1 ? ' día' : ' días');
+  el.textContent = d === null ? 'nunca' : d === 0 ? 'hoy' : 'hace ' + d + (d === 1 ? ' día' : ' días');
   var bb = document.getElementById('backup-btn');
   if (bb) bb.title = (d === null ? 'Nunca se ha descargado un respaldo en este equipo' : d === 0 ? 'Último respaldo: hoy' : 'Último respaldo: hace ' + d + (d === 1 ? ' día' : ' días'))
     + '. Descarga todas las evaluaciones y la configuración en un archivo.';
@@ -11549,8 +11554,9 @@ function toggleDarkMode() {
 // Initialize dark mode from localStorage
 (function() {
   try {
-    const saved = localStorage.getItem(_DARK_KEY);
-    if (saved === '1') _applyDarkMode(true);
+    // El modo oscuro se retiró: siempre en claro
+    localStorage.removeItem(_DARK_KEY);
+    _applyDarkMode(false);
   } catch(e) {}
 })();
 // ─────────────────────────────────────────────────────────────────────────────
