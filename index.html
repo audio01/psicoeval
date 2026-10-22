@@ -13860,6 +13860,19 @@ function _rhNivelPrueba(c, tid) {
   return { v: r.score >= r.min + 15 ? 'Alto' : r.score >= r.min ? 'Medio' : 'Bajo', fuente: (TESTS_META[tid] || {}).name + ': ' + r.score + u + ' (mín. ' + r.min + u + ')' };
 }
 
+// Fortalezas y debilidades armadas en el computador a partir de los niveles y los ideales
+function _rhFortDeb(c, niveles, ideales) {
+  var fort = [], deb = [];
+  _RH_COMP.forEach(function(k) {
+    var n = niveles[k.key]; if (!n) return;
+    if (n === 'Bajo' && _RH_DEB[k.key]) deb.push(_RH_DEB[k.key]);
+    else if (_RH_NIVELES.indexOf(n) <= _RH_NIVELES.indexOf(ideales[k.key] || k.ideal) && _RH_FORT[k.key]) fort.push(_RH_FORT[k.key]);
+  });
+  var h0 = Array.isArray(c.historial) && c.historial[0];
+  if (h0 && /guardia|vigilan|seguridad|conserje|portero|control de acceso/i.test(h0.cargo || '')) fort.push('Experiencia como ' + h0.cargo.toLowerCase() + (h0.empresa ? ' en ' + h0.empresa : '') + '.');
+  return { fortalezas: fort.join('\n'), debilidades: deb.join('\n') };
+}
+
 // Propuesta del panel (se usa cuando aún no hay informe guardado)
 function _rhSugerencias(c) {
   var s = c.scores || {}, niveles = {};
@@ -13871,26 +13884,20 @@ function _rhSugerencias(c) {
   _evCompsDe(ev).forEach(function(x) {
     if ((x.key === 'comunicacion' || x.key === 'equipo') && x.nivel) niveles[x.key] = { v: x.nivel >= 4 ? 'Alto' : x.nivel === 3 ? 'Medio' : 'Bajo', fuente: 'Entrevista: ' + x.nivel + ' de 5' };
   });
-  var fort = [], deb = [], ideales = _rhIdealesDe(_rhCargoBase(c));
-  _RH_COMP.forEach(function(k) {
-    var n = niveles[k.key]; if (!n) return;
-    if (n.v === 'Bajo' && _RH_DEB[k.key]) deb.push(_RH_DEB[k.key]);
-    else if (_RH_NIVELES.indexOf(n.v) <= _RH_NIVELES.indexOf(ideales[k.key]) && _RH_FORT[k.key]) fort.push(_RH_FORT[k.key]);
-  });
-  var h0 = Array.isArray(c.historial) && c.historial[0];
-  if (h0 && /guardia|vigilan|seguridad|conserje|portero|control de acceso/i.test(h0.cargo || '')) fort.push('Experiencia como ' + h0.cargo.toLowerCase() + (h0.empresa ? ' en ' + h0.empresa : '') + '.');
+  var ideales = _rhIdealesDe(_rhCargoBase(c));
+  var nv = {}; Object.keys(niveles).forEach(function(k){ nv[k] = niveles[k].v; });
+  var fd = _rhFortDeb(c, nv, ideales), h0 = Array.isArray(c.historial) && c.historial[0];
   var dic = _dictamenDe(s);
   var cat = dic === 'recomendado' ? 'apto' : dic === 'obs' ? 'obs' : dic === 'no_recomendable' ? 'no_apto' : '';
   var ref = c.referencia || s._referencia || {};
   var nom = ((c.nombre || '') + ' ' + (c.apellido || '')).trim();
   var catTxt = (_RH_CAT.filter(function(x){ return x[0] === cat; })[0] || [])[1];
-  var nv = {}; Object.keys(niveles).forEach(function(k){ nv[k] = niveles[k].v; });
   return {
     cargo:_rhCargoBase(c), ideales:ideales,
     lista:'', zonal:'', instalacion:'', recomendacion:'', detalle:'', categoria:cat, publico:'',
     fecha:(_momentoTxt(c) || '').slice(0, 10).replace(/-/g, '/'),
     niveles:nv, fuentes:niveles,
-    fortalezas:fort.join('\n'), debilidades:deb.join('\n'),
+    fortalezas:fd.fortalezas, debilidades:fd.debilidades,
     empresa:ref.empresa || (h0 && h0.empresa) || '',
     corrobora:[ref.nombre, ref.cargo].filter(Boolean).join(', '),
     fono:ref.telefono || '', aportados:s._ref_notas || '',
@@ -13899,14 +13906,12 @@ function _rhSugerencias(c) {
   };
 }
 
-var _rhCand = null, _rhFuentes = {};
+var _rhCand = null;
 async function abrirInformeRH(id) {
   var all = await getDB();
   var c = all.find(function(x){ return x.id === id; }); if (!c) return;
   _rhCand = c;
-  var sug = _rhSugerencias(c);
-  _rhFuentes = sug.fuentes;
-  var g = (c.scores && c.scores._informe_rh) || {};
+  var sug = _rhSugerencias(c), g = (c.scores && c.scores._informe_rh) || {};
   var d = Object.assign({}, sug, g, { niveles: Object.assign({}, sug.niveles, g.niveles || {}) });
   if (g.cargo && !g.ideales) d.ideales = _rhIdealesDe(g.cargo);
   d.ideales = Object.assign({}, sug.ideales, d.ideales || {});
@@ -13945,8 +13950,8 @@ async function abrirInformeRH(id) {
     + '<div class="field"><label>Instalación</label>' + input('instalacion', d.instalacion, 'Ej: Rehau') + '</div></div>'
     + '<div class="field"><label>Atención a público</label>' + chips('publico', [['si','Recomendable'],['no','No Recomendable']], d.publico) + '</div>'
     + '<table class="rh-tbl"><thead><tr><th>Competencia</th><th>Nivel ideal</th><th>Nivel obtenido</th><th>Sugerencia</th></tr></thead><tbody>' + filas + '</tbody></table>'
-    + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:4px 0 2px"><button class="rs-btn prim" id="rh-btn-analizar" onclick="_rhAnalizar()">✨ Analizar fortalezas y debilidades con IA</button>'
-    + '<span style="font-size:11.5px;color:var(--ink4)">Cruza los niveles por competencia con todo lo anotado en la entrevista y propone fortalezas y debilidades en lenguaje para RRHH, sin citar sus apuntes. No envía nombre, RUT ni datos de contacto (se ocultan también dentro de las notas).</span></div>'
+    + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:4px 0 2px"><button class="rs-btn" onclick="_rhRecalcular()">↻ Recalcular desde los resultados</button>'
+    + '<span style="font-size:11.5px;color:var(--ink4)">Vuelve a armar fortalezas y debilidades con los niveles e ideales de la tabla (sin IA). Úselo si cambió niveles o ideales.</span></div>'
     + '<div class="field"><label>Fortalezas <span style="text-transform:none;font-weight:500">(una por línea)</span></label>' + area('fortalezas', d.fortalezas, 5) + '</div>'
     + '<div class="field"><label>Debilidades <span style="text-transform:none;font-weight:500">(una por línea)</span></label>' + area('debilidades', d.debilidades, 3) + '</div>'
     + sec('Antecedentes laborales')
@@ -13980,46 +13985,6 @@ function _rhLeer() {
            niveles:niveles, fortalezas:v('fortalezas'), debilidades:v('debilidades'), empresa:v('empresa'), corrobora:v('corrobora'),
            fono:v('fono'), aportados:v('aportados'), observaciones:v('observaciones'), refuerzo:v('refuerzo'), actualizado:new Date().toISOString() };
 }
-// Lo observado en las entrevistas, como texto para el análisis con IA de fortalezas y debilidades. Se ocultan el
-// nombre, el RUT, correos y teléfonos que aparezcan en las notas; no va el entrevistador.
-function _rhEntrevistaTexto(c) {
-  var evs = (((c.scores || {})._entrevistas) || []).filter(Boolean).slice()
-    .sort(function(a, b){ return String(a.fecha || '').localeCompare(String(b.fecha || '')); });
-  var tipos = { rrhh:'RRHH', psicolaboral:'psicolaboral', tecnica:'técnica', panel:'panel' };
-  var t = function(x){ return String(x || '').replace(/\s+/g, ' ').trim(); };
-  var bloques = evs.map(function(ev, i) {
-    var l = ['Entrevista ' + (i + 1) + (ev.tipo ? ' (' + (tipos[ev.tipo] || ev.tipo) + ')' : '')];
-    if (t(ev.notas_inicio)) l.push('Anotaciones al inicio: ' + t(ev.notas_inicio));
-    var comps = _evCompsDe(ev).filter(function(x){ return x.nivel || t(x.nota); });
-    if (comps.length) l.push('Competencias:\n' + comps.map(function(x){ return '- ' + x.name + (x.nivel ? ' ' + x.nivel + '/5' : '') + (x.sinEjemplo ? ' (sin ejemplo concreto)' : '') + (t(x.nota) ? ': ' + t(x.nota) : ''); }).join('\n'));
-    var scr = ev.screening || {};
-    var obs = Object.keys(_EV_SCREEN_OPTS).filter(function(k){ return scr[k]; }).map(function(k){ return _EV_SCREEN_OPTS[k].label + ': ' + scr[k]; });
-    if (obs.length) l.push('Observación conductual: ' + obs.join('; '));
-    var dp = (ev.desde_pruebas || []).filter(function(x){ return t(x.nota); });
-    if (dp.length) l.push('Preguntas desde las pruebas:\n' + dp.map(function(x){ return '- ' + t(x.q) + ' → ' + t(x.nota); }).join('\n'));
-    (ev.experiencia || []).forEach(function(x) {
-      if (!x) return;
-      var p = [t(x.cargo), t(x.tiempo), (x.tareas || []).map(t).filter(Boolean).join(', '), t(x.motivo) ? 'salida: ' + t(x.motivo) : '', t(x.verificacion) ? 'verificación: ' + t(x.verificacion) : '', t(x.notas)].filter(Boolean);
-      if (p.length) l.push('Trayectoria: ' + p.join(' · '));
-    });
-    if (t(ev.apuntes_psico)) l.push('Apuntes del psicólogo: ' + t(ev.apuntes_psico));
-    if (t(ev.sintesis)) l.push('Síntesis: ' + t(ev.sintesis));
-    if (t(ev.notas)) l.push('Notas adicionales: ' + t(ev.notas));
-    var dm = _EV_DICTAMEN.filter(function(d){ return d.val === ev.dictamen; })[0];
-    if (dm) l.push('Dictamen: ' + dm.label + (t(ev.motivo) ? '. Motivo: ' + t(ev.motivo) : ''));
-    return l.length > 1 ? l.join('\n') : '';
-  }).filter(Boolean);
-  var txt = bloques.join('\n\n');
-  // Datos personales fuera
-  ((c.nombre || '') + ' ' + (c.apellido || '')).split(/\s+/).filter(function(w){ return w.length >= 3; }).forEach(function(w) {
-    txt = txt.replace(new RegExp('(^|[^\\wÁÉÍÓÚÑáéíóúñ])' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?=$|[^\\wÁÉÍÓÚÑáéíóúñ])', 'gi'), '$1[NOMBRE]');
-  });
-  txt = txt.replace(/\b\d{1,2}\.?\d{3}\.?\d{3}-?[\dkK]\b/g, '[DATO]')
-           .replace(/[\w.+-]+@[\w-]+\.[\w.]+/g, '[DATO]')
-           .replace(/(\+?56\s?)?\b9\s?\d{4}\s?\d{4}\b/g, '[DATO]');
-  return txt.slice(0, 7000);
-}
-
 // Redacción con IA (Edge Function psicoeval-redactar). Solo viajan textos del informe,
 // nunca el nombre, RUT ni contacto; el nombre se pone aquí, en el computador del psicólogo.
 async function _rhRedactar() {
@@ -14050,34 +14015,14 @@ async function _rhRedactar() {
   finally { if (btn) { btn.disabled = false; btn.textContent = '✨ Redactar integración con IA'; } }
 }
 
-// Análisis con IA: propone fortalezas y debilidades cruzando niveles y entrevista
-async function _rhAnalizar() {
-  var d = _rhLeer(), c = _rhCand;
+// Recalcula fortalezas y debilidades con lo que hay en la tabla (en el computador, sin IA)
+async function _rhRecalcular() {
+  var d = _rhLeer(), fd = _rhFortDeb(_rhCand, d.niveles, d.ideales);
   var tf = document.getElementById('rh-fortalezas'), td = document.getElementById('rh-debilidades');
-  if (((tf && tf.value.trim()) || (td && td.value.trim())) && !(await appConfirm('¿Reemplazar las Fortalezas y Debilidades por el análisis de la IA?'))) return;
-  var btn = document.getElementById('rh-btn-analizar');
-  if (btn) { btn.disabled = true; btn.textContent = '✨ Analizando…'; }
-  try {
-    var r = await fetch(SUPA_URL + '/functions/v1/psicoeval-redactar', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + S.authToken },
-      body: JSON.stringify({
-        modo: 'analizar',
-        cargo: d.cargo || _rhCargoBase(c),
-        niveles: _RH_COMP.map(function(k){ var f = _rhFuentes[k.key]; return { competencia: k.label, ideal: d.ideales[k.key], obtenido: d.niveles[k.key] || '', fuente: f && f.v === d.niveles[k.key] ? f.fuente : '' }; }),
-        fortalezas: d.fortalezas, debilidades: d.debilidades,
-        entrevista: _rhEntrevistaTexto(c)
-      })
-    });
-    var j = await r.json().catch(function(){ return {}; });
-    if (!r.ok || !Array.isArray(j.fortalezas)) throw new Error(j.error || (r.status === 404 ? 'La función de redacción aún no está instalada en Supabase.' : 'Error ' + r.status));
-    var nom = ((c.nombre || '') + ' ' + (c.apellido || '')).trim();
-    var poner = function(x){ return String(x).replace(/\[NOMBRE\]/g, nom); };
-    if (tf) tf.value = j.fortalezas.map(poner).join('\n');
-    if (td) td.value = (j.debilidades || []).map(poner).join('\n');
-    toast('✨ Fortalezas y debilidades propuestas: revíselas antes de redactar', 'ok');
-  } catch(e) { toast('No se pudo analizar: ' + e.message, 'er'); }
-  finally { if (btn) { btn.disabled = false; btn.textContent = '✨ Analizar fortalezas y debilidades con IA'; } }
+  if (((tf.value.trim() && tf.value.trim() !== fd.fortalezas) || (td.value.trim() && td.value.trim() !== fd.debilidades))
+      && !(await appConfirm('¿Reemplazar las Fortalezas y Debilidades por las calculadas desde los resultados? Se perderá lo que editó en ellas.'))) return;
+  tf.value = fd.fortalezas; td.value = fd.debilidades;
+  toast('Fortalezas y debilidades recalculadas', 'ok');
 }
 
 async function _rhGuardar(silencioso) {
