@@ -8699,13 +8699,19 @@ function buildReportHtml(c, withClose) {
 // `value` puede ser una función (valorAnterior) => valorNuevo, para modificar listas
 // partiendo siempre de los datos frescos del servidor. Devuelve el objeto scores guardado.
 async function _patchScoresField(candidateId, key, value) {
-  // Fetch current scores, merge, then PATCH
+  return _patchScores(candidateId, function(scores){ scores[key] = (typeof value === 'function') ? value(scores[key]) : value; });
+}
+
+// Lee la ficha recién guardada en el servidor (nunca la copia en memoria, que para el
+// administrador incluye entrevistas y notas privadas), la modifica y la guarda
+async function _patchScores(candidateId, cambiar) {
   const r0 = await fetch(SUPA_URL + '/rest/v1/candidates?id=eq.' + encodeURIComponent(candidateId) + '&select=scores', { headers: getDBHeaders() });
   if (!r0.ok) throw new Error('Fetch scores ' + r0.status);
   const rows = await r0.json();
   if (!rows.length) throw new Error('Candidato no encontrado');
   var scores = Object.assign({}, rows[0].scores || {});
-  scores[key] = (typeof value === 'function') ? value(scores[key]) : value;
+  cambiar(scores);
+  delete scores._entrevistas; delete scores._ref_notas;   // viven en psicoeval_privado
   const r1 = await fetch(SUPA_URL + '/rest/v1/candidates?id=eq.' + encodeURIComponent(candidateId), {
     method: 'PATCH',
     headers: Object.assign({}, getDBHeaders(), { 'Content-Type': 'application/json', 'Prefer': 'return=representation' }),
@@ -12115,22 +12121,15 @@ async function kDrop(event, newStage) {
   } catch(e) { toast('Error: ' + e.message, 'er'); }
 }
 
-async function _setPipelineEtapa(id, etapa) {
-  var allCands = await getDB();
-  var c = allCands.find(function(x){ return x.id === id; });
-  var scores = Object.assign({}, (c && c.scores) || {});
-  var oldEtapa = scores._pipeline_etapa || getPipelineEtapa(c);
-  scores._pipeline_etapa = etapa;
-  var hist = scores._pipeline_history || [];
-  hist.push({ from: oldEtapa, to: etapa, ts: new Date().toISOString() });
-  scores._pipeline_history = hist;
-  var r = await fetch(SUPA_URL + '/rest/v1/candidates?id=eq.' + id, {
-    method: 'PATCH',
-    headers: Object.assign({}, getDBHeaders(), { 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }),
-    body: JSON.stringify({ scores: scores })
+async function _setPipelineEtapa(id, etapa, extra) {
+  await _patchScores(id, function(scores) {
+    var oldEtapa = scores._pipeline_etapa || 'postulante';
+    scores._pipeline_etapa = etapa;
+    var hist = Array.isArray(scores._pipeline_history) ? scores._pipeline_history : [];
+    hist.push({ from: oldEtapa, to: etapa, ts: new Date().toISOString() });
+    scores._pipeline_history = hist;
+    if (extra) Object.assign(scores, extra);
   });
-  if (!r.ok) { var t = await r.text(); throw new Error('PATCH ' + r.status + ': ' + t); }
-  _invalidateCache();
 }
 
 // ── Star Rating ──────────────────────────────────────────────────
