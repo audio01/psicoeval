@@ -797,7 +797,7 @@ input,select,textarea{font-family:inherit;outline:none}
 .drawer-body.ev-body{padding:0;overflow:hidden;display:flex;flex-direction:row-reverse}
 .ev-aside{width:350px;flex-shrink:0;background:var(--surface2);border-left:1px solid var(--border);overflow-y:auto;padding:20px}
 .ev-main{flex:1;overflow-y:auto;padding:22px 32px 40px;display:flex;flex-direction:column;gap:16px}
-.ev-main > *{width:100%;max-width:860px;margin-left:auto;margin-right:auto;box-sizing:border-box;zoom:1.15}
+.ev-main > *{width:100%;max-width:940px;margin-left:auto;margin-right:auto;box-sizing:border-box;zoom:1.15}
 .ev-aside > *{zoom:1.12}
 .ev-main .ev-sec{padding:18px}
 .ev-main .ev-sec-title{font-size:11.5px}
@@ -890,6 +890,12 @@ input,select,textarea{font-family:inherit;outline:none}
 .ev-dp-q span{font-size:10.5px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:.4px;margin-right:6px}
 .ev-barra{position:sticky;bottom:-40px;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;margin-top:4px;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 -4px 18px rgba(0,0,0,.08)}
 .ev-barra-info{font-size:13px;min-width:0}
+.ev-prev{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 14px}
+.ev-prev summary{display:flex;align-items:center;gap:8px;flex-wrap:wrap;cursor:pointer;list-style:none;font-size:13px;font-weight:700;color:var(--ink)}
+.ev-prev summary::-webkit-details-marker{display:none}
+.ev-prev-chip{font-size:12px;font-weight:600;color:var(--ink3);background:var(--surface2);border-radius:100px;padding:2px 9px}
+.ev-prev-inf{margin-left:auto;font-size:12.5px;color:var(--accent);cursor:pointer}
+.ev-prev-item{border-top:1px solid var(--border);padding:12px 0 4px;margin-top:10px}
 .ev-star-q{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin:6px 0 4px}
 .ev-lv{width:26px;height:26px;border-radius:7px;border:1.5px solid var(--border);background:var(--surface);color:var(--ink3);font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;padding:0}
 .ev-lv.on{color:#fff}
@@ -12064,7 +12070,8 @@ function _renderDrawerHeader(c) {
     + '<div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#7c3aed);display:flex;align-items:center;justify-content:center;color:#fff;font-size:17px;font-weight:800;flex-shrink:0">' + initials + '</div>'
     + '<div style="flex:1;min-width:0">'
     + '<div style="font-size:15px;font-weight:800;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + htmlEsc(c.nombre + ' ' + c.apellido) + '</div>'
-    + '<div style="font-size:11px;color:var(--ink3);margin-top:1px">' + (pm.icon || '') + ' ' + htmlEsc(c.cargo || pm.label || c.perfil || '—') + '</div>'
+    + '<div style="font-size:11px;color:var(--ink3);margin-top:1px">' + (pm.icon || '') + ' ' + htmlEsc(c.cargo || pm.label || c.perfil || '—')
+    + [c.edad ? c.edad + ' años' : '', c.comuna || '', c.educacion_label || c.educacion || ''].filter(Boolean).map(function(x){ return ' · ' + htmlEsc(String(x)); }).join('') + '</div>'
     + '<div style="display:flex;align-items:center;gap:7px;margin-top:6px;flex-wrap:wrap">'
     + pipeBadgeHtml(etapa)
     + _dictamenBadgeHtml(c)
@@ -12528,82 +12535,6 @@ function _tabEntrevistasDrawer(c) {
   var entrevistas = sc._entrevistas || [];
   var _hoy = new Date(), today = _hoy.getFullYear() + '-' + String(_hoy.getMonth() + 1).padStart(2, '0') + '-' + String(_hoy.getDate()).padStart(2, '0');
 
-  var pai  = sc.pai  || {};
-  var dc0  = sc.dc0  || {};
-  var disc = sc.disc || {};
-
-  // ── Panel de datos (derecha) ──────────────────────────────────
-  var aside = '<div class="ev-aside">';
-
-  // Datos clave
-  var dkv = 'display:flex;flex-direction:column;gap:1px;padding:6px 9px;background:var(--surface);border-radius:8px;border:1px solid var(--border)';
-  var dkl = 'font-size:9px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px';
-  var dkv2 = 'font-size:11.5px;font-weight:600;color:var(--ink2)';
-  aside += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px">';
-  aside += '<div style="' + dkv + '"><span style="' + dkl + '">Edad</span><span style="' + dkv2 + '">' + (c.edad ? c.edad + ' años' : '—') + '</span></div>';
-  aside += '<div style="' + dkv + '"><span style="' + dkl + '">Comuna</span><span style="' + dkv2 + ';font-size:11px">' + htmlEsc(c.comuna||'—') + '</span></div>';
-  aside += '<div style="' + dkv + ';grid-column:1/-1"><span style="' + dkl + '">Educación</span><span style="' + dkv2 + ';font-size:11px">' + htmlEsc(c.educacion_label||c.educacion||'—') + '</span></div>';
-  aside += '<div style="' + dkv + ';grid-column:1/-1"><span style="' + dkl + '">Rubro</span><span style="' + dkv2 + ';font-size:11px">' + htmlEsc(c.rubro_label||c.rubro||'—') + '</span></div>';
-  aside += '</div>';
-
-  // Barras de puntaje
-  var hasTests = sc.pai || sc.dc0 || sc.disc;
-  if (hasTests) {
-    aside += '<div style="font-size:9px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:9px">Evaluaciones</div>';
-    function darkBar(label, val, color) {
-      if (!val && val !== 0) return '';
-      var pct = Math.min(100, Math.round(val));
-      return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:7px">'
-           + '<span style="font-size:9px;color:var(--ink3);width:68px;flex-shrink:0">' + label + '</span>'
-           + '<div style="flex:1;height:5px;background:var(--border);border-radius:2px;overflow:hidden">'
-           + '<div style="width:' + pct + '%;height:100%;background:' + color + ';border-radius:2px"></div></div>'
-           + '<span style="font-size:10px;font-weight:700;color:' + color + ';min-width:22px;text-align:right">' + val + '</span>'
-           + '</div>';
-    }
-    if (sc.dc0 && dc0.total) aside += darkBar('Cognitivo', dc0.total, '#0891b2');
-    if (sc.pai) {
-      if (pai.ME) aside += darkBar('M. Estrés', pai.ME, '#16a34a');
-      if (pai.EE) aside += darkBar('Est. Emoc.', pai.EE, '#d97706');
-      if (pai.IL) aside += darkBar('Integridad', pai.IL, '#4f46e5');
-    }
-    if (sc.disc && disc.dominant) {
-      aside += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:7px">'
-             + '<span style="font-size:9px;color:var(--ink3);width:68px;flex-shrink:0">DISC</span>'
-             + '<div style="background:#6366f1;color:#fff;border-radius:6px;padding:2px 9px;font-size:11px;font-weight:800">' + disc.dominant + '</div></div>';
-    }
-  }
-
-  // Separator
-  aside += '<div style="height:1px;background:var(--surface);margin:12px 0"></div>';
-
-  // History mini-list
-  if (entrevistas.length) {
-    aside += '<div style="font-size:9px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:7px">Historial (' + entrevistas.length + ')</div>';
-    var modIcons2  = { online:'🖥', presencial:'🏢', terreno:'🌍' };
-    var tipoIcons2 = { rrhh:'🧑‍💼', tecnica:'🔧', psicolaboral:'🧠', panel:'👥' };
-    entrevistas.slice().reverse().forEach(function(ev) {
-      var dictM = _EV_DICTAMEN.find(function(d){ return d.val === ev.dictamen; });
-      var fFmt = ev.fecha || '—';
-      try { fFmt = new Date(ev.fecha+'T12:00').toLocaleDateString('es-CL',{day:'2-digit',month:'short'}); } catch(e){}
-      aside += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:8px 10px;margin-bottom:6px">';
-      aside += '<div style="display:flex;justify-content:space-between;align-items:center;gap:4px">';
-      aside += '<div style="font-size:11.5px;font-weight:700;color:var(--ink2)">' + fFmt + '</div>';
-      aside += '<button onclick="deleteEntrevistaEntry(\'' + c.id + '\',' + ev.id + ')" title="Eliminar" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--ink3);padding:1px 3px;line-height:1;border-radius:3px" onmouseover="this.style.color=\'#f87171\'" onmouseout="this.style.color=\'var(--ink3)\'">🗑</button>';
-      aside += '</div>';
-      aside += '<div style="font-size:10.5px;color:var(--ink3);margin-top:2px">';
-      if (ev.tipo) aside += (tipoIcons2[ev.tipo]||'') + ' ';
-      aside += (modIcons2[ev.modalidad]||'') + ' ' + (ev.modalidad||'');
-      if (ev.entrevistador) aside += ' · ' + htmlEsc(ev.entrevistador);
-      aside += '</div>';
-      if (dictM) aside += '<div style="margin-top:4px;font-size:10px;font-weight:700;color:' + dictM.color + '">' + dictM.icon + ' ' + dictM.label + '</div>';
-      var _evProm = _evPromedio(_evCompsDe(ev));
-      if (_evProm !== null) aside += '<div style="margin-top:3px;font-size:10px;color:var(--ink3)">Competencias: <strong style="color:var(--ink2)">' + String(_evProm).replace('.', ',') + ' / 5</strong></div>';
-      aside += '</div>';
-    });
-  } else {
-    aside += '<div style="text-align:center;padding:16px 8px;color:var(--ink3);font-size:11.5px;background:var(--surface);border-radius:8px;border:1px dashed var(--border)">Sin entrevistas<br>registradas aún</div>';
-  }
-  aside += '</div>'; // /ev-aside
 
   // ── Pauta: 5 pasos en el orden de la entrevista, con índice fijo y barra para finalizar ──
   var _dp = _evDesdePruebas(c);
@@ -12616,6 +12547,27 @@ function _tabEntrevistasDrawer(c) {
       + '<span class="ev-ix-n">' + (i + 1) + '</span><span class="ev-ix-t">' + p[0] + '</span><span class="ev-ix-st" id="ev-ix-st-' + (i + 1) + '"></span></button>';
   }).join('') + '</div>';
   main += '<div id="ev-borrador-aviso"></div>';
+  if (entrevistas.length) {
+    var tipoIc = { rrhh:'🧑‍💼', tecnica:'🔧', psicolaboral:'🧠', panel:'👥' };
+    main += '<details class="ev-prev"><summary><span>🗓 Entrevistas anteriores (' + entrevistas.length + ')</span>'
+      + entrevistas.slice().reverse().slice(0, 3).map(function(ev){
+          var dm = _EV_DICTAMEN.filter(function(d){ return d.val === ev.dictamen; })[0];
+          var f = ev.fecha || '';
+          try { f = new Date(ev.fecha + 'T12:00').toLocaleDateString('es-CL', { day:'2-digit', month:'short' }); } catch(e) {}
+          return '<span class="ev-prev-chip">' + htmlEsc(f) + (dm ? ' · <span style="color:' + dm.color + '">' + dm.icon + ' ' + dm.label + '</span>' : '') + '</span>';
+        }).join('')
+      + (c.estado === 'completed' ? '<a class="ev-prev-inf" onclick="event.preventDefault();closeCandDrawer();viewCandReport(\'' + c.id + '\')">Ver informe →</a>' : '')
+      + '</summary>';
+    entrevistas.slice().reverse().forEach(function(ev) {
+      var f = ev.fecha || '';
+      try { f = new Date(ev.fecha + 'T12:00').toLocaleDateString('es-CL', { day:'2-digit', month:'long', year:'numeric' }); } catch(e) {}
+      main += '<div class="ev-prev-item"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'
+        + '<strong style="flex:1;font-size:13.5px">' + (tipoIc[ev.tipo] || '') + ' ' + htmlEsc(f) + (ev.entrevistador ? ' · ' + htmlEsc(ev.entrevistador) : '') + '</strong>'
+        + '<button type="button" class="btn btn-ghost btn-sm" style="color:#b91c1c" onclick="deleteEntrevistaEntry(\'' + c.id + '\',' + ev.id + ')">Eliminar</button></div>'
+        + _evInformeHtml(ev, false) + '</div>';
+    });
+    main += '</details>';
+  }
 
   var paso = function(n, sub, cuerpo) {
     var p = _EV_PASOS[n - 1];
@@ -12752,7 +12704,7 @@ function _tabEntrevistasDrawer(c) {
     + '<button type="button" class="btn btn-primary" onclick="_evFinalizar(\'' + c.id + '\')" style="white-space:nowrap">Finalizar entrevista</button></div>';
   main += '</div>'; // /ev-main
 
-  return aside + main;
+  return main;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -12898,6 +12850,8 @@ function _evBorradorRestaurar(candId) {
     if (el.type === 'checkbox') { el.checked = !!d.campos[id]; var lb = el.closest('.ev-flag'); if (lb) lb.classList.toggle('active', el.checked); }
     else el.value = d.campos[id];
   });
+  var hr = document.getElementById('ef-hora');
+  if (hr && !hr.value) { var ah = new Date(); hr.value = String(ah.getHours()).padStart(2, '0') + ':' + String(ah.getMinutes()).padStart(2, '0'); }
   document.querySelectorAll('#ev-main [data-ev-comp]').forEach(function(r){
     var x = (d.niveles || {})[r.dataset.evComp]; if (!x) return;
     r.dataset.nivel = x.n || 0;
