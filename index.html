@@ -780,6 +780,8 @@ input,select,textarea{font-family:inherit;outline:none}
 .kanban-card{background:var(--bg);border-radius:10px;border:1.5px solid var(--border);padding:11px 12px;cursor:grab;transition:box-shadow .15s,transform .15s,border-color .15s;user-select:none}
 .kanban-card:hover{box-shadow:0 4px 18px rgba(0,0,0,.10);transform:translateY(-1px);border-color:var(--accent)}
 .kanban-card.dragging{opacity:.45;cursor:grabbing;box-shadow:0 8px 32px rgba(0,0,0,.18)}
+.kanban-card.drop-antes{box-shadow:0 -4px 0 -1px var(--accent)}
+.kanban-cards.drop-fin>.kanban-card:last-of-type{box-shadow:0 4px 0 -1px var(--accent)}
 /* ── Candidatos: tabla y tablero estilo Notion ── */
 .bd-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:14px}
 .bd-vistas{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--border);margin-bottom:10px}
@@ -10733,12 +10735,21 @@ function _bdTabla(lista) {
   return h;
 }
 
+// Posición en la columna del tablero: la que se dio al arrastrar (scores._pos) o, si nunca
+// se movió, una que equivale a "más recientes primero". Menor = más arriba.
+function _bdPos(c) {
+  var p = c.scores && c.scores._pos;
+  if (typeof p === 'number' && isFinite(p)) return p;
+  var d = _momentoCand(c); return -((d ? d.getTime() : 0) / 1000);
+}
 function _bdTablero(lista) {
   var campo = _BD.columnas === 'dictamen' ? 'dictamen' : 'etapa', arrastra = campo === 'etapa';
+  var manual = arrastra && _BD.orden === 'fecha_desc';
   var h = '<div class="kanban-board bd-board">';
   _bdGrupos(campo).forEach(function(g) {
     var del = lista.filter(function(c){ return _bdValorGrupo(c, campo) === g.id; });
-    h += '<div class="kanban-col" id="kcol-' + g.id + '"' + (arrastra ? ' ondragover="event.preventDefault();this.classList.add(\'drag-over\')" ondragleave="if(!this.contains(event.relatedTarget)){this.classList.remove(\'drag-over\')}" ondrop="kDrop(event,\'' + g.id + '\')"' : '') + '>'
+    if (manual) del.sort(function(a, b){ return _bdPos(a) - _bdPos(b); });
+    h += '<div class="kanban-col" id="kcol-' + g.id + '"' + (arrastra ? ' ondragover="event.preventDefault();this.classList.add(\'drag-over\');kOver(event,\'' + g.id + '\')" ondragleave="if(!this.contains(event.relatedTarget)){this.classList.remove(\'drag-over\')}" ondrop="kDrop(event,\'' + g.id + '\')"' : '') + '>'
       + '<div class="kanban-col-header" style="color:' + g.color + '"><span>' + g.label + '</span><span style="margin-left:auto;font-size:11px;background:' + g.bg + ';border:1.5px solid ' + g.border + ';color:' + g.color + ';border-radius:100px;padding:1px 8px">' + del.length + '</span></div>'
       + '<div class="kanban-cards" id="kcards-' + g.id + '">';
     if (!del.length) h += '<div class="bd-vacio">Sin candidatos</div>';
@@ -12073,52 +12084,77 @@ function kDragEnd(event) {
     var el = document.getElementById('kcard-' + _dragCandId);
     if (el) el.classList.remove('dragging');
   }
+  _kLimpiarMarca();
   document.querySelectorAll('.kanban-col').forEach(function(col){ col.classList.remove('drag-over'); });
+}
+function _kLimpiarMarca() {
+  document.querySelectorAll('.drop-antes').forEach(function(x){ x.classList.remove('drop-antes'); });
+  document.querySelectorAll('.drop-fin').forEach(function(x){ x.classList.remove('drop-fin'); });
+}
+// Tarjeta delante de la cual quedaría la que se arrastra (null = al final de la columna)
+function _kDestino(event, etapa) {
+  var cont = document.getElementById('kcards-' + etapa);
+  if (!cont) return { cont:null, antes:null };
+  var cards = [].filter.call(cont.querySelectorAll('.kanban-card'), function(x){ return x.id !== 'kcard-' + _dragCandId; });
+  for (var i = 0; i < cards.length; i++) {
+    var r = cards[i].getBoundingClientRect();
+    if (event.clientY < r.top + r.height / 2) return { cont:cont, antes:cards[i], cards:cards, i:i };
+  }
+  return { cont:cont, antes:null, cards:cards, i:cards.length };
+}
+function kOver(event, etapa) {
+  if (!_dragCandId || _BD.orden !== 'fecha_desc') return;
+  var d = _kDestino(event, etapa);
+  _kLimpiarMarca();
+  if (d.antes) d.antes.classList.add('drop-antes');
+  else if (d.cont && d.cards.length) d.cont.classList.add('drop-fin');
 }
 async function kDrop(event, newStage) {
   event.preventDefault();
   document.querySelectorAll('.kanban-col').forEach(function(c){ c.classList.remove('drag-over'); });
   if (!_dragCandId) return;
-  var id = _dragCandId; _dragCandId = null;
-  // Move card in DOM immediately
+  var id = _dragCandId;
+  var d = _kDestino(event, newStage);
+  _kLimpiarMarca();
+  _dragCandId = null;
+  var all = _dbCache || [];
+  var c = all.find(function(x){ return x.id === id; });
+  if (!c) return;
+  var mismaEtapa = getPipelineEtapa(c) === newStage;
+  // Nueva posición: entre la tarjeta de arriba y la de abajo
+  var pos = null;
+  if (_BD.orden === 'fecha_desc' && d.cards) {
+    var key = function(el){ var x = all.find(function(y){ return 'kcard-' + y.id === el.id; }); return x ? _bdPos(x) : 0; };
+    var arriba = d.i > 0 ? d.cards[d.i - 1] : null, abajo = d.antes;
+    if (arriba && abajo) pos = (key(arriba) + key(abajo)) / 2;
+    else if (abajo) pos = key(abajo) - 1000;
+    else if (arriba) pos = key(arriba) + 1000;
+    // Soltar en el mismo lugar no cambia nada
+    if (mismaEtapa) {
+      var actual = document.getElementById('kcard-' + id);
+      var hermanos = d.cont ? [].slice.call(d.cont.querySelectorAll('.kanban-card')) : [];
+      var idx = hermanos.indexOf(actual);
+      if (idx === d.i) return;
+    }
+  }
+  if (mismaEtapa && pos === null) {
+    if (_BD.orden !== 'fecha_desc') toast('Para ordenar las tarjetas a mano, elija Ordenar → Más recientes primero', 'er');
+    return;
+  }
+  // La tarjeta se mueve de inmediato; luego se guarda
   var card = document.getElementById('kcard-' + id);
-  var kcards = document.getElementById('kcards-' + newStage);
-  if (card && kcards) {
-    var empty = kcards.querySelector('[style*="dashed"]');
-    if (empty) empty.remove();
-    kcards.appendChild(card);
-    // Update column counts
-    PIPELINE_STAGES.forEach(function(s) {
-      var colEl = document.getElementById('kcol-' + s.id);
-      if (!colEl) return;
-      var cnt = colEl.querySelectorAll('.kanban-card').length;
-      var badge = colEl.querySelector('.kanban-col-header span:last-child');
-      if (badge) badge.textContent = cnt;
-      var cardsEl = document.getElementById('kcards-' + s.id);
-      if (cardsEl && cnt === 0 && !cardsEl.querySelector('[style*="dashed"]')) {
-        cardsEl.innerHTML = '<div style="text-align:center;padding:18px 8px;color:var(--ink4);font-size:11px;border:1.5px dashed var(--border);border-radius:8px">Sin candidatos</div>';
-      }
-    });
+  if (card && d.cont) {
+    var vacio = d.cont.querySelector('.bd-vacio'); if (vacio) vacio.remove();
+    if (d.antes) d.cont.insertBefore(card, d.antes); else d.cont.appendChild(card);
   }
   try {
-    await _setPipelineEtapa(id, newStage);
-    toast(getPipelineMeta(newStage).icon + ' Movido a ' + getPipelineMeta(newStage).label, 'ok');
+    if (mismaEtapa) await _patchScoresField(id, '_pos', pos);
+    else await _setPipelineEtapa(id, newStage, pos === null ? null : { _pos: pos });
+    _invalidateCache();
+    if (!mismaEtapa) toast(getPipelineMeta(newStage).icon + ' Movido a ' + getPipelineMeta(newStage).label, 'ok');
     _bdRenderCuerpo();
-    if (newStage === 'seleccionado') _ofrecerContratacion(id);
-    // Update pipeline metrics
-    var metricsEl = document.getElementById('pipeline-metrics');
-    if (metricsEl) {
-      PIPELINE_STAGES.forEach(function(s) {
-        var colEl = document.getElementById('kcol-' + s.id);
-        var cnt = colEl ? colEl.querySelectorAll('.kanban-card').length : 0;
-        var mItem = metricsEl.querySelectorAll('div')[PIPELINE_STAGES.indexOf(s)];
-        if (mItem) {
-          var spans = mItem.querySelectorAll('span');
-          if (spans[1]) spans[1].textContent = cnt;
-        }
-      });
-    }
-  } catch(e) { toast('Error: ' + e.message, 'er'); }
+    if (!mismaEtapa && newStage === 'seleccionado') _ofrecerContratacion(id);
+  } catch(e) { toast('Error: ' + e.message, 'er'); _bdRenderCuerpo(); }
 }
 
 async function _setPipelineEtapa(id, etapa, extra) {
@@ -12756,6 +12792,7 @@ function _evInformeHtml(ev, compacto) {
   }
   if (ev.motivo) h += '<div style="font-size:12px;color:#334155;line-height:1.6;margin-top:10px;padding:8px 12px;background:#f8fafc;border-radius:8px"><strong>' + (ev.dictamen === 'obs' ? 'Observaciones' : 'Motivo') + ':</strong> ' + htmlEsc(ev.motivo) + '</div>';
   if (!compacto) {
+    if (ev.notas_inicio) h += '<div style="font-size:12px;color:#334155;line-height:1.6;margin-top:10px;white-space:pre-line"><strong>Anotaciones al inicio:</strong> ' + htmlEsc(ev.notas_inicio) + '</div>';
     if (ev.sintesis) h += '<div style="font-size:12px;color:#334155;line-height:1.6;margin-top:10px"><strong>Síntesis:</strong> ' + htmlEsc(ev.sintesis) + '</div>';
     var dp = (ev.desde_pruebas || []).filter(function(x){ return x.nota; });
     if (dp.length) {
@@ -12899,7 +12936,9 @@ function _tabEntrevistasDrawer(c) {
     + '<div class="ev-field"><label>Tipo</label><select id="ef-tipo">' + opcion('rrhh', '🧑‍💼 RRHH', pref.tipo) + opcion('psicolaboral', '🧠 Psicolaboral', pref.tipo) + opcion('tecnica', '🔧 Técnica', pref.tipo) + opcion('panel', '👥 Panel', pref.tipo) + '</select></div>'
     + '<div class="ev-field"><label>Modalidad</label><select id="ef-modalidad">' + opcion('presencial', '🏢 Presencial', pref.modalidad) + opcion('online', '🖥 Online', pref.modalidad) + opcion('terreno', '🌍 En terreno', pref.modalidad) + '</select></div>'
     + '<div class="ev-field" style="grid-column:1/-1"><label>Entrevistador/a</label><input type="text" id="ef-entrevistador" value="' + htmlEsc(pref.entrevistador) + '" placeholder="Nombre del evaluador/a"></div>'
-    + '</div>';
+    + '</div>'
+    + '<div class="ev-field" style="margin-top:12px"><label>📝 Anotaciones al inicio</label>'
+    + '<textarea id="ef-notas-inicio" rows="5" placeholder="Primeras impresiones y lo que surja al comenzar: puntualidad, presentación, disposición, cómo llega a la entrevista, condiciones de la sesión (lugar, conexión), lo que la persona comenta espontáneamente…"></textarea></div>';
   main += paso(1, 'Datos de la sesión', p1);
 
   // 2. Trayectoria: lo que la persona declaró al postular, para verificar
@@ -13231,6 +13270,7 @@ async function saveEntrevistaDrawer(candId) {
   var modal  = document.getElementById('ef-modalidad')?.value || 'presencial';
   var entrev = document.getElementById('ef-entrevistador')?.value || '';
   var notas  = document.getElementById('ef-notas')?.value || '';
+  var notasInicio = (document.getElementById('ef-notas-inicio')?.value || '').trim();
   var sintesis = document.getElementById('ef-sintesis')?.value || '';
   var apuntesPsico = document.getElementById('ef-apuntes-psico')?.value || '';
   var dictamen = (document.querySelector('input[name="ev-dictamen"]:checked'))?.value || '';
@@ -13273,7 +13313,7 @@ async function saveEntrevistaDrawer(candId) {
   }
   var entry = {
     id: Date.now(), fecha: fecha, hora: hora, tipo: tipo, modalidad: modal,
-    entrevistador: entrev, notas: notas, sintesis: sintesis, dictamen: dictamen,
+    entrevistador: entrev, notas_inicio: notasInicio, notas: notas, sintesis: sintesis, dictamen: dictamen,
     v: 2, comp: comp, promedio: _evPromedio(_evCompsDe({ comp:comp })), motivo: motivoReq ? motivo : '',
     desde_pruebas: desdePruebas,
     competencias: comps, notas_comp: notasComp,
