@@ -784,9 +784,15 @@ input,select,textarea{font-family:inherit;outline:none}
 #cand-drawer-overlay.open{display:flex}
 #cand-drawer{width:min(1520px,100%);height:100%;max-height:calc(100vh - 24px);background:var(--bg);border-radius:16px;box-shadow:0 24px 70px rgba(0,0,0,.28);display:flex;flex-direction:column;overflow:hidden;transform:translateY(14px) scale(.985);opacity:0;transition:transform .22s cubic-bezier(.4,0,.2,1),opacity .22s ease}
 #cand-drawer-overlay.open #cand-drawer{transform:none;opacity:1}
-#drawer-header > div{padding-left:28px!important;padding-right:28px!important}
+.dh-row{display:flex;align-items:center;gap:12px;padding:10px 24px;border-bottom:1px solid var(--border)}
+.dh-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#7c3aed);color:#fff;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.dh-txt{flex:1;min-width:0;display:flex;align-items:baseline;gap:10px;overflow:hidden;white-space:nowrap}
+.dh-name{font-size:16px;font-weight:800;color:var(--ink)}
+.dh-meta{font-size:12.5px;color:var(--ink3);overflow:hidden;text-overflow:ellipsis}
+.dh-badges{display:flex;gap:6px;align-items:center;flex-shrink:0}
+.dh-close{width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:14px;color:var(--ink3);flex-shrink:0}
 .drawer-tabs{display:flex;gap:4px;padding:0 24px;border-bottom:1px solid var(--border);background:var(--bg);overflow-x:auto;flex-shrink:0}
-.drawer-tab-btn{padding:12px 15px;font-size:14px;font-weight:600;color:var(--ink3);border:none;background:none;cursor:pointer;border-bottom:2.5px solid transparent;margin-bottom:-1px;white-space:nowrap;font-family:inherit;transition:color .15s,background .15s;border-radius:8px 8px 0 0}
+.drawer-tab-btn{padding:9px 14px;font-size:13.5px;font-weight:600;color:var(--ink3);border:none;background:none;cursor:pointer;border-bottom:2.5px solid transparent;margin-bottom:-1px;white-space:nowrap;font-family:inherit;transition:color .15s,background .15s;border-radius:8px 8px 0 0}
 .drawer-tab-btn:hover{color:var(--ink);background:var(--surface2)}
 .drawer-tab-btn.active{color:var(--ink);border-bottom-color:var(--ink)}
 /* Pestañas de lectura: columna centrada de ancho cómodo, todo un poco más grande */
@@ -814,7 +820,9 @@ input,select,textarea{font-family:inherit;outline:none}
 @media (max-width:700px){
   #cand-drawer-overlay{padding:0}
   #cand-drawer{max-height:100vh;border-radius:0}
-  #drawer-header > div{padding-left:16px!important;padding-right:16px!important}
+  .dh-row{padding:10px 12px;flex-wrap:wrap}
+  .dh-txt{flex-direction:column;gap:0;white-space:normal}
+  .dh-badges{order:3;width:100%;padding-left:46px}
   .drawer-tabs{padding:0 8px}
   .drawer-body{padding:18px 16px 32px}
 }
@@ -835,8 +843,8 @@ input,select,textarea{font-family:inherit;outline:none}
 .ev-star-row{display:flex;align-items:center;gap:6px;padding:7px 0;border-bottom:1px solid var(--border)}
 .ev-star-row:last-child{border-bottom:none}
 /* Pauta de entrevista por pasos */
-.ev-index{position:sticky;top:-22px;z-index:5;display:flex;gap:4px;flex-wrap:wrap;padding:10px 0 12px;margin-top:-10px;background:var(--bg);border-bottom:1px solid var(--border)}
-.ev-ix{display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:100px;border:1px solid var(--border);background:var(--surface);font-size:12px;font-weight:600;color:var(--ink2);cursor:pointer;font-family:inherit}
+.ev-index{position:sticky;top:-22px;z-index:5;display:flex;gap:4px;flex-wrap:wrap;padding:6px 0 7px;margin-top:-10px;background:var(--bg);border-bottom:1px solid var(--border)}
+.ev-ix{display:flex;align-items:center;gap:5px;padding:3px 9px 3px 4px;border-radius:100px;border:1px solid var(--border);background:var(--surface);font-size:12px;font-weight:600;color:var(--ink2);cursor:pointer;font-family:inherit}
 .ev-ix:hover{border-color:var(--accent)}
 .ev-ix-n{width:18px;height:18px;border-radius:50%;background:var(--surface2);color:var(--ink3);font-size:10.5px;font-weight:800;display:flex;align-items:center;justify-content:center}
 .ev-ix.done{border-color:#86efac;background:#f0fdf4;color:#166534}
@@ -887,7 +895,7 @@ input,select,textarea{font-family:inherit;outline:none}
 .ev-dp{margin-bottom:12px}
 .ev-dp-q{font-size:13px;color:var(--ink);line-height:1.55;margin-bottom:4px}
 .ev-dp-q span{font-size:10.5px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:.4px;margin-right:6px}
-.ev-barra{position:sticky;bottom:-40px;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;margin-top:4px;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 -4px 18px rgba(0,0,0,.08)}
+.ev-barra{position:sticky;bottom:-40px;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 8px 6px 14px;margin-top:4px;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 -4px 18px rgba(0,0,0,.08)}
 .ev-barra-info{font-size:13px;min-width:0}
 .ev-prev{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 14px}
 .ev-prev summary{display:flex;align-items:center;gap:8px;flex-wrap:wrap;cursor:pointer;list-style:none;font-size:13px;font-weight:700;color:var(--ink)}
@@ -12064,18 +12072,14 @@ function _renderDrawerHeader(c) {
   var etapa = getPipelineEtapa(c);
   var em = getPipelineMeta(etapa);
   var initials = ((c.nombre||'?')[0] + (c.apellido||'?')[0]).toUpperCase();
+  var datos = [c.cargo || pm.label || c.perfil || '', c.edad ? c.edad + ' años' : '', c.comuna || '', c.educacion_label || c.educacion || ''].filter(Boolean).map(function(x){ return htmlEsc(String(x)); }).join(' · ');
+  // Una sola franja compacta: deja el máximo de alto para el contenido
   document.getElementById('drawer-header').innerHTML =
-    '<div style="display:flex;align-items:flex-start;gap:13px;padding:16px 18px 14px;border-bottom:1.5px solid var(--border)">'
-    + '<div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#7c3aed);display:flex;align-items:center;justify-content:center;color:#fff;font-size:17px;font-weight:800;flex-shrink:0">' + initials + '</div>'
-    + '<div style="flex:1;min-width:0">'
-    + '<div style="font-size:15px;font-weight:800;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + htmlEsc(c.nombre + ' ' + c.apellido) + '</div>'
-    + '<div style="font-size:11px;color:var(--ink3);margin-top:1px">' + (pm.icon || '') + ' ' + htmlEsc(c.cargo || pm.label || c.perfil || '—')
-    + [c.edad ? c.edad + ' años' : '', c.comuna || '', c.educacion_label || c.educacion || ''].filter(Boolean).map(function(x){ return ' · ' + htmlEsc(String(x)); }).join('') + '</div>'
-    + '<div style="display:flex;align-items:center;gap:7px;margin-top:6px;flex-wrap:wrap">'
-    + pipeBadgeHtml(etapa)
-    + _dictamenBadgeHtml(c)
-    + '</div></div>'
-    + '<button onclick="closeCandDrawer()" style="width:28px;height:28px;border-radius:8px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:15px;flex-shrink:0;color:var(--ink3);display:flex;align-items:center;justify-content:center">✕</button>'
+    '<div class="dh-row">'
+    + '<div class="dh-av">' + initials + '</div>'
+    + '<div class="dh-txt"><span class="dh-name">' + htmlEsc(c.nombre + ' ' + c.apellido) + '</span><span class="dh-meta">' + (pm.icon || '') + ' ' + datos + '</span></div>'
+    + '<div class="dh-badges">' + pipeBadgeHtml(etapa) + _dictamenBadgeHtml(c) + '</div>'
+    + '<button onclick="closeCandDrawer()" class="dh-close" title="Cerrar (Esc)">✕</button>'
     + '</div>';
 }
 
@@ -12700,7 +12704,7 @@ function _tabEntrevistasDrawer(c) {
 
   // Barra fija: resultado en vivo, borrador y finalizar
   main += '<div class="ev-barra"><div class="ev-barra-info" id="ev-barra-info"></div>'
-    + '<button type="button" class="btn btn-primary" onclick="_evFinalizar(\'' + c.id + '\')" style="white-space:nowrap">Finalizar entrevista</button></div>';
+    + '<button type="button" class="btn btn-primary btn-sm" onclick="_evFinalizar(\'' + c.id + '\')" style="white-space:nowrap;padding:8px 16px">Finalizar entrevista</button></div>';
   main += '</div>'; // /ev-main
 
   return main;
@@ -12807,7 +12811,7 @@ function _evProgreso() {
     info.innerHTML = (prom !== null ? '<strong style="color:' + bd.color + '">' + String(prom).replace('.', ',') + ' / 5</strong> <span style="color:var(--ink3)">' + bd.label + ' · ' + hechas + '/' + comps.length + '</span>'
                                     : '<span style="color:var(--ink4)">Sin competencias puntuadas</span>')
       + (dm ? ' <span style="margin-left:8px;color:' + dm.color + ';font-weight:700">' + dm.icon + ' ' + dm.label + '</span>' : '')
-      + (_evBorradorTs ? '<div style="font-size:11px;color:var(--ink4);margin-top:2px">Borrador guardado a las ' + new Date(_evBorradorTs).toLocaleTimeString('es-CL', { hour:'2-digit', minute:'2-digit', hour12:false }) + '</div>' : '');
+      + (_evBorradorTs ? '<span style="font-size:11px;color:var(--ink4);margin-left:10px">· Borrador guardado a las ' + new Date(_evBorradorTs).toLocaleTimeString('es-CL', { hour:'2-digit', minute:'2-digit', hour12:false }) + '</span>' : '');
   }
 }
 
