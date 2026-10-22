@@ -800,7 +800,9 @@ input,select,textarea{font-family:inherit;outline:none}
 .ev-main .ev-sec-title{font-size:11.5px}
 .ev-main .ev-field input,.ev-main .ev-field select,.ev-main .ev-field textarea{font-size:13px;padding:8px 10px}
 @media (max-width:900px){
-  .drawer-body.ev-body{flex-direction:column;overflow-y:auto}
+  .drawer-body.ev-body{flex-direction:column-reverse;justify-content:flex-end;overflow-y:auto}   /* la pauta primero, los datos debajo */
+  .ev-index{top:0}
+  .ev-barra{bottom:0}
   .ev-aside{width:auto;border-left:none;border-bottom:1px solid var(--border);overflow:visible}
   .ev-main{overflow:visible;padding:18px 16px 32px}
 }
@@ -827,6 +829,61 @@ input,select,textarea{font-family:inherit;outline:none}
 .ev-flag input{margin-top:2px;flex-shrink:0;accent-color:#e11d48}
 .ev-star-row{display:flex;align-items:center;gap:6px;padding:7px 0;border-bottom:1px solid var(--border)}
 .ev-star-row:last-child{border-bottom:none}
+/* Pauta de entrevista por pasos */
+.ev-index{position:sticky;top:-22px;z-index:5;display:flex;gap:4px;flex-wrap:wrap;padding:10px 0 12px;margin-top:-10px;background:var(--bg);border-bottom:1px solid var(--border)}
+.ev-ix{display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:100px;border:1px solid var(--border);background:var(--surface);font-size:12px;font-weight:600;color:var(--ink2);cursor:pointer;font-family:inherit}
+.ev-ix:hover{border-color:var(--accent)}
+.ev-ix-n{width:18px;height:18px;border-radius:50%;background:var(--surface2);color:var(--ink3);font-size:10.5px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.ev-ix.done{border-color:#86efac;background:#f0fdf4;color:#166534}
+.ev-ix.done .ev-ix-n{background:#16a34a;color:#fff}
+.ev-ix-st{font-size:11px;color:var(--ink4);font-weight:700}
+.ev-ix.done .ev-ix-st{color:#16a34a}
+.ev-step{background:var(--surface);border:1px solid var(--border);border-radius:12px;scroll-margin-top:70px}
+.ev-step.done{border-color:#bbf7d0}
+.ev-step-h{width:100%;display:flex;align-items:center;gap:12px;padding:14px 18px;background:none;border:none;cursor:pointer;font-family:inherit;text-align:left}
+.ev-step-n{width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;font-size:12.5px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ev-step.done .ev-step-n{background:#16a34a}
+.ev-step-t{flex:1;font-size:15px;font-weight:800;color:var(--ink);display:flex;flex-direction:column}
+.ev-step-t small{font-size:12px;font-weight:500;color:var(--ink3);margin-top:1px}
+.ev-step-st{font-size:12px;font-weight:700;color:var(--ink3);white-space:nowrap}
+.ev-step.done .ev-step-st{color:#16a34a}
+.ev-step-chev{color:var(--ink4);transition:transform .2s}
+.ev-step:not(.open) .ev-step-chev{transform:rotate(-90deg)}
+.ev-step-b{padding:0 18px 18px}
+.ev-step:not(.open) .ev-step-b{display:none}
+.ev-hint{font-size:12.5px;color:var(--ink3);line-height:1.55;background:var(--surface2);border-radius:9px;padding:9px 12px;margin-bottom:14px}
+.ev-sub{font-size:11px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.ev-aviso{font-size:12.5px;color:#1e3a8a;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:9px 12px}
+.ev-aviso a{color:#1d4ed8;font-weight:700;cursor:pointer;text-decoration:underline}
+.ev-mas summary{font-size:12.5px;font-weight:700;color:var(--accent);cursor:pointer;list-style:none;padding:4px 0}
+.ev-mas summary::-webkit-details-marker{display:none}
+.ev-mas ul{margin:6px 0 0 18px;padding:0;font-size:13px;color:var(--ink2);line-height:1.7}
+.ev-exp{border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px;background:var(--bg)}
+.ev-exp-tit{font-size:14px;font-weight:700;color:var(--ink)}
+.ev-exp-meta{font-size:12px;color:var(--ink3);margin-top:2px}
+.ev-comp-nav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.ev-comp-dots{display:flex;gap:6px}
+.ev-dot{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--border);background:var(--surface);font-size:11px;font-weight:800;color:var(--ink3);cursor:pointer;font-family:inherit;padding:0}
+.ev-dot.on{box-shadow:0 0 0 3px var(--accent-l);border-color:var(--accent)}
+.ev-comp{border:1px solid var(--border);border-radius:12px;padding:16px;background:var(--bg)}
+.ev-comp-cnt{font-size:11px;font-weight:700;color:var(--ink4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.ev-comp-h{display:flex;gap:10px;align-items:flex-start;margin-bottom:12px}
+.ev-comp-name{font-size:16px;font-weight:800;color:var(--ink)}
+.ev-comp-def{font-size:12.5px;color:var(--ink3);line-height:1.5;margin-top:2px}
+.ev-q-main{font-size:14px;color:var(--ink);line-height:1.6;background:#eff6ff;border-left:3px solid var(--accent);border-radius:0 9px 9px 0;padding:10px 12px}
+.ev-q-main span{display:block;font-size:10.5px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
+.ev-escala{display:flex;gap:6px;margin:14px 0 8px}
+.ev-escala .ev-lv{width:40px;height:36px;font-size:14px;border-radius:9px}
+.ev-anclas{display:flex;flex-direction:column;gap:4px;margin-bottom:8px}
+.ev-ancla{display:flex;gap:8px;font-size:12px;color:var(--ink3);line-height:1.45;padding:5px 8px;border-radius:7px}
+.ev-ancla b{flex-shrink:0;width:14px;color:var(--ink2)}
+.ev-ancla.on{background:var(--accent-l);color:var(--ink)}
+.ev-sin-ej-lbl{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink2);margin:8px 0 6px;cursor:pointer}
+.ev-dp{margin-bottom:12px}
+.ev-dp-q{font-size:13px;color:var(--ink);line-height:1.55;margin-bottom:4px}
+.ev-dp-q span{font-size:10.5px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:.4px;margin-right:6px}
+.ev-barra{position:sticky;bottom:-40px;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;margin-top:4px;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 -4px 18px rgba(0,0,0,.08)}
+.ev-barra-info{font-size:13px;min-width:0}
 .ev-star-q{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin:6px 0 4px}
 .ev-lv{width:26px;height:26px;border-radius:7px;border:1.5px solid var(--border);background:var(--surface);color:var(--ink3);font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;padding:0}
 .ev-lv.on{color:#fff}
@@ -12027,7 +12084,7 @@ function _switchDrawerTab(tab, c) {
   bodyEl.scrollTop = 0;
   if (tab === 'resumen') bodyEl.innerHTML = _tabResumen(c);
   else if (tab === 'evaluaciones') bodyEl.innerHTML = _tabEvaluaciones(c);
-  else if (tab === 'entrevistas') bodyEl.innerHTML = _tabEntrevistasDrawer(c);
+  else if (tab === 'entrevistas') { bodyEl.innerHTML = _tabEntrevistasDrawer(c); _evInit(c); }
   else if (tab === 'seguimiento') bodyEl.innerHTML = _tabSeguimiento(c);
 }
 
@@ -12268,6 +12325,7 @@ function _evLevelClick(btn) {
   row.dataset.nivel = (+row.dataset.nivel === lv) ? 0 : lv;   // segundo clic: desmarca
   _evPintarComp(row);
   _evResultadoVivo();
+  _evCambio();
 }
 function _evSinEjemplo(cb) {
   var row = cb.closest('[data-ev-comp]'); if (!row) return;
@@ -12285,7 +12343,9 @@ function _evPintarComp(row) {
     b.style.background = on ? COL[lv] : '';
     b.style.borderColor = on ? COL[lv] : '';
   });
+  row.querySelectorAll('.ev-ancla').forEach(function(a){ a.classList.toggle('on', +a.dataset.a === lv); });
   var desc = row.querySelector('.ev-lv-desc');
+  if (desc && (lv === 2 || lv === 4)) { desc.style.display = ''; } else if (desc) { desc.style.display = 'none'; }
   if (desc) {
     var ancla = cfg.anclas && (cfg.anclas[lv] || (lv === 2 ? 'Intermedio entre 1 y 3.' : lv === 4 ? 'Intermedio entre 3 y 5.' : ''));
     desc.innerHTML = lv ? '<strong>' + lv + '.</strong> ' + htmlEsc(ancla || '') : '<span style="color:var(--ink4)">Sin puntaje</span>';
@@ -12425,6 +12485,7 @@ function _evPillClick(el, key, val) {
   }
   el.dataset.selected = val;
   grp.dataset.value = val;
+  if (document.getElementById('ev-main')) _evCambio();
 }
 
 function _evGetScreen() {
@@ -12448,7 +12509,7 @@ function _evGetChecksOp() {
 function _tabEntrevistasDrawer(c) {
   var sc = c.scores || {};
   var entrevistas = sc._entrevistas || [];
-  var today = new Date().toISOString().substring(0,10);
+  var _hoy = new Date(), today = _hoy.getFullYear() + '-' + String(_hoy.getMonth() + 1).padStart(2, '0') + '-' + String(_hoy.getDate()).padStart(2, '0');
 
   var pai  = sc.pai  || {};
   var dc0  = sc.dc0  || {};
@@ -12527,161 +12588,337 @@ function _tabEntrevistasDrawer(c) {
   }
   aside += '</div>'; // /ev-aside
 
-  // ── RIGHT: Pauta Activa ─────────────────────────────────────────
-  var main = '<div class="ev-main">';
-
-  // Section 1: Sesión
-  main += '<div class="ev-sec">';
-  main += '<div class="ev-sec-title">🗓 Datos de la sesión</div>';
-  main += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
-  main += '<div class="ev-field"><label>Fecha</label><input type="date" id="ef-fecha" value="' + today + '"></div>';
-  main += '<div class="ev-field"><label>Hora</label><input type="time" id="ef-hora"></div>';
-  main += '<div class="ev-field"><label>Tipo</label><select id="ef-tipo"><option value="rrhh">🧑‍💼 RRHH</option><option value="psicolaboral">🧠 Psicolaboral</option><option value="tecnica">🔧 Técnica</option><option value="panel">👥 Panel</option></select></div>';
-  main += '<div class="ev-field"><label>Modalidad</label><select id="ef-modalidad"><option value="presencial">🏢 Presencial</option><option value="online">🖥 Online</option><option value="terreno">🌍 En Terreno</option></select></div>';
-  main += '<div class="ev-field" style="grid-column:1/-1"><label>Entrevistador/a</label><input type="text" id="ef-entrevistador" placeholder="Nombre del evaluador/a"></div>';
-  main += '</div></div>';
-
-  // Section 2: Desde las pruebas (preguntas que salen de los resultados; notas sin puntaje)
+  // ── Pauta: 5 pasos en el orden de la entrevista, con índice fijo y barra para finalizar ──
   var _dp = _evDesdePruebas(c);
-  main += '<div class="ev-sec">';
-  main += '<div class="ev-sec-title">🧪 Desde las pruebas</div>';
-  if (_dp.length) {
-    main += '<div style="font-size:11.5px;color:var(--ink3);margin-bottom:10px">Preguntas que surgen de los resultados del candidato. Se registran sin puntaje.</div>';
-    _dp.forEach(function(x, i) {
-      main += '<div data-ev-dp="' + i + '" data-fuente="' + htmlEsc(x.fuente) + '" data-q="' + htmlEsc(x.q) + '" style="margin-bottom:10px">'
-            + '<div style="font-size:12px;color:var(--ink);line-height:1.5"><span style="font-size:10px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:.4px">' + htmlEsc(x.fuente) + '</span> · ' + htmlEsc(x.q) + '</div>'
-            + '<div class="ev-field" style="margin-top:4px"><textarea id="ef-dp-' + i + '" rows="2" placeholder="Lo que respondió…"></textarea></div></div>';
-    });
-  } else {
-    main += '<div style="font-size:12px;color:var(--ink4)">Los resultados no generan preguntas adicionales.</div>';
-  }
-  main += '</div>';
+  var hist = (c.historial || []).filter(function(x){ return x && (x.empresa || x.cargo); }).slice(0, 2);
+  var main = '<div class="ev-main" id="ev-main" data-cand="' + c.id + '">';
 
-  // Section 3: Experiencia Laboral (2 entradas)
-  function _expBlock(n) {
-    var sep = n === 1 ? 'border-bottom:1px solid var(--border);margin-bottom:14px;padding-bottom:14px' : '';
-    var h = '<div style="' + sep + '">';
-    h += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:9px">'
-       + '<span style="background:var(--accent);color:#fff;border-radius:50%;width:17px;height:17px;display:inline-flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:800;flex-shrink:0">' + n + '</span>'
-       + '<span style="font-size:10.5px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px">Experiencia ' + n + '</span>'
-       + '</div>';
-    h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">';
-    h += '<div class="ev-field"><label>Cargo</label><input type="text" id="ef-exp' + n + '-cargo" placeholder="Ej: Analista Administrativo"></div>';
-    h += '<div class="ev-field"><label>Empresa / Institución</label><input type="text" id="ef-exp' + n + '-empresa" placeholder="Nombre de la organización"></div>';
-    h += '<div class="ev-field"><label>Desde</label><input type="month" id="ef-exp' + n + '-desde"></div>';
-    h += '<div class="ev-field"><label>Hasta (vacío = actual)</label><input type="month" id="ef-exp' + n + '-hasta"></div>';
-    h += '<div class="ev-field"><label>Tiempo en el cargo</label><input type="text" id="ef-exp' + n + '-tiempo" placeholder="Ej: 2 años 3 meses"></div>';
-    h += '<div class="ev-field"><label>Tipo de contrato</label><select id="ef-exp' + n + '-contrato"><option value="">— Seleccionar —</option><option value="indefinido">Indefinido</option><option value="plazo_fijo">Plazo Fijo</option><option value="honorarios">Honorarios/Boleta</option><option value="practica">Práctica / Pasantía</option><option value="otro">Otro</option></select></div>';
-    h += '</div>';
-    h += '<div style="margin-bottom:8px"><div style="font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:7px">📋 Tareas / Responsabilidades principales</div>';
-    for (var t = 1; t <= 3; t++) {
-      h += '<div class="ev-field" style="margin-bottom:5px"><label>Tarea ' + t + '</label>'
-         + '<input type="text" id="ef-exp' + n + '-tarea' + t + '" placeholder="Descripción de responsabilidad ' + t + '"></div>';
+  // Índice
+  main += '<div class="ev-index" id="ev-index">' + _EV_PASOS.map(function(p, i){
+    return '<button type="button" class="ev-ix" data-paso="' + (i + 1) + '" onclick="_evIrPaso(' + (i + 1) + ')">'
+      + '<span class="ev-ix-n">' + (i + 1) + '</span><span class="ev-ix-t">' + p[0] + '</span><span class="ev-ix-st" id="ev-ix-st-' + (i + 1) + '"></span></button>';
+  }).join('') + '</div>';
+  main += '<div id="ev-borrador-aviso"></div>';
+
+  var paso = function(n, sub, cuerpo) {
+    var p = _EV_PASOS[n - 1];
+    return '<section class="ev-step' + (n === 1 ? ' open' : '') + '" id="ev-step-' + n + '">'
+      + '<button type="button" class="ev-step-h" onclick="_evToggle(' + n + ')">'
+      + '<span class="ev-step-n">' + n + '</span>'
+      + '<span class="ev-step-t">' + p[1] + ' ' + p[0] + '<small>' + sub + '</small></span>'
+      + '<span class="ev-step-st" id="ev-st-' + n + '"></span><span class="ev-step-chev">▾</span></button>'
+      + '<div class="ev-step-b">' + cuerpo
+      + (n < 5 ? '<div style="text-align:right;margin-top:16px"><button type="button" class="btn btn-outline btn-sm" onclick="_evIrPaso(' + (n + 1) + ')">Siguiente: ' + _EV_PASOS[n][0] + ' →</button></div>' : '')
+      + '</div></section>';
+  };
+
+  // 1. Inicio
+  var p1 = '<div class="ev-hint">Presente el objetivo de la conversación y su duración aproximada (30 a 40 minutos).</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    + '<div class="ev-field"><label>Fecha</label><input type="date" id="ef-fecha" value="' + today + '"></div>'
+    + '<div class="ev-field"><label>Hora</label><input type="time" id="ef-hora"></div>'
+    + '<div class="ev-field"><label>Tipo</label><select id="ef-tipo"><option value="rrhh">🧑‍💼 RRHH</option><option value="psicolaboral">🧠 Psicolaboral</option><option value="tecnica">🔧 Técnica</option><option value="panel">👥 Panel</option></select></div>'
+    + '<div class="ev-field"><label>Modalidad</label><select id="ef-modalidad"><option value="presencial">🏢 Presencial</option><option value="online">🖥 Online</option><option value="terreno">🌍 En terreno</option></select></div>'
+    + '<div class="ev-field" style="grid-column:1/-1"><label>Entrevistador/a</label><input type="text" id="ef-entrevistador" placeholder="Nombre del evaluador/a"></div>'
+    + '</div>';
+  main += paso(1, 'Datos de la sesión', p1);
+
+  // 2. Trayectoria: lo que la persona declaró al postular, para verificar
+  var expBlock = function(n, d) {
+    d = d || {};
+    var decl = !!(d.empresa || d.cargo);
+    var v = function(x){ return htmlEsc(x || ''); };
+    var h = '<div class="ev-exp" data-exp="' + n + '">';
+    if (decl) {
+      h += '<div class="ev-exp-tit">' + v(d.cargo || 'Cargo no indicado') + ' · ' + v(d.empresa || 'Empresa no indicada') + '</div>'
+        + '<div class="ev-exp-meta">' + [d.duracion_label ? 'Duración: ' + d.duracion_label : '', d.salida_label ? 'Salida: ' + d.salida_label : ''].filter(Boolean).map(htmlEsc).join(' · ') + '</div>'
+        + '<div class="ev-pill-group" id="ef-exp' + n + '-pills" style="margin:10px 0 2px">'
+        + '<button type="button" class="ev-pill" data-ver="si" onclick="_evVerificar(' + n + ',\'si\')">✓ Coincide</button>'
+        + '<button type="button" class="ev-pill" data-ver="corregida" onclick="_evVerificar(' + n + ',\'corregida\')">✎ Corregir</button>'
+        + '<button type="button" class="ev-pill" data-ver="no_verificable" onclick="_evVerificar(' + n + ',\'no_verificable\')">? No se pudo verificar</button></div>';
+    } else {
+      h += '<div class="ev-exp-tit" style="margin-bottom:8px">' + (n === 1 ? 'Experiencia principal' : 'Otra experiencia') + '</div>';
     }
-    h += '</div>';
-    h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
-    h += '<div class="ev-field"><label>Jefatura directa</label><input type="text" id="ef-exp' + n + '-jefatura" placeholder="Nombre del/la supervisor/a"></div>';
-    h += '<div class="ev-field"><label>Motivo de salida</label><input type="text" id="ef-exp' + n + '-motivo" placeholder="Ej: Término contrato, desvinculación…"></div>';
-    h += '</div></div>';
-    return h;
-  }
-  main += '<div class="ev-sec">';
-  main += '<div class="ev-sec-title">💼 Experiencia Laboral Verificada</div>';
-  main += _expBlock(1);
-  main += _expBlock(2);
-  main += '</div>';
+    h += '<input type="hidden" id="ef-exp' + n + '-ver" value="">';
+    h += '<div id="ef-exp' + n + '-det" style="display:' + (decl ? 'none' : '') + ';margin-top:10px">'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+      + '<div class="ev-field"><label>Cargo</label><input type="text" id="ef-exp' + n + '-cargo" value="' + v(d.cargo) + '" placeholder="Ej: Guardia de seguridad"></div>'
+      + '<div class="ev-field"><label>Empresa</label><input type="text" id="ef-exp' + n + '-empresa" value="' + v(d.empresa) + '" placeholder="Nombre de la empresa"></div>'
+      + '<div class="ev-field"><label>Desde</label><input type="month" id="ef-exp' + n + '-desde"></div>'
+      + '<div class="ev-field"><label>Hasta (vacío = actual)</label><input type="month" id="ef-exp' + n + '-hasta"></div>'
+      + '<div class="ev-field"><label>Tiempo en el cargo</label><input type="text" id="ef-exp' + n + '-tiempo" value="' + v(d.duracion_label) + '" placeholder="Ej: 2 años"></div>'
+      + '<div class="ev-field"><label>Tipo de contrato</label><select id="ef-exp' + n + '-contrato"><option value="">—</option><option value="indefinido">Indefinido</option><option value="plazo_fijo">Plazo fijo</option><option value="honorarios">Honorarios</option><option value="obra">Por obra o faena</option></select></div>'
+      + '<div class="ev-field"><label>Jefatura directa</label><input type="text" id="ef-exp' + n + '-jefatura" placeholder="Nombre de la jefatura"></div>'
+      + '<div class="ev-field"><label>Motivo de salida</label><input type="text" id="ef-exp' + n + '-motivo" value="' + v(d.salida_label) + '" placeholder="Ej: término de contrato"></div>'
+      + '</div></div>'
+      + '<div class="ev-field" style="margin-top:10px"><label>Notas</label><textarea id="ef-exp' + n + '-notas" rows="2" placeholder="Tareas principales, por qué se fue, qué diría su jefatura…"></textarea></div>';
+    return h + '</div>';
+  };
+  var p2 = '<div class="ev-hint">' + (hist.length ? 'Revise con la persona lo que declaró al postular: marque si coincide o corrija lo que no.' : 'La persona no declaró experiencia al postular: regístrela aquí.') + '</div>';
+  p2 += expBlock(1, hist[0]);
+  if (hist[1]) p2 += expBlock(2, hist[1]);
+  else p2 += '<details class="ev-mas"><summary>＋ Agregar otra experiencia</summary>' + expBlock(2, null) + '</details>';
+  main += paso(2, hist.length ? 'Verificar lo que declaró' : 'Experiencia laboral', p2);
 
-  // Section 4: Competencias del perfil de la empresa (escala descrita 1–5, con evidencia)
-  main += '<div class="ev-sec">';
-  main += '<div class="ev-sec-title">⭐ Competencias (método STAR)</div>';
-  main += '<div style="font-size:11.5px;color:var(--ink3);line-height:1.55;margin-bottom:12px">Se puntúa lo que la persona <strong>hizo</strong>, no lo que haría. '
-        + 'Sin un ejemplo concreto, el máximo es 2. Si nunca vivió la situación, use otra pregunta: valen ejemplos de estudios, servicio militar o voluntariado. '
-        + 'Cada puntaje necesita una nota con la evidencia.</div>';
+  // 3. Competencias, de a una
+  var p3 = '<div class="ev-hint">Puntúe lo que la persona <strong>hizo</strong>, no lo que haría. Sin un ejemplo concreto, el máximo es 2. '
+    + 'Si nunca vivió la situación, use otra pregunta: valen ejemplos de estudios, servicio militar o voluntariado. Cada puntaje necesita la evidencia.</div>';
+  p3 += '<div class="ev-comp-nav"><button type="button" class="btn btn-ghost btn-sm" onclick="_evComp(-1)">← Anterior</button>'
+    + '<div class="ev-comp-dots" id="ev-comp-dots"></div>'
+    + '<button type="button" class="btn btn-ghost btn-sm" onclick="_evComp(1)">Siguiente →</button></div>';
   _COMP_CONFIG.forEach(function(comp, i) {
-    var isLast = (i === _COMP_CONFIG.length - 1);
-    main += '<div data-ev-comp="' + comp.key + '" data-nivel="0" style="margin-bottom:' + (isLast?'4':'14') + 'px;padding-bottom:' + (isLast?'0':'14') + 'px' + (isLast?'':';border-bottom:1px solid var(--border)') + '">';
-    main += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:3px">';
-    main += '<span style="font-size:13px">' + comp.icon + '</span>';
-    main += '<span style="font-size:12.5px;font-weight:700;color:var(--ink);flex:1">' + comp.name + '</span>';
-    main += '<span style="display:inline-flex;gap:4px">';
+    p3 += '<div class="ev-comp" data-ev-comp="' + comp.key + '" data-nivel="0" data-idx="' + i + '" style="display:' + (i ? 'none' : '') + '">'
+      + '<div class="ev-comp-cnt">Competencia ' + (i + 1) + ' de ' + _COMP_CONFIG.length + '</div>'
+      + '<div class="ev-comp-h"><span style="font-size:20px">' + comp.icon + '</span><div><div class="ev-comp-name">' + comp.name + '</div><div class="ev-comp-def">' + comp.def + '</div></div></div>'
+      + '<div class="ev-q-main"><span>Pregunte</span>' + comp.questions[0] + '</div>'
+      + (comp.questions.length > 1 ? '<details class="ev-mas" style="margin-top:6px"><summary>Otras preguntas</summary><ul>' + comp.questions.slice(1).map(function(q){ return '<li>' + q + '</li>'; }).join('') + '</ul></details>' : '')
+      + '<div class="ev-escala">';
     for (var lv = 1; lv <= 5; lv++) {
-      main += '<button type="button" class="ev-lv" data-lv="' + lv + '" onclick="_evLevelClick(this)" title="' + htmlEsc(comp.anclas[lv] || (lv === 2 ? 'Intermedio entre 1 y 3' : 'Intermedio entre 3 y 5')) + '">' + lv + '</button>';
+      p3 += '<button type="button" class="ev-lv" data-lv="' + lv + '" onclick="_evLevelClick(this)" title="' + htmlEsc(comp.anclas[lv] || (lv === 2 ? 'Intermedio entre 1 y 3' : 'Intermedio entre 3 y 5')) + '">' + lv + '</button>';
     }
-    main += '</span></div>';
-    main += '<div style="font-size:11px;color:var(--ink3);margin-bottom:6px">' + comp.def + '</div>';
-    main += '<div class="ev-lv-desc" style="font-size:11.5px;color:var(--ink2);line-height:1.5;padding:6px 9px;background:var(--bg);border-radius:7px;margin-bottom:6px"><span style="color:var(--ink4)">Sin puntaje</span></div>';
-    main += '<details class="ev-star-q"><summary style="font-size:11px;font-weight:600;color:var(--accent);cursor:pointer;list-style:none;display:flex;align-items:center;gap:4px">'
-          + '<span style="font-size:10px">▶</span> Preguntas y escala</summary><ul>';
-    comp.questions.forEach(function(q) { main += '<li>' + q + '</li>'; });
-    main += '</ul><div style="font-size:11px;color:var(--ink3);line-height:1.6;margin-top:6px">'
-          + [1,3,5].map(function(n){ return '<div><strong>' + n + '</strong> — ' + comp.anclas[n] + '</div>'; }).join('') + '</div></details>';
-    main += '<label style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink2);margin:6px 0 4px;cursor:pointer"><input type="checkbox" class="ev-sin-ej" onchange="_evSinEjemplo(this)" style="accent-color:var(--accent)"> No dio un ejemplo concreto (máximo 2)</label>';
-    main += '<div class="ev-field"><textarea id="ef-comp-nota-' + i + '" rows="2" placeholder="Evidencia: situación que relató, qué hizo y qué resultado tuvo…"></textarea></div>';
-    main += '</div>';
+    p3 += '</div><div class="ev-anclas">' + [1, 3, 5].map(function(n){ return '<div class="ev-ancla" data-a="' + n + '"><b>' + n + '</b><span>' + comp.anclas[n] + '</span></div>'; }).join('') + '</div>'
+      + '<div class="ev-lv-desc" style="display:none"></div>'
+      + '<label class="ev-sin-ej-lbl"><input type="checkbox" class="ev-sin-ej" onchange="_evSinEjemplo(this)"> No dio un ejemplo concreto (máximo 2)</label>'
+      + '<div class="ev-field"><textarea id="ef-comp-nota-' + i + '" rows="3" placeholder="Evidencia: situación que relató, qué hizo y qué resultado tuvo…"></textarea></div>'
+      + '</div>';
   });
-  main += '</div>';
+  main += paso(3, 'Método STAR · escala de 1 a 5', p3);
 
-  // Resultado de la entrevista (se actualiza al puntuar)
-  main += '<div class="ev-sec">';
-  main += '<div class="ev-sec-title">📊 Resultado de la entrevista</div>';
-  main += '<div id="ev-resultado">' + _evResultadoHtml(_COMP_CONFIG.map(function(x){ return { name:x.name, nivel:0 }; })) + '</div>';
-  main += '</div>';
+  // 4. Desde las pruebas
+  var p4 = '';
+  if (_dp.length) {
+    p4 += '<div class="ev-hint">Preguntas que surgen de los resultados de esta persona. Se registran sin puntaje.</div>';
+    _dp.forEach(function(x, i) {
+      if (i === 3) p4 += '<div id="ev-dp-mas" style="display:none">';
+      p4 += '<div class="ev-dp" data-ev-dp="' + i + '" data-fuente="' + htmlEsc(x.fuente) + '" data-q="' + htmlEsc(x.q) + '">'
+        + '<div class="ev-dp-q"><span>' + htmlEsc(x.fuente) + '</span>' + htmlEsc(x.q) + '</div>'
+        + '<div class="ev-field"><textarea id="ef-dp-' + i + '" rows="2" placeholder="Lo que respondió…"></textarea></div></div>';
+    });
+    if (_dp.length > 3) p4 += '</div><button type="button" class="btn btn-ghost btn-sm" id="ev-dp-btn" onclick="document.getElementById(\'ev-dp-mas\').style.display=\'\';this.remove()">Ver ' + (_dp.length - 3) + ' preguntas más</button>';
+  } else {
+    p4 += '<div style="font-size:13px;color:var(--ink4)">Los resultados no generan preguntas adicionales.</div>';
+  }
+  main += paso(4, 'Contrastar los resultados', p4);
 
-  // Secciones opcionales, sin puntaje: screening rápido y verificaciones operativas
-  main += '<details class="ev-sec" style="padding-bottom:0"><summary style="cursor:pointer;list-style:none" class="ev-sec-title">▸ Secciones opcionales (sin puntaje)</summary>';
-  // Screening psicológico rápido
-  main += '<div class="ev-sec">';
-  main += '<div class="ev-sec-title">🧠 Screening Psicológico Rápido</div>';
+  // 5. Cierre y dictamen
+  var p5 = '<div class="ev-sub">Resultado de las competencias</div><div id="ev-resultado" style="margin-bottom:16px">' + _evResultadoHtml(_COMP_CONFIG.map(function(x){ return { name:x.name, nivel:0 }; })) + '</div>';
+  p5 += '<div class="ev-field" style="margin-bottom:14px"><label>Síntesis</label><textarea id="ef-sintesis" rows="4" placeholder="Fortalezas observadas, aspectos a desarrollar, ajuste al cargo, impresión general…"></textarea></div>';
+  p5 += '<div class="ev-sub">Dictamen</div><div class="ev-dictamen" id="ev-dictamen-group">';
+  _EV_DICTAMEN.forEach(function(d) {
+    p5 += '<label class="ev-dictamen-opt" style="cursor:pointer" onclick="_evDictamenSel(\'' + d.val + '\')" id="ev-dict-opt-' + d.val + '">'
+      + '<input type="radio" name="ev-dictamen" value="' + d.val + '" style="accent-color:' + d.color + '">'
+      + '<span style="font-size:14px">' + d.icon + '</span><div style="flex:1;font-size:13px;font-weight:700;color:' + d.color + '">' + d.label + '</div></label>';
+  });
+  p5 += '</div>';
+  p5 += '<div class="ev-field" id="ev-motivo-wrap" style="margin-top:12px;display:none"><label id="ev-motivo-lbl">Motivo (obligatorio)</label>'
+    + '<textarea id="ef-motivo" rows="2" placeholder="Fundamente el dictamen con lo observado en la entrevista y las pruebas…"></textarea></div>';
+  p5 += '<div class="ev-field" style="margin-top:12px"><label>Notas adicionales</label><textarea id="ef-notas" rows="2" placeholder="Recomendaciones para la siguiente etapa…"></textarea></div>';
+  // Opcionales, sin puntaje
+  p5 += '<details class="ev-mas" style="margin-top:14px"><summary>Opcional: screening rápido y verificaciones operativas</summary><div style="padding-top:10px">';
   Object.keys(_EV_SCREEN_OPTS).forEach(function(key) {
     var opt = _EV_SCREEN_OPTS[key];
-    main += '<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:600;color:var(--ink);margin-bottom:5px">' + opt.label + '</div>';
-    main += _evPillGroup(key, '', opt.opts, opt.colors) + '</div>';
+    p5 += '<div style="margin-bottom:10px"><div style="font-size:12px;font-weight:600;color:var(--ink);margin-bottom:5px">' + opt.label + '</div>' + _evPillGroup(key, '', opt.opts, opt.colors) + '</div>';
   });
-  main += '<div class="ev-field" style="margin-top:4px"><label>Apuntes Psicológicos Rápidos</label>'
-        + '<textarea id="ef-apuntes-psico" rows="2" placeholder="Observaciones sobre conducta, discurso, lenguaje no verbal, juicio…"></textarea></div>';
-  main += '</div>';
-
-  // Verificaciones operativas
-  main += '<div class="ev-sec">';
-  main += '<div class="ev-sec-title">✅ Verificaciones Operativas</div>';
+  p5 += '<div class="ev-field" style="margin:4px 0 12px"><label>Apuntes</label><textarea id="ef-apuntes-psico" rows="2" placeholder="Conducta, discurso, lenguaje no verbal…"></textarea></div>';
   _EV_CHECKS_OP.forEach(function(chk, i) {
-    main += '<label class="ev-flag" id="ev-chk-lbl-' + i + '" style="margin-bottom:6px">'
-          + '<input type="checkbox" id="ev-chk-' + i + '" onchange="this.closest(\'.ev-flag\').classList.toggle(\'active\',this.checked)">'
-          + '<span style="font-size:12px;color:var(--ink);line-height:1.45">' + chk + '</span></label>';
+    p5 += '<label class="ev-flag" id="ev-chk-lbl-' + i + '" style="margin-bottom:6px"><input type="checkbox" id="ev-chk-' + i + '" onchange="this.closest(\'.ev-flag\').classList.toggle(\'active\',this.checked)">'
+      + '<span style="font-size:12.5px;color:var(--ink);line-height:1.45">' + chk + '</span></label>';
   });
-  main += '</div>';
+  p5 += '</div></details>';
+  main += paso(5, 'Síntesis y decisión', p5);
 
-  main += '</details>';
-
-  // Section 6: Síntesis y Dictamen
-  main += '<div class="ev-sec">';
-  main += '<div class="ev-sec-title">📝 Síntesis y Dictamen Final</div>';
-  main += '<div class="ev-field" style="margin-bottom:12px"><label>Síntesis Integrativa Psico-Laboral</label>'
-        + '<textarea id="ef-sintesis" rows="4" placeholder="Fortalezas observadas, áreas de desarrollo, ajuste al cargo, impresión general del evaluador/a…"></textarea></div>';
-  main += '<div style="font-size:10.5px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Dictamen</div>';
-  main += '<div class="ev-dictamen" id="ev-dictamen-group">';
-  _EV_DICTAMEN.forEach(function(d) {
-    main += '<label class="ev-dictamen-opt" style="cursor:pointer" onclick="_evDictamenSel(\'' + d.val + '\')" id="ev-dict-opt-' + d.val + '">'
-          + '<input type="radio" name="ev-dictamen" value="' + d.val + '" style="accent-color:' + d.color + '">'
-          + '<span style="font-size:13px">' + d.icon + '</span>'
-          + '<div style="flex:1"><div style="font-size:12.5px;font-weight:700;color:' + d.color + '">' + d.label + '</div></div></label>';
-  });
-  main += '</div>';
-  main += '<div class="ev-field" id="ev-motivo-wrap" style="margin-top:12px;display:none"><label id="ev-motivo-lbl">Motivo (obligatorio)</label>'
-        + '<textarea id="ef-motivo" rows="2" placeholder="Fundamente el dictamen con lo observado en la entrevista y las pruebas…"></textarea></div>';
-  main += '<div class="ev-field" style="margin-top:12px"><label>Notas adicionales</label>'
-        + '<textarea id="ef-notas" rows="2" placeholder="Observaciones adicionales, recomendaciones para la siguiente etapa…"></textarea></div>';
-  main += '<button onclick="saveEntrevistaDrawer(\'' + c.id + '\')" style="width:100%;margin-top:14px;padding:11px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--accent),#7c3aed);color:#fff;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;letter-spacing:.3px">💾 Guardar y Finalizar Entrevista</button>';
-  main += '</div>';
-
+  // Barra fija: resultado en vivo, borrador y finalizar
+  main += '<div class="ev-barra"><div class="ev-barra-info" id="ev-barra-info"></div>'
+    + '<button type="button" class="btn btn-primary" onclick="_evFinalizar(\'' + c.id + '\')" style="white-space:nowrap">Finalizar entrevista</button></div>';
   main += '</div>'; // /ev-main
 
   return aside + main;
 }
 
+// ═══════════════════════════════════════════════════════════
+//  PAUTA DE ENTREVISTA: pasos, borrador automático y cierre
+// ═══════════════════════════════════════════════════════════
+var _EV_PASOS = [['Inicio', '🗓'], ['Trayectoria', '💼'], ['Competencias', '⭐'], ['Desde las pruebas', '🧪'], ['Cierre y dictamen', '📝']];
+var _evCompIdx = 0, _evBorradorTimer = null, _evBorradorTs = null;
+
+function _evInit(c) {
+  var m = document.getElementById('ev-main'); if (!m) return;
+  _evCompIdx = 0; _evBorradorTs = null;
+  m.addEventListener('input', _evCambio);
+  m.addEventListener('change', _evCambio);
+  _evBorradorRestaurar(c.id);
+  _evCompIr(_evCompIdx);
+  _evProgreso();
+}
+
+function _evToggle(n) {
+  var st = document.getElementById('ev-step-' + n); if (st) st.classList.toggle('open');
+}
+function _evIrPaso(n) {
+  var st = document.getElementById('ev-step-' + n); if (!st) return;
+  st.classList.add('open');
+  st.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// Competencias: una a la vez
+function _evComp(delta) { _evCompIr(Math.max(0, Math.min(_COMP_CONFIG.length - 1, _evCompIdx + delta))); }
+function _evCompIr(i) {
+  _evCompIdx = i;
+  document.querySelectorAll('#ev-main .ev-comp').forEach(function(r){ r.style.display = +r.dataset.idx === i ? '' : 'none'; });
+  var COL = { 1:'#dc2626', 2:'#ea580c', 3:'#ca8a04', 4:'#16a34a', 5:'#15803d' };
+  var dots = document.getElementById('ev-comp-dots'); if (!dots) return;
+  dots.innerHTML = [].map.call(document.querySelectorAll('#ev-main .ev-comp'), function(r){
+    var n = +r.dataset.nivel || 0, k = +r.dataset.idx;
+    var cfg = _COMP_CONFIG[k] || {};
+    return '<button type="button" onclick="_evCompIr(' + k + ')" title="' + htmlEsc(cfg.name || '') + (n ? ': ' + n : ': sin puntaje') + '" class="ev-dot' + (k === i ? ' on' : '') + '"'
+      + (n ? ' style="background:' + COL[n] + ';border-color:' + COL[n] + ';color:#fff"' : '') + '>' + (n || (k + 1)) + '</button>';
+  }).join('');
+}
+
+// Trayectoria: coincide / corregir / no se pudo verificar
+function _evVerificar(n, val) {
+  var inp = document.getElementById('ef-exp' + n + '-ver'); if (!inp) return;
+  inp.value = inp.value === val ? '' : val;
+  var cls = { si:'sel-verde', corregida:'sel-amarillo', no_verificable:'sel-rojo' };
+  var g = document.getElementById('ef-exp' + n + '-pills');
+  if (g) g.querySelectorAll('.ev-pill').forEach(function(b){
+    b.classList.remove('sel-verde', 'sel-amarillo', 'sel-rojo');
+    if (b.dataset.ver === inp.value) b.classList.add(cls[inp.value]);
+  });
+  var det = document.getElementById('ef-exp' + n + '-det');
+  if (det) det.style.display = inp.value === 'corregida' ? '' : 'none';
+  _evCambio();
+}
+
+// Avance por paso (índice, encabezados y barra inferior)
+function _evProgreso() {
+  var m = document.getElementById('ev-main'); if (!m) return;
+  var val = function(id){ return ((document.getElementById(id) || {}).value || '').trim(); };
+  var est = [];
+  est[1] = val('ef-fecha') && val('ef-entrevistador') ? [true, '✓'] : [false, ''];
+  var exps = [].slice.call(m.querySelectorAll('.ev-exp'));
+  var decl = exps.filter(function(e){ return e.querySelector('.ev-pill-group'); });
+  if (decl.length) {
+    var ok = decl.filter(function(e){ return val('ef-exp' + e.dataset.exp + '-ver'); }).length;
+    est[2] = [ok === decl.length, ok === decl.length ? '✓' : ok + '/' + decl.length];
+  } else {
+    var lleno = val('ef-exp1-cargo') || val('ef-exp1-empresa') || val('ef-exp1-notas');
+    est[2] = [!!lleno, lleno ? '✓' : ''];
+  }
+  var comps = [].slice.call(m.querySelectorAll('[data-ev-comp]'));
+  var hechas = comps.filter(function(r){ return +r.dataset.nivel > 0; }).length;
+  est[3] = [hechas === comps.length, hechas === comps.length ? '✓' : hechas + '/' + comps.length];
+  var dps = [].slice.call(m.querySelectorAll('[data-ev-dp]'));
+  var resp = dps.filter(function(d){ return val('ef-dp-' + d.dataset.evDp); }).length;
+  est[4] = dps.length ? [resp === dps.length, resp === dps.length ? '✓' : resp + '/' + dps.length] : [true, '✓'];
+  var dict = (m.querySelector('input[name="ev-dictamen"]:checked') || {}).value || '';
+  var motivoOk = !_evMotivoRequerido() || val('ef-motivo');
+  est[5] = [!!dict && !!motivoOk, dict && motivoOk ? '✓' : ''];
+  for (var n = 1; n <= 5; n++) {
+    var ix = document.getElementById('ev-ix-st-' + n), sh = document.getElementById('ev-st-' + n);
+    if (ix) ix.textContent = est[n][1];
+    if (sh) sh.textContent = est[n][0] ? '✓ Listo' : est[n][1];
+    var b = m.querySelector('.ev-ix[data-paso="' + n + '"]'); if (b) b.classList.toggle('done', est[n][0]);
+    var sec = document.getElementById('ev-step-' + n); if (sec) sec.classList.toggle('done', est[n][0]);
+  }
+  // Barra inferior
+  var info = document.getElementById('ev-barra-info');
+  if (info) {
+    var prom = _evPromedio(comps.map(function(r){ return { nivel: +r.dataset.nivel || 0 }; })), bd = _evBanda(prom);
+    var dm = _EV_DICTAMEN.filter(function(d){ return d.val === dict; })[0];
+    info.innerHTML = (prom !== null ? '<strong style="color:' + bd.color + '">' + String(prom).replace('.', ',') + ' / 5</strong> <span style="color:var(--ink3)">' + bd.label + ' · ' + hechas + '/' + comps.length + '</span>'
+                                    : '<span style="color:var(--ink4)">Sin competencias puntuadas</span>')
+      + (dm ? ' <span style="margin-left:8px;color:' + dm.color + ';font-weight:700">' + dm.icon + ' ' + dm.label + '</span>' : '')
+      + (_evBorradorTs ? '<div style="font-size:11px;color:var(--ink4);margin-top:2px">Borrador guardado a las ' + new Date(_evBorradorTs).toLocaleTimeString('es-CL', { hour:'2-digit', minute:'2-digit', hour12:false }) + '</div>' : '');
+  }
+}
+
+// ── Borrador automático (en este navegador) ──
+var _EV_BORRADOR = 'psicoeval_ev_borrador_';
+function _evCambio() {
+  clearTimeout(_evBorradorTimer);
+  _evBorradorTimer = setTimeout(_evBorradorGuardar, 700);
+  _evProgreso();
+  _evCompIr(_evCompIdx);
+}
+function _evBorradorGuardar() {
+  var m = document.getElementById('ev-main'); if (!m) return;
+  var d = { ts: Date.now(), campos: {}, niveles: {}, pills: {}, dictamen: '', comp: _evCompIdx };
+  m.querySelectorAll('input[id],textarea[id],select[id]').forEach(function(el){
+    if (el.type === 'radio') return;
+    d.campos[el.id] = el.type === 'checkbox' ? el.checked : el.value;
+  });
+  m.querySelectorAll('[data-ev-comp]').forEach(function(r){
+    d.niveles[r.dataset.evComp] = { n: +r.dataset.nivel || 0, sin: !!(r.querySelector('.ev-sin-ej') || {}).checked };
+  });
+  Object.keys(_EV_SCREEN_OPTS).forEach(function(k){ var g = document.getElementById('ev-pg-' + k); if (g && g.dataset.value) d.pills[k] = g.dataset.value; });
+  d.dictamen = (m.querySelector('input[name="ev-dictamen"]:checked') || {}).value || '';
+  // Un formulario sin nada escrito no se guarda como borrador
+  var escrito = Object.keys(d.campos).some(function(id){ var v = d.campos[id]; return v === true || (typeof v === 'string' && v.trim() && !/^ef-(fecha|tipo|modalidad|exp\d-(cargo|empresa|tiempo|motivo))$/.test(id)); })
+    || Object.keys(d.niveles).some(function(k){ return d.niveles[k].n > 0; }) || d.dictamen || Object.keys(d.pills).length;
+  if (!escrito) return;
+  try { localStorage.setItem(_EV_BORRADOR + m.dataset.cand, JSON.stringify(d)); _evBorradorTs = d.ts; } catch(e) {}
+  _evProgreso();
+}
+function _evBorradorBorrar(candId) { clearTimeout(_evBorradorTimer); _evBorradorTs = null; try { localStorage.removeItem(_EV_BORRADOR + candId); } catch(e) {} }
+function _evBorradorRestaurar(candId) {
+  var d = null;
+  try { d = JSON.parse(localStorage.getItem(_EV_BORRADOR + candId) || 'null'); } catch(e) {}
+  if (!d) return;
+  if (!d.ts || Date.now() - d.ts > 14 * 86400000) { _evBorradorBorrar(candId); return; }   // vence a los 14 días
+  Object.keys(d.campos || {}).forEach(function(id){
+    var el = document.getElementById(id); if (!el) return;
+    if (el.type === 'checkbox') { el.checked = !!d.campos[id]; var lb = el.closest('.ev-flag'); if (lb) lb.classList.toggle('active', el.checked); }
+    else el.value = d.campos[id];
+  });
+  document.querySelectorAll('#ev-main [data-ev-comp]').forEach(function(r){
+    var x = (d.niveles || {})[r.dataset.evComp]; if (!x) return;
+    r.dataset.nivel = x.n || 0;
+    var cb = r.querySelector('.ev-sin-ej'); if (cb) cb.checked = !!x.sin;
+    _evPintarComp(r);
+  });
+  Object.keys(d.pills || {}).forEach(function(k){
+    var g = document.getElementById('ev-pg-' + k); if (!g) return;
+    var btn = [].filter.call(g.querySelectorAll('.ev-pill'), function(b){ return (b.getAttribute('onclick') || '').indexOf("'" + d.pills[k] + "'") !== -1; })[0];
+    if (btn) _evPillClick(btn, k, d.pills[k]);
+  });
+  [1, 2].forEach(function(n){
+    var inp = document.getElementById('ef-exp' + n + '-ver');
+    if (inp && inp.value) { var v = inp.value; inp.value = ''; _evVerificar(n, v); }
+  });
+  if (d.dictamen) {
+    var r = document.querySelector('#ev-main input[name="ev-dictamen"][value="' + d.dictamen + '"]');
+    if (r) { r.checked = true; _evDictamenSel(d.dictamen); }
+  }
+  _evCompIdx = d.comp || 0;
+  _evBorradorTs = d.ts;
+  _evResultadoVivo();
+  var av = document.getElementById('ev-borrador-aviso');
+  if (av) av.innerHTML = '<div class="ev-aviso">📝 Se recuperó un borrador del ' + new Date(d.ts).toLocaleDateString('es-CL') + ' a las '
+    + new Date(d.ts).toLocaleTimeString('es-CL', { hour:'2-digit', minute:'2-digit', hour12:false })
+    + '. <a onclick="_evBorradorDescartar(\'' + candId + '\')">Descartar y empezar de nuevo</a></div>';
+}
+async function _evBorradorDescartar(candId) {
+  if (!(await appConfirm('¿Descartar el borrador? Se perderá lo escrito en esta entrevista.'))) return;
+  _evBorradorBorrar(candId);
+  switchDrawerTabById('entrevistas');
+}
+
+// Finalizar: avisa lo que falta y guarda
+async function _evFinalizar(candId) {
+  var m = document.getElementById('ev-main'); if (!m) return;
+  var falta = [];
+  if (!((document.getElementById('ef-entrevistador') || {}).value || '').trim()) falta.push('el nombre del entrevistador/a');
+  var sin = [].filter.call(m.querySelectorAll('[data-ev-comp]'), function(r){ return !(+r.dataset.nivel > 0); }).length;
+  if (sin) falta.push(sin + (sin === 1 ? ' competencia sin puntaje' : ' competencias sin puntaje'));
+  if (!m.querySelector('input[name="ev-dictamen"]:checked')) falta.push('el dictamen');
+  if (falta.length && !(await appConfirm('Falta ' + falta.join(', ') + '. ¿Guardar la entrevista igual?'))) return;
+  saveEntrevistaDrawer(candId);
+}
+
 function _evDictamenSel(val) {
   _evDictamenActual = val;
-  setTimeout(_evMotivoVisible, 0);   // el radio se marca después del clic en la etiqueta
+  setTimeout(function(){ _evMotivoVisible(); if (document.getElementById('ev-main')) _evCambio(); }, 0);   // el radio se marca después del clic en la etiqueta
   _EV_DICTAMEN.forEach(function(d) {
     var opt = document.getElementById('ev-dict-opt-' + d.val);
     if (!opt) return;
@@ -12700,7 +12937,7 @@ function _evDictamenSel(val) {
 
 async function saveEntrevistaDrawer(candId) {
   var fecha  = document.getElementById('ef-fecha')?.value || '';
-  if (!fecha) { toast('Ingresa la fecha de la entrevista', 'er'); return; }
+  if (!fecha) { _evIrPaso(1); toast('Ingresa la fecha de la entrevista', 'er'); return; }
   var hora   = document.getElementById('ef-hora')?.value || '';
   var tipo   = document.getElementById('ef-tipo')?.value || 'rrhh';
   var modal  = document.getElementById('ef-modalidad')?.value || 'presencial';
@@ -12721,14 +12958,15 @@ async function saveEntrevistaDrawer(candId) {
   });
   if (faltaNota.length) {
     faltaNota.forEach(function(r){ var t = r.querySelector('textarea'); if (t) t.style.borderColor = '#dc2626'; });
-    faltaNota[0].scrollIntoView({ block:'center', behavior:'smooth' });
+    _evIrPaso(3); _evCompIr(+faltaNota[0].dataset.idx || 0);
     toast('Cada competencia puntuada necesita una nota con la evidencia', 'er'); return;
   }
   var motivoReq = _evMotivoRequerido();
   var motivo = ((document.getElementById('ef-motivo') || {}).value || '').trim();
   if (motivoReq && !motivo) {
     var mw = document.getElementById('ef-motivo');
-    if (mw) { mw.style.borderColor = '#dc2626'; mw.scrollIntoView({ block:'center', behavior:'smooth' }); }
+    _evIrPaso(5);
+    if (mw) { mw.style.borderColor = '#dc2626'; setTimeout(function(){ mw.scrollIntoView({ block:'center', behavior:'smooth' }); }, 300); }
     toast(motivoReq + ': es obligatorio para este dictamen', 'er'); return;
   }
   var desdePruebas = [].map.call(document.querySelectorAll('#drawer-body [data-ev-dp]'), function(el) {
@@ -12741,7 +12979,8 @@ async function saveEntrevistaDrawer(candId) {
       desde: v('ef-exp'+n+'-desde'), hasta: v('ef-exp'+n+'-hasta'),
       tiempo: v('ef-exp'+n+'-tiempo'), contrato: v('ef-exp'+n+'-contrato'),
       tareas: [v('ef-exp'+n+'-tarea1'), v('ef-exp'+n+'-tarea2'), v('ef-exp'+n+'-tarea3')],
-      jefatura: v('ef-exp'+n+'-jefatura'), motivo: v('ef-exp'+n+'-motivo')
+      jefatura: v('ef-exp'+n+'-jefatura'), motivo: v('ef-exp'+n+'-motivo'),
+      verificacion: v('ef-exp'+n+'-ver'), notas: v('ef-exp'+n+'-notas')
     };
   }
   var entry = {
@@ -12758,10 +12997,12 @@ async function saveEntrevistaDrawer(candId) {
   };
   try {
     var sc = await _patchScoresField(candId, '_entrevistas', function(prev){ return (prev || []).concat([entry]); });
+    _evBorradorBorrar(candId);
     var all = await getDB();
     var c = all.find(function(x){ return x.id === candId; });
     toast('🗓 Entrevista guardada ✓', 'ok');
     var updated = Object.assign({}, c, { scores: sc });
+    _renderDrawerHeader(updated);   // el encabezado muestra el dictamen nuevo
     _switchDrawerTab('entrevistas', updated);
   } catch(e) { toast('Error: ' + e.message, 'er'); }
 }
