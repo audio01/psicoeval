@@ -8424,6 +8424,19 @@ function buildReportHtml(c, withClose) {
     if (s._bateria && s._bateria.faltantes && s._bateria.faltantes.length) {
       _rsPuntos.push('<strong>Batería incompleta:</strong> no rindió ' + htmlEsc(_testNames(s._bateria.faltantes)) + '.');
     }
+    var _du = _duracionDe(c);
+    if (_du) {
+      if (_du.rapidas.length) _rsPuntos.push('<strong>Tiempo de respuesta:</strong> respondió muy rápido ' + htmlEsc(_du.rapidas.map(function(f){ return f.nombre + ' (' + _fmtDur(f.seg) + ')'; }).join(', ')) + '. Puede indicar respuestas al azar o sin leer: interprete esos resultados con cautela.');
+      html += _rsCard(_rsH3('Tiempo de respuesta', 'Total respondiendo: ' + _fmtDur(_du.total) + ' · no incluye el registro ni las instrucciones')
+        + _du.filas.map(function(f) {
+            var p = f.prev ? Math.min(100, Math.round(f.seg / f.prev * 100)) : 0;
+            return '<div style="display:flex;align-items:center;gap:10px;padding:5px 0;font-size:12px;border-top:1px solid #f1f5f9">'
+              + '<span style="flex:0 0 210px;color:#0f172a;font-weight:600">' + htmlEsc(f.nombre) + '</span>'
+              + (f.prev ? '<span style="flex:1;height:5px;border-radius:3px;background:#e2e8f0;position:relative"><span style="position:absolute;left:0;top:0;bottom:0;border-radius:3px;width:' + p + '%;background:' + (f.rapida ? '#f59e0b' : '#94a3b8') + '"></span></span>' : '<span style="flex:1;font-size:11px;color:#94a3b8">duración fija</span>')
+              + '<span style="flex:0 0 60px;text-align:right;font-weight:700;color:' + (f.rapida ? '#b45309' : '#334155') + '">' + _fmtDur(f.seg) + '</span>'
+              + '<span style="flex:0 0 96px;font-size:11px;color:' + (f.rapida ? '#b45309' : '#94a3b8') + '">' + (f.rapida ? '⚡ muy rápida' : f.prev ? 'previsto ' + _fmtDur(f.prev) : '') + '</span></div>';
+          }).join(''));
+    }
 
     // ── 4b. Entrevista (última con competencias puntuadas) ──
     if (_evUlt) html += _rsCard(_rsH3('Entrevista', 'Competencias del perfil de la empresa · escala de 1 a 5') + _evInformeHtml(_evUlt, true));
@@ -10258,6 +10271,13 @@ async function renderDashboard() {
     + kpi('Sin dictamen', sinDict, completadas.length ? 'En proceso y aún sin dictamen de entrevista' : 'No hay evaluaciones en el período', sinDict ? '#b45309' : 'var(--ink)', ir({ estado:'completed', dictamen:'sin' }))
     + kpi('Recomendados', conDict.length ? Math.round(recomendados / conDict.length * 100) + ' %' : '—', conDict.length ? recomendados + ' de ' + conDict.length + ' con dictamen (incluye "con observaciones")' : 'Aún no hay dictámenes en el período', '#15803d', ir({ dictamen:'recomendado' }))
     + kpi('Seleccionados', seleccionados, completadas.length ? Math.round(seleccionados / completadas.length * 100) + ' % de las evaluaciones completadas' : 'Sin evaluaciones en el período', seleccionados ? '#4f46e5' : 'var(--ink)', ir({ etapa:'seleccionado' }))
+    + (function(){
+        var ds = completadas.map(_duracionDe).filter(Boolean), tot = ds.map(function(d){ return d.total; }).sort(function(a, b){ return a - b; });
+        if (!tot.length) return kpi('Duración típica', '—', 'Sin tiempos registrados en el período', 'var(--ink)');
+        var med = tot.length % 2 ? tot[(tot.length - 1) / 2] : (tot[tot.length / 2 - 1] + tot[tot.length / 2]) / 2;
+        var rap = ds.filter(function(d){ return d.rapidas.length; }).length;
+        return kpi('Duración típica', _fmtDur(med), rap ? '⚡ ' + rap + (rap > 1 ? ' evaluaciones' : ' evaluación') + ' con alguna prueba muy rápida' : 'Mediana respondiendo · ninguna muy rápida', 'var(--ink)', rap ? ir({ duracion:'rapida' }) : '');
+      })()
     + kpi('Sin terminar', sinTerminar, sinTerminar ? 'Comenzaron la evaluación y no la completaron' : 'Nadie dejó la evaluación a medias', sinTerminar ? '#b45309' : 'var(--ink)', ir({ estado:'pending' }))
     + '</div>';
 
@@ -10466,9 +10486,9 @@ async function renderCandidatesTable() { return _bdRender(); }
 //  (estilo base de datos de Notion). Las vistas guardadas se comparten con todos
 //  los usuarios del panel (clave 'vistas' de psicoeval_config, 18_vistas.sql).
 // ═══════════════════════════════════════════════════════════
-var _BD_PROPS = [['cargo','Cargo'], ['resultado','Resultado'], ['etapa','Etapa'], ['dictamen','Dictamen'], ['estado','Estado'], ['fecha','Fecha'], ['comuna','Comuna'], ['invitacion','Invitación']];
+var _BD_PROPS = [['cargo','Cargo'], ['resultado','Resultado'], ['etapa','Etapa'], ['dictamen','Dictamen'], ['estado','Estado'], ['fecha','Fecha'], ['duracion','Duración'], ['comuna','Comuna'], ['invitacion','Invitación']];
 var _BD_DEF = { vista:'tabla', filtros:{}, orden:'fecha_desc', agrupar:'', columnas:'etapa',
-                props:{ cargo:1, resultado:1, etapa:1, dictamen:1, estado:0, fecha:1, comuna:0, invitacion:0 } };
+                props:{ cargo:1, resultado:1, etapa:1, dictamen:1, estado:0, fecha:1, duracion:0, comuna:0, invitacion:0 } };
 var _BD_FIJAS = [
   { id:'todos',   nombre:'Todos',       icon:'👥', cfg:{ vista:'tabla' } },
   { id:'tablero', nombre:'Tablero',     icon:'🗂', cfg:{ vista:'tablero' } },
@@ -10561,6 +10581,8 @@ var _BD_CAMPOS = {
                 ok:function(c, v){ return ((c.scores || {}).integridad || {}).nivel === v; } },
   archivo:    { label:'Archivo', ops:function(){ return [['activos', 'Solo activos'], ['pronto', 'Se archivan esta semana'], ['archivados', 'Archivo (descartados e inactivos)'], ['todos', 'Activos y archivo']]; },
                 ok:function(c, v){ if (v === 'pronto') return _diasParaArchivo(c) !== null; return v === 'todos' || (v === 'archivados') === _bdEnArchivo(c); } },
+  duracion:   { label:'Duración', ops:function(){ return [['rapida', '⚡ Alguna prueba muy rápida'], ['normal', 'Sin pruebas muy rápidas']]; },
+                ok:function(c, v){ var du = _duracionDe(c); if (!du) return false; return v === 'rapida' ? du.rapidas.length > 0 : !du.rapidas.length; } },
   invitacion: { label:'Invitación', ops:function(){ return [['con', 'Con invitación'], ['sin', 'Sin invitación']]; },
                 ok:function(c, v){ var i = !!(c.scores && c.scores._invitacion); return v === 'con' ? i : !i; } }
 };
@@ -10684,6 +10706,7 @@ function _bdCelda(c, p) {
   if (p === 'dictamen') return _bdDictamenCorto(c);
   if (p === 'estado') return statusBadge(c.estado);
   if (p === 'fecha') return '<span style="color:var(--ink3);white-space:nowrap">' + htmlEsc(_momentoTxt(c)) + '</span>';
+  if (p === 'duracion') { var du = _duracionDe(c); return du ? '<span title="' + htmlEsc(_duracionTip(du)) + '" style="white-space:nowrap;' + (du.rapidas.length ? 'color:#b45309;font-weight:700' : 'color:var(--ink2)') + '">' + _fmtDur(du.total) + (du.rapidas.length ? ' ⚡' : '') + '</span>' : '<span style="color:var(--ink4)">—</span>'; }
   if (p === 'comuna') return htmlEsc(c.comuna || '—');
   if (p === 'invitacion') { var iv = c.scores && c.scores._invitacion; return iv ? (iv.tipo === 'rut' ? '🪪 Por RUT' : '🔗 Link único') : '<span style="color:var(--ink4)">—</span>'; }
   return '';
@@ -12550,6 +12573,10 @@ function _tabResumen(c) {
             ['Entrevistas', !_verEntrevistas() ? '' : ents.length ? ents.length + (ult && ult.fecha ? ' · última ' + ult.fecha.split('-').reverse().join('-') : '') + (ult && ult.entrevistador ? ' · ' + ult.entrevistador : '') : 'Ninguna']];
   h += '<div class="rs-card"><div class="rs-lbl">Antecedentes</div>';
   kv.forEach(function(x){ if (x[1]) h += '<div class="rs-kv"><span>' + x[0] + '</span><b>' + htmlEsc(String(x[1])) + '</b></div>'; });
+  var du = _duracionDe(c);
+  if (du) h += '<div class="rs-kv"><span>Duración</span><b title="' + htmlEsc(_duracionTip(du)) + '" style="cursor:help">' + _fmtDur(du.total) + ' respondiendo'
+    + (du.rapidas.length ? ' <span style="color:#b45309;font-weight:700">· ⚡ ' + du.rapidas.length + (du.rapidas.length > 1 ? ' pruebas muy rápidas' : ' prueba muy rápida') + '</span>' : '')
+    + ' <span style="color:var(--ink4);font-weight:500">ⓘ</span></b></div>';
   var otras = _mismoRut(c);
   if (otras.length) h += '<div class="rs-kv"><span>Mismo RUT</span><b>' + otras.map(function(o){
       return '<a class="rs-link" onclick="openCandDrawer(\'' + htmlEsc(o.id) + '\')">' + htmlEsc(((PERFIL_META[o.perfil] || {}).label || o.cargo || 'Evaluación') + ' · ' + (_momentoTxt(o) || '').slice(0, 10)) + '</a>';
@@ -13630,6 +13657,40 @@ function saveContacto() {
 }
 
 // Dictamen de la última entrevista (cabecera de la ficha)
+// ═══════════════════════════════════════════════════════════
+//  DURACIÓN DE LA EVALUACIÓN (scores._timings: segundos por prueba)
+//  Cuenta el tiempo respondiendo cada prueba; no incluye el registro ni las
+//  instrucciones. "Muy rápida": menos de un tercio del tiempo previsto para
+//  una prueba con preguntas (las tareas de reacción y globos tienen duración fija).
+// ═══════════════════════════════════════════════════════════
+var _DUR_NOMBRES = { integridad:'Integridad laboral', juego_globos:'Globos (versión anterior)', juego_semaforo:'Semáforo (versión anterior)', game_dilemas_op:'Dilemas (versión anterior)' };
+var _DUR_FIJA = { gonogo:1, bart:1, juego_globos:1, juego_semaforo:1, game_dilemas_op:1 };
+function _fmtDur(sec) {
+  sec = Math.round(sec || 0);
+  if (sec < 60) return sec + ' s';
+  var m = Math.round(sec / 60);
+  return m < 60 ? m + ' min' : Math.floor(m / 60) + ' h ' + String(m % 60).padStart(2, '0') + ' min';
+}
+function _duracionDe(c) {
+  var t = c && c.scores && c.scores._timings;
+  if (!t || typeof t !== 'object') return null;
+  var filas = [], total = 0;
+  Object.keys(t).forEach(function(k) {
+    var seg = +t[k];
+    if (!isFinite(seg) || seg <= 0) return;
+    total += seg;
+    var prev = _DUR_FIJA[k] ? 0 : (TM_MINS_CONFIG[k] || TM_MINS_DEFAULTS[k] || 0) * 60;
+    filas.push({ id:k, nombre:_DUR_NOMBRES[k] || (TESTS_META[k] || {}).name || k, seg:seg, prev:prev, rapida: prev > 0 && seg < prev / 3 });
+  });
+  if (!filas.length) return null;
+  var orden = _MIRADA_ORDEN.concat(['juego_globos', 'juego_semaforo', 'game_dilemas_op']);
+  filas.sort(function(a, b){ return orden.indexOf(a.id) - orden.indexOf(b.id); });
+  return { total: total, filas: filas, rapidas: filas.filter(function(f){ return f.rapida; }) };
+}
+function _duracionTip(du) {
+  return du.filas.map(function(f){ return f.nombre + ': ' + _fmtDur(f.seg) + (f.prev ? ' (previsto ' + _fmtDur(f.prev) + ')' : '') + (f.rapida ? ' · muy rápida' : ''); }).join('\n');
+}
+
 // Una sola etiqueta en el encabezado de la ficha: la decisión final (Seleccionado o
 // Descartado) manda; mientras el proceso sigue, el dictamen de la entrevista si lo hay,
 // y si no, la etapa. Lo otro queda en el texto al pasar el mouse.
