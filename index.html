@@ -232,7 +232,17 @@ input,select,textarea{font-family:inherit;outline:none}
   display:flex;flex-direction:column;padding:24px 10px 16px;height:100vh;overflow-y:auto;
   border-right:1px solid var(--border);
 }
-.sidebar .logo{padding:4px 10px;margin-bottom:28px;font-size:17px;font-weight:700;color:var(--ink);letter-spacing:-.02em}
+.sidebar .logo{padding:4px 10px;margin-bottom:18px;font-size:17px;font-weight:700;color:var(--ink);letter-spacing:-.02em}
+/* Barra lateral: acción principal, navegación y pie con usuario y acciones secundarias */
+.sb-cta{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:10px 12px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-size:13px;font-weight:700;cursor:pointer;margin:0 0 16px;font-family:inherit;box-shadow:0 2px 8px rgba(0,122,255,.25)}
+.sb-cta:hover{filter:brightness(1.06)}
+.sb-sep{height:1px;background:var(--border);margin:10px 8px}
+.sb-foot{border-top:1px solid var(--border);margin-top:10px;padding-top:8px;display:flex;flex-direction:column;gap:1px}
+.sb-user{display:flex;align-items:center;gap:9px;padding:6px 10px 8px;min-width:0}
+.sb-avatar{width:28px;height:28px;border-radius:50%;background:var(--accent-l);color:var(--accent);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;text-transform:uppercase}
+.sb-user-txt{display:flex;flex-direction:column;gap:2px;min-width:0}
+#role-badge{align-self:flex-start;font-size:10px;font-weight:700;padding:1px 7px;border-radius:100px;border:1px solid transparent}
+.nav-btn.sb-mini{font-size:12px;padding:6px 12px;gap:8px}
 .sidebar .logo span{color:var(--accent)}
 .nav-btn{
   display:flex;align-items:center;gap:9px;padding:8px 12px;border-radius:10px;
@@ -1603,31 +1613,37 @@ body.exam-away #exam-shield{display:flex}
   <div class="admin-layout">
     <aside class="sidebar">
       <div class="logo">PsicoEval</div>
+      <button class="sb-cta" id="sb-invitar" onclick="showInviteModal()">✉️ Invitar a evaluación</button>
       <button class="nav-btn active" id="nav-dashboard" onclick="adminTab('dashboard',this)"><span>📊</span><span>Dashboard</span></button>
       <button class="nav-btn" id="nav-candidates" onclick="adminTab('candidates',this)"><span>👥</span><span>Candidatos</span></button>
       <button class="nav-btn" id="nav-pipeline" onclick="adminTab('pipeline',this)"><span>🗂</span><span>Pipeline</span></button>
       <button class="nav-btn" id="nav-analisis" onclick="adminTab('analisis',this)"><span>📈</span><span>Análisis</span></button>
       <button class="nav-btn" id="nav-cargos" onclick="adminTab('cargos',this)"><span>🏢</span><span>Cargos</span></button>
       <button class="nav-btn" id="nav-params" onclick="adminTab('params',this)" style="display:none"></button>
-      <div style="flex:1"></div>
-      <div style="height:1px;background:#f1f5f9;margin:8px 4px 12px"></div>
+      <div class="sb-sep"></div>
       <button class="nav-btn" id="nav-wiki" onclick="adminTab('wiki',this)"><span>📖</span><span>Wiki de Tests</span></button>
       <button class="nav-btn" id="nav-users" onclick="adminTab('users',this)"><span>👤</span><span>Usuarios</span></button>
-      <div id="role-badge" style="font-size:11px;font-weight:700;text-align:center;padding:5px 8px;border-radius:100px;background:#f0fdf4;color:#16a34a;margin:6px 8px 2px;border:1px solid #bbf7d0"></div>
-      <button class="nav-btn" onclick="showInviteModal()" style="color:#2563eb;font-weight:600;margin-top:4px"><span>✉️</span><span>Invitar a evaluación</span></button>
-      <button class="nav-btn" onclick="showShareModal()" style="color:#16a34a;font-weight:600"><span>🔗</span><span>Compartir evaluación</span></button>
-      <button class="nav-btn" id="backup-btn" onclick="downloadFullBackup()" title="Descarga todas las evaluaciones y la configuración en un archivo"><span>💾</span><span style="display:flex;flex-direction:column;align-items:flex-start;line-height:1.25">Respaldo completo<span id="backup-last" style="font-size:10px;font-weight:500;color:#94a3b8"></span></span></button>
-      <div id="sidebar-username" style="padding:6px 12px 2px;display:flex;flex-direction:column;gap:3px">
-        <span id="sidebar-user-label" style="font-size:11px;color:#94a3b8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
-        <div id="session-timer-wrap" style="display:flex;align-items:center;gap:5px">
-          <span id="session-timer-icon" style="font-size:11px">🟢</span>
-          <span id="session-timer-label" style="font-size:11px;color:#94a3b8;font-weight:500">Sesión activa</span>
+      <div style="flex:1"></div>
+      <div class="sb-foot">
+        <div class="sb-user" id="sidebar-username">
+          <div class="sb-avatar" id="sb-avatar">·</div>
+          <div class="sb-user-txt">
+            <span id="sidebar-user-label" style="font-size:12px;color:var(--ink2);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+            <span id="role-badge"></span>
+          </div>
         </div>
+        <!-- Solo aparece cuando la sesión está por cerrarse por inactividad -->
+        <div id="session-timer-wrap" style="display:none;align-items:center;gap:5px;padding:0 12px 6px">
+          <span id="session-timer-icon" style="font-size:11px">🟢</span>
+          <span id="session-timer-label" style="font-size:11px;color:#94a3b8;font-weight:600">Sesión activa</span>
+        </div>
+        <button class="nav-btn sb-mini" onclick="showShareModal()" title="Link general por cargo, sin invitación personal"><span>🔗</span><span>Link general</span></button>
+        <button class="nav-btn sb-mini" id="backup-btn" onclick="downloadFullBackup()" title="Descarga todas las evaluaciones y la configuración en un archivo"><span>💾</span><span>Respaldo <span id="backup-last" style="font-size:11px;font-weight:500;color:var(--ink4)"></span></span></button>
+        <button id="dark-mode-btn" class="nav-btn sb-mini" onclick="toggleDarkMode()" aria-label="Alternar modo oscuro">
+          <span id="dark-toggle-icon">🌙</span><span id="dark-toggle-label">Modo oscuro</span>
+        </button>
+        <button id="logout-btn" class="nav-btn sb-mini" onclick="adminLogout()"><span>⎋</span><span>Cerrar sesión</span></button>
       </div>
-      <button id="dark-mode-btn" class="nav-btn" onclick="toggleDarkMode()" style="color:var(--ink3);margin-top:2px" aria-label="Alternar modo oscuro">
-        <span id="dark-toggle-icon">🌙</span><span id="dark-toggle-label">Modo oscuro</span>
-      </button>
-      <button id="logout-btn" class="nav-btn" onclick="adminLogout()" style="color:var(--ink3);margin-top:2px"><span>⎋</span><span>Cerrar sesión</span></button>
     </aside>
     <main id="admin-main" style="padding:28px 36px;overflow-y:auto;background:var(--bg);height:100vh">
       <!-- Mobile top bar -->
@@ -1644,6 +1660,7 @@ body.exam-away #exam-shield{display:flex}
             <div style="font-size:17px;font-weight:700">PsicoEval</div>
             <button onclick="closeMobileSidebar()" aria-label="Cerrar menú" style="width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:16px">✕</button>
           </div>
+          <button class="sb-cta" onclick="closeMobileSidebar();showInviteModal()">✉️ Invitar a evaluación</button>
           <div style="display:flex;flex-direction:column;gap:2px">
             <button class="nav-btn" onclick="mobileNav('dashboard')"><span>📊</span><span>Dashboard</span></button>
             <button class="nav-btn" onclick="mobileNav('candidates')"><span>👥</span><span>Candidatos</span></button>
@@ -1655,11 +1672,10 @@ body.exam-away #exam-shield{display:flex}
           </div>
           <div style="flex:1"></div>
           <div style="display:flex;flex-direction:column;gap:4px;margin-top:20px;border-top:1px solid var(--border);padding-top:12px">
-            <button class="nav-btn" onclick="toggleDarkMode()" style="color:var(--ink3)"><span>🌙</span><span>Modo oscuro</span></button>
-            <button class="nav-btn" onclick="closeMobileSidebar();showInviteModal()" style="color:#2563eb"><span>✉️</span><span>Invitar</span></button>
-            <button class="nav-btn" onclick="closeMobileSidebar();showShareModal()" style="color:#16a34a"><span>🔗</span><span>Compartir</span></button>
-            <button class="nav-btn" onclick="closeMobileSidebar();downloadFullBackup()"><span>💾</span><span>Respaldo completo</span></button>
-            <button class="nav-btn" onclick="closeMobileSidebar();adminLogout()" style="color:var(--ink3)"><span>⎋</span><span>Cerrar sesión</span></button>
+            <button class="nav-btn sb-mini" onclick="closeMobileSidebar();showShareModal()"><span>🔗</span><span>Link general</span></button>
+            <button class="nav-btn sb-mini" onclick="closeMobileSidebar();downloadFullBackup()"><span>💾</span><span>Respaldo</span></button>
+            <button class="nav-btn sb-mini" onclick="toggleDarkMode()"><span>🌙</span><span>Modo oscuro</span></button>
+            <button class="nav-btn sb-mini" onclick="closeMobileSidebar();adminLogout()"><span>⎋</span><span>Cerrar sesión</span></button>
           </div>
         </div>
       </div>
@@ -9582,6 +9598,8 @@ function _updateSessionClock() {
   var remaining = Math.max(0, _INACTIVITY_TIMEOUT_MS - elapsed);
   var mins      = Math.ceil(remaining / 60000);
   if (remaining === 0) return; // ya se ejecutó el logout
+  var wrap = document.getElementById('session-timer-wrap');
+  if (wrap) wrap.style.display = mins <= 5 ? 'flex' : 'none';   // solo cuando está por cerrarse
   if (mins <= 2) {
     icon.textContent = '🔴'; lbl.style.color = '#dc2626';
     lbl.textContent  = 'Cierra en ' + mins + ' min';
@@ -9764,7 +9782,10 @@ function _backupLabel() {
   var el = document.getElementById('backup-last'); if (!el) return;
   var d = _backupDias();
   var atrasado = d === null || d >= _BACKUP_DIAS_AVISO;
-  el.textContent = d === null ? 'Nunca en este equipo' : d === 0 ? 'Último: hoy' : 'Último: hace ' + d + (d === 1 ? ' día' : ' días');
+  el.textContent = d === null ? '· nunca' : d === 0 ? '· hoy' : '· hace ' + d + (d === 1 ? ' día' : ' días');
+  var bb = document.getElementById('backup-btn');
+  if (bb) bb.title = (d === null ? 'Nunca se ha descargado un respaldo en este equipo' : d === 0 ? 'Último respaldo: hoy' : 'Último respaldo: hace ' + d + (d === 1 ? ' día' : ' días'))
+    + '. Descarga todas las evaluaciones y la configuración en un archivo.';
   el.style.color = atrasado ? '#d97706' : '#94a3b8';
   el.style.fontWeight = atrasado ? '700' : '500';
 }
@@ -10846,6 +10867,10 @@ function applyRoleRestrictions() {
     roleBadge.style.borderColor = isViewer ? '#fde68a' : '#bbf7d0';
   }
   // Show username + email completo en tooltip
+  var sbAv = document.getElementById('sb-avatar');
+  if (sbAv && S.userEmail) sbAv.textContent = S.userEmail.charAt(0);
+  var sbInv = document.getElementById('sb-invitar');
+  if (sbInv) sbInv.style.display = isViewer ? 'none' : '';
   var userLabel = document.getElementById('sidebar-user-label');
   if (userLabel && S.userEmail) {
     userLabel.textContent = S.userEmail;
