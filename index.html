@@ -833,9 +833,10 @@ input,select,textarea{font-family:inherit;outline:none}
 .bd-board{min-height:300px}
 .bd-board .kanban-col{flex:1 1 0;min-width:165px;width:auto}
 .bd-board .kanban-card span{white-space:normal!important}
-.bd-board .kanban-col.bd-descartar{flex:0 0 112px;min-width:112px;min-height:150px;border-style:dashed;border-color:#fecaca;background:transparent;justify-content:center;align-items:center;gap:6px;text-align:center;color:#dc2626;font-size:12px;font-weight:700;line-height:1.5;padding:12px 8px}
-.bd-board .kanban-col.bd-descartar small{font-size:10.5px;font-weight:500;color:var(--ink4)}
-.bd-board .kanban-col.bd-descartar.drag-over{background:#fef2f2;border-color:#dc2626}
+.bd-descartar-barra{position:fixed;left:50%;bottom:28px;transform:translate(-50%,24px);opacity:0;pointer-events:none;z-index:900;display:flex;align-items:center;gap:12px;width:min(520px,calc(100vw - 40px));padding:16px 22px;border-radius:14px;border:2px dashed #fca5a5;background:#fff;color:#b91c1c;font-size:13.5px;box-shadow:0 12px 36px rgba(15,23,42,.18);transition:opacity .15s,transform .15s,background .15s,border-color .15s}
+.bd-descartar-barra small{display:block;font-size:11.5px;color:#64748b;font-weight:500;margin-top:1px}
+.bd-descartar-barra.visible{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+.bd-descartar-barra.over{background:#fef2f2;border-color:#dc2626;border-style:solid}
 .bd-vacio{text-align:center;padding:18px 8px;color:var(--ink4);font-size:11px;border:1.5px dashed var(--border);border-radius:8px}
 .bd-card-pie{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:10.5px;color:var(--ink4)}
 .kanban-card .row-chk{margin-top:2px;flex-shrink:0}
@@ -10762,13 +10763,8 @@ function _bdTablero(lista) {
   _bdGrupos(campo).forEach(function(g) {
     var del = lista.filter(function(c){ return _bdValorGrupo(c, campo) === g.id; });
     if (manual) del.sort(function(a, b){ return _bdPos(a) - _bdPos(b); });
-    // Descartados: van al archivo. En el tablero queda solo una zona para soltar
-    if (arrastra && g.id === 'descartado' && !del.length && !verArchivo) {
-      h += '<div class="kanban-col bd-descartar" id="kcol-descartado" ondragover="event.preventDefault();this.classList.add(\'drag-over\')" ondragleave="if(!this.contains(event.relatedTarget)){this.classList.remove(\'drag-over\')}" ondrop="kDrop(event,\'descartado\')">'
-        + '<div>❌<br>Soltar aquí<br>para descartar</div><small>Pasa al archivo</small>'
-        + '<div class="kanban-cards" id="kcards-descartado" style="display:none"></div></div>';
-      return;
-    }
+    // Descartados: van al archivo. Para descartar, la barra que aparece al arrastrar
+    if (arrastra && g.id === 'descartado' && !del.length && !verArchivo) return;
     h += '<div class="kanban-col" id="kcol-' + g.id + '"' + (arrastra ? ' ondragover="event.preventDefault();this.classList.add(\'drag-over\');kOver(event,\'' + g.id + '\')" ondragleave="if(!this.contains(event.relatedTarget)){this.classList.remove(\'drag-over\')}" ondrop="kDrop(event,\'' + g.id + '\')"' : '') + '>'
       + '<div class="kanban-col-header" style="color:' + g.color + '"><span>' + g.label + '</span><span style="margin-left:auto;font-size:11px;background:' + g.bg + ';border:1.5px solid ' + g.border + ';color:' + g.color + ';border-radius:100px;padding:1px 8px">' + del.length + '</span></div>'
       + '<div class="kanban-cards" id="kcards-' + g.id + '">';
@@ -10792,6 +10788,8 @@ function _bdTablero(lista) {
     if (del.length > _bdLimite) h += '<button class="btn btn-ghost btn-sm" onclick="_bdLimite+=60;_bdRenderCuerpo()">Mostrar más (' + (del.length - _bdLimite) + ')</button>';
     h += '</div></div>';
   });
+  if (arrastra) h += '<div id="bd-descartar" class="bd-descartar-barra" ondragover="event.preventDefault();this.classList.add(\'over\')" ondragleave="this.classList.remove(\'over\')" ondrop="kDrop(event,\'descartado\')">'
+    + '<span style="font-size:18px">❌</span><span><b>Suelte aquí para descartar</b><small>El candidato pasa al archivo</small></span></div>';
   return h + '</div>';
 }
 
@@ -12094,6 +12092,8 @@ async function renderKanban() { return _bdRender(); }
 
 function kDragStart(event, id) {
   _dragCandId = id;
+  var barra = document.getElementById('bd-descartar');
+  if (barra) barra.classList.add('visible');
   event.dataTransfer.effectAllowed = 'move';
   setTimeout(function() {
     var el = document.getElementById('kcard-' + id);
@@ -12107,6 +12107,8 @@ function kDragEnd(event) {
   }
   _kLimpiarMarca();
   document.querySelectorAll('.kanban-col').forEach(function(col){ col.classList.remove('drag-over'); });
+  var barra = document.getElementById('bd-descartar');
+  if (barra) barra.classList.remove('visible', 'over');
 }
 function _kLimpiarMarca() {
   document.querySelectorAll('.drop-antes').forEach(function(x){ x.classList.remove('drop-antes'); });
@@ -12167,12 +12169,14 @@ async function kDrop(event, newStage) {
   if (card && d.cont) {
     var vacio = d.cont.querySelector('.bd-vacio'); if (vacio) vacio.remove();
     if (d.antes) d.cont.insertBefore(card, d.antes); else d.cont.appendChild(card);
-  }
+  } else if (card) card.remove();   // a la barra de descartar: sale del tablero
+  var barra = document.getElementById('bd-descartar');
+  if (barra) barra.classList.remove('visible', 'over');
   try {
     if (mismaEtapa) await _patchScoresField(id, '_pos', pos);
     else await _setPipelineEtapa(id, newStage, pos === null ? null : { _pos: pos });
     _invalidateCache();
-    if (!mismaEtapa) toast(getPipelineMeta(newStage).icon + ' Movido a ' + getPipelineMeta(newStage).label, 'ok');
+    if (!mismaEtapa) toast(newStage === 'descartado' ? '❌ Descartado: quedó en el Archivo' : getPipelineMeta(newStage).icon + ' Movido a ' + getPipelineMeta(newStage).label, 'ok');
     _bdRenderCuerpo();
     if (!mismaEtapa && newStage === 'contratado') _ofrecerContratacion(id);
   } catch(e) { toast('Error: ' + e.message, 'er'); _bdRenderCuerpo(); }
