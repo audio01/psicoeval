@@ -831,6 +831,8 @@ input,select,textarea{font-family:inherit;outline:none}
 .bd-grp-ch{display:inline-block;width:14px;color:var(--ink3)}
 .bd-grp-n{font-size:12px;color:var(--ink4);font-weight:700;margin-left:4px}
 .bd-board{min-height:300px}
+.bd-board .kanban-col{flex:1 1 0;min-width:165px;width:auto}
+.bd-board .kanban-card span{white-space:normal!important}
 .bd-vacio{text-align:center;padding:18px 8px;color:var(--ink4);font-size:11px;border:1.5px dashed var(--border);border-radius:8px}
 .bd-card-pie{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:10.5px;color:var(--ink4)}
 .kanban-card .row-chk{margin-top:2px;flex-shrink:0}
@@ -1896,6 +1898,7 @@ body.exam-away #exam-shield{display:flex}
             <option value="postulante">📋 Postulante</option>
             <option value="entrevista">💬 Entrevista Laboral</option>
             <option value="seleccionado">✅ Seleccionado</option>
+            <option value="contratado">🤝 Contratado</option>
             <option value="descartado">❌ Descartado</option>
           </select>
           <button id="bulk-del" class="btn btn-outline btn-sm" onclick="deleteSelected()" style="border-color:#fecdd3;color:#be123c;background:var(--surface)">🗑 Eliminar</button>
@@ -7953,7 +7956,7 @@ function _porRevisarHtml(cands, desde) {
     if (et === 'descartado') { if (m.segPend.length) grupos[3].lista.push({ c:c, nota:m.segPend.map(function(p){ return p.hito.toLowerCase(); }).join(' y ') }); return; }
     if (m.integ === 'riesgo_alto' && !m.dictamen) grupos[0].lista.push({ c:c });
     if (m.incid === 'grave' && !m.dictamen) grupos[1].lista.push({ c:c });
-    if (!m.dictamen && et !== 'seleccionado') grupos[2].lista.push({ c:c });
+    if (!m.dictamen && et !== 'seleccionado' && et !== 'contratado') grupos[2].lista.push({ c:c });
     if (m.segPend.length) grupos[3].lista.push({ c:c, nota:m.segPend.map(function(p){ return p.hito.toLowerCase(); }).join(' y ') });
   });
   grupos[4].lista.sort(function(a, b){ return _diasParaArchivo(a.c) - _diasParaArchivo(b.c); });
@@ -10192,8 +10195,9 @@ async function renderDashboard() {
   var recomendados = conDict.filter(function(x){ return x.m.dictamen === 'recomendado' || x.m.dictamen === 'obs'; }).length;
   var sinTerminar = cands.filter(function(c){ return c.estado !== 'completed'; }).length;
   // Mismo criterio que "Por revisar": en proceso (ni seleccionados ni descartados) y sin dictamen
-  var sinDict = miradas.filter(function(x){ var e = getPipelineEtapa(x.c); return !x.m.dictamen && e !== 'seleccionado' && e !== 'descartado'; }).length;
-  var seleccionados = cands.filter(function(c){ return getPipelineEtapa(c) === 'seleccionado'; }).length;
+  var sinDict = miradas.filter(function(x){ var e = getPipelineEtapa(x.c); return !x.m.dictamen && e !== 'seleccionado' && e !== 'contratado' && e !== 'descartado'; }).length;
+  // Seleccionados incluye a los ya contratados
+  var seleccionados = cands.filter(function(c){ var e = getPipelineEtapa(c); return e === 'seleccionado' || e === 'contratado'; }).length;
   // Clic en un indicador: Candidatos con el mismo cargo y período, más el filtro del indicador
   var ir = function(extra) {
     var f = Object.assign({}, extra);
@@ -12051,6 +12055,7 @@ var PIPELINE_STAGES = [
   { id:'postulante',   label:'Postulante',          icon:'📋', color:'#475569', bg:'#f1f5f9', border:'#cbd5e1' },
   { id:'entrevista',   label:'Entrevista Laboral',   icon:'💬', color:'#d97706', bg:'#fffbeb', border:'#fde68a' },
   { id:'seleccionado', label:'Seleccionado',          icon:'✅', color:'#16a34a', bg:'#f0fdf4', border:'#bbf7d0' },
+  { id:'contratado',   label:'Contratado',            icon:'🤝', color:'#0e7490', bg:'#ecfeff', border:'#a5f3fc' },
   { id:'descartado',   label:'Descartado',            icon:'❌', color:'#dc2626', bg:'#fef2f2', border:'#fecaca' },
 ];
 
@@ -12153,7 +12158,7 @@ async function kDrop(event, newStage) {
     _invalidateCache();
     if (!mismaEtapa) toast(getPipelineMeta(newStage).icon + ' Movido a ' + getPipelineMeta(newStage).label, 'ok');
     _bdRenderCuerpo();
-    if (!mismaEtapa && newStage === 'seleccionado') _ofrecerContratacion(id);
+    if (!mismaEtapa && newStage === 'contratado') _ofrecerContratacion(id);
   } catch(e) { toast('Error: ' + e.message, 'er'); _bdRenderCuerpo(); }
 }
 
@@ -12184,7 +12189,7 @@ function _dashProceso(cands, all, filterCargo) {
   });
   var total = cands.length;
   var completed = cands.filter(function(c){ return c.estado === 'completed'; }).length;
-  var seleccionados = stageCounts['seleccionado'] || 0;
+  var seleccionados = (stageCounts['seleccionado'] || 0) + (stageCounts['contratado'] || 0);
   var descartados   = stageCounts['descartado']   || 0;
   var convRate = total > 0 ? Math.round(seleccionados / total * 100) : 0;
 
@@ -12262,7 +12267,7 @@ function _dashProceso(cands, all, filterCargo) {
       var k = c.perfil || 'sin_cargo';
       if (!byCargo[k]) byCargo[k] = { total:0, sel:0 };
       byCargo[k].total++;
-      if (getPipelineEtapa(c) === 'seleccionado') byCargo[k].sel++;
+      if (getPipelineEtapa(c) === 'seleccionado' || getPipelineEtapa(c) === 'contratado') byCargo[k].sel++;
     });
     var cargoKeys = Object.keys(byCargo).sort(function(a,b){ return byCargo[b].total - byCargo[a].total; });
     if (cargoKeys.length > 1) {
@@ -12344,7 +12349,7 @@ function _renderDrawerHeader(c) {
     '<div class="dh-row">'
     + '<div class="dh-av">' + initials + '</div>'
     + '<div class="dh-txt"><span class="dh-name">' + htmlEsc(c.nombre + ' ' + c.apellido) + '</span><span class="dh-meta">' + (pm.icon || '') + ' ' + datos + '</span></div>'
-    + '<div class="dh-badges">' + pipeBadgeHtml(etapa) + _dictamenBadgeHtml(c)
+    + '<div class="dh-badges">' + _estadoFichaHtml(c)
     + (c.estado === 'completed' ? '<button class="dh-pdf" onclick="downloadPdfReport(\'' + c.id + '\')" title="Descargar el informe en PDF">⬇ PDF</button>' : '') + '</div>'
     + '<button onclick="closeCandDrawer()" class="dh-close" title="Cerrar (Esc)">✕</button>'
     + '</div>';
@@ -12420,8 +12425,12 @@ function _rsProximoPaso(c, m) {
   } else if (etapa === 'seleccionado') {
     if (m.segPend.length) { t = 'Registrar seguimiento'; d = 'Corresponde el seguimiento ' + m.segPend.map(function(p){ return p.hito.toLowerCase(); }).join(' y ') + '.'; acc = btn('⏱ Registrar seguimiento', "switchDrawerTabById('seguimiento')", true); tono = 'warn'; }
     else if (!m.dictamen) { t = 'Seleccionado sin entrevista registrada'; d = 'Para respaldar la decisión, registre la entrevista y su dictamen.'; acc = btn('🗓 Registrar entrevista', "switchDrawerTabById('entrevistas')", true); tono = 'warn'; }
-    else if (!(c.scores || {})._seguimiento || !(c.scores || {})._seguimiento.contratado) { t = 'Registrar la contratación'; d = 'Indique si fue contratado y su fecha de ingreso, para programar el seguimiento a los 3 y 6 meses.'; acc = btn('⏱ Registrar contratación', "switchDrawerTabById('seguimiento')", true); tono = 'ok'; }
-    else { t = 'Seleccionado'; d = 'Registre cómo le va a los 3 y 6 meses: sirve para calibrar los mínimos del cargo.'; acc = btn('⏱ Ver seguimiento', "switchDrawerTabById('seguimiento')"); tono = 'ok'; }
+    else { t = '¿Se concretó la contratación?'; d = 'Cuando ingrese a trabajar, muévalo a Contratado y registre la fecha de ingreso para programar el seguimiento a los 3 y 6 meses.'; acc = btn('🤝 Marcar como contratado', "drawerSetEtapa('" + c.id + "','contratado')", true); tono = 'ok'; }
+  } else if (etapa === 'contratado') {
+    var segC = (c.scores || {})._seguimiento;
+    if (m.segPend.length) { t = 'Registrar seguimiento'; d = 'Corresponde el seguimiento ' + m.segPend.map(function(p){ return p.hito.toLowerCase(); }).join(' y ') + '.'; acc = btn('⏱ Registrar seguimiento', "switchDrawerTabById('seguimiento')", true); tono = 'warn'; }
+    else if (!segC || segC.contratado !== 'si' || !segC.fecha_ingreso) { t = 'Falta la fecha de ingreso'; d = 'Regístrela para programar el seguimiento a los 3 y 6 meses.'; acc = btn('⏱ Registrar fecha de ingreso', "switchDrawerTabById('seguimiento')", true); tono = 'warn'; }
+    else { t = 'Contratado'; d = 'Registre cómo le va a los 3 y 6 meses: sirve para calibrar los mínimos del cargo.'; acc = btn('⏱ Ver seguimiento', "switchDrawerTabById('seguimiento')"); tono = 'ok'; }
   } else if (!m.dictamen) {
     t = 'Siguiente paso: entrevista';
     d = 'Revise los puntos a explorar y registre la entrevista con su dictamen.';
@@ -13463,6 +13472,8 @@ async function saveSeguimiento(candId) {
   seg.por = S.userEmail || '';
   try {
     var sc = await _patchScoresField(candId, '_seguimiento', function(){ return seg; });
+    var c0 = (_dbCache || []).find(function(x){ return x.id === candId; });
+    if (seg.contratado === 'si' && c0 && getPipelineEtapa(c0) !== 'contratado') { await _setPipelineEtapa(candId, 'contratado'); _invalidateCache(); }
     var all = await getDB();
     var c = all.find(function(x){ return x.id === candId; });
     toast('✓ Seguimiento guardado', 'ok');
@@ -13598,6 +13609,19 @@ function saveContacto() {
 }
 
 // Dictamen de la última entrevista (cabecera de la ficha)
+// Una sola etiqueta en el encabezado de la ficha: la decisión final (Seleccionado o
+// Descartado) manda; mientras el proceso sigue, el dictamen de la entrevista si lo hay,
+// y si no, la etapa. Lo otro queda en el texto al pasar el mouse.
+function _estadoFichaHtml(c) {
+  var etapa = getPipelineEtapa(c), em = getPipelineMeta(etapa);
+  var d = _EV_DICTAMEN.filter(function(x){ return x.val === _dictamenDe(c.scores); })[0];
+  var pill = function(icon, txt, col, bg, bd, tip) {
+    return '<span class="pipe-badge" title="' + htmlEsc(tip) + '" style="background:' + bg + ';color:' + col + ';border-color:' + bd + '">' + icon + ' ' + txt + '</span>';
+  };
+  var final = etapa === 'seleccionado' || etapa === 'contratado' || etapa === 'descartado';
+  if (final || !d) return pill(em.icon, em.label, em.color, em.bg, em.border, 'Etapa: ' + em.label + ' · Dictamen de entrevista: ' + (d ? d.label : 'sin dictamen'));
+  return pill(d.icon, d.label, d.color, d.bg, d.border, 'Dictamen de entrevista: ' + d.label + ' · Etapa: ' + em.label);
+}
 function _dictamenBadgeHtml(c) {
   var dv = _dictamenDe(c.scores);
   var d = _EV_DICTAMEN.filter(function(x){ return x.val === dv; })[0];
@@ -13627,7 +13651,8 @@ async function drawerSetEtapa(candId, etapa) {
       _switchDrawerTab('resumen', c);
     }
     toast(getPipelineMeta(etapa).icon + ' Movido a ' + getPipelineMeta(etapa).label, 'ok');
-    if (etapa === 'seleccionado') _ofrecerContratacion(candId);
+    _bdRenderCuerpo();   // el tablero o la tabla de fondo
+    if (etapa === 'contratado') _ofrecerContratacion(candId);
   } catch(e) { toast('Error: ' + e.message, 'er'); }
 }
 
