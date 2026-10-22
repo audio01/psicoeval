@@ -1248,7 +1248,7 @@ body.exam-away #exam-shield{display:flex}
           <span class="err" id="e-comuna" role="alert" aria-live="polite"></span>
         </div>
         <div style="display:flex;gap:10px;margin-top:6px">
-          <button class="btn btn-outline" onclick="regSetStep(0)">← Anterior</button>
+          <button class="btn btn-outline" onclick="_regSinCargo ? gotoLanding() : regSetStep(0)">← Anterior</button>
           <button class="btn btn-primary btn-lg" style="flex:1" onclick="regNext(1)">Continuar →</button>
         </div>
       </div>
@@ -1562,23 +1562,23 @@ body.exam-away #exam-shield{display:flex}
       <div style="background:linear-gradient(135deg,#e11d48,#f43f5e);padding:14px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
         <div style="font-size:28px;line-height:1;flex-shrink:0">⏱</div>
         <div style="flex:1;min-width:160px">
-          <div style="font-size:14px;font-weight:900;color:#fff;letter-spacing:-.01em">Esta evaluación tiene tiempo límite</div>
-          <div style="font-size:11px;color:#fecdd3;margin-top:2px">El cronómetro inicia al presionar "Comenzar"</div>
+          <div style="font-size:14px;font-weight:900;color:#fff;letter-spacing:-.01em">Hazla de una sola vez</div>
+          <div style="font-size:11px;color:#fecdd3;margin-top:2px">Algunas pruebas tienen tiempo propio</div>
         </div>
         <div style="text-align:center;background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.3);border-radius:10px;padding:7px 14px;flex-shrink:0">
           <div style="font-size:20px;font-weight:900;color:#fff;line-height:1" id="disclaimer-time-value">40 min</div>
-          <div style="font-size:9px;color:#fecdd3;margin-top:2px;text-transform:uppercase;letter-spacing:.5px">Tiempo total</div>
+          <div style="font-size:9px;color:#fecdd3;margin-top:2px;text-transform:uppercase;letter-spacing:.5px">Duración aprox.</div>
         </div>
       </div>
       <!-- Reglas -->
       <div style="padding:12px 16px">
         <ul style="font-size:12.5px;color:#9f1239;line-height:1.8;padding-left:16px;margin:0">
-          <li><strong>Una vez que presiones "Comenzar", el tiempo no se detiene.</strong></li>
-          <li>Si cambias de pestaña o app, <strong>el tiempo contará el doble</strong> hasta que regreses.</li>
+          <li><strong id="disclaimer-reloj">Algunas pruebas tienen tiempo propio; al terminarse, la evaluación pasa a la siguiente. En las demás, responde a tu ritmo.</strong></li>
+          <li>En las pruebas con tiempo, si cambias de pestaña o app <strong>el tiempo cuenta el doble</strong> hasta que regreses.</li>
           <li>Si sales de esta ventana, <strong>las preguntas se ocultan y la salida queda registrada</strong> en tu evaluación.</li>
           <li>No se permite copiar, imprimir ni capturar las preguntas. Cada intento queda registrado.</li>
           <li>Las preguntas llevan una marca con tu nombre y RUT.</li>
-          <li>Al agotarse el tiempo, tus respuestas se enviarán automáticamente.</li>
+          <li>Desde que comienzas tienes <strong>2 horas</strong> para terminar. Si se te corta la conexión, continúas donde quedaste.</li>
           <li>Responde con honestidad y de forma autónoma.</li>
         </ul>
       </div>
@@ -2057,7 +2057,7 @@ const TESTS_META = {
   situacional:  { name:'Juicio Situacional',                 icon:'💡', color:'var(--accent)' },
   vigilancia:   { name:'Aptitud de Vigilancia',              icon:'🛡', color:'var(--ink2)'   },
   comprension:  { name:'Comprensión de Instrucciones',       icon:'📋', color:'var(--lilac)'  },
-  disc:         { name:'Estilos Conductuales (DISC-20)',       icon:'🎭', color:'#7c3aed'        },
+  disc:         { name:'Estilos Conductuales (DISC-20)',       icon:'🎭', color:'#7c3aed', cand:'Estilos de trabajo' },
   pf16:         { name:'Personalidad laboral',               icon:'🧬', color:'#0d9488', cand:'Cuestionario de estilo personal' },
   normativa_ohs:    { name:'Conocimiento Normativo OHS',       icon:'📐', color:'#0369a1' },
   integridad:       { name:'Actitudes en el trabajo',          icon:'🧭', color:'#b45309' },   // integridad laboral (nombre neutro para el candidato)
@@ -3703,7 +3703,14 @@ function gotoRegister() {
   if (_bloq) { _invAviso(_bloq); _invBanner(); return; }
   applyCargoVisibility();
   showView('register');
-  regSetStep(0);
+  // Con invitación el cargo ya viene definido: se salta ese paso
+  _regSinCargo = false;
+  var _opCargo = _INV && _INV.perfil && document.querySelector('input[name="cargo-opcion"][value="' + _INV.perfil + '"]');
+  if (_opCargo) {
+    _opCargo.checked = true;
+    _regSinCargo = true;
+    regNext(0);
+  } else regSetStep(0);
   // Set max date = today (block future dates at input level)
   setTimeout(function() {
     var fn = document.getElementById('r-fechanac');
@@ -3851,6 +3858,7 @@ function launchSingleTest(testId) {
   };
 
   S._testTotalMinutes = 15; // single test estimate
+  S.tiempoRestante = {}; S.inicioSesion = Date.now();
   S.selectedTests = [testId];
   S.allQs = buildQuestions(perfil);
   S.answers = {};
@@ -3894,6 +3902,7 @@ function launchTestMode(perfil) {
   banner.innerHTML = '<span style="font-size:24px">' + pm.icon + '</span><div style="margin-top:8px"><strong style="font-size:15px">' + pm.label + '</strong><div style="font-size:13px;color:var(--ink3);margin-top:3px">' + pm.desc + '</div></div>';
   var disclaimerTimeEl = document.getElementById('disclaimer-time-value');
   if (disclaimerTimeEl) disclaimerTimeEl.textContent = totalMin + ' min';
+  _textoReloj(tests);
 
   var cb = document.getElementById('disclaimer-check');
   if (cb) cb.checked = false;
@@ -4628,6 +4637,7 @@ function _regRefEmp1() {
   var r = document.getElementById('r-ref-empresa'); if (r && emp) r.value = emp.trim();
 }
 
+var _regSinCargo = false;
 function regSetStep(step) {
   // Hide all panels
   ['reg-step-0','reg-step-1','reg-step-2-guardia','reg-step-2-general','reg-step-2-supervisor','reg-step-3','reg-step-4'].forEach(function(id) {
@@ -4653,16 +4663,18 @@ function regSetStep(step) {
     var emp1 = ((document.getElementById('r-emp1') || {}).value || '').trim(), at = document.getElementById('ref-usar-emp1');
     if (at) { at.style.display = emp1 ? 'inline-block' : 'none'; at.textContent = emp1 ? '↳ Es de mi trabajo más reciente (' + emp1 + ')' : ''; }
   }
-  // Progreso: 5 pasos (0 a 4)
+  // Progreso: 5 pasos (0 a 4); con invitación, 4 (sin el de cargo)
   var STEP_NAMES = ['Cargo', 'Datos personales', 'Perfil', 'Experiencia', 'Referencia'];
-  var pct = [10, 30, 50, 75, 100][step] || 10;
+  var nPasos = _regSinCargo ? 4 : 5, nActual = _regSinCargo ? step : step + 1;
+  var pct = Math.round(nActual / nPasos * 100) || 10;
+  var d1 = document.getElementById('reg-dot-1'); if (d1) d1.style.display = _regSinCargo ? 'none' : '';
   var barEl = document.getElementById('reg-progress-bar');
   if (barEl) {
     barEl.style.width = pct + '%';
     barEl.setAttribute('aria-valuenow', pct);
     barEl.setAttribute('aria-label', 'Progreso: ' + pct + '%');
   }
-  var stepLabel = 'Paso ' + (step + 1) + ' de 5';
+  var stepLabel = 'Paso ' + nActual + ' de ' + nPasos;
   document.getElementById('reg-step-label').textContent = stepLabel;
   // Anunciar paso a lectores de pantalla
   var live = document.getElementById('reg-live-region');
@@ -5035,12 +5047,22 @@ function submitRegister() {
   S._testTotalMinutes = totalMin;
   var disclaimerTimeEl = document.getElementById('disclaimer-time-value');
   if (disclaimerTimeEl) disclaimerTimeEl.textContent = totalMin + ' min';
+  _textoReloj(tests);
   showView('testselect');
 }
 
 // ═══════════════════════════════════════════════════════════
 //  TEST ENGINE
 // ═══════════════════════════════════════════════════════════
+// Condiciones: cuántas pruebas tienen reloj y cuánto suman
+function _textoReloj(tests) {
+  var el = document.getElementById('disclaimer-reloj'); if (!el) return;
+  var con = (tests || []).filter(_conTiempo);
+  var min = con.reduce(function(a, t){ return a + _minPrueba(t); }, 0);
+  el.textContent = !con.length ? 'Ninguna prueba tiene reloj: responde a tu ritmo, pero de una sola vez.'
+    : (con.length === 1 ? 'Una prueba tiene tiempo propio' : con.length + ' pruebas tienen tiempo propio') + ' (' + min + ' min en total); al terminarse, la evaluación pasa a la siguiente. En las demás, responde a tu ritmo.';
+}
+
 function onDisclaimerChange() {
   var cb  = document.getElementById('disclaimer-check');
   var btn = document.getElementById('btn-start-tests');
@@ -5064,6 +5086,8 @@ function startTests() {
   S.gameResults = {};
   S.blockTimes = {};
   S.integrity = null;
+  S.tiempoRestante = {};
+  S.inicioSesion = Date.now();
   S.testBlocks = S.selectedTests.map(tid => ({ testId:tid, qs:S.allQs.filter(q=>q.testId===tid) }));
   S.blockIdx = 0;
   renderTestBlock();
@@ -5073,32 +5097,54 @@ function startTests() {
 }
 
 // ── Timer & tab detection ─────────────────────────────────────────
+// Solo las pruebas de aptitud tienen reloj propio (minutos de Cargos → Tiempos por Test).
+// Al agotarse, la evaluación pasa sola a la prueba siguiente. Las demás se responden
+// a su ritmo. Desde que comienza, la persona tiene _PLAZO_SESION para terminar todo.
+var _CON_TIEMPO = { dc0:1, situacional:1, vigilancia:1, comprension:1, normativa_ohs:1 };
+var _PLAZO_SESION = 2 * 3600;   // segundos
 var _testInProgress = false;
-var _timerSeconds = 40 * 60;
+var _timerSeconds = 0;          // segundos que quedan en la prueba actual (si tiene reloj)
 var _timerInterval = null;
 var _tabHidden = false;
-var _timerPaused = false;
+var _timerPaused = false;       // true en pruebas sin reloj
 
 // El cronómetro se basa en el reloj real, no en contar ticks: en el celular el navegador
-// suspende los intervalos cuando la persona cambia de app, y el tiempo se detenía.
-// Ahora, al volver, se descuenta lo que estuvo fuera, al doble.
+// suspende los intervalos cuando la persona cambia de app. Al volver, en una prueba con
+// reloj, lo que estuvo fuera se descuenta al doble.
 var _timerLastTick = 0;
 var _timerSaveCount = 0;
 
-function startTestTimer() {
-  var mins = S._testTotalMinutes || 40;
-  // Al retomar una evaluación se conserva el tiempo que quedaba (recargar no lo reinicia)
-  _timerSeconds = (S._resumeSeconds !== undefined && S._resumeSeconds !== null) ? S._resumeSeconds : mins * 60;
-  S._resumeSeconds = null;
-  _timerLastTick = Date.now();
+function _conTiempo(tid) { return !!_CON_TIEMPO[tid]; }
+function _minPrueba(tid) { return TM_MINS_CONFIG[tid] || TM_MINS_DEFAULTS[tid] || 3; }
+// Minutos estimados que faltan, contando la prueba actual
+function _minRestantes() {
+  return (S.testBlocks || []).slice(S.blockIdx || 0).reduce(function(a, b){ return a + _minPrueba(b.testId); }, 0);
+}
+// Reloj de la prueba actual: al entrar, lo que le quedaba (al retomar) o su tiempo completo
+function _relojPrueba(tid) {
+  S.tiempoRestante = S.tiempoRestante || {};
+  _timerPaused = !_conTiempo(tid);
+  if (_timerPaused) { updateTimerDisplay(); return; }
+  if (typeof S.tiempoRestante[tid] !== 'number') S.tiempoRestante[tid] = _minPrueba(tid) * 60;
+  _timerSeconds = S.tiempoRestante[tid];
   updateTimerDisplay();
+}
+
+function startTestTimer() {
+  if (!S.inicioSesion) S.inicioSesion = Date.now();
+  _timerLastTick = Date.now();
   if (_timerInterval) clearInterval(_timerInterval);
-  if (_timerSeconds <= 0) { _timerSeconds = 0; updateTimerDisplay(); timeExpired(); return; }
+  if (_sesionVencida()) { timeExpired(); return; }
   _timerInterval = setInterval(_timerTick, 1000);
+  updateTimerDisplay();
 
   // Tab visibility detection
   document.addEventListener('visibilitychange', onVisibilityChange);
   _integStart();
+}
+
+function _sesionVencida() {
+  return S.inicioSesion && !(S.candidate && S.candidate._testMode) && (Date.now() - S.inicioSesion) / 1000 >= _PLAZO_SESION;
 }
 
 function _timerTick() {
@@ -5107,31 +5153,30 @@ function _timerTick() {
   var dt = Math.floor((now - _timerLastTick) / 1000);
   if (dt <= 0) return;
   _timerLastTick += dt * 1000;
-  // Pruebas sin tiempo (personalidad): el reloj no corre
+  // Plazo de la sesión completa
+  if (_sesionVencida()) { clearInterval(_timerInterval); _timerInterval = null; timeExpired(); return; }
+  // Pruebas sin reloj: no se descuenta nada
   if (_timerPaused) return;
+  var blk = S.testBlocks && S.testBlocks[S.blockIdx];
+  if (!blk) return;
   // Fuera de la ventana el tiempo corre al doble
   var prevSeconds = _timerSeconds;
-  _timerSeconds -= dt * (_tabHidden ? 2 : 1);
+  _timerSeconds = Math.max(0, _timerSeconds - dt * (_tabHidden ? 2 : 1));
+  S.tiempoRestante[blk.testId] = _timerSeconds;
   // Guarda el tiempo restante cada ~15 s, para que una recarga no lo reinicie
   if (++_timerSaveCount % 15 === 0 && _testInProgress) saveTestProgress();
-  if (_timerSeconds <= 0) {
-    _timerSeconds = 0;
-    updateTimerDisplay();
-    clearInterval(_timerInterval);
-    _timerInterval = null;
-    timeExpired();
-    return;
-  }
   updateTimerDisplay();
-  // Avisos al cruzar el umbral (se descuentan varios segundos a la vez y podría saltarse el valor exacto)
-  // Warn at 5 minutes
-  if (prevSeconds > 300 && _timerSeconds <= 300) {
-    showTimerWarning('⏱ Quedan 5 minutos. Responde las preguntas que puedas.');
-  }
-  // Warn at 1 minute
-  if (prevSeconds > 60 && _timerSeconds <= 60) {
-    showTimerWarning('⚠️ Último minuto. Las respuestas se enviarán automáticamente.');
-  }
+  if (prevSeconds > 60 && _timerSeconds <= 60 && _timerSeconds > 0) showTimerWarning('⏱ Queda 1 minuto en esta prueba.');
+  if (_timerSeconds <= 0) _avanzarPorTiempo();
+}
+
+// Se acabó el tiempo de la prueba: pasa a la siguiente con lo respondido
+function _avanzarPorTiempo() {
+  var blk = S.testBlocks[S.blockIdx];
+  if (S.blockStartTime) _recordBlockTime(blk.testId);
+  if (S.blockIdx === S.testBlocks.length - 1) { stopTestTimer(); finishTests(); return; }
+  showTimerWarning('⏱ Terminó el tiempo de esta prueba. Pasamos a la siguiente.');
+  S.blockIdx++; saveTestProgress(); renderTestBlock();
 }
 
 function stopTestTimer() {
@@ -5151,7 +5196,7 @@ function onVisibilityChange() {
     timerEl.style.background = '#fef2f2';
     timerEl.style.borderColor = '#fecaca';
     timerEl.style.color = '#dc2626';
-    showTimerWarning('⚠️ Detectamos que saliste de la evaluación. El tiempo avanza el doble.');
+    if (!_timerPaused) showTimerWarning('⚠️ Saliste de la evaluación. En esta prueba el tiempo avanza el doble.');
   } else {
     timerEl.style.background = 'var(--surface2)';
     timerEl.style.borderColor = 'var(--border)';
@@ -5291,14 +5336,14 @@ function updateTimerDisplay() {
   var el = document.getElementById('test-timer-display');
   var timerEl = document.getElementById('test-timer');
   if (!el) return;
+  // Pruebas sin reloj: el indicador se oculta (la cabecera dice "a tu ritmo")
+  if (timerEl) timerEl.style.display = _timerPaused ? 'none' : 'flex';
+  if (_timerPaused) return;
   var m = Math.floor(_timerSeconds / 60);
   var s = _timerSeconds % 60;
   el.textContent = m + ':' + (s < 10 ? '0' : '') + s;
-  // Color: green > 10min, amber 5-10min, red < 5min
-  if (!_tabHidden) {
-    var col = _timerSeconds > 600 ? 'var(--ink2)' : _timerSeconds > 300 ? '#b45309' : '#dc2626';
-    if (timerEl) timerEl.style.color = col;
-  }
+  // Color: normal, ámbar en el último minuto y medio, rojo en los últimos 30 s
+  if (!_tabHidden && timerEl) timerEl.style.color = _timerSeconds > 90 ? 'var(--ink2)' : _timerSeconds > 30 ? '#b45309' : '#dc2626';
 }
 
 function showTimerWarning(msg) {
@@ -5318,8 +5363,8 @@ function timeExpired() {
   div.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px';
   div.innerHTML = '<div style="background:#fff;border-radius:16px;padding:32px;max-width:380px;width:100%;text-align:center;font-family:inherit">'
     + '<div style="font-size:40px;margin-bottom:12px">⏱</div>'
-    + '<div style="font-size:20px;font-weight:800;color:#0f172a;margin-bottom:8px">Tiempo agotado</div>'
-    + '<div style="font-size:14px;color:#64748b;margin-bottom:24px;line-height:1.6">El tiempo de evaluación ha finalizado. Tus respuestas serán enviadas ahora.</div>'
+    + '<div style="font-size:20px;font-weight:800;color:#0f172a;margin-bottom:8px">Se cumplió el plazo</div>'
+    + '<div style="font-size:14px;color:#64748b;margin-bottom:24px;line-height:1.6">Pasaron 2 horas desde que comenzaste. Enviaremos lo que respondiste hasta ahora.</div>'
     + '<button onclick="this.closest(\'div[style*=fixed]\').remove();finishTests()" style="background:#6366f1;border:none;color:#fff;padding:12px 28px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;width:100%">Enviar respuestas →</button>'
     + '</div>';
   document.body.appendChild(div);
@@ -5695,45 +5740,8 @@ function _bart2Fin() {
 
 // ─────────────────────────────────────────────────────────────────────────
 
-function renderTestBlock() {
-  // Registrar hora de inicio del bloque para medir tiempo por test
-  S.blockStartTime = Date.now();
-  const block = S.testBlocks[S.blockIdx];
-  const meta  = TESTS_META[block.testId];
-  const total = S.testBlocks.length;
-
-  // Pause timer for personality tests (pf16, disc), resume for others
-  _timerPaused = (block.testId === 'pf16' || block.testId === 'disc');
-
-  // Saltar bloques vacíos y juegos retirados
-  if ((!meta.game && block.qs.length === 0) || (meta.game && !_GAME_UI[block.testId])) {
-    if (S.blockIdx < total - 1) { S.blockIdx++; renderTestBlock(); return; }
-    else { finishTests(); return; }
-  }
-
-  // ── GAME BLOCK ──────────────────────────────────────────────────────────
-  if (meta.game) {
-    _timerPaused = true;
-    var existingResult = S.gameResults && S.gameResults[block.testId];
-    var btnNext = document.getElementById('btn-next-test');
-    document.getElementById('test-body').innerHTML =
-      '<div style="display:inline-flex;align-items:center;gap:8px;padding:5px 14px;border-radius:100px;font-size:12px;font-weight:700;background:' + meta.color + '15;border:1px solid ' + meta.color + '30;color:' + meta.color + ';margin-bottom:16px">' + (meta.badge || '🎮 Juego interactivo') + '</div>'
-      + '<h2 style="font-size:20px;font-weight:800;margin-bottom:4px;line-height:1.2">' + (meta.cand || meta.name) + '</h2>'
-      + '<div style="height:1px;background:var(--border);margin:14px 0 18px"></div>'
-      + '<div id="game-container">' + _renderGameUI(block.testId) + '</div>';
-    if (existingResult) {
-      if (btnNext) { btnNext.style.display = ''; btnNext.disabled = false; }
-      _showGameDone(block.testId, existingResult);
-    } else {
-      if (btnNext) btnNext.style.display = 'none';
-      setTimeout(function() { _initGame(block.testId); }, 120);
-    }
-    updateUnanswered();
-    window.scrollTo(0, 0);
-    return;
-  }
-
-  // ── Rich pill progress bar ──
+// Barra de pruebas (arriba): hechas, actual y pendientes
+function _pintarPills() {
   var pillsBar = document.getElementById('test-pills-bar');
   if (pillsBar) {
     var pillsHtml = '';
@@ -5759,7 +5767,58 @@ function renderTestBlock() {
     var currentPill = pillsBar.children[S.blockIdx * 2];
     if (currentPill) currentPill.scrollIntoView({ behavior:'smooth', block:'nearest', inline:'center' });
   }
+}
+
+// Cabecera de cada prueba: dónde va, cuánto falta y si tiene reloj
+function _cabeceraPrueba(meta) {
+  var blk = S.testBlocks[S.blockIdx], total = S.testBlocks.length, rest = _minRestantes();
+  var reloj = _conTiempo(blk.testId)
+    ? '<span style="color:#b45309;font-weight:700">⏱ ' + _minPrueba(blk.testId) + ' min para esta prueba</span>'
+    : meta.game ? '<span style="color:var(--ink3);font-weight:700">' + (meta.badge || 'Tarea') + ' · ≈ ' + _minPrueba(blk.testId) + ' min</span>'
+    : '<span style="color:#15803d;font-weight:700">Sin reloj · responde a tu ritmo</span>';
+  return '<div style="font-size:12px;font-weight:700;color:var(--ink3);margin-bottom:6px">Prueba ' + (S.blockIdx + 1) + ' de ' + total + ' · ≈ ' + rest + ' min para terminar</div>'
+    + '<h2 style="font-size:21px;font-weight:800;margin-bottom:4px;line-height:1.2">' + (meta.cand || meta.name) + '</h2>'
+    + '<div style="font-size:12.5px;margin-bottom:4px">' + reloj + '</div>';
+}
+
+function renderTestBlock() {
+  // Registrar hora de inicio del bloque para medir tiempo por test
+  S.blockStartTime = Date.now();
+  const block = S.testBlocks[S.blockIdx];
+  const meta  = TESTS_META[block.testId];
+  const total = S.testBlocks.length;
+
+
+  // Saltar bloques vacíos y juegos retirados
+  if ((!meta.game && block.qs.length === 0) || (meta.game && !_GAME_UI[block.testId])) {
+    if (S.blockIdx < total - 1) { S.blockIdx++; renderTestBlock(); return; }
+    else { finishTests(); return; }
+  }
+
+  _relojPrueba(block.testId);
+  _pintarPills();
   document.getElementById('btn-prev-test').style.visibility = S.blockIdx === 0 ? 'hidden' : 'visible';
+
+  // ── GAME BLOCK ──────────────────────────────────────────────────────────
+  if (meta.game) {
+    var existingResult = S.gameResults && S.gameResults[block.testId];
+    var btnNext = document.getElementById('btn-next-test');
+    document.getElementById('test-body').innerHTML =
+      _cabeceraPrueba(meta)
+      + '<div style="height:1px;background:var(--border);margin:14px 0 18px"></div>'
+      + '<div id="game-container">' + _renderGameUI(block.testId) + '</div>';
+    if (existingResult) {
+      if (btnNext) { btnNext.style.display = ''; btnNext.disabled = false; }
+      _showGameDone(block.testId, existingResult);
+    } else {
+      if (btnNext) btnNext.style.display = 'none';
+      setTimeout(function() { _initGame(block.testId); }, 120);
+    }
+    updateUnanswered();
+    window.scrollTo(0, 0);
+    return;
+  }
+
   document.getElementById('btn-next-test').textContent = S.blockIdx === total - 1 ? 'Finalizar →' : 'Siguiente →';
 
   // ── STANDARD MODE ──
@@ -5853,15 +5912,9 @@ function renderTestBlock() {
     }
   }).join('');
 
-  var pruebaN2 = 'Prueba ' + (S.blockIdx + 1);
-  var noTimeWarning = (block.testId === 'pf16' || block.testId === 'disc')
-    ? '<div style="background:#ecfdf5;border:1px solid #86efac;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#047857"><strong>✓ Sin límite de tiempo:</strong> Esta prueba no tiene tiempo cronometrado. Responde con tranquilidad.</div>'
-    : '';
   document.getElementById('test-body').innerHTML = `
-    <div style="display:inline-flex;align-items:center;gap:8px;padding:5px 14px;border-radius:100px;font-size:12px;font-weight:700;background:${meta.color}15;border:1px solid ${meta.color}30;color:${meta.color};margin-bottom:16px">📝 ${pruebaN2}</div>
-    <h2 style="font-size:20px;font-weight:800;margin-bottom:4px;line-height:1.2">${pruebaN2}</h2>
+    ${_cabeceraPrueba(meta)}
     <p style="font-size:13px;color:var(--ink3);margin-bottom:14px">${block.qs.length} preguntas · Responde todas antes de continuar</p>
-    ${noTimeWarning}
     ${instrHtml}
     <div style="height:1px;background:var(--border);margin:14px 0 18px"></div>
     <div>${questionsHtml}</div>`;
@@ -5949,6 +6002,10 @@ function answerChoice(qid, idx) {
 }
 
 function prevTest() {
+  var ant = S.testBlocks[S.blockIdx - 1];
+  if (ant && _conTiempo(ant.testId) && S.tiempoRestante && S.tiempoRestante[ant.testId] === 0) {
+    toast('El tiempo de esa prueba ya terminó.', 'er'); return;
+  }
   if(S.blockIdx>0){
     S.blockIdx--;
     saveTestProgress();
@@ -11241,7 +11298,8 @@ function saveTestProgress() {
       gameResults:  S.gameResults || {},
       blockTimes:   S.blockTimes || {},
       integrity:    S.integrity || null,
-      timerSeconds: _testInProgress ? _timerSeconds : null,
+      tiempoRestante: S.tiempoRestante || {},
+      inicioSesion: S.inicioSesion || null,
       savedAt:      Date.now(),
     }));
   } catch(e) { console.warn('saveTestProgress failed:', e.message); }
@@ -11276,12 +11334,13 @@ function resumeTestProgress() {
   S.gameResults   = p.gameResults || {};
   S.blockTimes    = p.blockTimes || {};
   S.integrity     = p.integrity || null;
-  // Tiempo restante: lo que quedaba al guardar, menos el tiempo transcurrido desde entonces
-  // (salvo si estaba en una prueba sin tiempo)
-  if (typeof p.timerSeconds === 'number') {
-    var _blkTid = (S.selectedTests || [])[S.blockIdx];
-    var _sinTiempo = _blkTid === 'pf16' || _blkTid === 'disc';
-    S._resumeSeconds = Math.max(0, Math.round(p.timerSeconds - (_sinTiempo ? 0 : (Date.now() - p.savedAt) / 1000)));
+  // Reloj de cada prueba: lo que quedaba al guardar, menos lo transcurrido desde entonces
+  // en la prueba actual si tenía reloj. El plazo de la sesión se cuenta desde el inicio.
+  S.tiempoRestante = p.tiempoRestante || {};
+  S.inicioSesion = p.inicioSesion || p.savedAt || Date.now();
+  var _blkTid = (S.selectedTests || [])[S.blockIdx];
+  if (_conTiempo(_blkTid) && typeof S.tiempoRestante[_blkTid] === 'number') {
+    S.tiempoRestante[_blkTid] = Math.max(0, Math.round(S.tiempoRestante[_blkTid] - (Date.now() - p.savedAt) / 1000));
   }
   S.allQs         = buildQuestions(S.candidate.perfil);
   S.testBlocks    = S.selectedTests.map(function(tid) {
