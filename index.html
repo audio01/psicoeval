@@ -4253,10 +4253,76 @@ async function getDB() {
     const r = await fetch(`${SUPA_URL}/rest/v1/candidates?select=*&order=created_at.desc`,{headers:getDBHeaders()});
     if (!r.ok) { _setConnState('error'); return _dbCache || []; }
     _setConnState('ok');
-    _dbCache   = (await r.json()).map(_withLabels);
+    var lista = (await r.json()).map(_withLabels);
+    await _unirPrivado(lista);
+    _dbCache   = lista;
     _dbCacheTs = Date.now();
     return _dbCache;
   } catch(e) { _setConnState('error'); return _dbCache || []; }
+}
+
+// Entrevistas y notas confidenciales: tabla psicoeval_privado, que solo lee el
+// administrador (19_entrevistas_privadas.sql). Se copian en scores._entrevistas y
+// scores._ref_notas para que el resto del panel las use igual que antes.
+// En la ficha (scores) quedan solo _dictamen y _entrevista_fecha, que ve también el lector.
+var _privadoOk = null;   // null: no se ha consultado · false: la tabla aún no existe
+async function _unirPrivado(lista) {
+  var admin = false;
+  try { admin = S.role === 'admin'; } catch(e) {}
+  if (!admin) {
+    lista.forEach(function(c){ if (c.scores) { delete c.scores._entrevistas; delete c.scores._ref_notas; } });
+    return;
+  }
+  try {
+    var r = await fetch(SUPA_URL + '/rest/v1/psicoeval_privado?select=candidate_id,entrevistas,notas', { headers: getDBHeaders() });
+    if (!r.ok) { _privadoOk = false; return; }   // SQL 19 sin aplicar: se usa lo que venga en la ficha
+    _privadoOk = true;
+    var por = {};
+    (await r.json()).forEach(function(x){ por[x.candidate_id] = x; });
+    lista.forEach(function(c) {
+      var x = por[c.id];
+      c.scores = c.scores || {};
+      c.scores._entrevistas = (x && Array.isArray(x.entrevistas)) ? x.entrevistas : [];
+      c.scores._ref_notas = (x && x.notas) || '';
+    });
+  } catch(e) { _privadoOk = false; }
+}
+
+// Guarda entrevistas o notas en la tabla privada y actualiza el dictamen visible en la ficha
+async function _patchPrivado(candId, campo, valor) {
+  if (_privadoOk === false) throw new Error('falta aplicar 19_entrevistas_privadas.sql en Supabase');
+  var url = SUPA_URL + '/rest/v1/psicoeval_privado';
+  var r0 = await fetch(url + '?candidate_id=eq.' + encodeURIComponent(candId) + '&select=entrevistas,notas', { headers: getDBHeaders() });
+  if (!r0.ok) throw new Error('Leer datos privados ' + r0.status);
+  var fila = (await r0.json())[0] || { entrevistas: [], notas: '' };
+  var nuevo = typeof valor === 'function' ? valor(fila[campo]) : valor;
+  var cuerpo = { candidate_id: candId, actualizado: new Date().toISOString() };
+  cuerpo[campo] = nuevo;
+  var r1 = await fetch(url + '?on_conflict=candidate_id', {
+    method: 'POST',
+    headers: Object.assign({}, getDBHeaders(), { 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates,return=representation' }),
+    body: JSON.stringify(cuerpo)
+  });
+  if (!r1.ok) { var t = await r1.text(); throw new Error('Guardar ' + r1.status + ': ' + t); }
+  var guardado = await r1.json().catch(function(){ return []; });
+  if (!Array.isArray(guardado) || !guardado.length) throw new Error('No se pudo guardar (sin permisos)');
+  var scores;
+  if (campo === 'entrevistas') {
+    var ult = (nuevo || []).filter(function(e){ return e && e.dictamen; }).pop();
+    var fin = (nuevo || [])[(nuevo || []).length - 1];
+    scores = await _patchScoresField(candId, '_dictamen', ult ? ult.dictamen : null);
+    scores = await _patchScoresField(candId, '_entrevista_fecha', fin ? fin.fecha || null : null);
+  }
+  _invalidateCache();
+  var all = await getDB();
+  var c = all.find(function(x){ return x.id === candId; });
+  return (c && c.scores) || scores || {};
+}
+
+// Dictamen de la última entrevista; el lector lo obtiene del resumen en la ficha
+function _dictamenDe(s) {
+  var ev = ((s && s._entrevistas) || []).filter(function(e){ return e && e.dictamen; });
+  return ev.length ? ev[ev.length - 1].dictamen : ((s && s._dictamen) || '');
 }
 
 // Llamada a las funciones del servidor pensadas para el candidato
@@ -7812,7 +7878,7 @@ function _aptRowsDe(c) {
 function _miradaDe(c) {
   var s = c.scores || {};
   var apt = _aptRowsDe(c);
-  var dict = ((s._entrevistas || []).filter(function(e){ return e && e.dictamen; }).pop() || {}).dictamen || '';
+  var dict = _dictamenDe(s);
   var disc = null;
   if (s.disc) {
     var k = ['D','I','S','C'].sort(function(a, b){ return (s.disc[b] || 0) - (s.disc[a] || 0); });
@@ -8604,7 +8670,8 @@ function buildReportHtml(c, withClose) {
   }
   html += '</div>'; // end header card
 
-  // Notas HR card
+  // Notas HR card (confidenciales: solo el administrador)
+  if (_verEntrevistas()) {
   html += '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:20px 22px">';
   html += '<div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:#0f172a;margin-bottom:12px">🗒️ Notas del proceso de referencia</div>';
   html += '<textarea id="ref-notas-area" placeholder="Registra aquí los resultados de la llamada: ¿quién contestó, qué informó, si corroboró experiencia, actitud general, recomendación final…" '
@@ -8614,6 +8681,7 @@ function buildReportHtml(c, withClose) {
   html += '<button onclick="saveRefNotas(\'' + htmlEsc(c.id) + '\')" class="btn btn-primary" style="padding:9px 22px;font-size:13px">Guardar notas</button>';
   html += '</div>';
   html += '</div>'; // end notas card
+  }
 
   html += '</div>'; // end rpt-panel-referencias
 
@@ -8655,7 +8723,7 @@ async function _patchScoresField(candidateId, key, value) {
 async function saveRefNotas(candidateId) {
   var notas = document.getElementById('ref-notas-area')?.value || '';
   try {
-    await _patchScoresField(candidateId, '_ref_notas', notas);
+    await _patchPrivado(candidateId, 'notas', notas);
     toast('Notas guardadas ✓', 'ok');
   } catch(e) { toast('Error al guardar: ' + e.message, 'er'); }
 }
@@ -9208,8 +9276,7 @@ function _calibPuntaje(s, tid, key) {
 
 // Último dictamen registrado en las entrevistas del candidato
 function _calibDictamen(s) {
-  var ev = ((s && s._entrevistas) || []).filter(function(e){ return e && e.dictamen; });
-  return ev.length ? ev[ev.length - 1].dictamen : '';
+  return _dictamenDe(s);
 }
 
 function _calibPanelHtml(perfil, tid) {
@@ -9986,6 +10053,11 @@ async function downloadFullBackup() {
     var rc = await fetch(SUPA_URL + '/rest/v1/psicoeval_config?select=key,value,updated_at', { headers: getDBHeaders() });
     if (!rc.ok) throw new Error('configuración: HTTP ' + rc.status);
     var cfg = await rc.json();
+    // Entrevistas y notas confidenciales (19_entrevistas_privadas.sql); si la tabla aún no existe, van en las evaluaciones
+    var priv = [];
+    var rp = await fetch(SUPA_URL + '/rest/v1/psicoeval_privado?select=*', { headers: getDBHeaders() });
+    if (rp.ok) priv = await rp.json();
+    else if (rp.status !== 404) throw new Error('entrevistas: HTTP ' + rp.status);
 
     var ahora = new Date();
     var data = {
@@ -9993,8 +10065,9 @@ async function downloadFullBackup() {
       generado: ahora.toISOString(),
       generado_por: (document.getElementById('sidebar-user-label') || {}).textContent || '',
       origen: SUPA_URL,
-      totales: { evaluaciones: cands.length, con_respuestas: cands.filter(function(c){ return c.respuestas; }).length, configuracion: cfg.length },
+      totales: { evaluaciones: cands.length, con_respuestas: cands.filter(function(c){ return c.respuestas; }).length, configuracion: cfg.length, entrevistas_y_notas: priv.length },
       configuracion: cfg,
+      entrevistas_y_notas: priv,
       evaluaciones: cands
     };
     var pad = function(n){ return String(n).padStart(2, '0'); };
@@ -10394,7 +10467,7 @@ var _BD_ARCH_DIAS = 30;
 function _ultimoMovimiento(c) {
   var t = (_momentoCand(c) || new Date(0)).getTime(), sc = c.scores || {};
   (sc._pipeline_history || []).forEach(function(h){ var x = Date.parse(h && h.ts); if (x > t) t = x; });
-  (sc._entrevistas || []).forEach(function(e){ var x = Date.parse(e && e.fecha); if (x > t) t = x; });
+  (sc._entrevistas || []).concat(sc._entrevista_fecha ? [{ fecha: sc._entrevista_fecha }] : []).forEach(function(e){ var x = Date.parse(e && e.fecha); if (x > t) t = x; });
   return t;
 }
 // Días que le quedan antes de archivarse (solo postulantes en la última semana); null si no aplica
@@ -10450,7 +10523,7 @@ function _bdAbrirVista(id, sinRender) {
 }
 
 // ── Filtros ──
-function _bdDictamen(c) { return (((c.scores && c.scores._entrevistas) || []).filter(function(e){ return e && e.dictamen; }).pop() || {}).dictamen || ''; }
+function _bdDictamen(c) { return _dictamenDe(c.scores); }
 var _BD_CAMPOS = {
   cargo:      { label:'Cargo', ops:function(){ return _cargosParaFiltro(_dbCache || []).map(function(k){ var pm = PERFIL_META[k] || {}; return [k, (pm.icon || '') + ' ' + (pm.label || k)]; }); },
                 ok:function(c, v){ return c.perfil === v; } },
@@ -12179,7 +12252,7 @@ function _dashProceso(cands, all, filterCargo) {
 
   out.cargos = h; h = '';
   // ── Dictámenes de la entrevista ──
-  var _dicts = cands.filter(function(c){ return c.estado === 'completed'; }).map(function(c){ return ((c.scores && c.scores._entrevistas || []).filter(function(e){ return e && e.dictamen; }).pop() || {}).dictamen || ''; });
+  var _dicts = cands.filter(function(c){ return c.estado === 'completed'; }).map(function(c){ return _dictamenDe(c.scores); });
   if (_dicts.length) {
     h += '<div class="dash-card">';
     h += '<div class="dash-lbl" style="margin-bottom:12px">Dictamen de la entrevista</div>';
@@ -13212,7 +13285,7 @@ async function saveEntrevistaDrawer(candId) {
     ts: new Date().toISOString()
   };
   try {
-    var sc = await _patchScoresField(candId, '_entrevistas', function(prev){ return (prev || []).concat([entry]); });
+    var sc = await _patchPrivado(candId, 'entrevistas', function(prev){ return (prev || []).concat([entry]); });
     _evBorradorBorrar(candId);
     try { localStorage.setItem(_EV_PREF_KEY, JSON.stringify({ tipo: tipo, modalidad: modal, entrevistador: entrev })); } catch(e) {}
     var all = await getDB();
@@ -13227,7 +13300,7 @@ async function saveEntrevistaDrawer(candId) {
 async function deleteEntrevistaEntry(candId, evId) {
   if (!(await appConfirm('¿Eliminar esta entrevista del historial?'))) return;
   try {
-    var sc = await _patchScoresField(candId, '_entrevistas', function(prev){ return (prev || []).filter(function(e){ return e.id !== evId; }); });
+    var sc = await _patchPrivado(candId, 'entrevistas', function(prev){ return (prev || []).filter(function(e){ return e.id !== evId; }); });
     var all = await getDB();
     var c = all.find(function(x){ return x.id === candId; });
     toast('Entrevista eliminada', 'ok');
@@ -13487,7 +13560,7 @@ function saveContacto() {
 
 // Dictamen de la última entrevista (cabecera de la ficha)
 function _dictamenBadgeHtml(c) {
-  var dv = (((c.scores && c.scores._entrevistas) || []).filter(function(e){ return e && e.dictamen; }).pop() || {}).dictamen;
+  var dv = _dictamenDe(c.scores);
   var d = _EV_DICTAMEN.filter(function(x){ return x.val === dv; })[0];
   return d ? '<span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:100px;background:' + d.bg + ';color:' + d.color + ';border:1px solid ' + d.border + '">' + d.icon + ' ' + d.label + '</span>'
            : '<span style="font-size:11px;color:var(--ink4)">Sin dictamen</span>';
@@ -13522,7 +13595,7 @@ async function drawerSetEtapa(candId, etapa) {
 async function saveDrawerNotas(candId) {
   var notas = document.getElementById('drawer-notas')?.value || '';
   try {
-    await _patchScoresField(candId, '_ref_notas', notas);
+    await _patchPrivado(candId, 'notas', notas);
     toast('Notas guardadas ✓', 'ok');
   } catch(e) { toast('Error: ' + e.message, 'er'); }
 }
