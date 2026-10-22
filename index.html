@@ -140,7 +140,8 @@ input,select,textarea{font-family:inherit;outline:none}
 
 /* ── Forms ── */
 .field{display:flex;flex-direction:column;gap:5px}
-.field label{font-size:12px;font-weight:600;color:var(--ink3);letter-spacing:.2px;text-transform:uppercase}
+.field > label{font-size:12px;font-weight:600;color:var(--ink3);letter-spacing:.2px;text-transform:uppercase}
+#view-register .err{font-size:11.5px;color:var(--rose)}
 .field input,.field select{
   padding:11px 14px;border:1px solid var(--border);border-radius:12px;
   background:rgba(118,118,128,.08);font-size:14px;color:var(--ink);
@@ -519,7 +520,7 @@ input,select,textarea{font-family:inherit;outline:none}
   .stat-grid{grid-template-columns:1fr!important}
   .q-scale-btns button{min-height:38px!important;font-size:13px!important}
   .q-choice-opt{padding:10px!important}
-  .field label{font-size:11px!important}
+  .field > label{font-size:11px!important}
   .modal{padding:16px!important}
   #game-container{padding:12px!important}
 }
@@ -853,6 +854,18 @@ input,select,textarea{font-family:inherit;outline:none}
 .dh-name{font-size:16px;font-weight:800;color:var(--ink)}
 .dh-meta{font-size:12.5px;color:var(--ink3);overflow:hidden;text-overflow:ellipsis}
 .dh-badges{display:flex;gap:6px;align-items:center;flex-shrink:0}
+.reg-ops{display:flex;flex-direction:column;gap:7px;margin-top:4px}
+.reg-op{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;font-size:13.5px;font-weight:600;color:var(--ink);transition:all .15s}
+.reg-op input{width:18px;height:18px;accent-color:var(--accent);flex-shrink:0;margin:0}
+.reg-op:has(input:checked){border-color:var(--accent);background:var(--accent-l)}
+.reg-chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:4px}
+.reg-chip{position:relative;display:inline-flex;align-items:center;padding:10px 14px;border-radius:100px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;font-size:13.5px;font-weight:600;color:var(--ink2);transition:all .15s;-webkit-tap-highlight-color:transparent}
+.reg-chip input{position:absolute;opacity:0;pointer-events:none}
+.reg-chip:has(input:checked){border-color:var(--accent);background:var(--accent);color:#fff}
+.reg-chip:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+.reg-emp{display:flex;flex-direction:column;gap:12px;padding:14px;border-radius:12px;background:var(--surface2);border:1px solid var(--border)}
+.reg-emp-tit{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--accent)}
+.reg-falta{box-shadow:0 0 0 2px #fca5a5;border-radius:10px}
 .bd-arch{color:var(--accent);font-weight:600;cursor:pointer;text-decoration:underline}
 .rs-wrap{display:flex;flex-direction:column;gap:13px;max-width:1180px;margin:0 auto}
 .rs-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:13px;align-items:start}
@@ -1153,6 +1166,7 @@ body.exam-away #exam-shield{display:flex}
         <div id="reg-dot-2" style="flex:1;text-align:center;font-size:11px;font-weight:600;color:var(--ink4)">Datos personales</div>
         <div id="reg-dot-3" style="flex:1;text-align:center;font-size:11px;font-weight:600;color:var(--ink4)">Perfil</div>
         <div id="reg-dot-4" style="flex:1;text-align:center;font-size:11px;font-weight:600;color:var(--ink4)">Experiencia</div>
+        <div id="reg-dot-5" style="flex:1;text-align:center;font-size:11px;font-weight:600;color:var(--ink4)">Referencia</div>
       </div>
     </div>
 
@@ -1212,10 +1226,10 @@ body.exam-away #exam-shield{display:flex}
             <span class="err" id="e-rut" role="alert" aria-live="polite"></span>
           </div>
           <div class="field">
-            <label for="r-fechanac">Fecha de nacimiento *</label>
-            <input id="r-fechanac" autocomplete="bday" type="date" style="width:100%"
-              max="" oninput="validateFechanacLive(this.value)"
-              aria-required="true" aria-describedby="e-fechanac" aria-invalid="false">
+            <label for="r-fechanac-txt">Fecha de nacimiento *</label>
+            <input id="r-fechanac-txt" inputmode="numeric" autocomplete="bday" placeholder="dd-mm-aaaa" maxlength="10"
+              oninput="_regFecha(this)" aria-required="true" aria-describedby="e-fechanac" aria-invalid="false">
+            <input type="hidden" id="r-fechanac">
             <span class="err" id="e-fechanac" role="alert" aria-live="polite"></span>
           </div>
         </div>
@@ -1265,96 +1279,21 @@ body.exam-away #exam-shield{display:flex}
           <span class="err" id="e-os10"></span>
         </div>
 
-        <!-- Nivel educativo guardia — explícito -->
+        <!-- Nivel educacional: primero si es personal en retiro -->
         <div class="field">
-          <label>Nivel educacional *</label>
-          <p style="font-size:12px;color:var(--ink3);margin:4px 0 8px;line-height:1.5">Selecciona el nivel más alto que completaste.</p>
-          <div style="display:flex;flex-direction:column;gap:7px">
-            <label id="edu-g-basica-lbl" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s">
-              <input type="radio" name="edu-guardia" id="r-edu-g-basica" value="basica" onchange="styleEduG()" onclick="setTimeout(styleEduG,0)" style="width:18px;height:18px;accent-color:var(--accent)">
-              <div>
-                <div style="font-size:13px;font-weight:600;color:var(--ink)">Educación Básica</div>
-              </div>
-            </label>
-            <label id="edu-g-sin4-lbl" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s">
-              <input type="radio" name="edu-guardia" id="r-edu-g-sin4" value="media_incompleta" onchange="styleEduG()" onclick="setTimeout(styleEduG,0)" style="width:18px;height:18px;accent-color:var(--accent)">
-              <div>
-                <div style="font-size:13px;font-weight:600;color:var(--ink)">Educación Media incompleta</div>
-              </div>
-            </label>
-            <label id="edu-g-4medio-lbl" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s">
-              <input type="radio" name="edu-guardia" id="r-edu-g-4medio" value="media" onchange="styleEduG()" onclick="setTimeout(styleEduG,0)" style="width:18px;height:18px;accent-color:var(--accent)">
-              <div>
-                <div style="font-size:13px;font-weight:600;color:var(--ink)">4º Medio completo</div>
-              </div>
-            </label>
-            <label id="edu-g-tecnica-lbl" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s">
-              <input type="radio" name="edu-guardia" id="r-edu-g-tecnica" value="tecnica" onchange="styleEduG()" onclick="setTimeout(styleEduG,0)" style="width:18px;height:18px;accent-color:var(--accent)">
-              <div>
-                <div style="font-size:13px;font-weight:600;color:var(--ink)">Técnico de Nivel Superior</div>
-              </div>
-            </label>
-            <label id="edu-g-univ-lbl" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s">
-              <input type="radio" name="edu-guardia" id="r-edu-g-univ" value="universitaria" onchange="styleEduG()" onclick="setTimeout(styleEduG,0)" style="width:18px;height:18px;accent-color:var(--accent)">
-              <div>
-                <div style="font-size:13px;font-weight:600;color:var(--ink)">Universitaria o superior</div>
-              </div>
-            </label>
-
-            <!-- Separador FF.AA. / Carabineros — toggle -->
-            <button type="button" id="edu-g-ffaa-toggle" onclick="toggleEduGffaa()" style="display:flex;align-items:center;gap:8px;margin:4px 0 2px;background:none;border:none;cursor:pointer;width:100%;padding:0">
-              <div style="flex:1;height:1px;background:var(--border)"></div>
-              <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--accent);white-space:nowrap">🎖 Soy personal en retiro ▾</span>
-              <div style="flex:1;height:1px;background:var(--border)"></div>
-            </button>
-
-            <div id="edu-g-ffaa-block" style="display:none;flex-direction:column;gap:7px">
-            <label id="edu-g-ej-retiro-lbl" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s">
-              <input type="radio" name="edu-guardia" id="r-edu-g-ej-retiro" value="ejercito_retiro" onchange="styleEduG()" onclick="setTimeout(styleEduG,0)" style="width:18px;height:18px;accent-color:var(--accent)">
-              <div>
-                <div style="font-size:13px;font-weight:600;color:var(--ink)">🎖 Retirado/a del Ejército — carrera completa</div>
-                <div style="font-size:11px;color:#16a34a;font-weight:600">✓ Cumple · Situación de retiro reconocida</div>
-              </div>
-            </label>
-            <label id="edu-g-ej-baja-lbl" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s">
-              <input type="radio" name="edu-guardia" id="r-edu-g-ej-baja" value="ejercito_baja" onchange="styleEduG()" onclick="setTimeout(styleEduG,0)" style="width:18px;height:18px;accent-color:var(--accent)">
-              <div>
-                <div style="font-size:13px;font-weight:600;color:var(--ink)">🎖 Retirado/a del Ejército — antes de completar carrera</div>
-                <div style="font-size:11px;color:#2563eb;font-weight:600">✓ Cumple · Considerar años de servicio en evaluación</div>
-              </div>
-            </label>
-            <label id="edu-g-car-retiro-lbl" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s">
-              <input type="radio" name="edu-guardia" id="r-edu-g-car-retiro" value="carabineros_retiro" onchange="styleEduG()" onclick="setTimeout(styleEduG,0)" style="width:18px;height:18px;accent-color:var(--accent)">
-              <div>
-                <div style="font-size:13px;font-weight:600;color:var(--ink)">👮 Retirado/a de Carabineros — carrera completa</div>
-                <div style="font-size:11px;color:#16a34a;font-weight:600">✓ Cumple · Situación de retiro reconocida</div>
-              </div>
-            </label>
-            <label id="edu-g-car-baja-lbl" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s">
-              <input type="radio" name="edu-guardia" id="r-edu-g-car-baja" value="carabineros_baja" onchange="styleEduG()" onclick="setTimeout(styleEduG,0)" style="width:18px;height:18px;accent-color:var(--accent)">
-              <div>
-                <div style="font-size:13px;font-weight:600;color:var(--ink)">👮 Retirado/a de Carabineros — antes de completar carrera</div>
-                <div style="font-size:11px;color:#2563eb;font-weight:600">✓ Cumple · Considerar años de servicio en evaluación</div>
-              </div>
-            </label>
-            <label id="edu-g-arm-retiro-lbl" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s">
-              <input type="radio" name="edu-guardia" id="r-edu-g-arm-retiro" value="armada_retiro" onchange="styleEduG()" onclick="setTimeout(styleEduG,0)" style="width:18px;height:18px;accent-color:var(--accent)">
-              <div>
-                <div style="font-size:13px;font-weight:600;color:var(--ink)">⚓ Retirado/a de la Armada — carrera completa</div>
-                <div style="font-size:11px;color:#16a34a;font-weight:600">✓ Cumple · Situación de retiro reconocida</div>
-              </div>
-            </label>
-            <label id="edu-g-arm-baja-lbl" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s">
-              <input type="radio" name="edu-guardia" id="r-edu-g-arm-baja" value="armada_baja" onchange="styleEduG()" onclick="setTimeout(styleEduG,0)" style="width:18px;height:18px;accent-color:var(--accent)">
-              <div>
-                <div style="font-size:13px;font-weight:600;color:var(--ink)">⚓ Retirado/a de la Armada — antes de completar carrera</div>
-                <div style="font-size:11px;color:#2563eb;font-weight:600">✓ Cumple · Considerar años de servicio en evaluación</div>
-              </div>
-            </label>
-            </div>
-          </div>
-          <span class="err" id="e-edu-guardia"></span>
+          <label>¿Eres personal en retiro de FF.AA. o Carabineros? *</label>
+          <div class="reg-chips"><label class="reg-chip"><input type="radio" name="retiro-g" value="no" onchange="_regCambio(this)"><span>No</span></label><label class="reg-chip"><input type="radio" name="retiro-g" value="si" onchange="_regCambio(this)"><span>Sí, soy personal en retiro</span></label></div>
+          <span class="err" id="e-retiro-g"></span>
         </div>
+        <div class="field" id="edu-g-civil" style="display:none">
+          <label>Nivel educacional más alto que completaste *</label>
+          <div class="reg-ops"><label class="reg-op"><input type="radio" name="edu-guardia" value="basica" id="r-edu-g-basica" onchange="_regCambio(this)"><span>Educación Básica</span></label><label class="reg-op"><input type="radio" name="edu-guardia" value="media_incompleta" id="r-edu-g-sin4" onchange="_regCambio(this)"><span>Educación Media incompleta</span></label><label class="reg-op"><input type="radio" name="edu-guardia" value="media" id="r-edu-g-4medio" onchange="_regCambio(this)"><span>4º Medio completo</span></label><label class="reg-op"><input type="radio" name="edu-guardia" value="tecnica" id="r-edu-g-tecnica" onchange="_regCambio(this)"><span>Técnico de Nivel Superior</span></label><label class="reg-op"><input type="radio" name="edu-guardia" value="universitaria" id="r-edu-g-univ" onchange="_regCambio(this)"><span>Universitaria o superior</span></label></div>
+        </div>
+        <div class="field" id="edu-g-retiro" style="display:none">
+          <label>Institución y situación de egreso *</label>
+          <div class="reg-ops"><label class="reg-op"><input type="radio" name="edu-guardia" value="ejercito_retiro" id="r-edu-g-ej-retiro" onchange="_regCambio(this)"><span>🎖 Ejército — carrera completa (retiro)</span></label><label class="reg-op"><input type="radio" name="edu-guardia" value="ejercito_baja" id="r-edu-g-ej-baja" onchange="_regCambio(this)"><span>🎖 Ejército — antes de completar la carrera</span></label><label class="reg-op"><input type="radio" name="edu-guardia" value="carabineros_retiro" id="r-edu-g-car-retiro" onchange="_regCambio(this)"><span>👮 Carabineros — carrera completa (retiro)</span></label><label class="reg-op"><input type="radio" name="edu-guardia" value="carabineros_baja" id="r-edu-g-car-baja" onchange="_regCambio(this)"><span>👮 Carabineros — antes de completar la carrera</span></label><label class="reg-op"><input type="radio" name="edu-guardia" value="armada_retiro" id="r-edu-g-arm-retiro" onchange="_regCambio(this)"><span>⚓ Armada — carrera completa (retiro)</span></label><label class="reg-op"><input type="radio" name="edu-guardia" value="armada_baja" id="r-edu-g-arm-baja" onchange="_regCambio(this)"><span>⚓ Armada — antes de completar la carrera</span></label></div>
+        </div>
+        <span class="err" id="e-edu-guardia"></span>
 
         <div style="display:flex;gap:10px;margin-top:4px">
           <button class="btn btn-outline" onclick="regBack(2)">← Anterior</button>
@@ -1410,21 +1349,6 @@ body.exam-away #exam-shield{display:flex}
             <option value="armada_baja">⚓ Armada — antes de completar carrera (baja)</option>
           </select>
           <span class="err" id="e-educacion-retiro"></span>
-        </div>
-        <div class="field">
-          <label>Rubro de experiencia principal</label>
-          <select id="r-rubro">
-            <option value="">Selecciona…</option>
-            <option value="seguridad">Seguridad / Vigilancia</option>
-            <option value="comercio">Comercio / Retail</option>
-            <option value="administracion">Administración / Oficina</option>
-            <option value="salud">Salud</option>
-            <option value="construccion">Construcción / Obras</option>
-            <option value="logistica">Logística / Transporte</option>
-            <option value="educacion">Educación</option>
-            <option value="tecnologia">Tecnología</option>
-            <option value="otro">Otro rubro</option>
-          </select>
         </div>
         <div style="display:flex;gap:10px;margin-top:4px">
           <button class="btn btn-outline" onclick="regBack(2)">← Anterior</button>
@@ -1528,80 +1452,47 @@ body.exam-away #exam-shield{display:flex}
     <!-- ── STEP 3: Experiencia laboral ── -->
     <div id="reg-step-3" class="card cp" style="display:none">
       <h2 style="font-size:22px;font-weight:800;margin-bottom:4px">Experiencia laboral</h2>
-      <p style="font-size:13px;color:var(--ink3);margin-bottom:4px">Indica tus dos últimas experiencias laborales más estables.</p>
-      <p style="font-size:12px;color:var(--ink4);margin-bottom:20px">Si no tienes experiencia laboral, deja estos campos en blanco. La referencia de más abajo sí es obligatoria.</p>
-
-      <!-- Experiencia 1 -->
-      <div style="background:var(--surface2);border-radius:12px;padding:16px;margin-bottom:14px;border:1px solid var(--border)">
-        <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--accent);margin-bottom:12px">Experiencia más reciente</div>
-        <div style="display:flex;flex-direction:column;gap:10px">
-          <div class="field"><label>Empresa / Organización</label><input id="r-emp1" placeholder="Ej: Empresa de Seguridad XYZ"></div>
-          <div class="field"><label>Cargo desempeñado</label><input id="r-cargo1" placeholder="Ej: Guardia de Seguridad"></div>
-          <div class="form-row">
-            <div class="field">
-              <label>Duración</label>
-              <select id="r-dur1">
-                <option value="">Selecciona…</option>
-                <option value="menos_6m">Menos de 6 meses</option>
-                <option value="6m_1a">6 meses a 1 año</option>
-                <option value="1_2a">1 a 2 años</option>
-                <option value="2_5a">2 a 5 años</option>
-                <option value="mas_5a">Más de 5 años</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>Motivo de salida</label>
-              <select id="r-salida1">
-                <option value="">Selecciona…</option>
-                <option value="termino_contrato">Término de contrato</option>
-                <option value="renuncia">Renuncia voluntaria</option>
-                <option value="despido">Desvinculación</option>
-                <option value="mutual">Acuerdo mutuo</option>
-                <option value="traslado">Traslado de instalación</option>
-                <option value="retiro_ffaa">Retiro FF.AA. / Carabineros</option>
-                <option value="actual">Es mi trabajo actual</option>
-              </select>
-            </div>
-          </div>
+      <p style="font-size:13px;color:var(--ink3);margin-bottom:18px">Cuéntanos de tus dos últimos trabajos. Toca la opción que corresponda.</p>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="field">
+          <label>¿Has trabajado antes? *</label>
+          <div class="reg-chips"><label class="reg-chip"><input type="radio" name="exp-tiene" value="si" onchange="_regCambio(this)"><span>Sí</span></label><label class="reg-chip"><input type="radio" name="exp-tiene" value="no" onchange="_regCambio(this)"><span>No, sería mi primer trabajo</span></label></div>
+          <span class="err" id="e-exp-tiene"></span>
+        </div>
+      <div class="reg-emp" id="exp1-block" style="display:none">
+        <div class="reg-emp-tit">Tu trabajo más reciente</div>
+        <div class="field"><label>Empresa u organización *</label><input id="r-emp1" placeholder="Ej: Empresa de Seguridad XYZ" oninput="_regCambio(this)"></div>
+        <div class="field"><label>Cargo que tenías *</label><input id="r-cargo1" placeholder="Ej: Guardia de seguridad" oninput="_regCambio(this)"></div>
+        <div class="field"><label>¿Sigues trabajando ahí? *</label><div class="reg-chips"><label class="reg-chip"><input type="radio" name="actual1" value="si" onchange="_regCambio(this)"><span>Sí, es mi trabajo actual</span></label><label class="reg-chip"><input type="radio" name="actual1" value="no" onchange="_regCambio(this)"><span>No</span></label></div></div>
+        <div class="field"><label id="dur1-lbl">¿Cuánto tiempo trabajaste ahí? *</label><div class="reg-chips"><label class="reg-chip"><input type="radio" name="dur1" value="menos_6m" onchange="_regCambio(this)"><span>Menos de 6 meses</span></label><label class="reg-chip"><input type="radio" name="dur1" value="6m_1a" onchange="_regCambio(this)"><span>6 meses a 1 año</span></label><label class="reg-chip"><input type="radio" name="dur1" value="1_2a" onchange="_regCambio(this)"><span>1 a 2 años</span></label><label class="reg-chip"><input type="radio" name="dur1" value="2_5a" onchange="_regCambio(this)"><span>2 a 5 años</span></label><label class="reg-chip"><input type="radio" name="dur1" value="mas_5a" onchange="_regCambio(this)"><span>Más de 5 años</span></label></div></div>
+        <div class="field" id="salida1-campo"><label>¿Por qué terminó? *</label><div class="reg-chips"><label class="reg-chip"><input type="radio" name="salida1" value="termino_contrato" onchange="_regCambio(this)"><span>Término de contrato</span></label><label class="reg-chip"><input type="radio" name="salida1" value="renuncia" onchange="_regCambio(this)"><span>Renuncia voluntaria</span></label><label class="reg-chip"><input type="radio" name="salida1" value="despido" onchange="_regCambio(this)"><span>Desvinculación</span></label><label class="reg-chip"><input type="radio" name="salida1" value="mutual" onchange="_regCambio(this)"><span>Acuerdo mutuo</span></label><label class="reg-chip"><input type="radio" name="salida1" value="traslado" onchange="_regCambio(this)"><span>Traslado de instalación</span></label><label class="reg-chip"><input type="radio" name="salida1" value="retiro_ffaa" onchange="_regCambio(this)"><span>Retiro FF.AA. / Carabineros</span></label></div></div>
+        <span class="err" id="e-exp1"></span>
+      </div>
+      <div class="field" id="exp-otro-campo" style="display:none">
+        <label>¿Tuviste otro trabajo antes de ese? *</label>
+        <div class="reg-chips"><label class="reg-chip"><input type="radio" name="exp-otro" value="si" onchange="_regCambio(this)"><span>Sí</span></label><label class="reg-chip"><input type="radio" name="exp-otro" value="no" onchange="_regCambio(this)"><span>No</span></label></div>
+        <span class="err" id="e-exp-otro"></span>
+      </div>
+      <div class="reg-emp" id="exp2-block" style="display:none">
+        <div class="reg-emp-tit">El trabajo anterior</div>
+        <div class="field"><label>Empresa u organización *</label><input id="r-emp2" placeholder="Ej: Retail ABC" oninput="_regCambio(this)"></div>
+        <div class="field"><label>Cargo que tenías *</label><input id="r-cargo2" placeholder="Ej: Guardia de seguridad" oninput="_regCambio(this)"></div>
+        <div class="field"><label id="dur2-lbl">¿Cuánto tiempo trabajaste ahí? *</label><div class="reg-chips"><label class="reg-chip"><input type="radio" name="dur2" value="menos_6m" onchange="_regCambio(this)"><span>Menos de 6 meses</span></label><label class="reg-chip"><input type="radio" name="dur2" value="6m_1a" onchange="_regCambio(this)"><span>6 meses a 1 año</span></label><label class="reg-chip"><input type="radio" name="dur2" value="1_2a" onchange="_regCambio(this)"><span>1 a 2 años</span></label><label class="reg-chip"><input type="radio" name="dur2" value="2_5a" onchange="_regCambio(this)"><span>2 a 5 años</span></label><label class="reg-chip"><input type="radio" name="dur2" value="mas_5a" onchange="_regCambio(this)"><span>Más de 5 años</span></label></div></div>
+        <div class="field" id="salida2-campo"><label>¿Por qué terminó? *</label><div class="reg-chips"><label class="reg-chip"><input type="radio" name="salida2" value="termino_contrato" onchange="_regCambio(this)"><span>Término de contrato</span></label><label class="reg-chip"><input type="radio" name="salida2" value="renuncia" onchange="_regCambio(this)"><span>Renuncia voluntaria</span></label><label class="reg-chip"><input type="radio" name="salida2" value="despido" onchange="_regCambio(this)"><span>Desvinculación</span></label><label class="reg-chip"><input type="radio" name="salida2" value="mutual" onchange="_regCambio(this)"><span>Acuerdo mutuo</span></label><label class="reg-chip"><input type="radio" name="salida2" value="traslado" onchange="_regCambio(this)"><span>Traslado de instalación</span></label><label class="reg-chip"><input type="radio" name="salida2" value="retiro_ffaa" onchange="_regCambio(this)"><span>Retiro FF.AA. / Carabineros</span></label></div></div>
+        <span class="err" id="e-exp2"></span>
+      </div>
+        <div style="display:flex;gap:10px;margin-top:4px">
+          <button class="btn btn-outline" onclick="regBack(3)">← Anterior</button>
+          <button class="btn btn-primary btn-lg" style="flex:1" onclick="regNext(3)">Continuar →</button>
         </div>
       </div>
+    </div>
 
-      <!-- Experiencia 2 -->
-      <div style="background:var(--surface2);border-radius:12px;padding:16px;margin-bottom:18px;border:1px solid var(--border)">
-        <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);margin-bottom:12px">Experiencia anterior</div>
-        <div style="display:flex;flex-direction:column;gap:10px">
-          <div class="field"><label>Empresa / Organización</label><input id="r-emp2" placeholder="Ej: Retail ABC (opcional)"></div>
-          <div class="field"><label>Cargo desempeñado</label><input id="r-cargo2" placeholder="Ej: Vendedor (opcional)"></div>
-          <div class="form-row">
-            <div class="field">
-              <label>Duración</label>
-              <select id="r-dur2">
-                <option value="">Selecciona…</option>
-                <option value="menos_6m">Menos de 6 meses</option>
-                <option value="6m_1a">6 meses a 1 año</option>
-                <option value="1_2a">1 a 2 años</option>
-                <option value="2_5a">2 a 5 años</option>
-                <option value="mas_5a">Más de 5 años</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>Motivo de salida</label>
-              <select id="r-salida2">
-                <option value="">Selecciona…</option>
-                <option value="termino_contrato">Término de contrato</option>
-                <option value="renuncia">Renuncia voluntaria</option>
-                <option value="despido">Desvinculación</option>
-                <option value="mutual">Acuerdo mutuo</option>
-                <option value="traslado">Traslado de instalación</option>
-                <option value="retiro_ffaa">Retiro FF.AA. / Carabineros</option>
-              </select>
-            </div>
-          </div>
-        </div>
-      </div>
-
+    <!-- ── STEP 4: Referencia laboral ── -->
+    <div id="reg-step-4" class="card cp" style="display:none">
+      <h2 style="font-size:22px;font-weight:800;margin-bottom:14px">Referencia laboral</h2>
       <!-- ── Referencia Laboral ── -->
-      <div style="background:#f0f9ff;border-radius:12px;padding:16px;margin-bottom:4px;border:1.5px solid #0ea5e9">
+      <div style="background:#f0f9ff;border-radius:12px;padding:16px;margin-bottom:16px;border:1.5px solid #0ea5e9">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
           <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#0369a1">📞 Referencia Laboral</div>
           <span style="font-size:10px;font-weight:800;background:#dc2626;color:#fff;padding:2px 8px;border-radius:100px;letter-spacing:.4px;text-transform:uppercase">Obligatorio</span>
@@ -1615,6 +1506,7 @@ body.exam-away #exam-shield{display:flex}
           <div class="field">
             <label>Empresa o institución <span style="color:#dc2626">*</span></label>
             <input id="r-ref-empresa" placeholder="Nombre de la empresa">
+            <a id="ref-usar-emp1" onclick="_regRefEmp1()" style="display:none;font-size:12px;font-weight:600;color:var(--accent);cursor:pointer;margin-top:5px"></a>
             <span id="e-ref-empresa" style="font-size:11px;color:#dc2626;display:none;margin-top:3px"></span>
           </div>
           <div class="form-row">
@@ -1623,7 +1515,8 @@ body.exam-away #exam-shield{display:flex}
               <input id="r-ref-nombre" placeholder="Nombre y apellido">
               <span id="e-ref-nombre" style="font-size:11px;color:#dc2626;display:none;margin-top:3px"></span>
             </div>
-            <div class="field"><label>Cargo que tenía</label><input id="r-ref-cargo" placeholder="Ej: Supervisor, Jefe de turno"></div>
+            <div class="field"><label>Cargo que tenía <span style="color:#dc2626">*</span></label><input id="r-ref-cargo" placeholder="Ej: Supervisor, Jefe de turno">
+              <span id="e-ref-cargo" style="font-size:11px;color:#dc2626;display:none;margin-top:3px"></span></div>
           </div>
           <div class="field">
             <label>Teléfono de contacto de esa persona <span style="color:#dc2626">*</span></label>
@@ -1634,7 +1527,7 @@ body.exam-away #exam-shield{display:flex}
       </div>
 
       <div style="display:flex;gap:10px">
-        <button class="btn btn-outline" onclick="regBack(3)">← Anterior</button>
+        <button class="btn btn-outline" onclick="regBack(4)">← Anterior</button>
         <button class="btn btn-primary btn-lg" style="flex:1" onclick="submitRegister()">Finalizar y comenzar →</button>
       </div>
     </div>
@@ -4661,37 +4554,79 @@ function styleOs10() {
   document.getElementById('e-os10').textContent = '';
 }
 
-var _eduGffaaOpen = false;
-function toggleEduGffaa() {
-  _eduGffaaOpen = !_eduGffaaOpen;
-  var block  = document.getElementById('edu-g-ffaa-block');
-  var toggle = document.getElementById('edu-g-ffaa-toggle');
-  if (block)  block.style.display = _eduGffaaOpen ? 'flex' : 'none';
-  if (toggle) {
-    var span = toggle.querySelector('span');
-    if (span) span.textContent = _eduGffaaOpen ? '🎖 Soy personal en retiro ▴' : '🎖 Soy personal en retiro ▾';
-  }
+// ── Registro: preguntas que se muestran según la respuesta anterior ──
+function _regVal(name) { var r = document.querySelector('input[name="' + name + '"]:checked'); return r ? r.value : ''; }
+function _regMostrar(id, si) { var el = document.getElementById(id); if (el) el.style.display = si ? '' : 'none'; }
+function _regLimpiar(ids, names) {
+  (ids || []).forEach(function(id){ var el = document.getElementById(id); if (el) el.value = ''; });
+  (names || []).forEach(function(n){ document.querySelectorAll('input[name="' + n + '"]').forEach(function(r){ r.checked = false; }); });
 }
-
-function styleEduG() {
-  var ffaaKeys = ['ej-retiro','ej-baja','car-retiro','car-baja','arm-retiro','arm-baja'];
-  var anyFfaaChecked = false;
-  ['basica','sin4','4medio','tecnica','univ','ej-retiro','ej-baja','car-retiro','car-baja','arm-retiro','arm-baja'].forEach(function(k) {
-    const radio = document.getElementById('r-edu-g-' + k);
-    const lbl   = document.getElementById('edu-g-' + k + '-lbl');
-    if (!radio || !lbl) return;
-    lbl.style.borderColor = radio.checked ? 'var(--accent)' : 'var(--border)';
-    lbl.style.background  = radio.checked ? 'var(--accent-l)' : 'var(--surface)';
-    if (radio.checked && ffaaKeys.indexOf(k) !== -1) anyFfaaChecked = true;
+function _regCambio(el) {
+  var n = el && el.name;
+  if (n === 'retiro-g') {
+    var ret = _regVal('retiro-g') === 'si';
+    _regMostrar('edu-g-civil', !ret); _regMostrar('edu-g-retiro', ret);
+    document.querySelectorAll('#' + (ret ? 'edu-g-civil' : 'edu-g-retiro') + ' input').forEach(function(r){ r.checked = false; });
+  }
+  if (n === 'exp-tiene') {
+    var tiene = _regVal('exp-tiene') === 'si';
+    _regMostrar('exp1-block', tiene); _regMostrar('exp-otro-campo', tiene);
+    if (!tiene) { _regLimpiar(['r-emp1','r-cargo1','r-emp2','r-cargo2'], ['actual1','dur1','salida1','exp-otro','dur2','salida2']); _regMostrar('exp2-block', false); }
+  }
+  if (n === 'actual1') {
+    var act = _regVal('actual1') === 'si';
+    _regMostrar('salida1-campo', !act);
+    if (act) _regLimpiar([], ['salida1']);
+    var l = document.getElementById('dur1-lbl'); if (l) l.textContent = act ? '¿Cuánto tiempo llevas ahí? *' : '¿Cuánto tiempo trabajaste ahí? *';
+  }
+  if (n === 'exp-otro') {
+    var otro = _regVal('exp-otro') === 'si';
+    _regMostrar('exp2-block', otro);
+    if (!otro) _regLimpiar(['r-emp2','r-cargo2'], ['dur2','salida2']);
+  }
+  // Al responder, se quita la marca de "falta"
+  var f = el && el.closest && el.closest('.field, .reg-emp');
+  if (f) f.classList.remove('reg-falta');
+  var bloque = el && el.closest && el.closest('[id^="reg-step-"]');
+  if (bloque) bloque.querySelectorAll('.err').forEach(function(e){ if (e.dataset.auto) { e.textContent = ''; delete e.dataset.auto; } });
+}
+// Marca lo que falta en un paso y lleva la pantalla al primero
+function _regFaltas(lista) {
+  var primero = null;
+  lista.forEach(function(x) {
+    var el = document.getElementById(x[0]); if (!el) return;
+    var campo = el.classList.contains('field') || el.classList.contains('reg-emp') ? el : (el.closest('.field') || el);
+    campo.classList.add('reg-falta');
+    if (x[1]) { var e = document.getElementById(x[1]); if (e) { e.textContent = x[2]; e.dataset.auto = '1'; e.style.display = 'block'; } }
+    if (!primero) primero = campo;
   });
-  // Auto-expand FFAA block if a FFAA option is already selected
-  if (anyFfaaChecked && !_eduGffaaOpen) toggleEduGffaa();
-  document.getElementById('e-edu-guardia').textContent = '';
+  if (primero) primero.scrollIntoView({ behavior:'smooth', block:'center' });
+  return !lista.length;
+}
+// Fecha escrita: 31121990 → 31-12-1990; el valor ISO (1990-12-31) queda en #r-fechanac
+function _regFecha(el) {
+  var d = el.value.replace(/\D/g, '').slice(0, 8);
+  el.value = d.length > 4 ? d.slice(0, 2) + '-' + d.slice(2, 4) + '-' + d.slice(4) : d.length > 2 ? d.slice(0, 2) + '-' + d.slice(2) : d;
+  var oculto = document.getElementById('r-fechanac'), e = document.getElementById('e-fechanac');
+  oculto.value = '';
+  if (d.length < 8) { if (e) { e.textContent = ''; } return; }
+  var dd = +d.slice(0, 2), mm = +d.slice(2, 4), aa = +d.slice(4);
+  var f = new Date(aa, mm - 1, dd);
+  if (aa < 1930 || f.getFullYear() !== aa || f.getMonth() !== mm - 1 || f.getDate() !== dd) {
+    if (e) { e.textContent = 'Fecha no válida: revisa día, mes y año'; e.style.color = 'var(--rose)'; }
+    return;
+  }
+  oculto.value = aa + '-' + String(mm).padStart(2, '0') + '-' + String(dd).padStart(2, '0');
+  validateFechanacLive(oculto.value);
+}
+function _regRefEmp1() {
+  var emp = (document.getElementById('r-emp1') || {}).value || '';
+  var r = document.getElementById('r-ref-empresa'); if (r && emp) r.value = emp.trim();
 }
 
 function regSetStep(step) {
   // Hide all panels
-  ['reg-step-0','reg-step-1','reg-step-2-guardia','reg-step-2-general','reg-step-2-supervisor','reg-step-3'].forEach(function(id) {
+  ['reg-step-0','reg-step-1','reg-step-2-guardia','reg-step-2-general','reg-step-2-supervisor','reg-step-3','reg-step-4'].forEach(function(id) {
     var el = document.getElementById(id); if (el) el.style.display = 'none';
   });
   // Show correct panel
@@ -4708,21 +4643,27 @@ function regSetStep(step) {
     document.getElementById(p2).style.display = 'block';
   }
   else if (step === 3) document.getElementById('reg-step-3').style.display = 'block';
-  // Update progress (4 steps: 0,1,2,3)
-  var STEP_NAMES = ['Cargo', 'Datos personales', 'Perfil', 'Experiencia'];
-  var pct = step === 0 ? 10 : step === 1 ? 35 : step === 2 ? 65 : 100;
+  else if (step === 4) {
+    document.getElementById('reg-step-4').style.display = 'block';
+    // Atajo: la referencia suele ser del último trabajo
+    var emp1 = ((document.getElementById('r-emp1') || {}).value || '').trim(), at = document.getElementById('ref-usar-emp1');
+    if (at) { at.style.display = emp1 ? 'inline-block' : 'none'; at.textContent = emp1 ? '↳ Es de mi trabajo más reciente (' + emp1 + ')' : ''; }
+  }
+  // Progreso: 5 pasos (0 a 4)
+  var STEP_NAMES = ['Cargo', 'Datos personales', 'Perfil', 'Experiencia', 'Referencia'];
+  var pct = [10, 30, 50, 75, 100][step] || 10;
   var barEl = document.getElementById('reg-progress-bar');
   if (barEl) {
     barEl.style.width = pct + '%';
     barEl.setAttribute('aria-valuenow', pct);
     barEl.setAttribute('aria-label', 'Progreso: ' + pct + '%');
   }
-  var stepLabel = 'Paso ' + (step + 1) + ' de 4';
+  var stepLabel = 'Paso ' + (step + 1) + ' de 5';
   document.getElementById('reg-step-label').textContent = stepLabel;
   // Anunciar paso a lectores de pantalla
   var live = document.getElementById('reg-live-region');
   if (live) live.textContent = stepLabel + ': ' + (STEP_NAMES[step] || '');
-  ['reg-dot-1','reg-dot-2','reg-dot-3','reg-dot-4'].forEach(function(id, i) {
+  ['reg-dot-1','reg-dot-2','reg-dot-3','reg-dot-4','reg-dot-5'].forEach(function(id, i) {
     var el = document.getElementById(id); if (!el) return;
     el.style.color      = i === step ? 'var(--accent)' : i < step ? 'var(--ink3)' : 'var(--ink4)';
     el.style.fontWeight = i === step ? '700' : '500';
@@ -4794,7 +4735,9 @@ function regNext(fromStep) {
     }
     const fechanac = document.getElementById('r-fechanac').value;
     if (!fechanac) {
-      document.getElementById('e-fechanac').textContent = 'Requerido'; ok = false;
+      var fTxt = (document.getElementById('r-fechanac-txt') || {}).value || '';
+      document.getElementById('e-fechanac').textContent = fTxt ? 'Escribe la fecha completa: dd-mm-aaaa' : 'Requerido';
+      document.getElementById('e-fechanac').style.color = 'var(--rose)'; ok = false;
     } else {
       var fnDate  = new Date(fechanac);
       var hoy     = new Date();
@@ -4860,12 +4803,10 @@ function regNext(fromStep) {
         e10.scrollIntoView({behavior:'smooth', block:'center'});
         return;
       }
-      // Validate education
-      const edu = document.querySelector('input[name="edu-guardia"]:checked');
-      if (!edu) {
-        var eedu = document.getElementById('e-edu-guardia');
-        eedu.textContent = 'Selecciona tu nivel educativo';
-        eedu.scrollIntoView({behavior:'smooth', block:'center'});
+      // Retiro y luego educación
+      if (!_regVal('retiro-g')) { _regFaltas([['e-retiro-g', 'e-retiro-g', 'Selecciona una opción']]); return; }
+      if (!_regVal('edu-guardia')) {
+        _regFaltas([[_regVal('retiro-g') === 'si' ? 'edu-g-retiro' : 'edu-g-civil', 'e-edu-guardia', _regVal('retiro-g') === 'si' ? 'Selecciona tu institución' : 'Selecciona tu nivel educacional']]);
         return;
       }
     } else if (perfil === 'supervisor') {
@@ -4896,6 +4837,26 @@ function regNext(fromStep) {
       }
     }
     regSetStep(3);
+  } else if (fromStep === 3) {
+    var falta = [], txt = function(id){ return ((document.getElementById(id) || {}).value || '').trim(); };
+    var tiene = _regVal('exp-tiene');
+    if (!tiene) falta.push(['e-exp-tiene', 'e-exp-tiene', 'Responde si has trabajado antes']);
+    if (tiene === 'si') {
+      var emp = function(n) {
+        var f = [];
+        if (txt('r-emp' + n).length < 2) f.push('la empresa');
+        if (txt('r-cargo' + n).length < 2) f.push('el cargo');
+        if (n === 1 && !_regVal('actual1')) f.push('si sigues trabajando ahí');
+        if (!_regVal('dur' + n)) f.push('cuánto tiempo');
+        if (!(n === 1 && _regVal('actual1') === 'si') && !_regVal('salida' + n)) f.push('por qué terminó');
+        if (f.length) falta.push(['exp' + n + '-block', 'e-exp' + n, 'Falta indicar ' + f.join(', ').replace(/, ([^,]*)$/, ' y $1') + '.']);
+      };
+      emp(1);
+      if (!_regVal('exp-otro')) falta.push(['e-exp-otro', 'e-exp-otro', 'Responde si tuviste otro trabajo antes']);
+      else if (_regVal('exp-otro') === 'si') emp(2);
+    }
+    if (!_regFaltas(falta)) return;
+    regSetStep(4);
   }
 }
 
@@ -4905,7 +4866,7 @@ function regBack(fromStep) {
 
 function showRutDuplicateBlock(existing) {
   // Hide all registration steps
-  ['reg-step-0','reg-step-1','reg-step-2-guardia','reg-step-2-general','reg-step-2-supervisor','reg-step-3'].forEach(function(id) {
+  ['reg-step-0','reg-step-1','reg-step-2-guardia','reg-step-2-general','reg-step-2-supervisor','reg-step-3','reg-step-4'].forEach(function(id) {
     var el = document.getElementById(id); if (el) el.style.display = 'none';
   });
   // Build blocking screen
@@ -4966,17 +4927,19 @@ function submitRegister() {
       educacion = document.getElementById('r-educacion')?.value || '';
     }
   }
-  const rubro = document.getElementById('r-rubro')?.value || '';
+  // Rubro: ya no se pregunta; se deduce de los cargos declarados
+  const _cargosDecl = [document.getElementById('r-cargo1')?.value, document.getElementById('r-cargo2')?.value].join(' ').toLowerCase();
+  const rubro = /guardia|vigilan|seguridad|conserje|portero|rond[ií]n/.test(_cargosDecl) ? 'seguridad' : '';
 
   // Experience
   const emp1    = document.getElementById('r-emp1')?.value.trim()   || '';
   const cargo1  = document.getElementById('r-cargo1')?.value.trim() || '';
-  const dur1    = document.getElementById('r-dur1')?.value           || '';
-  const salida1 = document.getElementById('r-salida1')?.value        || '';
+  const dur1    = _regVal('dur1');
+  const salida1 = _regVal('actual1') === 'si' ? 'actual' : _regVal('salida1');
   const emp2    = document.getElementById('r-emp2')?.value.trim()   || '';
   const cargo2  = document.getElementById('r-cargo2')?.value.trim() || '';
-  const dur2    = document.getElementById('r-dur2')?.value           || '';
-  const salida2 = document.getElementById('r-salida2')?.value        || '';
+  const dur2    = _regVal('dur2');
+  const salida2 = _regVal('salida2');
 
   // Labels
   const EDU_LABELS = CAND_EDU_LABELS;
@@ -5006,20 +4969,25 @@ function submitRegister() {
   _setRefErr('e-ref-empresa',  '');
   _setRefErr('e-ref-nombre',   '');
   _setRefErr('e-ref-telefono', '');
+  _setRefErr('e-ref-cargo', '');
   if (!refEmpresa || _letras(refEmpresa) < 3) {
     _setRefErr('e-ref-empresa', !refEmpresa ? 'Campo obligatorio.' : 'Ingresa el nombre real de la empresa. Datos no verificables invalidan la evaluación.'); refOk = false;
   }
   if (!refNombre || !_dosPalabras(refNombre) || _letras(refNombre) < 4) {
     _setRefErr('e-ref-nombre', !refNombre ? 'Campo obligatorio.' : 'Ingresa nombre y apellido del referente (ej: Juan Pérez). Datos no verificables invalidan la evaluación.'); refOk = false;
   }
-  if (refCargo && _letras(refCargo) < 2) {
-    toast('El cargo del referente debe contener texto real.', 'er'); refOk = false;
+  if (!refCargo || _letras(refCargo) < 2) {
+    _setRefErr('e-ref-cargo', !refCargo ? 'Campo obligatorio.' : 'Ingresa el cargo real de esa persona.'); refOk = false;
   }
+  var _telPropio = ((document.getElementById('r-telefono') || {}).value || '').replace(/\D/g, '');
   if (!refTelefono || refTelefono.replace(/\D/g,'').length < 8) {
     _setRefErr('e-ref-telefono', 'Ingresa un número de contacto real y verificable.'); refOk = false;
+  } else if (_telPropio && refTelefono.replace(/\D/g, '').slice(-8) === _telPropio.slice(-8)) {
+    _setRefErr('e-ref-telefono', 'Es tu propio número: ingresa el teléfono de la persona que da la referencia.'); refOk = false;
   }
   if (!refOk) {
-    var refBlock = document.getElementById('r-ref-empresa');
+    var refBlock = document.querySelector('#reg-step-4 [id^="e-ref-"]:not(:empty)');
+    refBlock = refBlock ? (refBlock.closest('.field') || refBlock) : document.getElementById('r-ref-empresa');
     if (refBlock) refBlock.scrollIntoView({ behavior:'smooth', block:'center' });
     toast('Verifica los datos de la referencia. Esta información será contactada por RRHH.', 'er');
     return;
@@ -5045,7 +5013,7 @@ function submitRegister() {
     educacion, educacion_label: EDU_LABELS[educacion] || educacion,
     os10: os10 || null,
     rubro, rubro_label: RUBRO_LABELS[rubro] || '',
-    historial: historial.length ? historial : null,
+    historial: historial.length ? historial : (_regVal('exp-tiene') === 'no' ? [] : null),   // [] = declaró no tener experiencia
     referencia: referencia,
     _invitacion: (_INV && _INV.estado === 'valida') ? _INV.codigo : null,
   };
@@ -12544,7 +12512,8 @@ function _tabResumen(c) {
   var sc = c.scores || {};
   var m = _miradaDe(c);
   var h0 = Array.isArray(c.historial) && c.historial[0];
-  var exp = h0 ? [h0.cargo, h0.empresa].filter(Boolean).join(' · ') + (h0.duracion_label ? ' (' + h0.duracion_label + ')' : '') : (c.experiencia_label || c.experiencia || '');
+  var exp = h0 ? [h0.cargo, h0.empresa].filter(Boolean).join(' · ') + (h0.duracion_label ? ' (' + h0.duracion_label + ')' : '')
+          : (Array.isArray(c.historial) ? 'Sin experiencia laboral (lo declaró)' : (c.experiencia_label || c.experiencia || ''));
   var iv = sc._invitacion;
   var ents = (sc._entrevistas || []).filter(Boolean);
   var ult = ents[ents.length - 1];
