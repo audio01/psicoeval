@@ -12544,11 +12544,6 @@ function _tabEntrevistasDrawer(c) {
   var hist = (Array.isArray(c.historial) ? c.historial : []).filter(function(x){ return x && (x.empresa || x.cargo); }).slice(0, 2);
   var main = '<div class="ev-main" id="ev-main" data-cand="' + c.id + '">';
 
-  // Índice
-  main += '<div class="ev-index" id="ev-index">' + _EV_PASOS.map(function(p, i){
-    return '<button type="button" class="ev-ix" data-paso="' + (i + 1) + '" onclick="_evIrPaso(' + (i + 1) + ')">'
-      + '<span class="ev-ix-n">' + (i + 1) + '</span><span class="ev-ix-t">' + p[0] + '</span><span class="ev-ix-st" id="ev-ix-st-' + (i + 1) + '"></span></button>';
-  }).join('') + '</div>';
   main += '<div id="ev-borrador-aviso"></div>';
   if (entrevistas.length) {
     var tipoIc = { rrhh:'🧑‍💼', tecnica:'🔧', psicolaboral:'🧠', panel:'👥' };
