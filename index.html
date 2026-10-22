@@ -434,6 +434,8 @@ input,select,textarea{font-family:inherit;outline:none}
 }
 
 @media(max-width:700px){
+  .dash-pills{flex-wrap:nowrap!important;overflow-x:auto;max-width:100%;padding-bottom:4px;scrollbar-width:none}
+  .dash-pills>*{flex-shrink:0}
   .form-row,.test-grid,.res-grid,.stat-grid,.l-features,.disc-grid{grid-template-columns:1fr!important}
   .admin-layout{grid-template-columns:1fr}
   .sidebar{display:none}
@@ -812,6 +814,7 @@ input,select,textarea{font-family:inherit;outline:none}
 .bd-mi-ck{width:14px;color:var(--accent);font-weight:800}
 .bd-card{overflow:auto}
 .bd-tbl td{padding:9px 12px;vertical-align:middle}
+.bd-tbl td:nth-child(3){min-width:150px}
 .bd-tbl th{padding:9px 12px;white-space:nowrap}
 .bd-th-ord{cursor:pointer;user-select:none}
 .bd-th-ord:hover{color:var(--ink)}
@@ -842,6 +845,21 @@ input,select,textarea{font-family:inherit;outline:none}
 .dh-name{font-size:16px;font-weight:800;color:var(--ink)}
 .dh-meta{font-size:12.5px;color:var(--ink3);overflow:hidden;text-overflow:ellipsis}
 .dh-badges{display:flex;gap:6px;align-items:center;flex-shrink:0}
+.dh-pdf{padding:5px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:12px;font-weight:700;color:var(--ink2);cursor:pointer;font-family:inherit}
+.dh-pdf:hover{border-color:var(--accent);color:var(--accent)}
+.drawer-body.rpt-body{padding:0;overflow:hidden;display:flex;flex-direction:column}
+.rpt-embed{flex:1;min-height:0;display:flex;flex-direction:column}
+.rpt-embed .rpt-modal{height:100%}
+/* Centradas sin cortar la primera pestaña cuando no caben */
+.drawer-tabs>:first-child{margin-left:auto}
+.drawer-tabs>:last-child{margin-right:auto}
+@media(max-width:700px){
+  /* En celular el informe se desplaza completo (aviso y pestañas incluidos) */
+  .drawer-body.rpt-body{overflow-y:auto;display:block}
+  .rpt-embed,.rpt-embed .rpt-modal{display:block;height:auto}
+}
+.rpt-embed .rpt-hdr{display:none}
+.rpt-embed .rpt-tab-panel{width:100%;max-width:1040px;margin-left:auto;margin-right:auto}
 .dh-close{width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:14px;color:var(--ink3);flex-shrink:0}
 .drawer-tabs{display:flex;gap:4px;padding:0 24px;border-bottom:1px solid var(--border);background:var(--bg);overflow-x:auto;flex-shrink:0}
 .drawer-tab-btn{padding:9px 14px;font-size:13.5px;font-weight:600;color:var(--ink3);border:none;background:none;cursor:pointer;border-bottom:2.5px solid transparent;margin-bottom:-1px;white-space:nowrap;font-family:inherit;transition:color .15s,background .15s;border-radius:8px 8px 0 0}
@@ -1768,7 +1786,7 @@ body.exam-away #exam-shield{display:flex}
     </aside>
     <main id="admin-main" style="padding:28px 36px;overflow-y:auto;background:var(--bg);height:100vh">
       <!-- Mobile top bar -->
-      <div id="mobile-admin-bar" style="display:none;align-items:center;justify-content:space-between;margin:-28px -36px 20px;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50">
+      <div id="mobile-admin-bar" style="display:none;align-items:center;justify-content:space-between;margin:-28px -36px 20px;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:-28px;z-index:50">
         <button id="mobile-menu-btn" onclick="toggleMobileSidebar()" style="display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;font-size:18px">☰</button>
         <div style="font-size:15px;font-weight:700;letter-spacing:-.02em">PsicoEval</div>
         <div style="width:36px"></div>
@@ -1800,7 +1818,7 @@ body.exam-away #exam-shield{display:flex}
       <div id="tab-dashboard">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
           <div>
-            <h2 style="font-size:22px;font-weight:800;margin-bottom:2px">Resumen</h2>
+            <h2 style="font-size:22px;font-weight:800;margin-bottom:2px">Dashboard</h2>
             <p style="font-size:13px;color:var(--ink3)" id="dash-subtitle">Vista general de evaluaciones</p>
           </div>
           <div style="display:flex;gap:8px;align-items:center">
@@ -2705,7 +2723,7 @@ function renderCargosTab() {
       }
       h += '</div>';
       // Per-cargo share button
-      h += '<button onclick="event.stopPropagation();shareCargoLink(\'' + key + '\')" style="flex-shrink:0;display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;background:#f0fdf4;border:1px solid #bbf7d0;color:#16a34a;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;font-family:inherit" onmouseover="this.style.background=\'#dcfce7\'" onmouseout="this.style.background=\'#f0fdf4\'">🔗 Compartir</button>';
+      h += '<button onclick="event.stopPropagation();_invAbrirCargo(\'' + key + '\')" style="flex-shrink:0;display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;font-family:inherit" onmouseover="this.style.background=\'#dbeafe\'" onmouseout="this.style.background=\'#eff6ff\'">✉️ Invitar</button>';
       h += '</div>';
     }
 
@@ -6093,7 +6111,7 @@ const PERFIL_IDEAL = {
 
   guardia: {
     situacional:    { min:70, max:100, label:'Juicio Situacional',          req:'Decisiones correctas en incidentes de seguridad.' },
-    vigilancia:     { min:65, max:100, label:'Apt. Vigilancia',             req:'Atención sostenida y aplicación de protocolos.' },
+    vigilancia:     { min:65, max:100, label:'Aptitud de Vigilancia',             req:'Atención sostenida y aplicación de protocolos.' },
     comprension:    { min:80, max:100, label:'Comprensión de Instrucciones', req:'Aplica protocolos de seguridad con precisión; sin ambigüedad ante instrucciones multi-condición.' },
     gonogo:         { min:80, max:100, label:'Control de impulsos',         req:'Frenarse ante situaciones que piden no actuar. Crítico para vigilancia activa y manejo de incidentes. Mínimo provisional, a calibrar con los datos propios.' },
     },
@@ -6128,7 +6146,7 @@ const PERFIL_IDEAL = {
       ML: { min:55, max:100, label:'Motivación Laboral',    req:'Compromiso con puntualidad, continuidad y cuidado del vehículo asignado.' },
     },
     dc0:            { min:55, max:100, label:'Aptitud Cognitiva',             req:'Procesamiento de información, lectura de guías de ruta, reportes de incidentes y cumplimiento de protocolos escritos.' },
-    vigilancia:      { min:72, max:100, label:'Apt. Vigilancia',             req:'Atención sostenida y detección de anomalías durante la conducción. Indicador principal del cargo.' },
+    vigilancia:      { min:72, max:100, label:'Aptitud de Vigilancia',             req:'Atención sostenida y detección de anomalías durante la conducción. Indicador principal del cargo.' },
     comprension:     { min:70, max:100, label:'Comprensión de Instrucciones', req:'Aplica correctamente rutas, protocolos de acceso y procedimientos ante incidentes.' },
     gonogo:          { min:80, max:100, label:'Control de impulsos',         req:'Frenarse ante lo que pide no actuar (maniobras arriesgadas, provocaciones en ruta). Mínimo provisional, a calibrar con los datos propios.' },
   },
@@ -7383,7 +7401,7 @@ function _integTestBannerHtml(s) {
   var n = INTEG_NIVELES[ig.nivel];
   return '<div style="padding:11px 14px;border-radius:10px;background:' + n.bg + ';border:1.5px solid ' + n.bd + ';color:' + n.color + ';font-size:12.5px;line-height:1.6">'
     + '<div style="font-weight:800;margin-bottom:2px">' + n.icon + ' Integridad laboral: ' + n.titulo + '</div>' + n.txt
-    + ' <span style="opacity:.85">Detalle en la pestaña "' + TESTS_META.integridad.name + '".</span></div>';
+    + ' <span style="opacity:.85">Detalle en la pestaña Integridad.</span></div>';
 }
 
 function _integridadReportHtml(c, ig) {
@@ -7758,7 +7776,7 @@ function _miradaFichaHtml(c) {
   if (!m.dictamen) lineas.push('<span style="color:var(--ink4)">Aún sin dictamen de entrevista.</span>');
   if (m.segPend.length) lineas.push('<span style="color:#b45309;font-weight:600">⏰ Seguimiento pendiente: ' + m.segPend.map(function(p){ return p.hito.toLowerCase(); }).join(' y ') + '</span>');
   if (lineas.length) h += '<div style="font-size:12px;color:var(--ink2);line-height:1.6;margin-top:8px">' + lineas.join('<br>') + '</div>';
-  h += '<a onclick="viewCandReport(\'' + c.id + '\')" style="display:inline-block;margin-top:8px;font-size:12px;font-weight:700;color:var(--accent);cursor:pointer">Ver informe completo →</a>';
+  h += '<a onclick="switchDrawerTabById(\'evaluaciones\')" style="display:inline-block;margin-top:8px;font-size:12px;font-weight:700;color:var(--accent);cursor:pointer">Ver informe completo →</a>';
   return h + '</div>';
 }
 
@@ -7811,7 +7829,7 @@ function buildReportHtml(c, withClose) {
   var pm = PERFIL_META[c.perfil] || {};
   var cargo = htmlEsc(c.cargo || pm.label || c.perfil || '—');
   var tests = c.tests || PERFIL_TESTS[c.perfil] || PERFIL_TESTS_DEFAULT[c.perfil] || [];
-  var fecha = c.fecha ? htmlEsc(c.fecha) : '—';
+  var fecha = htmlEsc(_momentoTxt(c) || c.fecha || '') || '—';
   var edad  = c.edad  ? htmlEsc(String(c.edad)) : null;
 
   // ── Data constants ──
@@ -7967,7 +7985,7 @@ function buildReportHtml(c, withClose) {
 
   var html = '<div class="rpt-modal" style="font-family:SF Pro Display,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;display:flex;flex-direction:column;height:100%;min-height:0">';
   html += '<style>'
-    + '.rpt-tabs{display:flex;flex-wrap:wrap;align-items:center;gap:6px 6px;padding:10px 20px;background:#fff;border-bottom:1px solid #e2e8f0;flex-shrink:0}'
+    + '.rpt-tabs{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px 6px;padding:10px 20px;background:#fff;border-bottom:1px solid #e2e8f0;flex-shrink:0}'
     + '.rpt-tg{display:flex;flex-wrap:wrap;align-items:center;gap:3px;min-width:0}'
     + '.rpt-tg+.rpt-tg{border-left:1px solid #e2e8f0;padding-left:10px;margin-left:4px}'
     + '.rpt-tg-lbl{font-size:9.5px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:#94a3b8;margin-right:5px}'
@@ -7987,7 +8005,7 @@ function buildReportHtml(c, withClose) {
   if (edad) _meta.push(['Edad', edad + ' años']);
   _meta.push(['Fecha de evaluación', fecha]);
   _meta.push(['Pruebas rendidas', String(completedTests.length)]);
-  html += '<div style="background:#0f2d52;color:#fff;padding:18px 24px 14px;flex-shrink:0;position:relative">';
+  html += '<div class="rpt-hdr" style="background:#0f2d52;color:#fff;padding:18px 24px 14px;flex-shrink:0;position:relative">';
   if (withClose) html += '<button onclick="document.getElementById(\'cand-modal-overlay\').style.display=\'none\'" title="Cerrar" style="position:absolute;top:14px;right:14px;background:rgba(255,255,255,.12);border:none;color:#fff;width:30px;height:30px;border-radius:50%;font-size:15px;cursor:pointer;line-height:1">✕</button>';
   html += '<div style="display:flex;align-items:center;gap:14px;padding-right:44px">';
   html += '<div style="width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;letter-spacing:.5px;flex-shrink:0">' + htmlEsc(_ini || '–') + '</div>';
@@ -8130,10 +8148,7 @@ function buildReportHtml(c, withClose) {
             + (row.tid === 'bart' ? ' Esta tarea se relaciona poco con conductas riesgosas reales: no la use sola para rechazar.' : ''));
         }
       });
-      var _rsNotas = [];
-      if (_apt.some(function(r){ return r.tid === 'gonogo'; })) _rsNotas.push('en Control de impulsos, porcentaje de rojos en que se frenó');
-      if (_apt.some(function(r){ return r.tid === 'bart'; })) _rsNotas.push('en Control del riesgo, 100 menos el promedio de infladas en una escala de 0 a 100');
-      var _rsGng = _rsNotas.length ? ' (' + _rsNotas.join('; ') + ')' : '';
+      var _rsGng = _apt.some(function(r){ return r.tid === 'gonogo' || r.tid === 'bart'; }) ? ' (las tareas de conducta usan su propia escala: vea su pestaña)' : '';
       html += _rsCard(_rsH3('Pruebas de aptitud', (_conMin.length ? 'Porcentaje de respuestas correctas' + _rsGng + ', comparado con el mínimo definido para ' + cargo : 'Porcentaje de respuestas correctas' + _rsGng + ' (el cargo no tiene mínimos definidos)'))
         + _aptHead + _aptRows);
     }
@@ -8623,12 +8638,14 @@ function renderWikiTab() {
     '🧠 Tests Cognitivos': ['dc0','comprension'],
     '🧬 Tests de Personalidad': ['pai','disc','pf16'],
     '💡 Tests Situacionales': ['situacional','vigilancia'],
+    '📐 Conocimiento e integridad': ['normativa_ohs','integridad'],
     '🎯 Control de impulsos': ['gonogo','bart'],
   };
   var WIKI_GROUP_DESC = {
     '🧠 Tests Cognitivos': 'Miden capacidades intelectuales, velocidad de procesamiento y comprensión procedimental.',
     '🧬 Tests de Personalidad': 'Evalúan rasgos de personalidad, estilos conductuales y disposición ética.',
     '💡 Tests Situacionales': 'Miden el juicio aplicado y la toma de decisiones ante escenarios laborales reales.',
+    '📐 Conocimiento e integridad': 'Conocimiento técnico del cargo y actitudes ante situaciones de riesgo de integridad.',
     '🎯 Control de impulsos': 'Medidas de conducta (no de opinión): frenar una respuesta automática y no arriesgar más de lo que conviene.',
   };
   var WIKI = {
@@ -8706,13 +8723,31 @@ function renderWikiTab() {
       reference: 'Paradigma Go/No-Go de inhibición de respuesta, en la versión de alta exigencia (25 % de ensayos No-Go). Confiabilidad entre personas moderada (Hedge, Powell y Sumner, 2018, Behavior Research Methods 50, 1166-1186): usar junto con la entrevista.'
     },
     bart: {
-      icon: '🎈', name: 'Control del riesgo (tarea de globos, BART)', category: 'Conducta', items: 30, time: '5 min', format: 'Tarea de decisión: inflar o guardar',
+      icon: '🎈', name: 'Control del riesgo (tarea de globos, BART)', category: 'Conducta', items: 20, time: '2-3 min', format: 'Tarea de decisión: inflar o guardar',
       description: 'Balloon Analogue Risk Task (Lejuez y otros, 2002). Versión corta propia: la persona infla 20 globos (la clásica usa 30 o más). Cada inflada suma un punto, puede guardar los puntos cuando quiera y, si el globo explota, los pierde. Todos los candidatos reciben la misma secuencia de puntos de explosión (entre 2 y 62 infladas, promedio 32), para compararlos en igualdad de condiciones. El candidato la ve como "Globos".',
       dimensions: [
         { key:'_self', name:'Control del riesgo', desc:'100 menos el promedio de infladas en los globos guardados (sobre 64). Más alto = más prudente. Se compara con el mínimo del cargo. El informe agrega globos explotados, cambio entre el inicio y el final, ritmo de infladas y un nivel descriptivo (prudente, moderado, alta disposición al riesgo).' },
       ],
       scoring: 'Lo calcula el servidor a partir del registro de globos, y verifica que coincida con la secuencia de explosiones. No interpretable si no coincide, está incompleto o la persona no se comprometió con la tarea (más de 7 globos guardados sin inflar o menos de 3 infladas promedio). Mínimo inicial: 50, que equivale a no superar la estrategia de mayor ganancia esperada (32 infladas).',
       reference: 'Lejuez y otros (2002), Journal of Experimental Psychology: Applied 8, 75-84. Estabilidad test-retest r = 0,77 en la versión clásica (White, Lejuez y de Wit, 2008); la versión corta no tiene estudios propios. Metaanálisis de 237 estudios: estable, pero con relación nula a baja con conductas riesgosas reales (Frey, Pantoja y Lob, 2026). No usar como criterio único.'
+    },
+    normativa_ohs: {
+      icon: '📐', name: 'Conocimiento Normativo OHS', category: 'Conocimiento', items: 15, time: '6 min', format: 'Opción múltiple',
+      description: 'Evalúa el dominio de la normativa chilena de seguridad y salud en el trabajo: DS 44, Ley 16.744, DS 594 y Ley Karin. Recomendada para Prevencionista de Riesgo.',
+      dimensions: [
+        { key:'_self', name:'Conocimiento normativo', desc:'Porcentaje de respuestas correctas (0-100). Se compara con el mínimo del cargo.' },
+      ],
+      scoring: 'Cada respuesta correcta suma 1 punto; se normaliza a 0-100. La corrección se hace en el servidor.',
+      reference: 'Desarrollo propio basado en la normativa vigente.'
+    },
+    integridad: {
+      icon: '🧭', name: 'Integridad laboral', category: 'Integridad', items: 24, time: '5 min', format: 'Opción múltiple en 6 secciones',
+      description: 'Prueba propia para guardias y cargos de seguridad. Explora actitudes ante hurto, registros, protocolos, sobornos y presiones: percepción de los demás, qué debería pasar en casos concretos, experiencia propia, preferencias entre frases igual de positivas, situaciones y validez. El candidato la ve como "Actitudes en el trabajo".',
+      dimensions: [
+        { key:'_self', name:'Nivel de riesgo', desc:'Evaluativa: sin indicadores, a explorar, riesgo alto o no interpretable, con los motivos. Algunas respuestas críticas activan riesgo alto por sí solas. Incluye un indicador de imagen favorable.' },
+      ],
+      scoring: 'Lo calcula el servidor; las claves no están en la página. Puede fundamentar un rechazo, pero la decisión final es del evaluador, junto con la entrevista y las referencias.',
+      reference: 'Desarrollo propio basado en el enfoque de pruebas de integridad abiertas (actitudes y admisiones). Borrador en validación profesional.'
     },
     pf16: {
       icon: '🧬', name: 'Personalidad laboral (5 dimensiones)', category: 'Personalidad', items: 20, time: '8-10 min', format: 'Acuerdo 1-5',
@@ -9004,17 +9039,10 @@ function renderBateriaTab() {
   });
 
   // ── Sección de tiempos configurables ──
-  var TM_TEST_ORDER = [
-    { id:'dc0',          label:'Aptitud Cognitiva (DC0)', icon:'🧠' },
-    { id:'comprension',  label:'Comprensión Lectora',     icon:'📖' },
-    { id:'pai',          label:'Ajuste laboral',          icon:'🔎' },
-    { id:'situacional',  label:'Evaluación Situacional',  icon:'💡' },
-    { id:'vigilancia',   label:'Vigilancia y Protocolos', icon:'👁' },
-    { id:'normativa_ohs',label:'Conocimiento Normativo OHS', icon:'📐' },
-    { id:'integridad',   label:'Integridad laboral',      icon:'🧭' },
-    { id:'disc',         label:'Perfil DISC',             icon:'🎯' },
-    { id:'pf16',         label:'Personalidad laboral',    icon:'🧬' },
-  ];
+  // Mismos nombres e íconos que la batería (las tareas de reacción y globos tienen duración fija)
+  var TM_TEST_ORDER = ['dc0','comprension','situacional','vigilancia','normativa_ohs','integridad','pai','disc','pf16'].map(function(id){
+    return { id:id, label: id === 'integridad' ? 'Integridad laboral' : TESTS_META[id].name, icon: TESTS_META[id].icon };
+  });
   var tmTotal = TM_TEST_ORDER.reduce(function(a, t){ return a + (TM_MINS_CONFIG[t.id] || TM_MINS_DEFAULTS[t.id] || 4); }, 0) + 2;
 
   out += '<div style="margin-top:32px;border-top:2px solid var(--border);padding-top:28px">';
@@ -9675,6 +9703,19 @@ async function downloadPdfReport(id) {
     .replace(/<button[^>]*class="rpt-tab-btn[^"]*"[^>]*>[\s\S]*?<\/button>/g, '');
 
   const fname = (c.nombre + '_' + c.apellido + '_Informe').replace(/\s+/g, '_');
+  // Mismo orden que las pestañas del informe
+  const _orden = ['resumen','integridad','dc0','situacional','vigilancia','comprension','normativa_ohs','gonogo','bart','pai','disc','pf16','entrevista','referencias'];
+  let reportOrdenado = reportBody;
+  try {
+    const tmp = document.createElement('div'); tmp.innerHTML = reportBody;
+    const paneles = [...tmp.querySelectorAll('.rpt-tab-panel')];
+    if (paneles.length > 1) {
+      const padre = paneles[0].parentNode;
+      paneles.sort((x, y) => _orden.indexOf(x.id.replace('rpt-panel-', '')) - _orden.indexOf(y.id.replace('rpt-panel-', '')));
+      paneles.forEach(p => padre.appendChild(p));
+      reportOrdenado = tmp.innerHTML;
+    }
+  } catch (e) { reportOrdenado = reportBody; }
 
   // ── Minimal print-optimised CSS (no app styles) ─────────────
   const PDF_CSS = `
@@ -9720,7 +9761,7 @@ async function downloadPdfReport(id) {
     <button onclick="document.getElementById('pdf-bar').style.display='none'" style="background:rgba(255,255,255,.12);border:none;color:rgba(255,255,255,.7);padding:7px 12px;border-radius:8px;font-size:12px;cursor:pointer;display:block!important">✕</button>
   </div>
 </div>
-<div style="padding-top:52px">${reportBody}</div>
+<div style="padding-top:52px">${reportOrdenado}</div>
 </body></html>`;
 
   const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
@@ -10013,7 +10054,7 @@ async function renderDashboard() {
 
   // ── Filtros: período y cargo ──
   h += '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:18px">';
-  h += '<div style="display:flex;gap:6px;flex-wrap:wrap">';
+  h += '<div class="dash-pills" style="display:flex;gap:6px;flex-wrap:wrap">';
   ['all'].concat(_cargosParaFiltro(allCands)).forEach(function(pf) {
     var active = pf === perfil;
     h += '<button class="dash-perfil-btn" onclick="setDashPerfil(\'' + pf + '\',this)" style="padding:6px 14px;border-radius:100px;border:1.5px solid ' + (active?'var(--accent)':'var(--border)') + ';background:' + (active?'var(--accent)':'transparent') + ';color:' + (active?'#fff':'var(--ink3)') + ';font-size:12px;font-weight:600;cursor:pointer;transition:all .15s">' + PICON[pf] + ' ' + PLABEL[pf] + '</button>';
@@ -10427,12 +10468,18 @@ function _bdCelda(c, p) {
   if (p === 'cargo') return htmlEsc(c.cargo || pm.label || c.perfil || '—');
   if (p === 'resultado') return _miradaChipsHtml(_bdMirada(c));
   if (p === 'etapa') { var em = getPipelineMeta(getPipelineEtapa(c)); return '<span class="bd-pill" style="color:' + em.color + ';background:' + em.bg + ';border-color:' + em.border + '">' + em.icon + ' ' + em.label + '</span>'; }
-  if (p === 'dictamen') return _dictamenBadgeHtml(c);
+  if (p === 'dictamen') return _bdDictamenCorto(c);
   if (p === 'estado') return statusBadge(c.estado);
   if (p === 'fecha') return '<span style="color:var(--ink3);white-space:nowrap">' + htmlEsc(_momentoTxt(c)) + '</span>';
   if (p === 'comuna') return htmlEsc(c.comuna || '—');
   if (p === 'invitacion') { var iv = c.scores && c.scores._invitacion; return iv ? (iv.tipo === 'rut' ? '🪪 Por RUT' : '🔗 Link único') : '<span style="color:var(--ink4)">—</span>'; }
   return '';
+}
+var _BD_DIC_CORTO = { recomendado:'Recomendado', obs:'Con observaciones', no_recomendable:'No recomendable' };
+function _bdDictamenCorto(c) {
+  var v = _bdDictamen(c), d = _EV_DICTAMEN.filter(function(x){ return x.val === v; })[0];
+  if (!d) return '<span style="font-size:11px;color:var(--ink4);white-space:nowrap">Sin dictamen</span>';
+  return '<span class="bd-pill" title="' + htmlEsc(d.label) + '" style="color:' + d.color + ';background:' + d.bg + ';border-color:' + d.border + '">' + d.icon + ' ' + _BD_DIC_CORTO[v] + '</span>';
 }
 // Resultado sin el dictamen cuando el dictamen ya se muestra aparte
 function _bdMirada(c) { var m = _miradaDe(c); return _BD.props.dictamen ? Object.assign({}, m, { dictamen:'' }) : m; }
@@ -10494,7 +10541,7 @@ function _bdTablero(lista) {
         + (_BD.props.cargo ? '<div class="bd-sub">' + (pm.icon || '') + ' ' + htmlEsc(c.cargo || pm.label || '') + '</div>' : '') + '</div>' + _bdChk(c) + '</div>'
         + (_BD.props.resultado && c.estado === 'completed' ? '<div style="margin-top:7px">' + _miradaChipsHtml(_bdMirada(c)) + '</div>' : '')
         + (_BD.props.etapa && campo !== 'etapa' ? '<div style="margin-top:6px">' + _bdCelda(c, 'etapa') + '</div>' : '')
-        + (_BD.props.dictamen && campo !== 'dictamen' && _bdDictamen(c) ? '<div style="margin-top:6px">' + _dictamenBadgeHtml(c) + '</div>' : '')
+        + (_BD.props.dictamen && campo !== 'dictamen' && _bdDictamen(c) ? '<div style="margin-top:6px">' + _bdDictamenCorto(c) + '</div>' : '')
         + '<div class="bd-card-pie">'
         + (_BD.props.estado ? statusBadge(c.estado) : '')
         + (ent ? '<span>🗓 ' + ent + '</span>' : '')
@@ -11490,6 +11537,8 @@ function _invCopiarViejo(texto) {
 function _invCopiarMensaje(codigo, tipo) { _invCopiar(_invMensaje(_invLink(codigo), tipo), '✓ Mensaje copiado: pégalo en WhatsApp'); }
 function _invWhatsapp(codigo, tipo) { window.open('https://wa.me/?text=' + encodeURIComponent(_invMensaje(_invLink(codigo), tipo)), '_blank'); }
 
+// Abrir "Invitar" con el cargo ya elegido (desde Cargos)
+function _invAbrirCargo(k) { showInviteModal(); var sel = document.getElementById('inv-perfil'); if (sel) sel.value = k; }
 function showInviteModal() {
   var modal = document.getElementById('inv-modal');
   if (!modal) {
@@ -11987,11 +12036,11 @@ function _dashProceso(cands, all, filterCargo) {
         var bar = Math.round(d.total / Math.max(...cargoKeys.map(function(x){return byCargo[x].total;})) * 100);
         var rate = d.total > 0 ? Math.round(d.sel/d.total*100) : 0;
         h += '<div style="display:flex;align-items:center;gap:10px">';
-        h += '<div style="width:130px;flex-shrink:0;font-size:12px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (pm.icon||'') + ' ' + (pm.label||k) + '</div>';
+        h += '<div style="width:210px;flex-shrink:0;font-size:12px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (pm.icon||'') + ' ' + (pm.label||k) + '</div>';
         h += '<div style="flex:1;height:20px;background:var(--bg);border-radius:6px;overflow:hidden;border:1px solid var(--border)">';
         h += '<div style="height:100%;width:' + bar + '%;background:var(--accent);border-radius:6px;opacity:.7"></div></div>';
         h += '<div style="width:28px;text-align:right;font-size:13px;font-weight:700;color:var(--ink)">' + d.total + '</div>';
-        h += '<div style="width:44px;text-align:right;font-size:11px;color:' + (rate >= 20 ? '#16a34a' : '#94a3b8') + ';font-weight:600">' + rate + '% sel.</div>';
+        h += '<div style="width:70px;white-space:nowrap;text-align:right;font-size:11px;color:' + (rate >= 20 ? '#16a34a' : '#94a3b8') + ';font-weight:600">' + rate + '% sel.</div>';
         h += '</div>';
       });
       h += '</div></div>';
@@ -12057,7 +12106,8 @@ function _renderDrawerHeader(c) {
     '<div class="dh-row">'
     + '<div class="dh-av">' + initials + '</div>'
     + '<div class="dh-txt"><span class="dh-name">' + htmlEsc(c.nombre + ' ' + c.apellido) + '</span><span class="dh-meta">' + (pm.icon || '') + ' ' + datos + '</span></div>'
-    + '<div class="dh-badges">' + pipeBadgeHtml(etapa) + _dictamenBadgeHtml(c) + '</div>'
+    + '<div class="dh-badges">' + pipeBadgeHtml(etapa) + _dictamenBadgeHtml(c)
+    + (c.estado === 'completed' ? '<button class="dh-pdf" onclick="downloadPdfReport(\'' + c.id + '\')" title="Descargar el informe en PDF">⬇ PDF</button>' : '') + '</div>'
     + '<button onclick="closeCandDrawer()" class="dh-close" title="Cerrar (Esc)">✕</button>'
     + '</div>';
 }
@@ -12079,7 +12129,7 @@ function _switchDrawerTab(tab, c) {
   var bodyEl = document.getElementById('drawer-body');
   if (!bodyEl) return;
   var drawerEl = document.getElementById('cand-drawer');
-  bodyEl.className = tab === 'entrevistas' ? 'drawer-body ev-body' : 'drawer-body';
+  bodyEl.className = tab === 'entrevistas' ? 'drawer-body ev-body' : (tab === 'evaluaciones' && c.estado === 'completed') ? 'drawer-body rpt-body' : 'drawer-body';
   bodyEl.scrollTop = 0;
   if (tab === 'resumen') bodyEl.innerHTML = _tabResumen(c);
   else if (tab === 'evaluaciones') bodyEl.innerHTML = _tabEvaluaciones(c);
@@ -12109,10 +12159,11 @@ function _tabResumen(c) {
     ['Teléfono', c.telefono ? '+56 ' + c.telefono : '—'],
     ['Edad', c.edad ? c.edad + ' años' : '—'],
     ['Educación', c.educacion_label || c.educacion || '—'],
-    ['Experiencia', c.experiencia_label || c.experiencia || '—'],
+    ['Experiencia', (function(){ var h0 = Array.isArray(c.historial) && c.historial[0]; if (!h0) return c.experiencia_label || c.experiencia || '—';
+      return [h0.cargo, h0.empresa].filter(Boolean).join(' · ') + (h0.duracion_label ? ' (' + h0.duracion_label + ')' : ''); })()],
     ['Comuna', c.comuna || '—'],
     ['Rubro', c.rubro_label || c.rubro || '—'],
-    ['Fecha evaluación', c.fecha ? c.fecha.substring(0,10) : '—'],
+    ['Fecha evaluación', _momentoTxt(c) || '—'],
     ['Invitación', (function(){ var iv = c.scores && c.scores._invitacion; if (!iv) return 'Sin invitación (link general)';
       return (iv.tipo === 'rut' ? 'Por RUT' : 'Link único') + (iv.creada_por ? ' · ' + iv.creada_por : '') + (iv.creada ? ' · ' + new Date(iv.creada).toLocaleDateString('es-CL') : ''); })()],
   ];
@@ -12149,14 +12200,13 @@ function _tabResumen(c) {
   h += '<button onclick="saveDrawerNotas(\'' + c.id + '\')" style="margin-top:7px;padding:7px 16px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Guardar notas</button>';
   h += '</div>';
   if (c.estado === 'completed') {
-    h += '<button onclick="closeCandDrawer();viewCandReport(\'' + c.id + '\')" style="width:100%;padding:11px;border-radius:10px;border:none;background:linear-gradient(135deg,#6366f1,#7c3aed);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">📋 Ver informe psicométrico completo</button>';
+    h += '<button onclick="switchDrawerTabById(\'evaluaciones\')" style="width:100%;padding:11px;border-radius:10px;border:none;background:linear-gradient(135deg,#6366f1,#7c3aed);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">📋 Ver informe psicométrico completo</button>';
   }
   h += '</div>';
   return h;
 }
 
 function _tabEvaluaciones(c) {
-  var sc = c.scores || {};
   if (c.estado !== 'completed') {
     return '<div style="text-align:center;padding:50px 20px">'
       + '<div style="font-size:42px;margin-bottom:10px">🔒</div>'
@@ -12164,35 +12214,8 @@ function _tabEvaluaciones(c) {
       + '<div style="font-size:12px;color:var(--ink3)">El candidato debe finalizar la evaluación para ver los resultados.</div>'
       + '</div>';
   }
-  var h = '<div style="display:flex;flex-direction:column;gap:13px">';
-  var tests = c.tests || [];
-  if (tests.length) {
-    h += '<div style="background:var(--surface);border-radius:11px;border:1px solid var(--border);overflow:hidden">';
-    h += '<div style="padding:9px 13px;border-bottom:1px solid var(--border);font-size:10.5px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px">Tests aplicados</div>';
-    tests.forEach(function(tid) {
-      var tm = TESTS_META[tid]; if (!tm) return;
-      var ts = sc[tid] || {};
-      var pct = ts.pct !== undefined ? ts.pct : (ts.score !== undefined ? ts.score : null);
-      var bd = pct !== null ? rawBandPct(pct) : null;
-      h += '<div style="padding:11px 13px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:11px">';
-      h += '<span style="font-size:20px">' + tm.icon + '</span>';
-      h += '<div style="flex:1">';
-      h += '<div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:4px">' + htmlEsc(tm.name) + '</div>';
-      if (pct !== null && bd) {
-        h += '<div style="height:5px;background:#e2e8f0;border-radius:100px;overflow:hidden">';
-        h += '<div style="height:100%;width:' + Math.round(pct) + '%;background:' + bd.color + ';border-radius:100px"></div></div>';
-      }
-      h += '</div>';
-      if (pct !== null && bd) {
-        h += '<span style="font-size:13px;font-weight:700;color:' + bd.color + ';flex-shrink:0">' + Math.round(pct) + '%</span>';
-      }
-      h += '</div>';
-    });
-    h += '</div>';
-  }
-  h += '<button onclick="closeCandDrawer();viewCandReport(\'' + c.id + '\')" style="width:100%;padding:11px;border-radius:10px;border:none;background:linear-gradient(135deg,#6366f1,#7c3aed);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">📋 Ver informe completo</button>';
-  h += '</div>';
-  return h;
+  // El mismo informe de "Ver informe completo", sin su encabezado (ya está el de la ficha)
+  return '<div class="rpt-embed">' + buildReportHtml(c, false) + '</div>';
 }
 
 
@@ -12533,7 +12556,7 @@ function _tabEntrevistasDrawer(c) {
           try { f = new Date(ev.fecha + 'T12:00').toLocaleDateString('es-CL', { day:'2-digit', month:'short' }); } catch(e) {}
           return '<span class="ev-prev-chip">' + htmlEsc(f) + (dm ? ' · <span style="color:' + dm.color + '">' + dm.icon + ' ' + dm.label + '</span>' : '') + '</span>';
         }).join('')
-      + (c.estado === 'completed' ? '<a class="ev-prev-inf" onclick="event.preventDefault();closeCandDrawer();viewCandReport(\'' + c.id + '\')">Ver informe →</a>' : '')
+      + (c.estado === 'completed' ? '<a class="ev-prev-inf" onclick="event.preventDefault();switchDrawerTabById(\'evaluaciones\')">Ver informe →</a>' : '')
       + '</summary>';
     entrevistas.slice().reverse().forEach(function(ev) {
       var f = ev.fecha || '';
@@ -13103,8 +13126,8 @@ async function saveSeguimiento(candId) {
 // Tarjeta del Análisis: permanencia, motivos de salida y puntajes según el resultado
 function _segAnalisisHtml(cands) {
   var conSeg = cands.filter(function(c){ return c.scores && c.scores._seguimiento && c.scores._seguimiento.contratado === 'si'; });
-  var h = '<div style="background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:20px 24px">';
-  h += '<div style="font-size:15px;font-weight:800;color:var(--ink);margin-bottom:4px">Seguimiento después de la contratación</div>';
+  var h = '<div class="dash-card">';
+  h += '<div class="dash-lbl" style="margin-bottom:4px">Seguimiento después de la contratación</div>';
   h += '<div style="font-size:12px;color:var(--ink3);margin-bottom:14px">Compara los puntajes de quienes tuvieron buen resultado (siguen, desempeño 4–5, sin incidentes) con los de quienes tuvieron mal resultado (salida por desempeño o conducta, incidentes o desempeño 1–2).</div>';
   if (!conSeg.length) return h + '<div style="font-size:12.5px;color:var(--ink3)">Aún no hay contrataciones registradas. Regístrelas en la ficha del candidato → pestaña Seguimiento.</div></div>';
   var m3 = conSeg.filter(function(c){ return c.scores._seguimiento.m3 && c.scores._seguimiento.m3.sigue; });
