@@ -13863,11 +13863,10 @@ function _rhSugerencias(c) {
   var conSint = ((s._entrevistas || []).filter(function(e){ return e && (e.sintesis || e.motivo); }).pop()) || {};
   var nom = ((c.nombre || '') + ' ' + (c.apellido || '')).trim();
   var catTxt = (_RH_CAT.filter(function(x){ return x[0] === cat; })[0] || [])[1];
-  var obs = (catTxt ? 'Al momento de la evaluación, se concluye que ' + nom + ' se encuentra en la categoría de ' + catTxt + ' para el cargo de ' + (c.cargo || (PERFIL_META[c.perfil] || {}).label || '') + '. ' : '')
-    + [conSint.sintesis, conSint.motivo].filter(Boolean).join(' ');
+  var obs = [conSint.sintesis, conSint.motivo].filter(Boolean).join('\n\n');
   var nv = {}; Object.keys(niveles).forEach(function(k){ nv[k] = niveles[k].v; });
   return {
-    lista:'', zonal:'', categoria:cat, publico:'',
+    lista:'', zonal:'', instalacion:'', recomendacion:'', detalle:'', categoria:cat, publico:'',
     fecha:(_momentoTxt(c) || '').slice(0, 10).replace(/-/g, '/'),
     niveles:nv, fuentes:niveles,
     fortalezas:fort.join('\n'), debilidades:deb.join('\n'),
@@ -13914,6 +13913,7 @@ async function abrirInformeRH(id) {
     + '<div class="rh-grid2"><div class="field"><label>Fecha de evaluación</label>' + input('fecha', d.fecha, 'dd/mm/aaaa') + '</div>'
     + '<div class="field"><label>Psicólogo que realiza el informe</label>' + input('psicologo', d.psicologo) + '</div></div>'
     + '<div class="field"><label>Categoría</label>' + chips('categoria', _RH_CAT, d.categoria) + '</div>'
+    + '<div class="field"><label>Instalación</label>' + input('instalacion', d.instalacion, 'Ej: Rehau') + '</div>'
     + '<div class="field"><label>Atención a público</label>' + chips('publico', [['si','Recomendable'],['no','No Recomendable']], d.publico) + '</div>'
     + '<table class="rh-tbl"><thead><tr><th>Competencia</th><th>Nivel ideal</th><th>Nivel obtenido</th><th>Sugerencia</th></tr></thead><tbody>' + filas + '</tbody></table>'
     + '<div class="field"><label>Fortalezas <span style="text-transform:none;font-weight:500">(una por línea)</span></label>' + area('fortalezas', d.fortalezas, 5) + '</div>'
@@ -13924,7 +13924,13 @@ async function abrirInformeRH(id) {
     + '<div class="field"><label>Nombre y cargo de quien corrobora</label>' + input('corrobora', d.corrobora) + '</div>'
     + '<div class="field"><label>Antecedentes aportados por el empleador anterior</label>' + area('aportados', d.aportados, 3) + '</div>'
     + sec('Cierre')
-    + '<div class="field"><label>Observaciones finales</label>' + area('observaciones', d.observaciones, 7) + '</div>'
+    + '<div class="field"><label>Recomendación de contratación</label>' + chips('recomendacion', [['plazo_fijo','Plazo fijo'],['indefinido','Indefinido'],['no_contratar','No contratar']], d.recomendacion) + '</div>'
+    + '<div class="field"><label>Detalle de la recomendación <span style="text-transform:none;font-weight:500">(opcional)</span></label>' + input('detalle', d.detalle, 'Ej: con inducción clara y seguimiento cercano en terreno de la jefatura directa') + '</div>'
+    + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><button class="rs-btn prim" id="rh-btn-ia" onclick="_rhRedactar()">✨ Redactar integración con IA</button>'
+    + '<span style="font-size:11.5px;color:var(--ink4)">Usa las fortalezas, debilidades, niveles y la recomendación. No envía nombre, RUT ni datos de contacto. Revise el texto antes de generar el PDF.</span></div>'
+    + '<div class="field"><label>Observaciones finales</label>'
+    + '<div style="font-size:12px;color:var(--ink3);margin:2px 0 6px">El PDF comienza con: <em>"Al momento de la evaluación, se concluye que [nombre] se encuentra en la categoría de [categoría] para el cargo de [cargo] en la instalación [instalación]."</em> Escriba aquí el resto; deje una línea en blanco entre párrafos.</div>'
+    + area('observaciones', d.observaciones, 8) + '</div>'
     + '<div class="field"><label>Refuerzo de habilidades que debe observar el supervisor</label>' + area('refuerzo', d.refuerzo, 3, 'Ej: Acompañamiento explícito en cambios de protocolo…') + '</div>'
     + '<div style="font-size:11.5px;color:var(--ink4)">Las secciones B (entrevista operacional) y C (verificación de domicilio) salen en blanco para que las complete el supervisor.</div>'
     + '</div>'
@@ -13938,10 +13944,39 @@ function _rhLeer() {
   var v = function(id){ return ((document.getElementById('rh-' + id) || {}).value || '').trim(); };
   var r = function(n){ var x = document.querySelector('input[name="rh-' + n + '"]:checked'); return x ? x.value : ''; };
   var niveles = {}; _RH_COMP.forEach(function(k){ var x = v('n-' + k.key); if (x) niveles[k.key] = x; });
-  return { lista:r('lista'), zonal:r('zonal'), categoria:r('categoria'), publico:r('publico'), fecha:v('fecha'), psicologo:v('psicologo'),
+  return { lista:r('lista'), zonal:r('zonal'), instalacion:v('instalacion'), recomendacion:r('recomendacion'), detalle:v('detalle'), categoria:r('categoria'), publico:r('publico'), fecha:v('fecha'), psicologo:v('psicologo'),
            niveles:niveles, fortalezas:v('fortalezas'), debilidades:v('debilidades'), empresa:v('empresa'), corrobora:v('corrobora'),
            fono:v('fono'), aportados:v('aportados'), observaciones:v('observaciones'), refuerzo:v('refuerzo'), actualizado:new Date().toISOString() };
 }
+// Redacción con IA (Edge Function psicoeval-redactar). Solo viajan textos del informe,
+// nunca el nombre, RUT ni contacto; el nombre se pone aquí, en el computador del psicólogo.
+async function _rhRedactar() {
+  var d = _rhLeer(), c = _rhCand;
+  if (!d.recomendacion) { toast('Elija primero la recomendación de contratación.', 'er'); return; }
+  var ta = document.getElementById('rh-observaciones');
+  if (ta && ta.value.trim() && !(await appConfirm('¿Reemplazar el texto actual de Observaciones finales por la redacción de la IA?'))) return;
+  var btn = document.getElementById('rh-btn-ia');
+  if (btn) { btn.disabled = true; btn.textContent = '✨ Redactando…'; }
+  try {
+    var r = await fetch(SUPA_URL + '/functions/v1/psicoeval-redactar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + S.authToken },
+      body: JSON.stringify({
+        cargo: c.cargo || (PERFIL_META[c.perfil] || {}).label || '', categoria: d.categoria,
+        fortalezas: d.fortalezas, debilidades: d.debilidades,
+        niveles: _RH_COMP.map(function(k){ return { competencia: k.label, ideal: k.ideal, obtenido: d.niveles[k.key] || '' }; }),
+        recomendacion: d.recomendacion, detalle: d.detalle
+      })
+    });
+    var j = await r.json().catch(function(){ return {}; });
+    if (!r.ok || !j.texto) throw new Error(j.error || (r.status === 404 ? 'La función de redacción aún no está instalada en Supabase.' : 'Error ' + r.status));
+    var nom = ((c.nombre || '') + ' ' + (c.apellido || '')).trim();
+    if (ta) ta.value = j.texto.replace(/\[NOMBRE\]/g, nom);
+    toast('✨ Texto redactado: revíselo antes de generar el PDF', 'ok');
+  } catch(e) { toast('No se pudo redactar: ' + e.message, 'er'); }
+  finally { if (btn) { btn.disabled = false; btn.textContent = '✨ Redactar integración con IA'; } }
+}
+
 async function _rhGuardar(silencioso) {
   var d = _rhLeer();
   try {
@@ -13956,59 +13991,86 @@ async function _rhRestablecer() {
   document.getElementById('rh-overlay').remove();
   abrirInformeRH(_rhCand.id);
 }
+// Primera frase de las observaciones finales (el PDF la arma con negritas)
+function _rhFrase(c, d, html) {
+  var b = function(x){ return html ? '<b>' + htmlEsc(x) + '</b>' : x; };
+  var cat = (_RH_CAT.filter(function(x){ return x[0] === d.categoria; })[0] || [])[1];
+  if (!cat) return '';
+  var nom = ((c.nombre || '') + ' ' + (c.apellido || '')).trim();
+  var cargo = c.cargo || (PERFIL_META[c.perfil] || {}).label || '';
+  return 'Al momento de la evaluación, se concluye que ' + b(nom) + ' se encuentra en la categoría de ' + b(cat.charAt(0) + cat.slice(1).toLowerCase())
+    + ' para el cargo de ' + b(cargo) + (d.instalacion ? ' en la instalación ' + b(d.instalacion) : '') + '.';
+}
+
 async function _rhPdf() {
   var d = await _rhGuardar(true); if (!d) return;
   var c = _rhCand, e = function(x){ return htmlEsc(x || ''); };
-  var caja = function(on){ return '<span class="bx">' + (on ? '✕' : '') + '</span>'; };
-  var opcion = function(on, t){ return '<span class="op">' + caja(on) + ' ' + t + '</span>'; };
-  var lineas = function(t){ return e(t).split('\n').filter(function(x){ return x.trim(); }).map(function(x){ return '<div class="ln">' + x + '</div>'; }).join(''); };
+  var TOTAL = 6;
+  var caja = function(on){ return '<span class="bx' + (on ? ' on' : '') + '"></span>'; };
+  var pila = function(ops, val){ return ops.map(function(o){ return '<div class="op">' + caja(val === o[0]) + '<span>' + o[1] + '</span></div>'; }).join(''); };
+  var vinetas = function(t){ var l = e(t).split('\n').filter(function(x){ return x.trim(); }); return l.length ? '<ul>' + l.map(function(x){ return '<li>' + x + '</li>'; }).join('') + '</ul>' : ''; };
+  var parrafos = function(t){ return e(t).split(/\n\s*\n/).filter(function(x){ return x.trim(); }).map(function(x){ return '<p>' + x.replace(/\n/g, '<br>') + '</p>'; }).join(''); };
+  var enc = function(n) {
+    return '<table class="hd"><tr><td class="rh" rowspan="3">RH</td><td class="tit" rowspan="3">INFORME PSICOLABORAL<br>VERIFICACION DE DOMICILIO</td>'
+      + '<td class="cod">R-GP-054</td><td class="niv" rowspan="3"><div class="nt">Nivel de<br>Seguridad</div>'
+      + '<div>' + caja(false) + 'Público</div><div>' + caja(true) + 'Reservado</div><div>' + caja(false) + 'Secreto</div></td></tr>'
+      + '<tr><td class="cod">I-GP-001</td></tr><tr><td class="ver">Versión: 03<br>Página ' + n + ' de ' + TOTAL + '</td></tr></table>';
+  };
+  var pag = function(n, cuerpo){ return '<section class="pg">' + enc(n) + cuerpo + '</section>'; };
   var nom = ((c.nombre || '') + ' ' + (c.apellido || '')).trim();
-  var html = '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Informe RH · ' + e(nom) + '</title><style>'
-    + '@page{size:A4;margin:14mm 14mm 16mm}*{box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;font-size:10pt;color:#000;margin:0}'
-    + 'table{width:100%;border-collapse:collapse;margin-bottom:8px;page-break-inside:avoid}td,th{border:1px solid #000;padding:4px 6px;vertical-align:top}'
-    + '.hd td{vertical-align:middle;text-align:center}.hd .rh{font-size:22pt;font-weight:900;width:14%}.hd .tit{font-weight:700;font-size:11pt}'
-    + '.azul{background:#8DB3E2;font-weight:700}.lbl{width:34%;font-weight:700}.sec{font-weight:700;margin:12px 0 4px;font-size:10.5pt}'
-    + '.bx{display:inline-block;width:11px;height:11px;border:1px solid #000;text-align:center;font-size:9px;line-height:10px;vertical-align:-1px}.op{margin-right:18px;white-space:nowrap}'
-    + '.ln{margin-bottom:3px}.ln:before{content:"• "}.txt{white-space:pre-line;line-height:1.4}.alto{height:52px}.firma{height:46px}'
-    + '.bar{position:fixed;bottom:12px;right:12px}@media print{.bar{display:none}}@media screen{body{max-width:820px;margin:16px auto;padding:0 12px 60px}}'
-    + '</style></head><body>'
-    + '<div class="bar"><button onclick="window.print()" style="padding:8px 16px;font-weight:700">⬇ Guardar como PDF</button></div>'
-    + '<table class="hd"><tr><td class="rh" rowspan="3">RH</td><td class="tit" rowspan="3">INFORME PSICOLABORAL<br>VERIFICACIÓN DE DOMICILIO</td><td>R-GP-054</td>'
-    + '<td rowspan="3" style="font-size:8.5pt;text-align:left">Nivel de Seguridad<br>' + caja(false) + ' Público<br>' + caja(true) + ' Reservado<br>' + caja(false) + ' Secreto</td></tr>'
-    + '<tr><td>I-GP-001</td></tr><tr><td>Versión: 03</td></tr></table>'
-    + '<table><tr><td class="lbl">LISTA</td><td>' + ['1','2','3'].map(function(x){ return opcion(d.lista === x, x); }).join('') + '</td></tr>'
-    + '<tr><td class="lbl">ZONAL</td><td>' + [['norte','NORTE'],['centro','CENTRO'],['sur','SUR']].map(function(x){ return opcion(d.zonal === x[0], x[1]); }).join('') + '</td></tr></table>'
-    + '<table><tr><td class="lbl">Nombre:</td><td>' + e(nom) + '</td></tr><tr><td class="lbl">Edad:</td><td>' + (c.edad ? c.edad + ' años' : '') + '</td></tr>'
-    + '<tr><td class="lbl">Comuna:</td><td>' + e(c.comuna) + '</td></tr>'
-    + '<tr><td colspan="2" class="azul">A.- EVALUACIÓN PSICO LABORAL</td></tr>'
-    + '<tr><td class="lbl">Fecha de evaluación:</td><td>' + e(d.fecha) + '</td></tr>'
-    + '<tr><td class="lbl">Categoría:</td><td>' + _RH_CAT.map(function(x){ return opcion(d.categoria === x[0], x[1]); }).join('') + '</td></tr>'
-    + '<tr><td class="lbl">Atención a Público:</td><td>' + opcion(d.publico === 'si', 'Recomendable') + opcion(d.publico === 'no', 'No Recomendable') + '</td></tr></table>'
-    + '<table><tr class="azul"><td>Competencia</td><td style="width:18%;text-align:center">Nivel Ideal</td><td style="width:18%;text-align:center">Nivel Obtenido</td></tr>'
-    + _RH_COMP.map(function(k){ return '<tr><td>' + k.label + '</td><td style="text-align:center">' + k.ideal + '</td><td style="text-align:center">' + e(d.niveles[k.key] || '') + '</td></tr>'; }).join('') + '</table>'
-    + '<div class="sec">FORTALEZAS</div><table><tr><td class="lbl">Fortalezas</td><td>' + lineas(d.fortalezas) + '</td></tr></table>'
-    + '<div class="sec">DEBILIDADES</div><table><tr><td class="lbl">Debilidades</td><td>' + lineas(d.debilidades) + '</td></tr></table>'
-    + '<table><tr><td colspan="2" class="azul">ANTECEDENTES LABORALES</td></tr>'
-    + '<tr><td class="lbl">Empresa en que trabajó anteriormente:</td><td>' + e(d.empresa) + '</td></tr>'
-    + '<tr><td class="lbl">Nombre y cargo de la persona que corrobora antecedentes antiguo empleo:</td><td>' + e(d.corrobora) + '</td></tr>'
-    + '<tr><td class="lbl">Fono o celular del empleador anterior:</td><td>' + e(d.fono) + '</td></tr>'
-    + '<tr><td class="lbl">Antecedentes aportados por el empleador anterior:</td><td class="txt">' + e(d.aportados) + '</td></tr></table>'
-    + '<div class="sec">OBSERVACIONES FINALES</div><table><tr><td class="lbl">Observaciones Finales</td><td class="txt">' + e(d.observaciones) + '</td></tr></table>'
-    + '<table><tr><td class="lbl">Refuerzo de habilidades que debe observar el Supervisor a cargo.</td><td>' + lineas(d.refuerzo) + '</td></tr></table>'
-    + '<table><tr><td class="lbl">Psicólogo que realiza el informe</td><td>' + e(d.psicologo) + '</td></tr></table>'
-    + '<div class="sec">B. ENTREVISTA OPERACIONAL</div>'
-    + '<table><tr><td class="lbl">Fecha de la entrevista</td><td></td></tr></table>'
-    + '<table><tr><td class="azul">Se aprueba la contratación</td></tr><tr><td>' + opcion(false, 'Sí') + opcion(false, 'No') + '</td></tr></table>'
-    + '<table><tr><td class="azul">Observaciones (Obligatorias)</td></tr><tr><td class="alto"></td></tr></table>'
-    + '<table><tr class="azul"><td>Subgerente o Supervisor que realizó la entrevista</td><td>Nombre completo</td><td>Firma</td></tr><tr><td class="firma"></td><td></td><td></td></tr></table>'
-    + '<div class="sec">C. VERIFICACIÓN DE DOMICILIO</div>'
-    + '<table><tr><td class="azul">Requiere verificación de domicilio por falta de recomendaciones: *</td></tr><tr><td>' + opcion(false, 'Sí') + opcion(false, 'No') + '</td></tr></table>'
-    + '<table><tr class="azul"><td>Supervisor entrevistador</td><td>Verificador de domicilio</td><td>Cierre</td></tr><tr><td class="firma"></td><td></td><td></td></tr></table>'
+  var p1 = '<div class="lz"><table class="mini lista"><tr><td class="az b">LISTA</td><td>' + pila([['1','1'],['2','2'],['3','3']], d.lista) + '</td></tr></table>'
+    + '<table class="mini zonal"><tr><td class="az b">ZONAL</td><td>' + pila([['norte','NORTE'],['centro','CENTRO'],['sur','SUR']], d.zonal) + '</td></tr></table></div>'
+    + '<table class="dt"><tr><td class="az b w30">Nombre:</td><td>' + e(nom) + '</td></tr><tr><td class="az b">Edad:</td><td>' + (c.edad ? c.edad + ' años' : '') + '</td></tr>'
+    + '<tr><td class="az b">Comuna:</td><td>' + e(c.comuna) + '</td></tr></table>'
+    + '<h3>A.- EVALUACIÓN PSICO LABORAL</h3>'
+    + '<table class="dt"><tr><td class="az b w30">Fecha de evaluación:</td><td>' + e(d.fecha) + '</td></tr>'
+    + '<tr><td class="az b">Categoría:</td><td class="ops">' + pila(_RH_CAT, d.categoria) + '</td></tr>'
+    + '<tr><td class="az b">Atención a Público:</td><td class="ops">' + pila([['si','Recomendable'],['no','No Recomendable']], d.publico) + '</td></tr></table>'
+    + '<table class="comp"><tr class="az b"><td>Competencia</td><td>Nivel Ideal</td><td>Nivel Obtenido</td></tr>'
+    + _RH_COMP.map(function(k){ return '<tr><td class="az b">' + k.label + '</td><td class="b">' + k.ideal + '</td><td>' + e(d.niveles[k.key] || '') + '</td></tr>'; }).join('') + '</table>';
+  var p2 = '<h4>FORTALEZAS</h4><table class="dt"><tr><td class="az w20">Fortalezas</td><td>' + vinetas(d.fortalezas) + '</td></tr></table>'
+    + '<h4>DEBILIDADES</h4><table class="dt"><tr><td class="az w20">Debilidades</td><td>' + vinetas(d.debilidades) + '</td></tr></table>';
+  var p3 = '<h4 class="sep">ANTECEDENTES LABORALES</h4><table class="dt just"><tr><td class="az w35">Empresa en que trabajó anteriormente:</td><td>' + e(d.empresa) + '</td></tr>'
+    + '<tr><td class="az">Nombre y cargo de la persona que corrobora antecedentes antiguo empleo:</td><td>' + e(d.corrobora) + '</td></tr>'
+    + '<tr><td class="az">Fono o celular del empleador anterior:</td><td>' + e(d.fono) + '</td></tr>'
+    + '<tr><td class="az">Antecedentes aportados por el empleador anterior:</td><td>' + parrafos(d.aportados) + '</td></tr></table>';
+  var p4 = '<h4 class="sep">OBSERVACIONES FINALES</h4><table class="dt just"><tr><td class="az w20">Observaciones Finales</td><td><p>' + _rhFrase(c, d, true) + '</p>' + parrafos(d.observaciones) + '</td></tr></table>'
+    + '<table class="dt just"><tr><td class="az w20">Refuerzo de habilidades que debe observar el Supervisor a cargo.</td><td>' + vinetas(d.refuerzo) + '</td></tr></table>'
+    + '<table class="dt"><tr><td class="az w20">Psicólogo que realiza el informe</td><td class="h60">' + e(d.psicologo) + '</td></tr></table>';
+  var p5 = '<h2>B. ENTREVISTA OPERACIONAL</h2>'
+    + '<table class="dt"><tr><td class="az2 b w25 h60">Fecha de la entrevista</td><td></td></tr></table>'
+    + '<table class="dt mt"><tr><td class="az b">Se aprueba la contratación</td></tr><tr><td class="ops h70">' + pila([['si','Si'],['no','No']], '') + '</td></tr></table>'
+    + '<table class="dt"><tr><td class="az b">Observaciones (Obligatorias)</td></tr><tr><td class="h220"></td></tr></table>'
+    + '<table class="dt firma"><tr><td class="az w20">Subgerente o Supervisor que realizó la entrevista</td><td class="abajo">Nombre completo</td><td class="abajo w25">Firma</td></tr></table>';
+  var p6 = '<h4>C. VERIFICACION DE DOMICILIO</h4>'
+    + '<table class="dt"><tr><td class="az">Requiere verificación de domicilio por falta de recomendaciones: *</td></tr><tr><td class="ops">' + pila([['si','Si'],['no','No']], '') + '</td></tr></table>'
+    + '<table class="cierre"><tr><td>SUPERVISOR ENTREVISTADOR</td><td><div class="caja"></div></td></tr><tr><td>VERIFICADOR DE DOMICILIO</td><td><div class="caja"></div></td></tr><tr><td>CIERRE</td><td><div class="caja"></div></td></tr></table>';
+  var css = '@page{size:letter;margin:12mm 15mm 14mm 18mm}*{box-sizing:border-box}'
+    + 'body{font-family:"Times New Roman",Times,serif;font-size:12pt;color:#000;margin:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
+    + '.pg{page-break-after:always;break-after:page}.pg:last-child{page-break-after:auto;break-after:auto}'
+    + 'table{border-collapse:collapse;width:100%}td{border:1px solid #000;padding:4px 8px;vertical-align:top;line-height:1.2}'
+    + '.hd{margin:0 0 16px -14px;width:calc(100% - 20px);font-family:Arial,Helvetica,sans-serif}.hd td{text-align:center;vertical-align:middle;font-weight:700}'
+    + '.hd .rh{font-size:44pt;width:22%;letter-spacing:1px}.hd .tit{font-size:11.5pt;width:37%}.hd .cod{font-size:13pt;width:19%;height:34px}'
+    + '.hd .ver{font-size:9.5pt;height:42px}.hd .niv{text-align:left;font-size:12pt;font-weight:400;width:22%;padding:4px 8px}.hd .niv .nt{font-weight:700;margin-bottom:6px}'
+    + '.bx{display:inline-block;width:12px;height:12px;border:1px solid #000;margin-right:8px;vertical-align:-1px;background:#fff}.bx.on{background:#000}'
+    + '.az{background:#8DB3E2}.az2{background:#95B3D7}.b{font-weight:700}.w20{width:19%}.w25{width:25%}.w30{width:24%}.w35{width:34%}'
+    + '.lz{position:relative;height:170px;margin-bottom:24px}.mini{width:auto;position:absolute}.mini td{padding:2px 8px}.lista{right:9%;top:0}.zonal{left:3%;top:96px}'
+    + '.mini .op{line-height:1.25}.ops .op{margin:4px 0 6px 40px}.op .bx{width:15px;height:15px;margin-right:14px}'
+    + '.dt{margin-bottom:22px}h3{font-size:13pt;margin:26px 0 30px 10px}h4{font-size:12pt;margin:6px 0 16px 0}h4.sep{margin-top:44px}h2{font-size:16pt;margin:6px 0 22px}'
+    + '.comp{width:77%;margin-left:23%;text-align:center}.comp td{text-align:center;padding:1px 6px}'
+    + 'ul{margin:0;padding-left:28px}li{margin:0 0 2px}.just td{text-align:justify}.just td p{margin:0 0 14px}.just td p:last-child{margin:0}'
+    + '.h60{height:60px}.h70{height:76px}.h220{height:220px}.mt{margin-top:40px}.firma td{height:92px}.firma .abajo{vertical-align:bottom;text-align:center}'
+    + '.cierre{width:100%;margin-top:30px}.cierre td{border:0;padding:4px 0;vertical-align:middle}.cierre td:first-child{width:37%}.caja{border:1px solid #000;height:36px}'
+    + '.bar{position:fixed;bottom:12px;right:12px;font-family:Arial}@media print{.bar{display:none}}'
+    + '@media screen{body{background:#e5e7eb}.pg{background:#fff;width:216mm;min-height:279mm;margin:14px auto;padding:12mm 15mm 14mm 18mm;box-shadow:0 2px 10px rgba(0,0,0,.15)}}';
+  var html = '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>' + e(nom) + ' IPS</title><style>' + css + '</style></head><body>'
+    + '<div class="bar"><button onclick="window.print()" style="padding:9px 16px;font-weight:700;cursor:pointer">⬇ Guardar como PDF</button></div>'
+    + pag(1, p1) + pag(2, p2) + pag(3, p3) + pag(4, p4) + pag(5, p5) + pag(6, p6)
     + '</body></html>';
   var w = window.open('', '_blank');
   if (!w) { toast('El navegador bloqueó la ventana del PDF. Permita ventanas emergentes para este sitio.', 'er'); return; }
   w.document.open(); w.document.write(html); w.document.close();
-  setTimeout(function(){ try { w.focus(); w.print(); } catch(x) {} }, 400);
+  setTimeout(function(){ try { w.focus(); w.print(); } catch(x) {} }, 500);
 }
 
 async function drawerSetEtapa(candId, etapa) {
