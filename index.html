@@ -265,6 +265,10 @@ input,select,textarea{font-family:inherit;outline:none}
 /* ── DISC grid ── */
 .disc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
 .disc-item{text-align:center;padding:14px 8px;border-radius:12px}
+/* Cualidades del DISC: el texto completo siempre visible (2 columnas en celular) */
+.disc-opts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.disc-opt{display:flex;align-items:center;justify-content:center;min-height:46px;padding:8px 10px;border-radius:8px;border:2px solid #e2e8f0;font-size:13px;line-height:1.25;font-family:inherit;cursor:pointer;transition:all .12s;width:100%;text-align:center;white-space:normal;overflow-wrap:break-word;hyphens:auto;-webkit-hyphens:auto}
+@media(max-width:640px){.disc-opts{grid-template-columns:repeat(2,minmax(0,1fr))}.disc-opt{font-size:14px;min-height:50px}}
 .disc-letter{font-size:32px;font-weight:800;line-height:1}
 .disc-name{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin:4px 0;color:var(--ink3)}
 .disc-pct{font-size:19px;font-weight:800}
@@ -1631,7 +1635,7 @@ body.exam-away #exam-shield{display:flex}
     </p>
     <div id="done-whatsapp" style="display:none;margin:-16px 0 28px"></div>
     <div id="done-tests" style="display:none"></div>
-    <button class="btn btn-outline btn-lg" onclick="gotoLanding()" style="width:100%">← Volver al inicio</button>
+    <p style="font-size:13px;color:var(--ink4);margin-top:4px">Ya puedes cerrar esta ventana.</p>
   </div>
 </div>
 
@@ -5794,7 +5798,7 @@ function renderTestBlock() {
       var makeDiscRow = function(role, label, color) {
         return '<div style="margin-bottom:10px">'
           + '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:' + color + ';margin-bottom:6px">' + label + '</div>'
-          + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">'
+          + '<div class="disc-opts">'
           + ['D','I','S','C'].map(function(d) {
               var isSel  = bAns[role] === d;
               var isOther = (role === 'most' ? bAns.least : bAns.most) === d;
@@ -5807,7 +5811,7 @@ function renderTestBlock() {
                 + ' aria-pressed="' + isSel + '"'
                 + ' aria-label="' + dimLabel + (role === 'most' ? ' — Me describe más' : ' — Me describe menos') + '"'
                 + (isOther ? ' aria-disabled="true"' : '')
-                + ' style="padding:8px 12px;border-radius:8px;border:2px solid ' + (isSel ? selColor : '#e2e8f0') + ';background:' + (isSel ? selBg : '#fff') + ';color:' + (isSel ? selColor : '#64748b') + ';font-size:13px;font-weight:' + (isSel ? '700' : '500') + ';cursor:pointer;transition:all .12s;width:100%;text-align:center' + (isOther ? ';opacity:0.35' : '') + '">'
+                + ' class="disc-opt" style="border-color:' + (isSel ? selColor : '#e2e8f0') + ';background:' + (isSel ? selBg : '#fff') + ';color:' + (isSel ? selColor : '#64748b') + ';font-weight:' + (isSel ? '700' : '500') + (isOther ? ';opacity:0.35' : '') + '">'
                 + dimLabel + '</button>';
             }).join('')
           + '</div></div>';
@@ -5924,6 +5928,7 @@ function answerDiscBlock(blockId, role, dim) {
       btn.style.color        = isSel ? selColor : '#64748b';
       btn.style.fontWeight   = isSel ? '700' : '500';
       btn.style.opacity      = isOther ? '0.35' : '1';
+      btn.setAttribute('aria-pressed', isSel ? 'true' : 'false');
     });
     var done = ans.most && ans.least && ans.most !== ans.least;
     row.classList.toggle('answered', !!done);
@@ -6164,6 +6169,15 @@ async function finishTests() {
 
   clearTestProgress();
   try { sessionStorage.removeItem(_INV_KEY); } catch(e) {}
+  // Evaluación enviada: en esta pestaña no se puede volver a empezar (el servidor
+  // además rechaza un segundo envío del mismo RUT o de la misma invitación).
+  // El Modo Prueba del panel queda libre para repetir.
+  if (!(S.authToken && S.role) && !S._testModeToken) {
+    if (_INV) _INV.estado = 'terminada';
+    try { sessionStorage.setItem(_TERMINADA_KEY, '1'); } catch(e) {}
+  }
+  // Se borran del formulario los datos personales ya enviados
+  document.querySelectorAll('#view-register input').forEach(function(i){ if (i.type === 'radio' || i.type === 'checkbox') i.checked = false; else if (i.id !== 'r-perfil') i.value = ''; });
 
   // ── Success ───────────────────────────────────────────────────────────────
   document.getElementById('done-name').textContent = S.candidate.nombre;
@@ -11650,6 +11664,7 @@ var _INV_MSG = {
   rut_no_coincide:   ['Esta invitación no corresponde a tu RUT', 'El link es personal y está asociado a otra persona. Solicita tu propio link a quien te contactó.'],
   rut_invalido:      ['RUT no válido', 'Revisa el RUT ingresado.'],
   cargo_no_coincide: ['La invitación es para otro cargo', 'Solicita un link para el cargo correcto a quien te contactó.'],
+  terminada:         ['Tu evaluación ya fue enviada', 'Ya completaste la evaluación y tus respuestas quedaron registradas. No es necesario volver a rendirla. Si tienes dudas, contacta a quien te envió el link.'],
   requerida:         ['Necesitas una invitación', 'Para rendir esta evaluación necesitas un link de invitación personal. Solicítalo a quien te contactó.'],
   error:             ['No se pudo verificar la invitación', 'Revisa tu conexión a internet y vuelve a abrir el link.']
 };
@@ -11683,7 +11698,9 @@ function _invAplicarCargo() {
 }
 
 // Motivo por el que no se puede comenzar, o null
+var _TERMINADA_KEY = 'psicoeval_terminada';
 function _invBloqueo() {
+  try { if (sessionStorage.getItem(_TERMINADA_KEY) && !(S.authToken && S.role) && !S._testModeToken) return 'terminada'; } catch(e) {}
   if (_INV) return _INV.estado === 'valida' ? null : _INV.estado;
   return ACCESO_CFG.solo_invitacion ? 'requerida' : null;
 }
@@ -11724,7 +11741,7 @@ function _invAviso(key) {
   var d = document.createElement('div');
   d.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px';
   d.innerHTML = '<div style="background:#fff;border-radius:16px;padding:26px 24px;max-width:420px;width:100%;text-align:center;font-family:inherit">'
-    + '<div style="font-size:40px;margin-bottom:10px">⛔</div>'
+    + '<div style="font-size:40px;margin-bottom:10px">' + (key === 'terminada' ? '✅' : '⛔') + '</div>'
     + '<div style="font-size:18px;font-weight:800;color:#0f172a;margin-bottom:8px">' + m[0] + '</div>'
     + '<div style="font-size:14px;color:#475569;line-height:1.6;margin-bottom:18px">' + m[1] + '</div>'
     + '<button onclick="this.closest(\'div[style*=fixed]\').remove()" style="padding:11px 28px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">Entendido</button></div>';
