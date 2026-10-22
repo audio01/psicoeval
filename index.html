@@ -845,6 +845,7 @@ input,select,textarea{font-family:inherit;outline:none}
 .dh-name{font-size:16px;font-weight:800;color:var(--ink)}
 .dh-meta{font-size:12.5px;color:var(--ink3);overflow:hidden;text-overflow:ellipsis}
 .dh-badges{display:flex;gap:6px;align-items:center;flex-shrink:0}
+.bd-arch{color:var(--accent);font-weight:600;cursor:pointer;text-decoration:underline}
 .rs-wrap{display:flex;flex-direction:column;gap:13px;max-width:1180px;margin:0 auto}
 .rs-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:13px;align-items:start}
 .rs-col{display:flex;flex-direction:column;gap:13px;min-width:0}
@@ -4210,7 +4211,21 @@ document.addEventListener('keydown', function(e) {
 // La tabla solo guarda el código (educacion, rubro); la etiqueta se reconstruye al leer.
 const CAND_EDU_LABELS = { basica:'Educación Básica', media_incompleta:'Media incompleta', media:'4º Medio completo', tecnica:'Técnico Superior', universitaria:'Universitaria', postgrado:'Postgrado', ejercito_retiro:'Retirado/a Ejército (carrera completa)', ejercito_baja:'Retirado/a Ejército (antes de completar)', carabineros_retiro:'Retirado/a Carabineros (carrera completa)', carabineros_baja:'Retirado/a Carabineros (antes de completar)', armada_retiro:'Retirado/a Armada (carrera completa)', armada_baja:'Retirado/a Armada (antes de completar)' };
 const CAND_RUBRO_LABELS = { seguridad:'Seguridad', comercio:'Comercio', administracion:'Administración', salud:'Salud', construccion:'Construcción', logistica:'Logística', educacion:'Educación', tecnologia:'Tecnología', otro:'Otro' };
+// "IGNACIO ISLA" / "juan carlos arias" → "Ignacio Isla" / "Juan Carlos Arias".
+// Solo cambia palabras escritas todo en mayúsculas o todo en minúsculas (respeta "DiCaprio")
+var _NP_MENORES = { de:1, del:1, la:1, las:1, los:1, y:1, e:1, van:1, von:1, da:1, di:1 };
+function _nombrePropio(t) {
+  if (!t || typeof t !== 'string') return t;
+  return t.trim().replace(/\s+/g, ' ').split(' ').map(function(w, i) {
+    if (w !== w.toUpperCase() && w !== w.toLowerCase()) return w;
+    var l = w.toLowerCase();
+    if (i > 0 && _NP_MENORES[l]) return l;
+    return l.split('-').map(function(x){ return x.charAt(0).toUpperCase() + x.slice(1); }).join('-');
+  }).join(' ');
+}
+
 function _withLabels(c) {
+  if (c) { c.nombre = _nombrePropio(c.nombre); c.apellido = _nombrePropio(c.apellido); }
   // La columna historial es texto en Supabase: llega como JSON en un string
   if (c && typeof c.historial === 'string') {
     try { var _h = JSON.parse(c.historial); c.historial = Array.isArray(_h) ? _h : null; } catch(e) { c.historial = null; }
@@ -4942,7 +4957,7 @@ function submitRegister() {
     : null;
 
   S.candidate = {
-    id: genUUID(), nombre, apellido, email,
+    id: genUUID(), nombre: _nombrePropio(nombre), apellido: _nombrePropio(apellido), email,
     rut: document.getElementById('r-rut').value.trim(),
     telefono: document.getElementById('r-telefono')?.value.trim() || '',
     fechanac: document.getElementById('r-fechanac')?.value || '',
@@ -7857,9 +7872,12 @@ function _porRevisarHtml(cands, desde) {
     { titulo:'Integridad con riesgo alto', icon:'🔴', lista:[] },
     { titulo:'Incidentes durante la evaluación', icon:'⚠️', lista:[] },
     { titulo:'Completadas sin dictamen de entrevista', icon:'🗓', lista:[] },
-    { titulo:'Seguimientos después de la contratación', icon:'⏰', lista:[] }
+    { titulo:'Seguimientos después de la contratación', icon:'⏰', lista:[] },
+    { titulo:'Se archivan esta semana', icon:'⏳', lista:[] }
   ];
   cands.forEach(function(c) {
+    var dpa = _diasParaArchivo(c);
+    if (dpa !== null) grupos[4].lista.push({ c:c, nota:dpa === 1 ? 'mañana' : 'en ' + dpa + ' días' });
     if (c.estado !== 'completed') return;
     var m = _miradaDe(c), et = getPipelineEtapa(c);
     var f = _fechaCand(c), enPeriodo = !desde || (f && f >= desde);
@@ -7870,6 +7888,7 @@ function _porRevisarHtml(cands, desde) {
     if (!m.dictamen && et !== 'seleccionado') grupos[2].lista.push({ c:c });
     if (m.segPend.length) grupos[3].lista.push({ c:c, nota:m.segPend.map(function(p){ return p.hito.toLowerCase(); }).join(' y ') });
   });
+  grupos[4].lista.sort(function(a, b){ return _diasParaArchivo(a.c) - _diasParaArchivo(b.c); });
   var activos = grupos.filter(function(g){ return g.lista.length; });
   if (!activos.length) return '';
   var h = '<div style="background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:16px 20px;margin-bottom:24px">';
@@ -10369,6 +10388,30 @@ var _BD_FIJAS = [
 var _BD_ORDEN = [['fecha_desc','Más recientes primero'], ['fecha_asc','Más antiguos primero'], ['nombre_asc','Nombre (A → Z)'], ['resultado_desc','Mejor resultado primero'], ['etapa','Etapa del proceso']];
 var _BD_AGRUPAR = [['','Sin agrupar'], ['etapa','Etapa'], ['cargo','Cargo'], ['dictamen','Dictamen'], ['estado','Estado']];
 var _BD_KEY = 'psicoeval_bd';
+// Archivados: postulantes sin movimiento hace más de _BD_ARCH_DIAS días. No se borran:
+// se ocultan de Candidatos y aparecen al buscarlos o con el filtro "Archivo"
+var _BD_ARCH_DIAS = 30;
+function _ultimoMovimiento(c) {
+  var t = (_momentoCand(c) || new Date(0)).getTime(), sc = c.scores || {};
+  (sc._pipeline_history || []).forEach(function(h){ var x = Date.parse(h && h.ts); if (x > t) t = x; });
+  (sc._entrevistas || []).forEach(function(e){ var x = Date.parse(e && e.fecha); if (x > t) t = x; });
+  return t;
+}
+// Días que le quedan antes de archivarse (solo postulantes en la última semana); null si no aplica
+var _BD_ARCH_AVISO = 7;
+function _diasParaArchivo(c) {
+  if (getPipelineEtapa(c) !== 'postulante') return null;
+  var quedan = Math.ceil(_BD_ARCH_DIAS - (Date.now() - _ultimoMovimiento(c)) / 864e5);
+  return quedan > 0 && quedan <= _BD_ARCH_AVISO ? quedan : null;
+}
+function _porArchivarBadge(c) {
+  var d = _diasParaArchivo(c);
+  if (d === null) return '';
+  return '<span title="Sin movimiento hace ' + (_BD_ARCH_DIAS - d) + ' días. Si no cambia de etapa, se archiva y deja de verse en Candidatos." style="display:inline-block;margin-left:6px;padding:1px 7px;border-radius:100px;font-size:10px;font-weight:700;vertical-align:1px;white-space:nowrap;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa">⏳ Se archiva ' + (d === 1 ? 'mañana' : 'en ' + d + ' días') + '</span>';
+}
+function _bdArchivado(c) {
+  return getPipelineEtapa(c) === 'postulante' && Date.now() - _ultimoMovimiento(c) > _BD_ARCH_DIAS * 864e5;
+}
 var _BD = null, _bdVistaId = 'todos', _bdBuscarTxt = '', _bdLimite = 60, _bdPlegados = {}, _bdTimer = null;
 var _VISTAS = [];
 
@@ -10423,6 +10466,8 @@ var _BD_CAMPOS = {
                 ok:function(c, v){ var m = _miradaDe(c); if (!m.apt.length) return false; return v === 'ok' ? !m.bajo.length : m.bajo.length > 0; } },
   integridad: { label:'Integridad', ops:function(){ return [['riesgo_alto', 'Riesgo alto'], ['explorar', 'A explorar'], ['sin_indicadores', 'Sin indicadores'], ['no_interpretable', 'No interpretable']]; },
                 ok:function(c, v){ return ((c.scores || {}).integridad || {}).nivel === v; } },
+  archivo:    { label:'Archivo', ops:function(){ return [['activos', 'Solo activos'], ['pronto', 'Se archivan esta semana'], ['archivados', 'Solo archivados'], ['todos', 'Activos y archivados']]; },
+                ok:function(c, v){ if (v === 'pronto') return _diasParaArchivo(c) !== null; return v === 'todos' || (v === 'archivados') === _bdArchivado(c); } },
   invitacion: { label:'Invitación', ops:function(){ return [['con', 'Con invitación'], ['sin', 'Sin invitación']]; },
                 ok:function(c, v){ var i = !!(c.scores && c.scores._invitacion); return v === 'con' ? i : !i; } }
 };
@@ -10433,6 +10478,8 @@ function _bdFiltrar(all) {
       var txt = [c.nombre, c.apellido, c.email, c.rut, c.cargo, c.comuna, c.rubro].map(function(v){ return v || ''; }).join(' ').toLowerCase();
       if (txt.indexOf(q) === -1) return false;
     }
+    // Sin filtro de archivo ni búsqueda, los archivados no se muestran
+    if (!q && !(_BD.filtros || {}).archivo && _bdArchivado(c)) return false;
     return Object.keys(_BD.filtros || {}).every(function(k){ var f = _BD_CAMPOS[k]; return !f || f.ok(c, _BD.filtros[k]); });
   });
 }
@@ -10483,7 +10530,13 @@ function _bdCuerpoPintar(all) {
   var cuerpo = document.getElementById('bd-cuerpo'); if (!cuerpo) return;
   var lista = _bdOrdenar(_bdFiltrar(all));
   var cnt = document.getElementById('bd-count');
-  if (cnt) cnt.textContent = lista.length === all.length ? all.length + ' candidatos' : lista.length + ' de ' + all.length;
+  if (cnt) {
+    var arch = (!(_BD.filtros || {}).archivo && !(_bdBuscarTxt || '').trim()) ? all.filter(_bdArchivado).length : 0;
+    cnt.innerHTML = (lista.length === all.length ? all.length + ' candidatos' : lista.length + ' de ' + all.length)
+      + (function(){ var pr = (_BD.filtros || {}).archivo ? 0 : all.filter(function(c){ return _diasParaArchivo(c) !== null; }).length;
+          return pr ? ' · <a class="bd-arch" style="color:#c2410c" onclick="_BD.filtros.archivo=\'pronto\';_bdCambio()">⏳ ' + pr + ' se archiva' + (pr > 1 ? 'n' : '') + ' esta semana</a>' : ''; })()
+      + (arch ? ' · <a class="bd-arch" onclick="_BD.filtros.archivo=\'archivados\';_bdCambio()" title="Postulantes sin movimiento hace más de ' + _BD_ARCH_DIAS + ' días. No se borran.">🗄 ' + arch + ' archivados</a>' : '');
+  }
   cuerpo.innerHTML = _BD.vista === 'tablero' ? _bdTablero(lista) : _bdTabla(lista);
   updateBulkBar();
 }
@@ -10542,6 +10595,17 @@ function _bdCelda(c, p) {
   return '';
 }
 var _BD_DIC_CORTO = { recomendado:'Recomendado', obs:'Con observaciones', no_recomendable:'No recomendable' };
+// Otras evaluaciones con el mismo RUT (más recientes primero)
+function _rutNorm(r) { return String(r || '').replace(/[^0-9kK]/g, '').toUpperCase(); }
+function _mismoRut(c, all) {
+  var r = _rutNorm(c.rut); if (r.length < 7) return [];
+  return (all || _dbCache || []).filter(function(x){ return x.id !== c.id && _rutNorm(x.rut) === r; })
+    .sort(function(a, b){ return (_momentoCand(b) || 0) - (_momentoCand(a) || 0); });
+}
+function _rutRepBadge(c) {
+  var n = _mismoRut(c).length;
+  return n ? '<span title="Hay ' + n + ' evaluación' + (n > 1 ? 'es' : '') + ' más con este RUT" style="display:inline-block;margin-left:6px;padding:1px 7px;border-radius:100px;font-size:10px;font-weight:700;vertical-align:1px;background:#f5f3ff;color:#6d28d9;border:1px solid #ddd6fe">🔁 Rindió ' + (n + 1) + ' veces</span>' : '';
+}
 function _bdDictamenCorto(c) {
   var v = _bdDictamen(c), d = _EV_DICTAMEN.filter(function(x){ return x.val === v; })[0];
   if (!d) return '<span style="font-size:11px;color:var(--ink4);white-space:nowrap">Sin dictamen</span>';
@@ -10566,7 +10630,7 @@ function _bdTabla(lista) {
     if (n > _bdLimite) return '';
     var id = htmlEsc(c.id), nombre = htmlEsc(((c.nombre || '') + ' ' + (c.apellido || '')).trim());
     return '<tr data-id="' + id + '" class="bd-tr" onclick="openCandDrawer(\'' + id + '\')"><td>' + _bdChk(c) + '</td>'
-      + '<td><div class="bd-nom">' + nombre + _alertBadgesHtml(c.scores) + '</div><div class="bd-sub">' + htmlEsc(c.email || '') + '</div></td>'
+      + '<td><div class="bd-nom">' + nombre + _alertBadgesHtml(c.scores) + _rutRepBadge(c) + _porArchivarBadge(c) + '</div><div class="bd-sub">' + htmlEsc(c.email || '') + '</div></td>'
       + props.map(function(p){ return '<td>' + _bdCelda(c, p[0]) + '</td>'; }).join('')
       + '<td class="bd-acc" onclick="event.stopPropagation()">'
       + (c.estado === 'completed' ? '<a onclick="viewCandReport(\'' + id + '\')" title="Ver informe">📋</a><a onclick="downloadPdfReport(\'' + id + '\')" title="Descargar PDF">⬇</a>' : '')
@@ -10603,7 +10667,7 @@ function _bdTablero(lista) {
       var id = htmlEsc(c.id), pm = PERFIL_META[c.perfil] || {};
       var ent = ((c.scores && c.scores._entrevistas) || []).length;
       h += '<div class="kanban-card" id="kcard-' + id + '"' + (arrastra ? ' draggable="true" ondragstart="kDragStart(event,\'' + id + '\')" ondragend="kDragEnd(event)"' : '') + ' onclick="openCandDrawer(\'' + id + '\')">'
-        + '<div style="display:flex;gap:8px;align-items:flex-start"><div style="flex:1;min-width:0"><div class="bd-nom">' + htmlEsc(((c.nombre || '') + ' ' + (c.apellido || '')).trim()) + '</div>'
+        + '<div style="display:flex;gap:8px;align-items:flex-start"><div style="flex:1;min-width:0"><div class="bd-nom">' + htmlEsc(((c.nombre || '') + ' ' + (c.apellido || '')).trim()) + _rutRepBadge(c) + _porArchivarBadge(c) + '</div>'
         + (_BD.props.cargo ? '<div class="bd-sub">' + (pm.icon || '') + ' ' + htmlEsc(c.cargo || pm.label || '') + '</div>' : '') + '</div>' + _bdChk(c) + '</div>'
         + (_BD.props.resultado && c.estado === 'completed' ? '<div style="margin-top:7px">' + _miradaChipsHtml(_bdMirada(c)) + '</div>' : '')
         + (_BD.props.etapa && campo !== 'etapa' ? '<div style="margin-top:6px">' + _bdCelda(c, 'etapa') + '</div>' : '')
@@ -12342,6 +12406,13 @@ function _tabResumen(c) {
             ['Entrevistas', ents.length ? ents.length + (ult && ult.fecha ? ' · última ' + ult.fecha.split('-').reverse().join('-') : '') + (ult && ult.entrevistador ? ' · ' + ult.entrevistador : '') : 'Ninguna']];
   h += '<div class="rs-card"><div class="rs-lbl">Antecedentes</div>';
   kv.forEach(function(x){ if (x[1]) h += '<div class="rs-kv"><span>' + x[0] + '</span><b>' + htmlEsc(String(x[1])) + '</b></div>'; });
+  var otras = _mismoRut(c);
+  if (otras.length) h += '<div class="rs-kv"><span>Mismo RUT</span><b>' + otras.map(function(o){
+      return '<a class="rs-link" onclick="openCandDrawer(\'' + htmlEsc(o.id) + '\')">' + htmlEsc(((PERFIL_META[o.perfil] || {}).label || o.cargo || 'Evaluación') + ' · ' + (_momentoTxt(o) || '').slice(0, 10)) + '</a>';
+    }).join('<br>') + '</b></div>';
+  var _dpa = _diasParaArchivo(c);
+  if (_dpa !== null) h += '<div class="rs-kv"><span>Archivo</span><b style="color:#c2410c">⏳ Se archiva ' + (_dpa === 1 ? 'mañana' : 'en ' + _dpa + ' días') + ' si no cambia de etapa.</b></div>';
+  if (_bdArchivado(c)) h += '<div class="rs-kv"><span>Archivo</span><b style="color:var(--ink3);font-weight:500">🗄 Archivado: sin movimiento hace más de ' + _BD_ARCH_DIAS + ' días. Vuelve a Candidatos al cambiarlo de etapa.</b></div>';
   h += '</div>';
 
   // Etapa del proceso
