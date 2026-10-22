@@ -871,6 +871,19 @@ input,select,textarea{font-family:inherit;outline:none}
 .reg-emp-tit{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--accent)}
 .reg-falta{box-shadow:0 0 0 2px #fca5a5;border-radius:10px}
 .bd-arch{color:var(--accent);font-weight:600;cursor:pointer;text-decoration:underline}
+.rh-ov{position:fixed;inset:0;z-index:9000;background:rgba(15,23,42,.5);display:flex;align-items:center;justify-content:center;padding:18px}
+.rh-box{background:var(--surface);border-radius:16px;width:min(860px,100%);max-height:100%;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.rh-top{display:flex;align-items:flex-start;gap:12px;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border)}
+.rh-body{overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:12px}
+.rh-pie{display:flex;gap:8px;align-items:center;padding:12px 20px;border-top:1px solid var(--border)}
+.rh-grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.rh-sec{font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#1e3a8a;background:#dbeafe;padding:6px 10px;border-radius:6px;margin-top:4px}
+.rh-in{width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--ink);box-sizing:border-box;line-height:1.5}
+textarea.rh-in{resize:vertical}
+.rh-tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.rh-tbl th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--ink3);padding:6px;border-bottom:1px solid var(--border)}
+.rh-tbl td{padding:5px 6px;border-bottom:1px solid var(--border)}
+@media(max-width:700px){.rh-grid2{grid-template-columns:1fr}.rh-tbl td:nth-child(4),.rh-tbl th:nth-child(4){display:none}}
 .rs-wrap{display:flex;flex-direction:column;gap:13px;max-width:1180px;margin:0 auto}
 .rs-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:13px;align-items:start}
 .rs-col{display:flex;flex-direction:column;gap:13px;min-width:0}
@@ -4185,11 +4198,11 @@ async function _unirPrivado(lista) {
   var admin = false;
   try { admin = S.role === 'admin'; } catch(e) {}
   if (!admin) {
-    lista.forEach(function(c){ if (c.scores) { delete c.scores._entrevistas; delete c.scores._ref_notas; } });
+    lista.forEach(function(c){ if (c.scores) { delete c.scores._entrevistas; delete c.scores._ref_notas; delete c.scores._informe_rh; } });
     return;
   }
   try {
-    var r = await fetch(SUPA_URL + '/rest/v1/psicoeval_privado?select=candidate_id,entrevistas,notas', { headers: getDBHeaders() });
+    var r = await fetch(SUPA_URL + '/rest/v1/psicoeval_privado?select=*', { headers: getDBHeaders() });
     if (!r.ok) { _privadoOk = false; return; }   // SQL 19 sin aplicar: se usa lo que venga en la ficha
     _privadoOk = true;
     var por = {};
@@ -4199,6 +4212,7 @@ async function _unirPrivado(lista) {
       c.scores = c.scores || {};
       c.scores._entrevistas = (x && Array.isArray(x.entrevistas)) ? x.entrevistas : [];
       c.scores._ref_notas = (x && x.notas) || '';
+      c.scores._informe_rh = (x && x.informe_rh) || {};
     });
   } catch(e) { _privadoOk = false; }
 }
@@ -4207,7 +4221,7 @@ async function _unirPrivado(lista) {
 async function _patchPrivado(candId, campo, valor) {
   if (_privadoOk === false) throw new Error('falta aplicar 19_entrevistas_privadas.sql en Supabase');
   var url = SUPA_URL + '/rest/v1/psicoeval_privado';
-  var r0 = await fetch(url + '?candidate_id=eq.' + encodeURIComponent(candId) + '&select=entrevistas,notas', { headers: getDBHeaders() });
+  var r0 = await fetch(url + '?candidate_id=eq.' + encodeURIComponent(candId) + '&select=*', { headers: getDBHeaders() });
   if (!r0.ok) throw new Error('Leer datos privados ' + r0.status);
   var fila = (await r0.json())[0] || { entrevistas: [], notas: '' };
   var nuevo = typeof valor === 'function' ? valor(fila[campo]) : valor;
@@ -8772,7 +8786,7 @@ async function _patchScores(candidateId, cambiar) {
   if (!rows.length) throw new Error('Candidato no encontrado');
   var scores = Object.assign({}, rows[0].scores || {});
   cambiar(scores);
-  delete scores._entrevistas; delete scores._ref_notas;   // viven en psicoeval_privado
+  delete scores._entrevistas; delete scores._ref_notas; delete scores._informe_rh;   // viven en psicoeval_privado
   const r1 = await fetch(SUPA_URL + '/rest/v1/candidates?id=eq.' + encodeURIComponent(candidateId), {
     method: 'PATCH',
     headers: Object.assign({}, getDBHeaders(), { 'Content-Type': 'application/json', 'Prefer': 'return=representation' }),
@@ -12445,6 +12459,7 @@ function _renderDrawerHeader(c) {
     + '<div class="dh-av">' + initials + '</div>'
     + '<div class="dh-txt"><span class="dh-name">' + htmlEsc(c.nombre + ' ' + c.apellido) + '</span><span class="dh-meta">' + (pm.icon || '') + ' ' + datos + '</span></div>'
     + '<div class="dh-badges">' + _estadoFichaHtml(c)
+    + (c.estado === 'completed' && S.role === 'admin' ? '<button class="dh-pdf" onclick="abrirInformeRH(\'' + c.id + '\')" title="Informe en formato RH (R-GP-054)">📄 Informe RH</button>' : '')
     + (c.estado === 'completed' ? '<button class="dh-pdf" onclick="downloadPdfReport(\'' + c.id + '\')" title="Descargar el informe en PDF">⬇ PDF</button>' : '') + '</div>'
     + '<button onclick="closeCandDrawer()" class="dh-close" title="Cerrar (Esc)">✕</button>'
     + '</div>';
@@ -13774,6 +13789,226 @@ async function _ofrecerContratacion(candId) {
   _switchDrawerTab('seguimiento', c);
   var sel = document.getElementById('seg-contratado');
   if (sel) { sel.value = 'si'; _segVisibilidad(); }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  INFORME RH (formato R-GP-054 · Informe psicolaboral – verificación de domicilio)
+//  Informe aparte del psicolaboral de PsicoEval. El panel propone los datos a partir
+//  de las pruebas, la entrevista y la referencia; el psicólogo los revisa y genera el PDF.
+//  Lo que se escribe se guarda en psicoeval_privado.informe_rh (solo administrador).
+// ═══════════════════════════════════════════════════════════
+var _RH_COMP = [
+  { key:'integridad',     label:'Integridad',                         ideal:'Alto'  },
+  { key:'autocontrol',    label:'Autocontrol',                        ideal:'Alto'  },
+  { key:'alerta',         label:'Alerta',                             ideal:'Alto'  },
+  { key:'identificacion', label:'Identificación con la organización', ideal:'Alto'  },
+  { key:'cliente',        label:'Orientación por el cliente',         ideal:'Alto'  },
+  { key:'criterio',       label:'Criterio',                           ideal:'Medio' },
+  { key:'comunicacion',   label:'Comunicación',                       ideal:'Medio' },
+  { key:'equipo',         label:'Trabajo en equipo',                  ideal:'Medio' },
+  { key:'razonamiento',   label:'Razonamiento General',               ideal:'Medio' }
+];
+var _RH_NIVELES = ['Alto', 'Medio', 'Bajo'];
+var _RH_CAT = [['apto', 'Apto'], ['obs', 'Apto con Observaciones'], ['no_apto', 'No Apto']];
+// Prueba que sugiere cada competencia
+var _RH_FUENTE = { autocontrol:'gonogo', alerta:'vigilancia', criterio:'situacional', razonamiento:'comprension' };
+var _RH_FORT = {
+  integridad:'Sus respuestas sobre actitudes en el trabajo no muestran indicadores de riesgo de integridad.',
+  autocontrol:'Buen control de impulsos: logra frenar una respuesta automática cuando la situación lo exige.',
+  alerta:'Adecuada capacidad de vigilancia y de detección de irregularidades.',
+  criterio:'Buen criterio para resolver situaciones habituales del cargo.',
+  razonamiento:'Comprende y aplica instrucciones con varias condiciones sin omitir pasos.',
+  comunicacion:'Se comunica de forma clara y respetuosa.',
+  equipo:'Colabora con su equipo y apoya cuando hace falta.'
+};
+var _RH_DEB = {
+  integridad:'La prueba de integridad muestra indicadores que deben contrastarse con referencias antes de contratar.',
+  autocontrol:'Dificultad para frenar respuestas automáticas: puede actuar antes de evaluar la situación.',
+  alerta:'Rendimiento bajo lo esperado en vigilancia y detección de irregularidades.',
+  criterio:'Rendimiento bajo lo esperado al resolver situaciones habituales del cargo.',
+  razonamiento:'Dificultad para seguir instrucciones con varias condiciones.',
+  comunicacion:'Comunicación poco clara o escueta en la entrevista.',
+  equipo:'Relata dificultades para colaborar con su equipo.'
+};
+
+function _rhNivelPrueba(c, tid) {
+  var r = _aptRowsDe(c).filter(function(x){ return x.tid === tid; })[0];
+  if (!r) return null;
+  var u = r.u === undefined ? '%' : r.u;
+  return { v: r.score >= r.min + 15 ? 'Alto' : r.score >= r.min ? 'Medio' : 'Bajo', fuente: (TESTS_META[tid] || {}).name + ': ' + r.score + u + ' (mín. ' + r.min + u + ')' };
+}
+
+// Propuesta del panel (se usa cuando aún no hay informe guardado)
+function _rhSugerencias(c) {
+  var s = c.scores || {}, niveles = {};
+  var ig = s.integridad && s.integridad.nivel;
+  if (ig && ig !== 'no_interpretable') niveles.integridad = { v: ig === 'sin_indicadores' ? 'Alto' : ig === 'explorar' ? 'Medio' : 'Bajo', fuente: 'Integridad laboral: ' + INTEG_NIVELES[ig].titulo.toLowerCase() };
+  Object.keys(_RH_FUENTE).forEach(function(k){ var n = _rhNivelPrueba(c, _RH_FUENTE[k]); if (n) niveles[k] = n; });
+  if (!niveles.razonamiento) { var d = _rhNivelPrueba(c, 'dc0'); if (d) niveles.razonamiento = d; }
+  var ev = _evUltima(s);
+  _evCompsDe(ev).forEach(function(x) {
+    if ((x.key === 'comunicacion' || x.key === 'equipo') && x.nivel) niveles[x.key] = { v: x.nivel >= 4 ? 'Alto' : x.nivel === 3 ? 'Medio' : 'Bajo', fuente: 'Entrevista: ' + x.nivel + ' de 5' };
+  });
+  var fort = [], deb = [];
+  _RH_COMP.forEach(function(k) {
+    var n = niveles[k.key]; if (!n) return;
+    if (n.v === 'Bajo' && _RH_DEB[k.key]) deb.push(_RH_DEB[k.key]);
+    else if (_RH_NIVELES.indexOf(n.v) <= _RH_NIVELES.indexOf(k.ideal) && _RH_FORT[k.key]) fort.push(_RH_FORT[k.key]);
+  });
+  var h0 = Array.isArray(c.historial) && c.historial[0];
+  if (h0 && /guardia|vigilan|seguridad|conserje|portero|control de acceso/i.test(h0.cargo || '')) fort.push('Experiencia como ' + h0.cargo.toLowerCase() + (h0.empresa ? ' en ' + h0.empresa : '') + '.');
+  var dic = _dictamenDe(s);
+  var cat = dic === 'recomendado' ? 'apto' : dic === 'obs' ? 'obs' : dic === 'no_recomendable' ? 'no_apto' : '';
+  var ref = c.referencia || s._referencia || {};
+  var conSint = ((s._entrevistas || []).filter(function(e){ return e && (e.sintesis || e.motivo); }).pop()) || {};
+  var nom = ((c.nombre || '') + ' ' + (c.apellido || '')).trim();
+  var catTxt = (_RH_CAT.filter(function(x){ return x[0] === cat; })[0] || [])[1];
+  var obs = (catTxt ? 'Al momento de la evaluación, se concluye que ' + nom + ' se encuentra en la categoría de ' + catTxt + ' para el cargo de ' + (c.cargo || (PERFIL_META[c.perfil] || {}).label || '') + '. ' : '')
+    + [conSint.sintesis, conSint.motivo].filter(Boolean).join(' ');
+  var nv = {}; Object.keys(niveles).forEach(function(k){ nv[k] = niveles[k].v; });
+  return {
+    lista:'', zonal:'', categoria:cat, publico:'',
+    fecha:(_momentoTxt(c) || '').slice(0, 10).replace(/-/g, '/'),
+    niveles:nv, fuentes:niveles,
+    fortalezas:fort.join('\n'), debilidades:deb.join('\n'),
+    empresa:ref.empresa || (h0 && h0.empresa) || '',
+    corrobora:[ref.nombre, ref.cargo].filter(Boolean).join(', '),
+    fono:ref.telefono || '', aportados:s._ref_notas || '',
+    observaciones:obs.trim(), refuerzo:'',
+    psicologo:(ev && ev.entrevistador) || _evPreferencias().entrevistador || ''
+  };
+}
+
+var _rhCand = null;
+async function abrirInformeRH(id) {
+  var all = await getDB();
+  var c = all.find(function(x){ return x.id === id; }); if (!c) return;
+  _rhCand = c;
+  var sug = _rhSugerencias(c), g = (c.scores && c.scores._informe_rh) || {};
+  var d = Object.assign({}, sug, g, { niveles: Object.assign({}, sug.niveles, g.niveles || {}) });
+  var guardado = !!Object.keys(g).length;
+  var chips = function(name, ops, val) {
+    return '<div class="reg-chips">' + ops.map(function(o){ return '<label class="reg-chip"><input type="radio" name="rh-' + name + '" value="' + o[0] + '"' + (o[0] === val ? ' checked' : '') + '><span>' + o[1] + '</span></label>'; }).join('') + '</div>';
+  };
+  var area = function(id, val, rows, ph) { return '<textarea id="rh-' + id + '" rows="' + rows + '" placeholder="' + (ph || '') + '" class="rh-in">' + htmlEsc(val || '') + '</textarea>'; };
+  var input = function(id, val, ph) { return '<input id="rh-' + id + '" value="' + htmlEsc(val || '') + '" placeholder="' + (ph || '') + '" class="rh-in">'; };
+  var filas = _RH_COMP.map(function(k) {
+    var f = sug.fuentes[k.key];
+    return '<tr><td>' + k.label + '</td><td style="text-align:center;color:var(--ink3)">' + k.ideal + '</td><td>'
+      + '<select id="rh-n-' + k.key + '" class="rh-in" style="padding:5px 8px"><option value="">—</option>'
+      + _RH_NIVELES.map(function(n){ return '<option' + (d.niveles[k.key] === n ? ' selected' : '') + '>' + n + '</option>'; }).join('') + '</select></td>'
+      + '<td style="font-size:11px;color:var(--ink4)">' + (f ? '💡 ' + htmlEsc(f.fuente) : 'Lo define usted') + '</td></tr>';
+  }).join('');
+  var sec = function(t){ return '<div class="rh-sec">' + t + '</div>'; };
+  var ov = document.createElement('div');
+  ov.id = 'rh-overlay';
+  ov.className = 'rh-ov';
+  ov.innerHTML = '<div class="rh-box">'
+    + '<div class="rh-top"><div><div style="font-size:17px;font-weight:800">📄 Informe RH · R-GP-054</div>'
+    + '<div style="font-size:12px;color:var(--ink3)">' + htmlEsc(((c.nombre || '') + ' ' + (c.apellido || '')).trim()) + ' · ' + (guardado ? 'editando el informe guardado' : 'propuesta del panel a partir de las pruebas, la entrevista y la referencia') + '</div></div>'
+    + '<button class="dh-close" onclick="document.getElementById(\'rh-overlay\').remove()">✕</button></div>'
+    + '<div class="rh-body">'
+    + '<div class="rh-grid2"><div class="field"><label>Lista</label>' + chips('lista', [['1','1'],['2','2'],['3','3']], d.lista) + '</div>'
+    + '<div class="field"><label>Zonal</label>' + chips('zonal', [['norte','Norte'],['centro','Centro'],['sur','Sur']], d.zonal) + '</div></div>'
+    + sec('A.- Evaluación psicolaboral')
+    + '<div class="rh-grid2"><div class="field"><label>Fecha de evaluación</label>' + input('fecha', d.fecha, 'dd/mm/aaaa') + '</div>'
+    + '<div class="field"><label>Psicólogo que realiza el informe</label>' + input('psicologo', d.psicologo) + '</div></div>'
+    + '<div class="field"><label>Categoría</label>' + chips('categoria', _RH_CAT, d.categoria) + '</div>'
+    + '<div class="field"><label>Atención a público</label>' + chips('publico', [['si','Recomendable'],['no','No Recomendable']], d.publico) + '</div>'
+    + '<table class="rh-tbl"><thead><tr><th>Competencia</th><th>Nivel ideal</th><th>Nivel obtenido</th><th>Sugerencia</th></tr></thead><tbody>' + filas + '</tbody></table>'
+    + '<div class="field"><label>Fortalezas <span style="text-transform:none;font-weight:500">(una por línea)</span></label>' + area('fortalezas', d.fortalezas, 5) + '</div>'
+    + '<div class="field"><label>Debilidades <span style="text-transform:none;font-weight:500">(una por línea)</span></label>' + area('debilidades', d.debilidades, 3) + '</div>'
+    + sec('Antecedentes laborales')
+    + '<div class="rh-grid2"><div class="field"><label>Empresa en que trabajó anteriormente</label>' + input('empresa', d.empresa) + '</div>'
+    + '<div class="field"><label>Fono del empleador anterior</label>' + input('fono', d.fono) + '</div></div>'
+    + '<div class="field"><label>Nombre y cargo de quien corrobora</label>' + input('corrobora', d.corrobora) + '</div>'
+    + '<div class="field"><label>Antecedentes aportados por el empleador anterior</label>' + area('aportados', d.aportados, 3) + '</div>'
+    + sec('Cierre')
+    + '<div class="field"><label>Observaciones finales</label>' + area('observaciones', d.observaciones, 7) + '</div>'
+    + '<div class="field"><label>Refuerzo de habilidades que debe observar el supervisor</label>' + area('refuerzo', d.refuerzo, 3, 'Ej: Acompañamiento explícito en cambios de protocolo…') + '</div>'
+    + '<div style="font-size:11.5px;color:var(--ink4)">Las secciones B (entrevista operacional) y C (verificación de domicilio) salen en blanco para que las complete el supervisor.</div>'
+    + '</div>'
+    + '<div class="rh-pie">' + (guardado ? '<a class="rs-link" onclick="_rhRestablecer()" style="margin-right:auto">Volver a la propuesta del panel</a>' : '<span style="margin-right:auto"></span>')
+    + '<button class="rs-btn" onclick="_rhGuardar()">Guardar</button><button class="rs-btn prim" onclick="_rhPdf()">⬇ Guardar y generar PDF</button></div>'
+    + '</div>';
+  document.body.appendChild(ov);
+}
+
+function _rhLeer() {
+  var v = function(id){ return ((document.getElementById('rh-' + id) || {}).value || '').trim(); };
+  var r = function(n){ var x = document.querySelector('input[name="rh-' + n + '"]:checked'); return x ? x.value : ''; };
+  var niveles = {}; _RH_COMP.forEach(function(k){ var x = v('n-' + k.key); if (x) niveles[k.key] = x; });
+  return { lista:r('lista'), zonal:r('zonal'), categoria:r('categoria'), publico:r('publico'), fecha:v('fecha'), psicologo:v('psicologo'),
+           niveles:niveles, fortalezas:v('fortalezas'), debilidades:v('debilidades'), empresa:v('empresa'), corrobora:v('corrobora'),
+           fono:v('fono'), aportados:v('aportados'), observaciones:v('observaciones'), refuerzo:v('refuerzo'), actualizado:new Date().toISOString() };
+}
+async function _rhGuardar(silencioso) {
+  var d = _rhLeer();
+  try {
+    await _patchPrivado(_rhCand.id, 'informe_rh', d);
+    if (!silencioso) toast('Informe RH guardado ✓', 'ok');
+    return d;
+  } catch(e) { toast('No se pudo guardar: ' + e.message, 'er'); return null; }
+}
+async function _rhRestablecer() {
+  if (!(await appConfirm('¿Volver a la propuesta del panel? Se descartará lo que escribió en este informe.'))) return;
+  try { await _patchPrivado(_rhCand.id, 'informe_rh', {}); } catch(e) {}
+  document.getElementById('rh-overlay').remove();
+  abrirInformeRH(_rhCand.id);
+}
+async function _rhPdf() {
+  var d = await _rhGuardar(true); if (!d) return;
+  var c = _rhCand, e = function(x){ return htmlEsc(x || ''); };
+  var caja = function(on){ return '<span class="bx">' + (on ? '✕' : '') + '</span>'; };
+  var opcion = function(on, t){ return '<span class="op">' + caja(on) + ' ' + t + '</span>'; };
+  var lineas = function(t){ return e(t).split('\n').filter(function(x){ return x.trim(); }).map(function(x){ return '<div class="ln">' + x + '</div>'; }).join(''); };
+  var nom = ((c.nombre || '') + ' ' + (c.apellido || '')).trim();
+  var html = '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Informe RH · ' + e(nom) + '</title><style>'
+    + '@page{size:A4;margin:14mm 14mm 16mm}*{box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;font-size:10pt;color:#000;margin:0}'
+    + 'table{width:100%;border-collapse:collapse;margin-bottom:8px;page-break-inside:avoid}td,th{border:1px solid #000;padding:4px 6px;vertical-align:top}'
+    + '.hd td{vertical-align:middle;text-align:center}.hd .rh{font-size:22pt;font-weight:900;width:14%}.hd .tit{font-weight:700;font-size:11pt}'
+    + '.azul{background:#8DB3E2;font-weight:700}.lbl{width:34%;font-weight:700}.sec{font-weight:700;margin:12px 0 4px;font-size:10.5pt}'
+    + '.bx{display:inline-block;width:11px;height:11px;border:1px solid #000;text-align:center;font-size:9px;line-height:10px;vertical-align:-1px}.op{margin-right:18px;white-space:nowrap}'
+    + '.ln{margin-bottom:3px}.ln:before{content:"• "}.txt{white-space:pre-line;line-height:1.4}.alto{height:52px}.firma{height:46px}'
+    + '.bar{position:fixed;bottom:12px;right:12px}@media print{.bar{display:none}}@media screen{body{max-width:820px;margin:16px auto;padding:0 12px 60px}}'
+    + '</style></head><body>'
+    + '<div class="bar"><button onclick="window.print()" style="padding:8px 16px;font-weight:700">⬇ Guardar como PDF</button></div>'
+    + '<table class="hd"><tr><td class="rh" rowspan="3">RH</td><td class="tit" rowspan="3">INFORME PSICOLABORAL<br>VERIFICACIÓN DE DOMICILIO</td><td>R-GP-054</td>'
+    + '<td rowspan="3" style="font-size:8.5pt;text-align:left">Nivel de Seguridad<br>' + caja(false) + ' Público<br>' + caja(true) + ' Reservado<br>' + caja(false) + ' Secreto</td></tr>'
+    + '<tr><td>I-GP-001</td></tr><tr><td>Versión: 03</td></tr></table>'
+    + '<table><tr><td class="lbl">LISTA</td><td>' + ['1','2','3'].map(function(x){ return opcion(d.lista === x, x); }).join('') + '</td></tr>'
+    + '<tr><td class="lbl">ZONAL</td><td>' + [['norte','NORTE'],['centro','CENTRO'],['sur','SUR']].map(function(x){ return opcion(d.zonal === x[0], x[1]); }).join('') + '</td></tr></table>'
+    + '<table><tr><td class="lbl">Nombre:</td><td>' + e(nom) + '</td></tr><tr><td class="lbl">Edad:</td><td>' + (c.edad ? c.edad + ' años' : '') + '</td></tr>'
+    + '<tr><td class="lbl">Comuna:</td><td>' + e(c.comuna) + '</td></tr>'
+    + '<tr><td colspan="2" class="azul">A.- EVALUACIÓN PSICO LABORAL</td></tr>'
+    + '<tr><td class="lbl">Fecha de evaluación:</td><td>' + e(d.fecha) + '</td></tr>'
+    + '<tr><td class="lbl">Categoría:</td><td>' + _RH_CAT.map(function(x){ return opcion(d.categoria === x[0], x[1]); }).join('') + '</td></tr>'
+    + '<tr><td class="lbl">Atención a Público:</td><td>' + opcion(d.publico === 'si', 'Recomendable') + opcion(d.publico === 'no', 'No Recomendable') + '</td></tr></table>'
+    + '<table><tr class="azul"><td>Competencia</td><td style="width:18%;text-align:center">Nivel Ideal</td><td style="width:18%;text-align:center">Nivel Obtenido</td></tr>'
+    + _RH_COMP.map(function(k){ return '<tr><td>' + k.label + '</td><td style="text-align:center">' + k.ideal + '</td><td style="text-align:center">' + e(d.niveles[k.key] || '') + '</td></tr>'; }).join('') + '</table>'
+    + '<div class="sec">FORTALEZAS</div><table><tr><td class="lbl">Fortalezas</td><td>' + lineas(d.fortalezas) + '</td></tr></table>'
+    + '<div class="sec">DEBILIDADES</div><table><tr><td class="lbl">Debilidades</td><td>' + lineas(d.debilidades) + '</td></tr></table>'
+    + '<table><tr><td colspan="2" class="azul">ANTECEDENTES LABORALES</td></tr>'
+    + '<tr><td class="lbl">Empresa en que trabajó anteriormente:</td><td>' + e(d.empresa) + '</td></tr>'
+    + '<tr><td class="lbl">Nombre y cargo de la persona que corrobora antecedentes antiguo empleo:</td><td>' + e(d.corrobora) + '</td></tr>'
+    + '<tr><td class="lbl">Fono o celular del empleador anterior:</td><td>' + e(d.fono) + '</td></tr>'
+    + '<tr><td class="lbl">Antecedentes aportados por el empleador anterior:</td><td class="txt">' + e(d.aportados) + '</td></tr></table>'
+    + '<div class="sec">OBSERVACIONES FINALES</div><table><tr><td class="lbl">Observaciones Finales</td><td class="txt">' + e(d.observaciones) + '</td></tr></table>'
+    + '<table><tr><td class="lbl">Refuerzo de habilidades que debe observar el Supervisor a cargo.</td><td>' + lineas(d.refuerzo) + '</td></tr></table>'
+    + '<table><tr><td class="lbl">Psicólogo que realiza el informe</td><td>' + e(d.psicologo) + '</td></tr></table>'
+    + '<div class="sec">B. ENTREVISTA OPERACIONAL</div>'
+    + '<table><tr><td class="lbl">Fecha de la entrevista</td><td></td></tr></table>'
+    + '<table><tr><td class="azul">Se aprueba la contratación</td></tr><tr><td>' + opcion(false, 'Sí') + opcion(false, 'No') + '</td></tr></table>'
+    + '<table><tr><td class="azul">Observaciones (Obligatorias)</td></tr><tr><td class="alto"></td></tr></table>'
+    + '<table><tr class="azul"><td>Subgerente o Supervisor que realizó la entrevista</td><td>Nombre completo</td><td>Firma</td></tr><tr><td class="firma"></td><td></td><td></td></tr></table>'
+    + '<div class="sec">C. VERIFICACIÓN DE DOMICILIO</div>'
+    + '<table><tr><td class="azul">Requiere verificación de domicilio por falta de recomendaciones: *</td></tr><tr><td>' + opcion(false, 'Sí') + opcion(false, 'No') + '</td></tr></table>'
+    + '<table><tr class="azul"><td>Supervisor entrevistador</td><td>Verificador de domicilio</td><td>Cierre</td></tr><tr><td class="firma"></td><td></td><td></td></tr></table>'
+    + '</body></html>';
+  var w = window.open('', '_blank');
+  if (!w) { toast('El navegador bloqueó la ventana del PDF. Permita ventanas emergentes para este sitio.', 'er'); return; }
+  w.document.open(); w.document.write(html); w.document.close();
+  setTimeout(function(){ try { w.focus(); w.print(); } catch(x) {} }, 400);
 }
 
 async function drawerSetEtapa(candId, etapa) {
