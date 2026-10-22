@@ -845,6 +845,45 @@ input,select,textarea{font-family:inherit;outline:none}
 .dh-name{font-size:16px;font-weight:800;color:var(--ink)}
 .dh-meta{font-size:12.5px;color:var(--ink3);overflow:hidden;text-overflow:ellipsis}
 .dh-badges{display:flex;gap:6px;align-items:center;flex-shrink:0}
+.rs-wrap{display:flex;flex-direction:column;gap:13px;max-width:1180px;margin:0 auto}
+.rs-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:13px;align-items:start}
+.rs-col{display:flex;flex-direction:column;gap:13px;min-width:0}
+.rs-card{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:13px 15px}
+.rs-lbl{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:10.5px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:9px}
+.rs-link{font-size:12px;font-weight:700;color:var(--accent);cursor:pointer;text-transform:none;letter-spacing:0}
+.rs-vacio{font-size:12.5px;color:var(--ink3)}
+.rs-fila{display:flex;align-items:center;gap:10px;padding:7px 6px;margin:0 -6px;border-radius:7px;cursor:pointer;font-size:12.5px}
+.rs-fila:hover{background:var(--bg)}
+.rs-nom{flex:0 0 225px;min-width:0;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rs-barra{position:relative;flex:1;height:7px;border-radius:4px;background:#e2e8f0;min-width:60px}
+.rs-barra span{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+.rs-barra i{position:absolute;top:-4px;bottom:-4px;width:2px;background:#0f172a;opacity:.55}
+.rs-val{flex:0 0 46px;text-align:right;font-weight:800}
+.rs-min{flex:0 0 62px;font-size:11px;color:var(--ink4);white-space:nowrap}
+.rs-desc{flex:1;color:var(--ink2)}
+.rs-desc em{color:var(--ink4);font-style:normal;font-size:11px}
+.rs-lista{margin:0;padding-left:18px;font-size:12.5px;color:var(--ink2);line-height:1.65}
+.rs-lista li+li{margin-top:3px}
+.rs-kv{display:flex;gap:10px;padding:5px 0;font-size:12.5px;border-bottom:1px solid var(--border)}
+.rs-kv:last-child{border-bottom:none}
+.rs-kv span{flex:0 0 88px;color:var(--ink4);font-size:11.5px}
+.rs-kv b{flex:1;min-width:0;font-weight:600;color:var(--ink)}
+.rs-acciones{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.rs-btn{display:inline-flex;align-items:center;gap:5px;padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--ink2);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;text-decoration:none;white-space:nowrap}
+.rs-btn:hover{border-color:var(--accent);color:var(--accent)}
+.rs-btn.prim{background:var(--accent);border-color:var(--accent);color:#fff}
+.rs-btn.prim:hover{filter:brightness(1.08);color:#fff}
+.rs-paso{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:13px 16px;border-radius:11px;border:1.5px solid #bfdbfe;background:#eff6ff}
+.rs-paso-txt{flex:1;min-width:220px}
+.rs-paso-t{font-size:14px;font-weight:800;color:#1e3a8a}
+.rs-paso-d{font-size:12.5px;color:#1e40af;margin-top:2px;line-height:1.5}
+.rs-paso-acc{display:flex;gap:6px;flex-wrap:wrap}
+.rs-warn{background:#fffbeb;border-color:#fde68a}.rs-warn .rs-paso-t{color:#92400e}.rs-warn .rs-paso-d{color:#92400e}
+.rs-alerta{background:#fff1f2;border-color:#fecdd3}.rs-alerta .rs-paso-t{color:#9f1239}.rs-alerta .rs-paso-d{color:#9f1239}
+.rs-ok{background:#f0fdf4;border-color:#bbf7d0}.rs-ok .rs-paso-t{color:#166534}.rs-ok .rs-paso-d{color:#166534}
+.rs-neutro{background:var(--surface);border-color:var(--border)}.rs-neutro .rs-paso-t{color:var(--ink)}.rs-neutro .rs-paso-d{color:var(--ink3)}
+@media(max-width:900px){.rs-grid{grid-template-columns:1fr}}
+@media(max-width:700px){.rs-fila{flex-wrap:wrap;row-gap:4px}.rs-nom{flex-basis:100%;white-space:normal}.rs-min{flex-basis:auto}}
 .dh-pdf{padding:5px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:12px;font-weight:700;color:var(--ink2);cursor:pointer;font-family:inherit}
 .dh-pdf:hover{border-color:var(--accent);color:var(--accent)}
 .drawer-body.rpt-body{padding:0;overflow:hidden;display:flex;flex-direction:column}
@@ -12151,58 +12190,150 @@ async function switchDrawerTabById(tab) {
   if (c) _switchDrawerTab(tab, c);
 }
 
+// Abre el informe de la ficha en la pestaña de una prueba
+async function _fichaVerPrueba(tid) {
+  await switchDrawerTabById('evaluaciones');
+  var b = document.querySelector('#drawer-body .rpt-tab-btn[onclick*="\'' + tid + '\'"]');
+  if (b) b.click();
+}
+
+// Lo que conviene hacer ahora con este candidato
+function _rsProximoPaso(c, m) {
+  var etapa = getPipelineEtapa(c);
+  var btn = function(txt, fn, prim){ return '<button class="rs-btn' + (prim ? ' prim' : '') + '" onclick="' + fn + '">' + txt + '</button>'; };
+  var wa = _rsWhatsapp(c);
+  var t, d, acc = '', tono = 'info';
+  if (!m.completada) {
+    t = 'Evaluación sin terminar';
+    d = 'Comenzó la evaluación' + (_momentoTxt(c) ? ' el ' + htmlEsc(_momentoTxt(c)) : '') + ' y no la terminó.';
+    if (wa) acc = '<a class="rs-btn prim" href="' + wa + '" target="_blank" rel="noopener">💬 Escribirle por WhatsApp</a>';
+    tono = 'warn';
+  } else if (etapa === 'descartado') {
+    t = 'Proceso cerrado'; d = 'El candidato fue descartado.'; tono = 'neutro';
+    if (m.segPend.length) { t = 'Seguimiento pendiente'; d = m.segPend.map(function(p){ return p.hito.toLowerCase(); }).join(' y ') + '.'; acc = btn('⏱ Registrar seguimiento', "switchDrawerTabById('seguimiento')", true); tono = 'warn'; }
+  } else if (etapa === 'seleccionado') {
+    if (m.segPend.length) { t = 'Registrar seguimiento'; d = 'Corresponde el seguimiento ' + m.segPend.map(function(p){ return p.hito.toLowerCase(); }).join(' y ') + '.'; acc = btn('⏱ Registrar seguimiento', "switchDrawerTabById('seguimiento')", true); tono = 'warn'; }
+    else if (!m.dictamen) { t = 'Seleccionado sin entrevista registrada'; d = 'Para respaldar la decisión, registre la entrevista y su dictamen.'; acc = btn('🗓 Registrar entrevista', "switchDrawerTabById('entrevistas')", true); tono = 'warn'; }
+    else if (!(c.scores || {})._seguimiento || !(c.scores || {})._seguimiento.contratado) { t = 'Registrar la contratación'; d = 'Indique si fue contratado y su fecha de ingreso, para programar el seguimiento a los 3 y 6 meses.'; acc = btn('⏱ Registrar contratación', "switchDrawerTabById('seguimiento')", true); tono = 'ok'; }
+    else { t = 'Seleccionado'; d = 'Registre cómo le va a los 3 y 6 meses: sirve para calibrar los mínimos del cargo.'; acc = btn('⏱ Ver seguimiento', "switchDrawerTabById('seguimiento')"); tono = 'ok'; }
+  } else if (!m.dictamen) {
+    t = 'Siguiente paso: entrevista';
+    d = 'Revise los puntos a explorar y registre la entrevista con su dictamen.';
+    if (m.integ === 'riesgo_alto') { d = 'La prueba de integridad indica riesgo alto. Solo continúe si la entrevista y las referencias descartan los motivos de forma fundada.'; tono = 'alerta'; }
+    acc = btn('🗓 Abrir pauta de entrevista', "switchDrawerTabById('entrevistas')", true);
+  } else {
+    var dd = _EV_DICTAMEN.filter(function(x){ return x.val === m.dictamen; })[0] || {};
+    t = 'Decidir'; d = 'La entrevista ya tiene dictamen: <strong>' + htmlEsc(dd.label || m.dictamen) + '</strong>.';
+    acc = btn('✅ Seleccionar', "drawerSetEtapa('" + c.id + "','seleccionado')", true) + btn('❌ Descartar', "drawerSetEtapa('" + c.id + "','descartado')");
+  }
+  return '<div class="rs-paso rs-' + tono + '"><div class="rs-paso-txt"><div class="rs-paso-t">' + t + '</div><div class="rs-paso-d">' + d + '</div></div>'
+    + (acc ? '<div class="rs-paso-acc">' + acc + '</div>' : '') + '</div>';
+}
+
+function _rsWhatsapp(c) {
+  var n = String(c.telefono || '').replace(/\D/g, '');
+  if (!n) return '';
+  if (n.length === 9) n = '56' + n;
+  return 'https://wa.me/' + n;
+}
+
+// Resultados: cada prueba frente al mínimo del cargo y las descriptivas
+function _rsResultados(c, m) {
+  var s = c.scores || {};
+  var h = '<div class="rs-card"><div class="rs-lbl">Resultados <a class="rs-link" onclick="switchDrawerTabById(\'evaluaciones\')">Ver informe completo →</a></div>';
+  if (!m.completada) return h + '<div class="rs-vacio">Sin resultados: la evaluación no está completa.</div></div>';
+  m.apt.forEach(function(r) {
+    var u = r.u === undefined ? '%' : r.u, col = r.cumple ? '#16a34a' : '#dc2626';
+    var p = Math.max(0, Math.min(100, r.score)), pm = Math.max(0, Math.min(100, r.min));
+    h += '<div class="rs-fila" onclick="_fichaVerPrueba(\'' + r.tid + '\')" title="' + htmlEsc(r.dimsBajo && r.dimsBajo.length ? 'Bajo el mínimo: ' + r.dimsBajo.join(', ') : r.dimNote || r.detTxt || '') + '">'
+      + '<span class="rs-nom">' + r.icon + ' ' + htmlEsc(r.label) + '</span>'
+      + '<span class="rs-barra"><span style="width:' + p + '%;background:' + col + '"></span><i style="left:' + pm + '%"></i></span>'
+      + '<span class="rs-val" style="color:' + col + '">' + r.score + u + '</span>'
+      + '<span class="rs-min">mín. ' + r.min + u + '</span></div>';
+  });
+  if (s.gonogo && s.gonogo.valido === false) h += '<div class="rs-fila" onclick="_fichaVerPrueba(\'gonogo\')"><span class="rs-nom">🎯 Control de impulsos</span><span class="rs-desc">No interpretable</span></div>';
+  if (s.bart && s.bart.valido === false) h += '<div class="rs-fila" onclick="_fichaVerPrueba(\'bart\')"><span class="rs-nom">🎈 Control del riesgo</span><span class="rs-desc">No interpretable</span></div>';
+  if (m.integ) h += '<div class="rs-fila" onclick="_fichaVerPrueba(\'integridad\')"><span class="rs-nom">🧭 Integridad laboral</span><span class="rs-desc">' + _integNivelBadge(s.integridad) + '</span></div>';
+  if (m.disc) h += '<div class="rs-fila" onclick="_fichaVerPrueba(\'disc\')"><span class="rs-nom">🎭 Estilo DISC</span><span class="rs-desc">' + htmlEsc(m.disc === 'Perfil equilibrado' ? m.disc : 'Predomina ' + m.disc) + ' <em>· descriptivo</em></span></div>';
+  if (s.pf16) h += '<div class="rs-fila" onclick="_fichaVerPrueba(\'pf16\')"><span class="rs-nom">🧬 Personalidad laboral</span><span class="rs-desc">Ver perfil <em>· descriptivo</em></span></div>';
+  if (!m.apt.length && !m.integ && !m.disc && !s.pf16) h += '<div class="rs-vacio">Sin pruebas con resultado.</div>';
+  var extra = _integSummaryHtml(s) + _bateriaHtml(s);
+  if (extra) h += '<div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">' + extra + '</div>';
+  return h + '</div>';
+}
+
+// Puntos concretos para profundizar en la entrevista
+function _rsExplorar(c, m) {
+  if (!m.completada) return '';
+  var s = c.scores || {}, items = [];
+  if (m.integ === 'riesgo_alto' || m.integ === 'explorar' || m.integ === 'no_interpretable')
+    items.push('<strong>Integridad laboral</strong> (' + htmlEsc(INTEG_NIVELES[m.integ].titulo.toLowerCase()) + '): use las preguntas sugeridas en <a class="rs-link" onclick="_fichaVerPrueba(\'integridad\')">la pestaña Integridad</a>.');
+  m.bajo.forEach(function(r) {
+    var u = r.u === undefined ? '%' : r.u;
+    items.push('<strong>' + htmlEsc(r.label) + '</strong>: ' + (r.dimsBajo && r.dimsBajo.length ? 'bajo el mínimo en ' + htmlEsc(r.dimsBajo.join(', ')) : r.score + u + ', bajo el mínimo de ' + r.min + u) + '. Pida ejemplos concretos de cómo lo resuelve en el trabajo.');
+  });
+  if (s.gonogo && s.gonogo.valido === false) items.push('<strong>Control de impulsos</strong>: resultado no interpretable; evalúelo en la entrevista.');
+  if (s.bart && s.bart.valido === false) items.push('<strong>Control del riesgo</strong>: resultado no interpretable; evalúelo en la entrevista.');
+  if (m.incid === 'grave' || m.incid === 'leve') items.push('<strong>Incidentes durante la evaluación</strong>: pregunte en qué condiciones la rindió.');
+  var bt = s._bateria;
+  if (bt && bt.faltantes && bt.faltantes.length) items.push('<strong>No rindió</strong> ' + htmlEsc(_testNames(bt.faltantes)) + ': evalúe esos aspectos en la entrevista.');
+  var h = '<div class="rs-card"><div class="rs-lbl">Para explorar en la entrevista</div>';
+  if (!items.length) return h + '<div class="rs-vacio">Sin alertas: los resultados no señalan aspectos críticos. Use la pauta habitual del cargo.</div></div>';
+  return h + '<ul class="rs-lista">' + items.map(function(x){ return '<li>' + x + '</li>'; }).join('') + '</ul></div>';
+}
+
 function _tabResumen(c) {
   var sc = c.scores || {};
-  var fields = [
-    ['RUT', c.rut || '—'],
-    ['Email', c.email || '—'],
-    ['Teléfono', c.telefono ? '+56 ' + c.telefono : '—'],
-    ['Edad', c.edad ? c.edad + ' años' : '—'],
-    ['Educación', c.educacion_label || c.educacion || '—'],
-    ['Experiencia', (function(){ var h0 = Array.isArray(c.historial) && c.historial[0]; if (!h0) return c.experiencia_label || c.experiencia || '—';
-      return [h0.cargo, h0.empresa].filter(Boolean).join(' · ') + (h0.duracion_label ? ' (' + h0.duracion_label + ')' : ''); })()],
-    ['Comuna', c.comuna || '—'],
-    ['Rubro', c.rubro_label || c.rubro || '—'],
-    ['Fecha evaluación', _momentoTxt(c) || '—'],
-    ['Invitación', (function(){ var iv = c.scores && c.scores._invitacion; if (!iv) return 'Sin invitación (link general)';
-      return (iv.tipo === 'rut' ? 'Por RUT' : 'Link único') + (iv.creada_por ? ' · ' + iv.creada_por : '') + (iv.creada ? ' · ' + new Date(iv.creada).toLocaleDateString('es-CL') : ''); })()],
-  ];
-  var h = '<div style="display:flex;flex-direction:column;gap:13px">';
-  h += _miradaFichaHtml(c);
-  var _integH = _integTestBannerHtml(sc) + _integSummaryHtml(sc) + _bateriaHtml(sc);
-  if (_integH) h += _integH;
-  // Contact card
-  h += '<div style="background:var(--surface);border-radius:11px;border:1px solid var(--border);overflow:hidden">';
-  h += '<div style="padding:9px 13px;border-bottom:1px solid var(--border);font-size:10.5px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px">Datos del candidato</div>';
-  h += '<div style="display:grid;grid-template-columns:1fr 1fr">';
-  fields.forEach(function(f, i) {
-    h += '<div style="padding:9px 13px;border-bottom:1px solid var(--border);' + (i % 2 === 0 ? 'border-right:1px solid var(--border)' : '') + '">';
-    h += '<div style="font-size:9.5px;font-weight:700;color:var(--ink4);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px">' + f[0] + '</div>';
-    h += '<div style="font-size:12.5px;color:var(--ink);word-break:break-all">' + htmlEsc(String(f[1])) + '</div>';
-    h += '</div>';
-  });
-  h += '</div></div>';
-  // Pipeline stage buttons
+  var m = _miradaDe(c);
+  var h0 = Array.isArray(c.historial) && c.historial[0];
+  var exp = h0 ? [h0.cargo, h0.empresa].filter(Boolean).join(' · ') + (h0.duracion_label ? ' (' + h0.duracion_label + ')' : '') : (c.experiencia_label || c.experiencia || '');
+  var iv = sc._invitacion;
+  var ents = (sc._entrevistas || []).filter(Boolean);
+  var ult = ents[ents.length - 1];
+
+  var h = '<div class="rs-wrap">';
+  h += _integTestBannerHtml(sc);
+  h += _rsProximoPaso(c, m);
+  h += '<div class="rs-grid"><div class="rs-col">';
+  h += _rsResultados(c, m);
+  h += _rsExplorar(c, m);
+  h += '</div><div class="rs-col">';
+
+  // Contacto con acciones directas
+  var wa = _rsWhatsapp(c);
+  h += '<div class="rs-card"><div class="rs-lbl">Contacto</div>';
+  if (c.telefono) h += '<div class="rs-kv"><span>Teléfono</span><b>+56 ' + htmlEsc(c.telefono) + '</b></div>';
+  if (c.email) h += '<div class="rs-kv"><span>Email</span><b style="word-break:break-all">' + htmlEsc(c.email) + '</b></div>';
+  h += '<div class="rs-acciones">'
+    + (wa ? '<a class="rs-btn prim" href="' + wa + '" target="_blank" rel="noopener">💬 WhatsApp</a>' : '')
+    + (c.telefono ? '<a class="rs-btn" href="tel:+56' + String(c.telefono).replace(/\D/g, '') + '">📞 Llamar</a>' : '')
+    + (c.email ? '<a class="rs-btn" href="mailto:' + encodeURI(c.email) + '">✉️ Correo</a>' : '')
+    + '</div></div>';
+
+  // Antecedentes (lo que no está en el encabezado)
+  var kv = [['RUT', c.rut], ['Experiencia', exp], ['Rubro', c.rubro_label || c.rubro], ['Evaluación', _momentoTxt(c)],
+            ['Invitación', iv ? (iv.tipo === 'rut' ? 'Por RUT' : 'Link único') + (iv.creada_por ? ' · ' + iv.creada_por : '') : 'Link general'],
+            ['Entrevistas', ents.length ? ents.length + (ult && ult.fecha ? ' · última ' + ult.fecha.split('-').reverse().join('-') : '') + (ult && ult.entrevistador ? ' · ' + ult.entrevistador : '') : 'Ninguna']];
+  h += '<div class="rs-card"><div class="rs-lbl">Antecedentes</div>';
+  kv.forEach(function(x){ if (x[1]) h += '<div class="rs-kv"><span>' + x[0] + '</span><b>' + htmlEsc(String(x[1])) + '</b></div>'; });
+  h += '</div>';
+
+  // Etapa del proceso
   var curEtapa = getPipelineEtapa(c);
-  h += '<div style="background:var(--surface);border-radius:11px;border:1px solid var(--border);padding:13px">';
-  h += '<div style="font-size:10.5px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:9px">Etapa del proceso</div>';
-  h += '<div style="display:flex;gap:5px;flex-wrap:wrap">';
-  PIPELINE_STAGES.forEach(function(s) {
-    var isCur = s.id === curEtapa;
-    h += '<button onclick="drawerSetEtapa(\'' + c.id + '\',\'' + s.id + '\')" style="padding:5px 11px;border-radius:100px;border:1.5px solid ' + (isCur ? s.color : 'var(--border)') + ';background:' + (isCur ? s.bg : 'transparent') + ';color:' + (isCur ? s.color : 'var(--ink3)') + ';font-size:11px;font-weight:' + (isCur ? '700' : '500') + ';cursor:pointer;transition:all .15s;font-family:inherit">' + s.icon + ' ' + s.label + '</button>';
+  h += '<div class="rs-card"><div class="rs-lbl">Etapa del proceso</div><div style="display:flex;gap:5px;flex-wrap:wrap">';
+  PIPELINE_STAGES.forEach(function(st) {
+    var isCur = st.id === curEtapa;
+    h += '<button onclick="drawerSetEtapa(\'' + c.id + '\',\'' + st.id + '\')" style="padding:5px 10px;border-radius:100px;border:1.5px solid ' + (isCur ? st.color : 'var(--border)') + ';background:' + (isCur ? st.bg : 'transparent') + ';color:' + (isCur ? st.color : 'var(--ink3)') + ';font-size:11px;font-weight:' + (isCur ? '700' : '500') + ';cursor:pointer;font-family:inherit">' + st.icon + ' ' + st.label + '</button>';
   });
   h += '</div></div>';
-  // HR notes
-  var notas = sc._ref_notas || '';
-  h += '<div style="background:var(--surface);border-radius:11px;border:1px solid var(--border);padding:13px">';
-  h += '<div style="font-size:10.5px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px">Notas HR confidenciales</div>';
-  h += '<textarea id="drawer-notas" rows="4" style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:8px;font-size:12.5px;font-family:inherit;color:var(--ink);background:var(--bg);resize:vertical;box-sizing:border-box;line-height:1.5">' + htmlEsc(notas) + '</textarea>';
-  h += '<button onclick="saveDrawerNotas(\'' + c.id + '\')" style="margin-top:7px;padding:7px 16px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Guardar notas</button>';
+
+  // Notas confidenciales
+  h += '<div class="rs-card"><div class="rs-lbl">Notas confidenciales</div>';
+  h += '<textarea id="drawer-notas" rows="4" placeholder="Solo las ve el equipo de selección" style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:8px;font-size:12.5px;font-family:inherit;color:var(--ink);background:var(--bg);resize:vertical;box-sizing:border-box;line-height:1.5">' + htmlEsc(sc._ref_notas || '') + '</textarea>';
+  h += '<button class="rs-btn prim" style="margin-top:7px" onclick="saveDrawerNotas(\'' + c.id + '\')">Guardar notas</button>';
   h += '</div>';
-  if (c.estado === 'completed') {
-    h += '<button onclick="switchDrawerTabById(\'evaluaciones\')" style="width:100%;padding:11px;border-radius:10px;border:none;background:linear-gradient(135deg,#6366f1,#7c3aed);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">📋 Ver informe psicométrico completo</button>';
-  }
-  h += '</div>';
+
+  h += '</div></div></div>';
   return h;
 }
 
