@@ -7434,6 +7434,38 @@ function _integNivelBadge(ig) {
 }
 
 // Aviso destacado (todas las pestañas del informe y la ficha) cuando el resultado lo amerita
+// Avisos del informe en una fila de etiquetas (el detalle queda en el ícono ⓘ y en su pestaña)
+function _avisosCompactosHtml(s, sinInteg) {
+  var chip = function(txt, col, bg, bd, tip) {
+    return '<span' + (tip ? ' title="' + htmlEsc(tip) + '"' : '') + ' style="display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:100px;font-size:12px;font-weight:700;line-height:1.4;color:' + col + ';background:' + bg + ';border:1px solid ' + bd + (tip ? ';cursor:help' : '') + '">' + txt + (tip ? ' <span style="opacity:.6;font-weight:600">ⓘ</span>' : '') + '</span>';
+  };
+  var out = '';
+  var ig = s && s.integridad, n = ig && INTEG_NIVELES[ig.nivel];
+  if (!sinInteg && n && (ig.nivel === 'riesgo_alto' || ig.nivel === 'no_interpretable'))
+    out += chip(n.icon + ' Integridad laboral: ' + n.titulo, n.color, n.bg, n.bd, n.txt + ' Detalle en la pestaña Integridad.');
+  var inc = s && s._integridad;
+  if (inc && typeof inc === 'object') {
+    var lv = _integLevel(s);
+    if (lv === 'none') out += chip('🛡 Sin incidentes durante la evaluación', '#166534', '#f0fdf4', '#bbf7d0');
+    else {
+      var det = [];
+      if (inc.salidas) det.push('salió ' + inc.salidas + (inc.salidas === 1 ? ' vez' : ' veces') + ' de la ventana (' + (inc.segundos_fuera || 0) + ' s fuera)');
+      if (inc.copiar) det.push(inc.copiar + ' intento(s) de copiar');
+      if (inc.captura) det.push(inc.captura + ' de captura de pantalla');
+      if (inc.imprimir) det.push(inc.imprimir + ' de imprimir');
+      out += lv === 'grave' ? chip('⚠️ Incidentes: ' + det.join(', '), '#9f1239', '#fff1f2', '#fecdd3', 'Puede indicar búsqueda de ayuda externa. Contrástelo en la entrevista.')
+                            : chip('⚠️ Incidentes: ' + det.join(', '), '#92400e', '#fffbeb', '#fde68a', 'Una salida breve puede deberse a una notificación o a un clic fuera de la ventana. Contrástelo en la entrevista.');
+    }
+  }
+  var bt = s && s._bateria;
+  if (bt && typeof bt === 'object') {
+    var tipB = 'Batería distinta a la configurada para el cargo. Puede deberse a un link generado antes de cambiar la batería, o a una manipulación de la página. Las pruebas no rendidas no tienen puntaje.';
+    if (bt.faltantes && bt.faltantes.length) out += chip('⚠️ No rindió: ' + htmlEsc(_testNames(bt.faltantes)), '#1e3a8a', '#eff6ff', '#bfdbfe', tipB);
+    if (bt.adicionales && bt.adicionales.length) out += chip('➕ Rindió además: ' + htmlEsc(_testNames(bt.adicionales)), '#1e3a8a', '#eff6ff', '#bfdbfe', tipB);
+  }
+  return out;
+}
+
 function _integTestBannerHtml(s) {
   var ig = s && s.integridad;
   if (!ig || (ig.nivel !== 'riesgo_alto' && ig.nivel !== 'no_interpretable')) return '';
@@ -8059,8 +8091,8 @@ function buildReportHtml(c, withClose) {
   html += '</div></div>';
 
   // ── Integridad (visible en todas las pestañas) ──
-  var _integHtml = _integTestBannerHtml(s) + _integSummaryHtml(s) + _bateriaHtml(s);
-  if (_integHtml) html += '<div style="padding:10px 20px 0;background:#fff;flex-shrink:0;display:flex;flex-direction:column;gap:6px">' + _integHtml + '</div>';
+  var _integHtml = _avisosCompactosHtml(s);
+  if (_integHtml) html += '<div style="padding:10px 20px 0;background:#fff;flex-shrink:0"><div style="max-width:1040px;margin:0 auto;display:flex;flex-wrap:wrap;justify-content:center;gap:6px">' + _integHtml + '</div></div>';
 
   // ── Tab bar: pestañas agrupadas por tipo de prueba ──
   // El punto de color resume el resultado: aptitud frente al mínimo del cargo e
@@ -12257,8 +12289,8 @@ function _rsResultados(c, m) {
   if (m.disc) h += '<div class="rs-fila" onclick="_fichaVerPrueba(\'disc\')"><span class="rs-nom">🎭 Estilo DISC</span><span class="rs-desc">' + htmlEsc(m.disc === 'Perfil equilibrado' ? m.disc : 'Predomina ' + m.disc) + ' <em>· descriptivo</em></span></div>';
   if (s.pf16) h += '<div class="rs-fila" onclick="_fichaVerPrueba(\'pf16\')"><span class="rs-nom">🧬 Personalidad laboral</span><span class="rs-desc">Ver perfil <em>· descriptivo</em></span></div>';
   if (!m.apt.length && !m.integ && !m.disc && !s.pf16) h += '<div class="rs-vacio">Sin pruebas con resultado.</div>';
-  var extra = _integSummaryHtml(s) + _bateriaHtml(s);
-  if (extra) h += '<div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">' + extra + '</div>';
+  var extra = _avisosCompactosHtml(s, true);   // la integridad ya tiene su fila
+  if (extra) h += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">' + extra + '</div>';
   return h + '</div>';
 }
 
@@ -12292,7 +12324,6 @@ function _tabResumen(c) {
   var ult = ents[ents.length - 1];
 
   var h = '<div class="rs-wrap">';
-  h += _integTestBannerHtml(sc);
   h += _rsProximoPaso(c, m);
   h += '<div class="rs-grid"><div class="rs-col">';
   h += _rsResultados(c, m);
