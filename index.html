@@ -12787,6 +12787,18 @@ function _rsExplorar(c, m) {
   return h + '<ul class="rs-lista">' + items.map(function(x){ return '<li>' + x + '</li>'; }).join('') + '</ul></div>';
 }
 
+// Resumen: motivo del dictamen de la entrevista (no recomendable u observaciones), arriba de todo
+function _rsMotivoHtml(c) {
+  var ev = ((c.scores || {})._entrevistas || []).filter(function(e){ return e && (e.dictamen === 'no_recomendable' || e.dictamen === 'obs'); }).pop();
+  if (!ev || !String(ev.motivo || '').trim()) return '';
+  var no = ev.dictamen === 'no_recomendable';
+  var f = ev.fecha ? ev.fecha.split('-').reverse().join('-') : '';
+  return '<div class="rs-card" style="border:1.5px solid ' + (no ? '#fca5a5' : '#fde68a') + ';background:' + (no ? '#fef2f2' : '#fffbeb') + '">'
+    + '<div class="rs-lbl" style="color:' + (no ? '#991b1b' : '#92400e') + '">' + (no ? '❌ Motivo del descarte' : '⚠️ Observaciones del dictamen') + '</div>'
+    + '<div style="font-size:13px;line-height:1.6;color:var(--ink);white-space:pre-line">' + htmlEsc(ev.motivo.trim()) + '</div>'
+    + '<div style="font-size:11.5px;color:var(--ink4);margin-top:6px">Entrevista' + (f ? ' del ' + f : '') + (ev.entrevistador ? ' · ' + htmlEsc(ev.entrevistador) : '') + '</div></div>';
+}
+
 // Resumen: a qué postula (cargo, instalación, turno), editable por el administrador
 function _rsPostulaHtml(c) {
   var p = _postulaDe(c), turno = p.turno ? _rhTurnoTxt({ jornada: p.turno, jornada_otra: p.turno_otra }) : '';
@@ -12827,6 +12839,7 @@ function _tabResumen(c) {
   var ult = ents[ents.length - 1];
 
   var h = '<div class="rs-wrap">';
+  h += _rsMotivoHtml(c);
   h += _rsProximoPaso(c, m);
   h += '<div class="rs-grid"><div class="rs-col">';
   h += _rsResultados(c, m);
