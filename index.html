@@ -10413,6 +10413,9 @@ async function renderDashboard() {
   var proc = _dashProceso(cands, cands, perfil);
   h += '<div class="dash-grid2">' + proc.embudo + proc.dictamen + '</div>';
 
+  // ── Por dónde llegan los postulantes (pregunta del registro, 21_canal.sql) ──
+  h += _dashCanalesHtml(cands, ir);
+
   // ── Resultados: evaluaciones por semana y pruebas de aptitud ──
   h += '<div class="dash-grid2">';
   h += '<div class="dash-card"><div class="dash-lbl" style="margin-bottom:12px">Evaluaciones completadas por semana</div><canvas id="chart-weekly" height="170"></canvas></div>';
@@ -10431,6 +10434,40 @@ async function renderDashboard() {
 
   container.innerHTML = h;
   _initDashCharts(delCargo, dias);
+}
+
+// Canales de llegada: cuántos postulantes por medio y cuántos resultan recomendados;
+// al lado, quiénes de la empresa recomiendan postulantes
+function _dashCanalesHtml(cands, ir) {
+  var con = cands.filter(function(c){ return c.scores && c.scores._canal && c.scores._canal.canal; });
+  var card = function(t, inner){ return '<div class="dash-card"><div class="dash-lbl" style="margin-bottom:4px">' + t + '</div>' + inner + '</div>'; };
+  if (!con.length) return '<div class="dash-grid2">' + card('¿Por dónde llegan?', '<div style="font-size:12.5px;color:var(--ink3);line-height:1.55">Aún no hay respuestas en el período. La pregunta "¿Cómo supiste de esta oferta?" se agregó al registro el 23-10-2026: los postulantes anteriores no tienen este dato.</div>') + '</div>';
+  var grupos = {};
+  con.forEach(function(c){ var k = c.scores._canal.canal; (grupos[k] = grupos[k] || []).push(c); });
+  var orden = Object.keys(grupos).sort(function(a, b){ return grupos[b].length - grupos[a].length; });
+  var max = grupos[orden[0]].length;
+  var filas = orden.map(function(k) {
+    var g = grupos[k], dic = g.map(function(c){ return _miradaDe(c).dictamen; }).filter(Boolean);
+    var rec = dic.filter(function(d){ return d === 'recomendado' || d === 'obs'; }).length;
+    return '<div onclick="' + ir({ canal:k }) + '" style="cursor:pointer;margin-bottom:9px">'
+      + '<div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:3px"><b>' + htmlEsc(CANAL_LABELS[k] || k) + '</b>'
+      + '<span style="color:var(--ink3)">' + g.length + ' · ' + Math.round(g.length / con.length * 100) + ' %' + (dic.length ? ' · ' + rec + ' de ' + dic.length + ' recomendados' : '') + '</span></div>'
+      + '<div style="height:8px;border-radius:4px;background:var(--surface2)"><div style="height:8px;border-radius:4px;background:var(--accent);width:' + Math.max(4, Math.round(g.length / max * 100)) + '%"></div></div></div>';
+  }).join('');
+  var sinDato = cands.length - con.length;
+  var canales = card('¿Por dónde llegan?', '<div style="font-size:11.5px;color:var(--ink3);margin-bottom:12px">' + con.length + ' postulantes respondieron' + (sinDato ? ' · ' + sinDato + ' sin dato (registrados antes de la pregunta)' : '') + '. Recomendados = dictamen recomendado o con observaciones.</div>' + filas);
+  var colegas = {};
+  (grupos.referido || []).forEach(function(c){ var n = (c.scores._canal.colega || 'Sin nombre').trim(); colegas[n] = (colegas[n] || []).concat([c]); });
+  var nombres = Object.keys(colegas).sort(function(a, b){ return colegas[b].length - colegas[a].length; });
+  var refs = card('Referidos por colegas', nombres.length
+    ? '<div style="font-size:11.5px;color:var(--ink3);margin-bottom:10px">Personas de la empresa que recomendaron postulantes en el período</div>'
+      + nombres.map(function(n) {
+          var l = colegas[n], inst = (l[0].scores._canal.instalacion || '');
+          return '<div style="display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);font-size:12.5px"><span><b>' + htmlEsc(n) + '</b>' + (inst ? ' <span style="color:var(--ink3)">· ' + htmlEsc(inst) + '</span>' : '') + '</span>'
+            + '<span style="color:var(--ink3);text-align:right">' + l.map(function(c){ return htmlEsc(((c.nombre || '') + ' ' + (c.apellido || '')).trim()); }).join(', ') + '</span></div>';
+        }).join('')
+    : '<div style="font-size:12.5px;color:var(--ink3)">Nadie llegó recomendado por un colega en el período.</div>');
+  return '<div class="dash-grid2">' + canales + refs + '</div>';
 }
 
 // Barras: porcentaje de evaluados sobre el mínimo, por prueba de aptitud
@@ -10714,6 +10751,8 @@ var _BD_CAMPOS = {
                 ok:function(c, v){ if (v === 'pronto') return _diasParaArchivo(c) !== null; return v === 'todos' || (v === 'archivados') === _bdEnArchivo(c); } },
   duracion:   { label:'Duración', ops:function(){ return [['rapida', '⚡ Alguna prueba muy rápida'], ['normal', 'Sin pruebas muy rápidas']]; },
                 ok:function(c, v){ var du = _duracionDe(c); if (!du) return false; return v === 'rapida' ? du.rapidas.length > 0 : !du.rapidas.length; } },
+  canal:      { label:'Llegó por', ops:function(){ return Object.keys(CANAL_LABELS).map(function(k){ return [k, CANAL_LABELS[k]]; }).concat([['sin', 'Sin dato']]); },
+                ok:function(c, v){ var k = c.scores && c.scores._canal && c.scores._canal.canal; return v === 'sin' ? !k : k === v; } },
   informe:    { label:'Informe RH', ops:function(){ return [['sin', 'Sin informe'], ['guardado', 'Guardado'], ['pdf', 'PDF generado'], ['enviado', 'Enviado a RRHH'], ['por_enviar', 'Por enviar (guardado o PDF, sin enviar)']]; },
                 ok:function(c, v){ var ie = _rhEstado(c); return v === 'por_enviar' ? (ie === 'guardado' || ie === 'pdf') : ie === v; } },
   invitacion: { label:'Invitación', ops:function(){ return [['con', 'Con invitación'], ['sin', 'Sin invitación']]; },
@@ -14239,7 +14278,14 @@ function _rhTurnoTxt(d) {
 // (nítido y seleccionable), encabezado en cada hoja y saltos de página automáticos
 // si un texto no cabe. Se descarga directo, sin abrir la impresión.
 async function _rhPdf() {
-  if (!_rhValidar(_rhLeer())) return;
+  var dv = _rhLeer();
+  if (!_rhValidar(dv)) return;
+  // Campos no obligatorios que, vacíos, dejan el informe incompleto
+  var vacios = [['fecha','Fecha de evaluación'], ['psicologo','Psicólogo que realiza el informe'], ['fortalezas','Fortalezas'], ['debilidades','Debilidades'],
+                ['observaciones','Observaciones finales'], ['refuerzo','Refuerzo de habilidades']].filter(function(x){ return !String(dv[x[0]] || '').trim(); });
+  var sinNivel = _RH_COMP.filter(function(k){ return !dv.niveles[k.key]; });
+  if (sinNivel.length) vacios.push(['', 'Nivel obtenido de ' + sinNivel.map(function(k){ return k.label; }).join(', ')]);
+  if (vacios.length && !(await appConfirm('El informe tiene campos vacíos:<ul style="margin:8px 0 10px;padding-left:18px;font-weight:500">' + vacios.map(function(x){ return '<li>' + x[1] + '</li>'; }).join('') + '</ul>¿Generar el PDF de todas formas?'))) return;
   var d = await _rhGuardar(true, { pdf: new Date().toISOString() }); if (!d) return;
   toast('Generando PDF…', 'ok');
   try {
@@ -14519,12 +14565,13 @@ async function abrirPlanillaEnvio(idsElegidos) {
     + '<div class="rh-body">'
     + (sinInforme.length ? '<div style="padding:10px 14px;border-radius:10px;background:#fffbeb;border:1.5px solid #fde68a;color:#92400e;font-size:12.5px;line-height:1.5"><strong>Sin Informe RH guardado (no se incluyen):</strong> ' + sinInforme.map(e).join(', ') + '. Complete su Informe RH y vuelva a generar la planilla.</div>' : '')
     + (yaEnviados.length ? '<div style="padding:10px 14px;border-radius:10px;background:#eff6ff;border:1.5px solid #bfdbfe;color:#1e40af;font-size:12.5px;line-height:1.5"><strong>Ya enviados antes:</strong> ' + yaEnviados.map(e).join(', ') + '. Si los vuelve a enviar, se actualiza la fecha de envío.</div>' : '')
+    + (_plFilas.length ? '<div class="field" style="margin:0"><label>Para (correo de RRHH) <span style="text-transform:none;font-weight:500">(opcional; se recuerda)</span></label><input id="pl-para" class="rh-in" placeholder="Ej: seleccion@empresa.cl" value="' + e(_plParaGuardado()) + '"></div>' : '')
     + (_plFilas.length ? '<div style="overflow-x:auto">' + _plTablaHtml() + '</div>'
       + '<div style="font-size:11.5px;color:var(--ink4)">Fecha envío = hoy, día en que se genera la planilla. Al copiar o descargar, cada postulante queda marcado como "Enviado a RRHH". Para corregir un dato, edítelo en el Informe RH del postulante.</div>'
       : '<div style="font-size:13px;color:var(--ink3)">Ninguno de los seleccionados tiene Informe RH guardado.</div>')
     + '</div>'
     + '<div class="rh-pie"><span style="margin-right:auto"></span>'
-    + (_plFilas.length ? '<button class="rs-btn" onclick="_plExcel()">⬇ Descargar Excel</button><button class="rs-btn prim" onclick="_plCopiar()">📋 Copiar para el correo</button>' : '')
+    + (_plFilas.length ? '<button class="rs-btn" onclick="_plExcel()">⬇ Descargar Excel</button><button class="rs-btn" onclick="_plCopiar()">📋 Copiar tabla</button><button class="rs-btn prim" onclick="_plCorreo()">✉️ Copiar y abrir correo</button>' : '')
     + '</div></div>';
   document.body.appendChild(ov);
 }
@@ -14591,6 +14638,27 @@ async function _plCopiar() {
   toast('✓ Tabla copiada: péguela en el correo', 'ok');
   _plMarcarEnviados();
 }
+// Correo listo: copia la tabla y abre el correo con destinatario, asunto y saludo.
+// La tabla se pega donde dice [pegue aquí la tabla]; la firma la agrega el programa de correo.
+var LS_PL_PARA = 'psicoeval_planilla_para';
+function _plParaGuardado() { try { return localStorage.getItem(LS_PL_PARA) || ''; } catch(e) { return ''; } }
+function _plZonas() {
+  var Z = { Centro:'ZC', Norte:'ZN', Sur:'ZS' }, zs = [];
+  _plFilas.forEach(function(f){ var z = Z[f[1]]; if (z && zs.indexOf(z) === -1) zs.push(z); });
+  return zs;
+}
+async function _plCorreo() {
+  var para = ((document.getElementById('pl-para') || {}).value || '').trim();
+  try { localStorage.setItem(LS_PL_PARA, para); } catch(e) {}
+  var zs = _plZonas(), zona = zs.length ? (zs.length === 1 ? 'la ' : 'las ') + zs.join(' y ') : 'la zona';
+  var n = _plFilas.length;
+  var asunto = 'IPS ' + (n === 1 ? 'nuevo postulante' : 'nuevo personal') + (zs.length ? ' ' + zs.join('-') : '') + ' – ' + _plFecha('');
+  var cuerpo = 'Buenos días,\n\nAdjunto IPS y datos relevantes ' + (n === 1 ? 'del nuevo postulante' : 'del nuevo personal') + ' que postula a ' + zona + '.\n\n[pegue aquí la tabla]\n\nQuedo atento a cualquier duda.\n\nAtte.\n';
+  await _plCopiar();
+  window.location.href = 'mailto:' + encodeURIComponent(para).replace(/%40/g, '@').replace(/%2C/gi, ',') + '?subject=' + encodeURIComponent(asunto) + '&body=' + encodeURIComponent(cuerpo);
+  toast('✓ Tabla copiada. En el correo, pegue la tabla (Cmd+V) donde dice [pegue aquí la tabla] y adjunte los PDF.', 'ok');
+}
+
 // Deja constancia del envío en el Informe RH de cada postulante de la planilla
 async function _plMarcarEnviados() {
   var hoy = new Date().toISOString(), fallos = 0;
