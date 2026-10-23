@@ -10907,7 +10907,7 @@ function _bdBarPintar() {
 
 function _bdCelda(c, p) {
   var pm = PERFIL_META[c.perfil] || {};
-  if (p === 'cargo') return htmlEsc(c.cargo || pm.label || c.perfil || '—') + (_instalacionDe(c) ? '<div style="font-size:11.5px;color:var(--ink3)">📍 ' + htmlEsc(_instalacionDe(c)) + '</div>' : '');
+  if (p === 'cargo') return htmlEsc(_postulaDe(c).cargo || c.cargo || pm.label || c.perfil || '—') + (_instalacionDe(c) ? '<div style="font-size:11.5px;color:var(--ink3)">📍 ' + htmlEsc(_instalacionDe(c)) + '</div>' : '');
   if (p === 'resultado') return _miradaChipsHtml(_bdMirada(c));
   if (p === 'etapa') { var em = getPipelineMeta(getPipelineEtapa(c)); return '<span class="bd-pill" style="color:' + em.color + ';background:' + em.bg + ';border-color:' + em.border + '">' + em.icon + ' ' + em.label + '</span>'; }
   if (p === 'dictamen') return _bdDictamenCorto(c);
@@ -11017,7 +11017,7 @@ function _bdTablero(lista) {
       var ent = ((c.scores && c.scores._entrevistas) || []).length;
       h += '<div class="kanban-card" id="kcard-' + id + '"' + (arrastra ? ' draggable="true" ondragstart="kDragStart(event,\'' + id + '\')" ondragend="kDragEnd(event)"' : '') + ' onclick="openCandDrawer(\'' + id + '\')">'
         + '<div style="display:flex;gap:8px;align-items:flex-start"><div style="flex:1;min-width:0"><div class="bd-nom">' + htmlEsc(((c.nombre || '') + ' ' + (c.apellido || '')).trim()) + _rutRepBadge(c) + _porArchivarBadge(c) + _enArchivoBadge(c) + '</div>'
-        + (_BD.props.cargo ? '<div class="bd-sub">' + (pm.icon || '') + ' ' + htmlEsc(c.cargo || pm.label || '') + '</div>' : '')
+        + (_BD.props.cargo ? '<div class="bd-sub">' + (pm.icon || '') + ' ' + htmlEsc(_postulaDe(c).cargo || c.cargo || pm.label || '') + '</div>' : '')
         + (_instalacionDe(c) ? '<div class="bd-sub" style="color:var(--ink2);font-weight:600">📍 ' + htmlEsc(_instalacionDe(c)) + '</div>' : '') + '</div>' + _bdChk(c) + '</div>'
         + (_BD.props.resultado && c.estado === 'completed' ? '<div style="margin-top:7px">' + _miradaChipsHtml(Object.assign({}, _miradaDe(c), { dictamen:'' })) + '</div>' : '')
         + (_BD.props.etapa && campo !== 'etapa' ? '<div style="margin-top:6px">' + _bdCelda(c, 'etapa') + '</div>' : '')
@@ -12632,7 +12632,7 @@ function _renderDrawerHeader(c) {
   var etapa = getPipelineEtapa(c);
   var em = getPipelineMeta(etapa);
   var initials = ((c.nombre||'?')[0] + (c.apellido||'?')[0]).toUpperCase();
-  var datos = [c.cargo || pm.label || c.perfil || '', c.edad ? c.edad + ' años' : '', c.comuna || '', c.educacion_label || c.educacion || '', _canalTxt(c) ? 'Llegó por: ' + _canalTxt(c) : '', _rhEstado(c) === 'enviado' ? '📤 Enviado a RRHH ' + _rhFechaCorta(c.scores._informe_rh.enviado) : ''].filter(Boolean).map(function(x){ return htmlEsc(String(x)); }).join(' · ');
+  var datos = [_postulaDe(c).cargo || c.cargo || pm.label || c.perfil || '', c.edad ? c.edad + ' años' : '', c.comuna || '', c.educacion_label || c.educacion || '', _canalTxt(c) ? 'Llegó por: ' + _canalTxt(c) : '', _rhEstado(c) === 'enviado' ? '📤 Enviado a RRHH ' + _rhFechaCorta(c.scores._informe_rh.enviado) : ''].filter(Boolean).map(function(x){ return htmlEsc(String(x)); }).join(' · ');
   // Una sola franja compacta: deja el máximo de alto para el contenido
   document.getElementById('drawer-header').innerHTML =
     '<div class="dh-row">'
