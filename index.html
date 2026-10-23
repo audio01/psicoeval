@@ -10611,9 +10611,9 @@ async function renderCandidatesTable() { return _bdRender(); }
 //  (estilo base de datos de Notion). Las vistas guardadas se comparten con todos
 //  los usuarios del panel (clave 'vistas' de psicoeval_config, 18_vistas.sql).
 // ═══════════════════════════════════════════════════════════
-var _BD_PROPS = [['cargo','Cargo'], ['resultado','Resultado'], ['etapa','Etapa'], ['dictamen','Dictamen'], ['estado','Estado'], ['fecha','Fecha'], ['duracion','Duración'], ['comuna','Comuna'], ['canal','Llegó por'], ['invitacion','Invitación']];
+var _BD_PROPS = [['cargo','Cargo'], ['resultado','Resultado'], ['etapa','Etapa'], ['dictamen','Dictamen'], ['estado','Estado'], ['fecha','Fecha'], ['duracion','Duración'], ['comuna','Comuna'], ['canal','Llegó por'], ['informe','Informe RH'], ['invitacion','Invitación']];
 var _BD_DEF = { vista:'tabla', filtros:{}, orden:'fecha_desc', agrupar:'', columnas:'etapa',
-                props:{ cargo:1, resultado:1, etapa:1, dictamen:1, estado:0, fecha:1, duracion:0, comuna:0, canal:0, invitacion:0 } };
+                props:{ cargo:1, resultado:1, etapa:1, dictamen:1, estado:0, fecha:1, duracion:0, comuna:0, canal:0, informe:0, invitacion:0 } };
 var _BD_FIJAS = [
   { id:'todos',   nombre:'Todos',       icon:'👥', cfg:{ vista:'tabla' } },
   { id:'tablero', nombre:'Tablero',     icon:'🗂', cfg:{ vista:'tablero' } },
@@ -10714,6 +10714,8 @@ var _BD_CAMPOS = {
                 ok:function(c, v){ if (v === 'pronto') return _diasParaArchivo(c) !== null; return v === 'todos' || (v === 'archivados') === _bdEnArchivo(c); } },
   duracion:   { label:'Duración', ops:function(){ return [['rapida', '⚡ Alguna prueba muy rápida'], ['normal', 'Sin pruebas muy rápidas']]; },
                 ok:function(c, v){ var du = _duracionDe(c); if (!du) return false; return v === 'rapida' ? du.rapidas.length > 0 : !du.rapidas.length; } },
+  informe:    { label:'Informe RH', ops:function(){ return [['sin', 'Sin informe'], ['guardado', 'Guardado'], ['pdf', 'PDF generado'], ['enviado', 'Enviado a RRHH'], ['por_enviar', 'Por enviar (guardado o PDF, sin enviar)']]; },
+                ok:function(c, v){ var ie = _rhEstado(c); return v === 'por_enviar' ? (ie === 'guardado' || ie === 'pdf') : ie === v; } },
   invitacion: { label:'Invitación', ops:function(){ return [['con', 'Con invitación'], ['sin', 'Sin invitación']]; },
                 ok:function(c, v){ var i = !!(c.scores && c.scores._invitacion); return v === 'con' ? i : !i; } }
 };
@@ -10842,6 +10844,8 @@ function _bdCelda(c, p) {
   if (p === 'fecha') return '<span style="color:var(--ink3);white-space:nowrap">' + htmlEsc(_momentoTxt(c)) + '</span>';
   if (p === 'duracion') { var du = _duracionDe(c); return du ? '<span title="' + htmlEsc(_duracionTip(du)) + '" style="white-space:nowrap;' + (du.rapidas.length ? 'color:#b45309;font-weight:700' : 'color:var(--ink2)') + '">' + _fmtDur(du.total) + (du.rapidas.length ? ' ⚡' : '') + '</span>' : '<span style="color:var(--ink4)">—</span>'; }
   if (p === 'comuna') return htmlEsc(c.comuna || '—');
+  if (p === 'informe') { if (S.role !== 'admin') return '<span style="color:var(--ink4)">—</span>'; var ie = _rhEstado(c), g = c.scores._informe_rh || {}, im = _RH_ESTADOS[ie];
+    return '<span style="font-size:12px;font-weight:700;color:' + im[1] + ';white-space:nowrap">' + im[0] + (ie === 'enviado' ? ' ' + _rhFechaCorta(g.enviado) : '') + '</span>'; }
   if (p === 'canal') return _canalTxt(c) ? htmlEsc(_canalTxt(c)) : '<span style="color:var(--ink4)">—</span>';
   if (p === 'invitacion') { var iv = c.scores && c.scores._invitacion; return iv ? (iv.tipo === 'rut' ? '🪪 Por RUT' : '🔗 Link único') : '<span style="color:var(--ink4)">—</span>'; }
   return '';
@@ -12527,7 +12531,7 @@ function _renderDrawerHeader(c) {
   var etapa = getPipelineEtapa(c);
   var em = getPipelineMeta(etapa);
   var initials = ((c.nombre||'?')[0] + (c.apellido||'?')[0]).toUpperCase();
-  var datos = [c.cargo || pm.label || c.perfil || '', c.edad ? c.edad + ' años' : '', c.comuna || '', c.educacion_label || c.educacion || '', _canalTxt(c) ? 'Llegó por: ' + _canalTxt(c) : ''].filter(Boolean).map(function(x){ return htmlEsc(String(x)); }).join(' · ');
+  var datos = [c.cargo || pm.label || c.perfil || '', c.edad ? c.edad + ' años' : '', c.comuna || '', c.educacion_label || c.educacion || '', _canalTxt(c) ? 'Llegó por: ' + _canalTxt(c) : '', _rhEstado(c) === 'enviado' ? '📤 Enviado a RRHH ' + _rhFechaCorta(c.scores._informe_rh.enviado) : ''].filter(Boolean).map(function(x){ return htmlEsc(String(x)); }).join(' · ');
   // Una sola franja compacta: deja el máximo de alto para el contenido
   document.getElementById('drawer-header').innerHTML =
     '<div class="dh-row">'
@@ -13982,6 +13986,23 @@ function _rhFortDeb(c, niveles, ideales, sinDato) {
   return { fortalezas: fort.join('\n'), debilidades: deb.join('\n'), notas: notas };
 }
 
+// Estado del Informe RH de un postulante (solo lo ve el administrador)
+function _rhEstado(c) {
+  var g = c && c.scores && c.scores._informe_rh;
+  if (!g || !Object.keys(g).length) return 'sin';
+  return g.enviado ? 'enviado' : g.pdf ? 'pdf' : 'guardado';
+}
+var _RH_ESTADOS = { sin:['Sin informe', '#94a3b8'], guardado:['Guardado', '#b45309'], pdf:['PDF generado', '#2563eb'], enviado:['Enviado a RRHH', '#15803d'] };
+function _rhFechaCorta(iso) { var f = new Date(iso); return isNaN(f) ? '' : String(f.getDate()).padStart(2, '0') + '-' + String(f.getMonth() + 1).padStart(2, '0') + '-' + String(f.getFullYear()).slice(-2); }
+// Edad al día de hoy (desde la fecha de nacimiento); si no hay, la del registro
+function _edadHoy(c) {
+  var m = String((c && c.fechanac) || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return c && c.edad ? +c.edad : null;
+  var h = new Date(), e = h.getFullYear() - +m[1];
+  if (h.getMonth() + 1 < +m[2] || (h.getMonth() + 1 === +m[2] && h.getDate() < +m[3])) e--;
+  return e;
+}
+
 // Fecha de evaluación del informe = fecha de la última entrevista (dd/mm/aaaa)
 function _rhFechaEntrevista(s) {
   var t = 0;
@@ -14174,10 +14195,14 @@ function _rhValidar(d, campos) {
   return false;
 }
 
-async function _rhGuardar(silencioso) {
+async function _rhGuardar(silencioso, marcas) {
   var d = _rhLeer();
   try {
-    await _patchPrivado(_rhCand.id, 'informe_rh', d);
+    // Las marcas de PDF generado y envío a RRHH no están en el formulario: se conservan
+    await _patchPrivado(_rhCand.id, 'informe_rh', function(prev) {
+      prev = prev || {};
+      return Object.assign(d, { pdf: prev.pdf || null, enviado: prev.enviado || null }, marcas || {});
+    });
     _rhRecordarIdeales(d.cargo, d.ideales);
     if (!silencioso) toast('Informe RH guardado ✓', 'ok');
     return d;
@@ -14215,7 +14240,7 @@ function _rhTurnoTxt(d) {
 // si un texto no cabe. Se descarga directo, sin abrir la impresión.
 async function _rhPdf() {
   if (!_rhValidar(_rhLeer())) return;
-  var d = await _rhGuardar(true); if (!d) return;
+  var d = await _rhGuardar(true, { pdf: new Date().toISOString() }); if (!d) return;
   toast('Generando PDF…', 'ok');
   try {
     await _rhCargarLib(_RH_LIB_PDF);
@@ -14350,7 +14375,7 @@ function _rhArmarPdf(c, d, nom) {
   mini(ML + W * 0.66, y, 'LISTA', [['1','1'],['2','2'],['3','3']], d.lista);
   mini(ML + 4, y + 25, 'ZONAL', [['norte','NORTE'],['centro','CENTRO'],['sur','SUR']], d.zonal);
   y += 25 + 18.6 + 8;
-  [['Nombre:', nom], ['Edad:', c.edad ? c.edad + ' años' : ''], ['Comuna:', c.comuna || '']].forEach(function(r) {
+  [['Nombre:', nom], ['Edad:', _edadHoy(c) ? _edadHoy(c) + ' años' : ''], ['Comuna:', c.comuna || '']].forEach(function(r) {
     fila([celda(0.24, AZ, txt(r[0], { b: true })), celda(0.76, null, txt(r[1]))]);
   });
   titulo('A.- EVALUACIÓN PSICO LABORAL', 13, 7, 6, 2.6);
@@ -14443,7 +14468,7 @@ function _rhArmarPdf(c, d, nom) {
 var _PL_COLS = ['Fecha envío', 'Zonal', 'Estado', 'Rut', 'Nombre', 'EDAD', 'Instalación', 'Jornada', 'Cargo', 'Referencia', 'Número', 'Observación'];
 var _PL_AZUL = '#1F5BA8';
 var _RH_LIB_XLSX = ['https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js', 'sha384-Pqp51FUN2/qzfxZxBCtF0stpc9ONI6MYZpVqmo8m20SoaQCzf+arZvACkLkirlPz', 'ExcelJS'];
-var _plFilas = [];
+var _plFilas = [], _plIds = [];
 
 function _plFono(t) {
   var d = String(t || '').replace(/\D/g, '').replace(/^56/, '');
@@ -14460,7 +14485,7 @@ function _plFecha(f) {
 function _plFila(c, d) {
   var est = d.categoria === 'no_apto' ? 'No aprobado' : d.categoria ? 'Aprobado' : '';
   return [_plFecha(''), (d.zonal || '').replace(/^./, function(x){ return x.toUpperCase(); }), est, c.rut || '',
-    ((c.apellido || '') + ' ' + (c.nombre || '')).trim().toUpperCase(), c.edad ? c.edad + ' años' : '', d.instalacion || '',
+    ((c.apellido || '') + ' ' + (c.nombre || '')).trim().toUpperCase(), _edadHoy(c) ? _edadHoy(c) + ' años' : '', d.instalacion || '',
     _rhTurnoTxt(d) || (d.jornada === 'otra' ? 'Otra' : ''), d.cargo || _rhCargoBase(c),
     d.referencia || _canalTxt(c), _plFono(c.telefono), d.obs_envio || ''];
 }
@@ -14472,14 +14497,17 @@ async function abrirPlanillaEnvio(idsElegidos) {
   var all = await getDB(), sinInforme = [];
   var prev = document.getElementById('pl-overlay'); if (prev) prev.remove();
   if (!ids.length) { _plElegir(all); return; }
+  var pares = [], yaEnviados = [];
   _plFilas = [];
   all.filter(function(c){ return ids.indexOf(c.id) >= 0; }).forEach(function(c) {
     var g = (c.scores && c.scores._informe_rh) || {};
     if (!Object.keys(g).length) { sinInforme.push(((c.nombre || '') + ' ' + (c.apellido || '')).trim()); return; }
     var d = Object.assign({ jornada:'4x4_rotativo' }, g);
-    _plFilas.push(_plFila(c, d));
+    if (g.enviado) yaEnviados.push(((c.nombre || '') + ' ' + (c.apellido || '')).trim() + ' (' + _rhFechaCorta(g.enviado) + ')');
+    pares.push([c.id, _plFila(c, d)]);
   });
-  _plFilas.sort(function(a, b){ return a[4].localeCompare(b[4], 'es'); });
+  pares.sort(function(a, b){ return a[1][4].localeCompare(b[1][4], 'es'); });
+  _plIds = pares.map(function(p){ return p[0]; }); _plFilas = pares.map(function(p){ return p[1]; });
   var e = function(x){ return htmlEsc(x || ''); };
   var ov = document.createElement('div');
   ov.id = 'pl-overlay'; ov.className = 'rh-ov';
@@ -14490,8 +14518,9 @@ async function abrirPlanillaEnvio(idsElegidos) {
     + '<button class="dh-close" onclick="document.getElementById(\'pl-overlay\').remove()">✕</button></div>'
     + '<div class="rh-body">'
     + (sinInforme.length ? '<div style="padding:10px 14px;border-radius:10px;background:#fffbeb;border:1.5px solid #fde68a;color:#92400e;font-size:12.5px;line-height:1.5"><strong>Sin Informe RH guardado (no se incluyen):</strong> ' + sinInforme.map(e).join(', ') + '. Complete su Informe RH y vuelva a generar la planilla.</div>' : '')
+    + (yaEnviados.length ? '<div style="padding:10px 14px;border-radius:10px;background:#eff6ff;border:1.5px solid #bfdbfe;color:#1e40af;font-size:12.5px;line-height:1.5"><strong>Ya enviados antes:</strong> ' + yaEnviados.map(e).join(', ') + '. Si los vuelve a enviar, se actualiza la fecha de envío.</div>' : '')
     + (_plFilas.length ? '<div style="overflow-x:auto">' + _plTablaHtml() + '</div>'
-      + '<div style="font-size:11.5px;color:var(--ink4)">Fecha envío = hoy, día en que se genera la planilla. Para corregir un dato, edítelo en el Informe RH del postulante.</div>'
+      + '<div style="font-size:11.5px;color:var(--ink4)">Fecha envío = hoy, día en que se genera la planilla. Al copiar o descargar, cada postulante queda marcado como "Enviado a RRHH". Para corregir un dato, edítelo en el Informe RH del postulante.</div>'
       : '<div style="font-size:13px;color:var(--ink3)">Ninguno de los seleccionados tiene Informe RH guardado.</div>')
     + '</div>'
     + '<div class="rh-pie"><span style="margin-right:auto"></span>'
@@ -14560,6 +14589,17 @@ async function _plCopiar() {
     if (!ok) { toast('No se pudo copiar. Seleccione la tabla y cópiela con Cmd+C.', 'er'); return; }
   }
   toast('✓ Tabla copiada: péguela en el correo', 'ok');
+  _plMarcarEnviados();
+}
+// Deja constancia del envío en el Informe RH de cada postulante de la planilla
+async function _plMarcarEnviados() {
+  var hoy = new Date().toISOString(), fallos = 0;
+  for (var i = 0; i < _plIds.length; i++) {
+    try { await _patchPrivado(_plIds[i], 'informe_rh', function(prev){ return Object.assign({}, prev || {}, { enviado: hoy }); }); }
+    catch(e) { fallos++; }
+  }
+  if (fallos) toast('No se pudo marcar como enviados a ' + fallos + ' postulante(s)', 'er');
+  try { if (document.getElementById('bd-bar')) _bdRenderCuerpo(); } catch(e) {}
 }
 
 async function _plExcel() {
@@ -14585,6 +14625,7 @@ async function _plExcel() {
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(function(){ URL.revokeObjectURL(a.href); }, 5000);
     toast('Excel descargado ✓', 'ok');
+    _plMarcarEnviados();
   } catch(e) { toast('No se pudo generar el Excel: ' + e.message, 'er'); }
 }
 
