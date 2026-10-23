@@ -14131,13 +14131,48 @@ async function _rhPdf() {
     + '.bar{position:fixed;bottom:12px;right:12px;font-family:Arial}@media print{.bar{display:none}}'
     + '@media screen{body{background:#e5e7eb}.pg{background:#fff;width:216mm;min-height:279mm;margin:14px auto;padding:12mm 15mm 14mm 18mm;box-shadow:0 2px 10px rgba(0,0,0,.15)}}';
   var html = '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>' + e(nom) + ' IPS</title><style>' + css + '</style></head><body>'
-    + '<div class="bar"><button onclick="window.print()" style="padding:9px 16px;font-weight:700;cursor:pointer">⬇ Guardar como PDF</button></div>'
     + pag(1, p1) + pag(2, p2) + pag(3, p3) + pag(4, p4) + pag(5, p5) + pag(6, p6)
     + '</body></html>';
-  var w = window.open('', '_blank');
-  if (!w) { toast('El navegador bloqueó la ventana del PDF. Permita ventanas emergentes para este sitio.', 'er'); return; }
-  w.document.open(); w.document.write(html); w.document.close();
-  setTimeout(function(){ try { w.focus(); w.print(); } catch(x) {} }, 500);
+  await _rhDescargarPdf(html, nom + ' IPS.pdf');
+}
+
+// Arma el archivo PDF en el computador (sin abrir la impresión) y lo descarga.
+// Cada hoja (.pg) se dibuja en un marco oculto y se pasa a una página carta.
+var _RH_LIBS = [
+  ['https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', 'sha384-ZZ1pncU3bQe8y31yfZdMFdSpttDoPmOZg2wguVK9almUodir1PghgT0eY7Mrty8H', 'html2canvas'],
+  ['https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', 'sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk', 'jspdf']
+];
+function _rhCargarLib(l) {
+  if (window[l[2]]) return Promise.resolve();
+  return new Promise(function(ok, mal) {
+    var sc = document.createElement('script');
+    sc.src = l[0]; sc.integrity = l[1]; sc.crossOrigin = 'anonymous';
+    sc.onload = ok; sc.onerror = function(){ mal(new Error('no se pudo cargar el generador de PDF (revise su conexión)')); };
+    document.head.appendChild(sc);
+  });
+}
+async function _rhDescargarPdf(html, archivo) {
+  var fr = null;
+  toast('Generando PDF…', 'ok');
+  try {
+    for (var i = 0; i < _RH_LIBS.length; i++) await _rhCargarLib(_RH_LIBS[i]);
+    fr = document.createElement('iframe');
+    fr.setAttribute('aria-hidden', 'true');
+    fr.style.cssText = 'position:fixed;left:-10000px;top:0;width:900px;height:1200px;border:0';
+    document.body.appendChild(fr);
+    await new Promise(function(ok){ fr.onload = ok; fr.srcdoc = html.replace('</style>', '@media screen{body{background:#fff}.pg{margin:0;box-shadow:none;height:279.4mm;overflow:hidden}}</style>'); });
+    if (fr.contentDocument.fonts) await fr.contentDocument.fonts.ready;
+    var pdf = new window.jspdf.jsPDF({ unit: 'mm', format: 'letter' });
+    var hojas = fr.contentDocument.querySelectorAll('.pg');
+    for (var j = 0; j < hojas.length; j++) {
+      var cv = await window.html2canvas(hojas[j], { scale: 2, backgroundColor: '#ffffff', logging: false });
+      if (j) pdf.addPage('letter');
+      pdf.addImage(cv.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, 215.9, 279.4);
+    }
+    pdf.save(archivo.replace(/[\\/:*?"<>|]/g, ''));
+    toast('PDF descargado ✓', 'ok');
+  } catch(e) { toast('No se pudo generar el PDF: ' + e.message, 'er'); }
+  finally { if (fr) fr.remove(); }
 }
 
 async function drawerSetEtapa(candId, etapa) {
