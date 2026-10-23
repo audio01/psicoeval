@@ -10792,7 +10792,7 @@ function _bdFiltrar(all) {
   var qRut = _rutNorm(q);   // el RUT se encuentra con o sin puntos y guion
   return all.filter(function(c) {
     if (q) {
-      var txt = [c.nombre, c.apellido, c.email, c.rut, c.cargo, c.comuna, c.rubro, _canalTxt(c)].map(function(v){ return v || ''; }).join(' ').toLowerCase();
+      var txt = [c.nombre, c.apellido, c.email, c.rut, c.cargo, c.comuna, c.rubro, _canalTxt(c), _instalacionDe(c)].map(function(v){ return v || ''; }).join(' ').toLowerCase();
       var porRut = qRut.length >= 6 && /^[\d.\-\skK]+$/.test(q) && _rutNorm(c.rut).indexOf(qRut) === 0;
       if (txt.indexOf(q) === -1 && !porRut) return false;
     }
@@ -10904,7 +10904,7 @@ function _bdBarPintar() {
 
 function _bdCelda(c, p) {
   var pm = PERFIL_META[c.perfil] || {};
-  if (p === 'cargo') return htmlEsc(c.cargo || pm.label || c.perfil || '—');
+  if (p === 'cargo') return htmlEsc(c.cargo || pm.label || c.perfil || '—') + (_instalacionDe(c) ? '<div style="font-size:11.5px;color:var(--ink3)">📍 ' + htmlEsc(_instalacionDe(c)) + '</div>' : '');
   if (p === 'resultado') return _miradaChipsHtml(_bdMirada(c));
   if (p === 'etapa') { var em = getPipelineMeta(getPipelineEtapa(c)); return '<span class="bd-pill" style="color:' + em.color + ';background:' + em.bg + ';border-color:' + em.border + '">' + em.icon + ' ' + em.label + '</span>'; }
   if (p === 'dictamen') return _bdDictamenCorto(c);
@@ -11004,7 +11004,8 @@ function _bdTablero(lista) {
       var ent = ((c.scores && c.scores._entrevistas) || []).length;
       h += '<div class="kanban-card" id="kcard-' + id + '"' + (arrastra ? ' draggable="true" ondragstart="kDragStart(event,\'' + id + '\')" ondragend="kDragEnd(event)"' : '') + ' onclick="openCandDrawer(\'' + id + '\')">'
         + '<div style="display:flex;gap:8px;align-items:flex-start"><div style="flex:1;min-width:0"><div class="bd-nom">' + htmlEsc(((c.nombre || '') + ' ' + (c.apellido || '')).trim()) + _rutRepBadge(c) + _porArchivarBadge(c) + _enArchivoBadge(c) + '</div>'
-        + (_BD.props.cargo ? '<div class="bd-sub">' + (pm.icon || '') + ' ' + htmlEsc(c.cargo || pm.label || '') + '</div>' : '') + '</div>' + _bdChk(c) + '</div>'
+        + (_BD.props.cargo ? '<div class="bd-sub">' + (pm.icon || '') + ' ' + htmlEsc(c.cargo || pm.label || '') + '</div>' : '')
+        + (_instalacionDe(c) ? '<div class="bd-sub" style="color:var(--ink2);font-weight:600">📍 ' + htmlEsc(_instalacionDe(c)) + '</div>' : '') + '</div>' + _bdChk(c) + '</div>'
         + (_BD.props.resultado && c.estado === 'completed' ? '<div style="margin-top:7px">' + _miradaChipsHtml(_bdMirada(c)) + '</div>' : '')
         + (_BD.props.etapa && campo !== 'etapa' ? '<div style="margin-top:6px">' + _bdCelda(c, 'etapa') + '</div>' : '')
         + (_BD.props.dictamen && campo !== 'dictamen' && _bdDictamen(c) ? '<div style="margin-top:6px">' + _bdDictamenCorto(c) + '</div>' : '')
@@ -14145,6 +14146,15 @@ function _rhFortDeb(c, niveles, ideales, sinDato) {
     notas.push(usadas ? 'Personalidad laboral' : 'Personalidad laboral sin frases: todas las dimensiones en nivel medio');
   }
   return { fortalezas: fort.join('\n'), debilidades: deb.join('\n'), notas: notas };
+}
+
+// Instalación a la que postula: la del Informe RH o, si no, la anotada en la entrevista
+// (ambas son datos privados: solo las ve el administrador)
+function _instalacionDe(c) {
+  var s = (c && c.scores) || {}, g = s._informe_rh || {};
+  if (g.instalacion) return g.instalacion;
+  var ev = (s._entrevistas || []).filter(function(e){ return e && e.instalacion; }).pop();
+  return ev ? ev.instalacion : '';
 }
 
 // Estado del Informe RH de un postulante (solo lo ve el administrador)
