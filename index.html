@@ -13874,13 +13874,15 @@ function _rhFortDeb(c, niveles, ideales) {
   });
   var h0 = Array.isArray(c.historial) && c.historial[0];
   if (h0 && /guardia|vigilan|seguridad|conserje|portero|control de acceso/i.test(h0.cargo || '')) fort.push('Experiencia como ' + h0.cargo.toLowerCase() + (h0.empresa ? ' en ' + h0.empresa : '') + '.');
-  var s = c.scores || {}, sumar = function(lista, t){ if (t && lista.indexOf(t) === -1) lista.push(t); };
+  var s = c.scores || {}, notas = [], sumar = function(lista, t){ if (t && lista.indexOf(t) === -1) lista.push(t); };
   // DISC (descriptivo, sin perfil esperado): fortalezas del estilo y riesgos de conducta
   // de los factores marcados. Un perfil equilibrado no aporta frases.
   var dc = s.disc, K = ['D', 'I', 'S', 'C'];
   if (dc && K.every(function(k){ return typeof dc[k] === 'number'; })) {
     var v = function(k){ return Math.round(dc[k]); }, o = K.slice().sort(function(a, b){ return v(b) - v(a); });
-    if (v(o[0]) - v(o[3]) >= 20) {
+    if (v(o[0]) - v(o[3]) < 20) notas.push('DISC sin frases: perfil equilibrado, ningún factor destaca');
+    else {
+      notas.push('DISC');
       var prof = _DISC_PROFILES[o[0] + (v(o[1]) >= 55 ? o[1] : '')] || _DISC_PROFILES[o[0]] || {};
       (prof.fortalezas || []).slice(0, 2).forEach(function(t){ sumar(fort, t); });
       if (v(o[0]) >= 70) sumar(deb, DISC_RPT.riesgos[o[0]].alto[0]);
@@ -13890,19 +13892,22 @@ function _rhFortDeb(c, niveles, ideales) {
   }
   // Personalidad laboral (descriptiva): lo que aportan y lo que conviene considerar de las
   // dimensiones altas o bajas. Se omite si la validez de las respuestas es dudosa.
-  var pf = s.pf16;
-  if (pf && _pf16ValidezNivel(_pf16Validez(c, s)).label !== 'Dudosa') {
+  var pf = s.pf16, usadas = 0;
+  if (pf && _pf16ValidezNivel(_pf16Validez(c, s)).label === 'Dudosa') notas.push('Personalidad laboral sin frases: validez dudosa');
+  else if (pf) {
     PF16_RPT.orden.forEach(function(k) {
       if (pf[k] == null || (k === 'EX' && pf._v !== 2)) return;
       var z = pf16ZoneOf(Math.round(pf[k])); if (z === 'medio') return;
+      usadas++;
       var t = PF16_RPT.dim[k][z];
       sumar(fort, t.aporta);
       // Ajuste emocional: alto solo advierte deseabilidad social; bajo se informa como rasgo
       if (k === 'AN') { if (z === 'bajo') sumar(deb, t.txt); }
       else sumar(deb, t.considerar);
     });
+    notas.push(usadas ? 'Personalidad laboral' : 'Personalidad laboral sin frases: todas las dimensiones en nivel medio');
   }
-  return { fortalezas: fort.join('\n'), debilidades: deb.join('\n') };
+  return { fortalezas: fort.join('\n'), debilidades: deb.join('\n'), notas: notas };
 }
 
 // Propuesta del panel (se usa cuando aún no hay informe guardado)
@@ -14056,7 +14061,7 @@ async function _rhRecalcular() {
   if (((tf.value.trim() && tf.value.trim() !== fd.fortalezas) || (td.value.trim() && td.value.trim() !== fd.debilidades))
       && !(await appConfirm('¿Reemplazar las Fortalezas y Debilidades por las calculadas desde los resultados? Se perderá lo que editó en ellas.'))) return;
   tf.value = fd.fortalezas; td.value = fd.debilidades;
-  toast('Fortalezas y debilidades recalculadas', 'ok');
+  toast('Fortalezas y debilidades recalculadas' + (fd.notas.length ? ' · ' + fd.notas.join(' · ') : ''), 'ok');
 }
 
 // Campos obligatorios del Informe RH: se marcan en rojo los que faltan
