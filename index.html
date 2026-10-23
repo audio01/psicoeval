@@ -14322,6 +14322,8 @@ async function abrirInformeRH(id) {
   var d = Object.assign({}, sug, g, { niveles: Object.assign({}, sug.niveles, g.niveles || {}) });
   if (g.cargo && !g.ideales) d.ideales = _rhIdealesDe(g.cargo);
   // Informe guardado sin instalación o sin turno: se completan con lo anotado en la entrevista
+  // Referencia laboral y canal del formulario: completan los campos que estén vacíos
+  ['empresa', 'corrobora', 'fono', 'referencia'].forEach(function(k){ if (!String(g[k] || '').trim() && sug[k]) d[k] = sug[k]; });
   var pz = _postulaDe(c);
   if (pz.instalacion) d.instalacion = pz.instalacion;
   if (pz.cargo) d.cargo = pz.cargo;
