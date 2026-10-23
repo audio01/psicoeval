@@ -14776,13 +14776,16 @@ async function abrirPlanillaEnvio(idsElegidos) {
   var all = await getDB(), sinInforme = [];
   var prev = document.getElementById('pl-overlay'); if (prev) prev.remove();
   if (!ids.length) { _plElegir(all); return; }
-  var pares = [], yaEnviados = [];
+  var pares = [], yaEnviados = [], otraEtapa = [];
+  _plEtapas = {};
   _plFilas = [];
   all.filter(function(c){ return ids.indexOf(c.id) >= 0; }).forEach(function(c) {
     var g = (c.scores && c.scores._informe_rh) || {};
     if (!Object.keys(g).length) { sinInforme.push(((c.nombre || '') + ' ' + (c.apellido || '')).trim()); return; }
     var d = Object.assign({ jornada:'4x4_rotativo' }, g);
     if (g.enviado) yaEnviados.push(((c.nombre || '') + ' ' + (c.apellido || '')).trim() + ' (' + _rhFechaCorta(g.enviado) + ')');
+    var et = getPipelineEtapa(c); _plEtapas[c.id] = et;
+    if (et !== 'seleccionado' && et !== 'enviado') otraEtapa.push(((c.nombre || '') + ' ' + (c.apellido || '')).trim() + ' (' + getPipelineMeta(et).label + ')');
     pares.push([c.id, _plFila(c, d)]);
   });
   pares.sort(function(a, b){ return a[1][4].localeCompare(b[1][4], 'es'); });
@@ -14800,8 +14803,15 @@ async function abrirPlanillaEnvio(idsElegidos) {
     + (yaEnviados.length ? '<div style="padding:10px 14px;border-radius:10px;background:#eff6ff;border:1.5px solid #bfdbfe;color:#1e40af;font-size:12.5px;line-height:1.5"><strong>Ya enviados antes:</strong> ' + yaEnviados.map(e).join(', ') + '. Si los vuelve a enviar, se actualiza la fecha de envío.</div>' : '')
     + (_plFilas.length ? '<div class="field" style="margin:0"><label>Para (correo de RRHH) <span style="text-transform:none;font-weight:500">(opcional; se recuerda)</span></label><input id="pl-para" class="rh-in" placeholder="Ej: seleccion@empresa.cl" value="' + e(_plParaGuardado()) + '"></div>' : '')
     + (_plFilas.length ? '<div style="overflow-x:auto">' + _plTablaHtml() + '</div>'
-      + '<div style="font-size:11.5px;color:var(--ink4)">Fecha envío = hoy, día en que se genera la planilla. Al copiar o descargar, cada postulante queda marcado como "Enviado a RRHH". Para corregir un dato, edítelo en el Informe RH del postulante.</div>'
+      + '<div style="font-size:11.5px;color:var(--ink4)">Fecha envío = hoy, día en que se genera la planilla. Para corregir un dato, edítelo en el Informe RH del postulante.</div>'
       : '<div style="font-size:13px;color:var(--ink3)">Ninguno de los seleccionados tiene Informe RH guardado.</div>')
+    + (_plFilas.length ? '<div id="pl-confirmar" style="padding:12px 14px;border-radius:10px;background:var(--surface2);border:1.5px solid var(--border);font-size:12.5px;line-height:1.55">'
+      + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span style="flex:1;min-width:220px"><strong>¿Ya enviaste el correo a RRHH?</strong> Al confirmar, quedan marcados como "Enviado a RRHH" y los que están en Seleccionado pasan a 📨 Enviado a contratación.</span>'
+      + '<button class="rs-btn" onclick="toast(\'Sin cambios. Siguen en Por enviar.\', \'ok\');document.getElementById(\'pl-overlay\').remove()">Todavía no</button>'
+      + '<button class="rs-btn prim" id="pl-btn-enviados" onclick="_plMarcarEnviados()">✓ Sí, marcar como enviados</button></div>'
+      + (otraEtapa.length ? '<label style="display:flex;gap:8px;align-items:flex-start;margin-top:8px;color:#92400e;cursor:pointer"><input type="checkbox" id="pl-mover-otros" style="width:auto;margin-top:3px">'
+        + '<span>No están en Seleccionado: ' + otraEtapa.map(e).join(', ') + '. Márquelo si también deben pasar a Enviado a contratación.</span></label>' : '')
+      + '</div>' : '')
     + '</div>'
     + '<div class="rh-pie"><span style="margin-right:auto"></span>'
     + (_plFilas.length ? '<button class="rs-btn" onclick="_plExcel()">⬇ Descargar Excel</button><button class="rs-btn" onclick="_plCopiar()">📋 Copiar tabla</button><button class="rs-btn prim" onclick="_plCorreo()">✉️ Copiar y abrir correo</button>' : '')
@@ -14869,7 +14879,7 @@ async function _plCopiar() {
     if (!ok) { toast('No se pudo copiar. Seleccione la tabla y cópiela con Cmd+C.', 'er'); return; }
   }
   toast('✓ Tabla copiada: péguela en el correo', 'ok');
-  _plMarcarEnviados();
+  _plPedirConfirmacion();
 }
 // Correo listo: copia la tabla y abre el correo con destinatario, asunto y saludo.
 // La tabla se pega donde dice [pegue aquí la tabla]; la firma la agrega el programa de correo.
@@ -14893,18 +14903,32 @@ async function _plCorreo() {
 }
 
 // Deja constancia del envío en el Informe RH de cada postulante de la planilla
+// Después de copiar o descargar: se destaca la pregunta de confirmación
+var _plEtapas = {};
+function _plPedirConfirmacion() {
+  var b = document.getElementById('pl-confirmar'); if (!b) return;
+  b.style.background = '#f5f3ff'; b.style.borderColor = '#a78bfa';
+  b.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+// Solo al confirmar: marca "Enviado a RRHH" y pasa a Enviado a contratación a quienes
+// estaban en Seleccionado (y a los de otras etapas solo si se marcó la casilla)
 async function _plMarcarEnviados() {
-  var hoy = new Date().toISOString(), fallos = 0, movidos = 0;
+  var btn = document.getElementById('pl-btn-enviados'); if (btn) { btn.disabled = true; btn.textContent = 'Guardando…'; }
+  var otros = !!(document.getElementById('pl-mover-otros') || {}).checked;
+  var hoy = new Date().toISOString(), fallos = 0, movidos = 0, marcados = 0;
   for (var i = 0; i < _plIds.length; i++) {
     try {
       await _patchPrivado(_plIds[i], 'informe_rh', function(prev){ return Object.assign({}, prev || {}, { enviado: hoy }); });
-      var cc = (_dbCache || []).filter(function(x){ return x.id === _plIds[i]; })[0], et = cc ? getPipelineEtapa(cc) : '';
-      if (cc && et !== 'enviado' && et !== 'contratado' && et !== 'descartado') { await _setPipelineEtapa(_plIds[i], 'enviado'); movidos++; }
+      marcados++;
+      var et = _plEtapas[_plIds[i]] || '';
+      if (et === 'seleccionado' || (otros && et !== 'enviado' && et !== 'contratado' && et !== 'descartado')) { await _setPipelineEtapa(_plIds[i], 'enviado'); movidos++; }
     }
     catch(e) { fallos++; }
   }
+  _invalidateCache();
   if (fallos) toast('No se pudo marcar como enviados a ' + fallos + ' postulante(s)', 'er');
-  if (movidos) { _invalidateCache(); toast('📨 ' + movidos + (movidos === 1 ? ' postulante pasó' : ' postulantes pasaron') + ' a "Enviado a contratación"', 'ok'); }
+  toast('📤 ' + marcados + (marcados === 1 ? ' marcado' : ' marcados') + ' como enviado a RRHH' + (movidos ? ' · ' + movidos + ' a Enviado a contratación' : ''), 'ok');
+  var ov = document.getElementById('pl-overlay'); if (ov) ov.remove();
   try { if (document.getElementById('bd-bar')) _bdRenderCuerpo(); } catch(e) {}
 }
 
@@ -14931,7 +14955,7 @@ async function _plExcel() {
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(function(){ URL.revokeObjectURL(a.href); }, 5000);
     toast('Excel descargado ✓', 'ok');
-    _plMarcarEnviados();
+    _plPedirConfirmacion();
   } catch(e) { toast('No se pudo generar el Excel: ' + e.message, 'er'); }
 }
 
