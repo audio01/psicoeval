@@ -13656,9 +13656,11 @@ async function saveEntrevistaDrawer(candId) {
     ts: new Date().toISOString()
   };
   try {
-    var edita = +(((document.getElementById('ev-main') || {}).dataset || {}).edita || 0);
+    var edita = +(((document.getElementById('ev-main') || {}).dataset || {}).edita || 0), dictAntes = null;
     var sc = await _patchPrivado(candId, 'entrevistas', function(prev) {
       prev = prev || [];
+      var ant = edita && prev.filter(function(e){ return e.id === edita; })[0];
+      dictAntes = ant ? (ant.dictamen || '') : null;
       if (edita && prev.some(function(e){ return e.id === edita; })) {
         entry.id = edita;
         return prev.map(function(e){ return e.id === edita ? Object.assign({ creada: e.creada || e.ts }, entry) : e; });
@@ -13669,7 +13671,18 @@ async function saveEntrevistaDrawer(candId) {
     try { localStorage.setItem(_EV_PREF_KEY, JSON.stringify({ tipo: tipo, modalidad: modal, entrevistador: entrev })); } catch(e) {}
     var all = await getDB();
     var c = all.find(function(x){ return x.id === candId; });
-    toast(edita ? '🗓 Entrevista actualizada ✓' : '🗓 Entrevista guardada ✓', 'ok');
+    // El dictamen mueve la etapa: recomendado (con o sin observaciones) → Seleccionado;
+    // no recomendable → Descartado. Solo si el dictamen es nuevo o cambió, y nunca saca a un contratado.
+    var etapaMsg = '', destino = dictamen === 'no_recomendable' ? 'descartado' : (dictamen === 'recomendado' || dictamen === 'obs') ? 'seleccionado' : '';
+    var etapaAct = c ? getPipelineEtapa(c) : '';
+    if (destino && dictamen !== dictAntes && etapaAct !== destino && etapaAct !== 'contratado') {
+      try {
+        await _setPipelineEtapa(candId, destino);
+        _invalidateCache(); all = await getDB(); c = all.find(function(x){ return x.id === candId; }); sc = c.scores;
+        etapaMsg = ' · etapa: ' + getPipelineMeta(destino).label;
+      } catch(e) { etapaMsg = ' · no se pudo cambiar la etapa'; }
+    }
+    toast((edita ? '🗓 Entrevista actualizada ✓' : '🗓 Entrevista guardada ✓') + etapaMsg, 'ok');
     var updated = Object.assign({}, c, { scores: sc });
     _renderDrawerHeader(updated);   // el encabezado muestra el dictamen nuevo
     _switchDrawerTab('entrevistas', updated);
