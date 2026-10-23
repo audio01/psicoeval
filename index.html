@@ -10933,10 +10933,19 @@ function _rutRepBadge(c) {
   var n = _mismoRut(c).length;
   return n ? '<span title="Hay ' + n + ' evaluación' + (n > 1 ? 'es' : '') + ' más con este RUT" style="display:inline-block;margin-left:6px;padding:1px 7px;border-radius:100px;font-size:10px;font-weight:700;vertical-align:1px;background:#f5f3ff;color:#6d28d9;border:1px solid #ddd6fe">🔁 Rindió ' + (n + 1) + ' veces</span>' : '';
 }
+// Categoría de la evaluación: la del Informe RH o, si aún no hay informe, la que
+// corresponde al dictamen de la entrevista (recomendado → Apto, etc.)
+var _CAT_DE_DICT = { recomendado:'apto', obs:'obs', no_recomendable:'no_apto' };
+var _CAT_META = { apto:['Apto', 'recomendado'], obs:['Apto con observaciones', 'obs'], no_apto:['No apto', 'no_recomendable'] };
+function _categoriaDe(c) {
+  var g = (c.scores && c.scores._informe_rh) || {};
+  return _CAT_META[g.categoria] ? g.categoria : (_CAT_DE_DICT[_bdDictamen(c)] || '');
+}
 function _bdDictamenCorto(c) {
-  var v = _bdDictamen(c), d = _EV_DICTAMEN.filter(function(x){ return x.val === v; })[0];
-  if (!d) return '<span style="font-size:11px;color:var(--ink4);white-space:nowrap">Sin dictamen</span>';
-  return '<span class="bd-pill" title="' + htmlEsc(d.label) + '" style="color:' + d.color + ';background:' + d.bg + ';border-color:' + d.border + '">' + d.icon + ' ' + _BD_DIC_CORTO[v] + '</span>';
+  var cat = _categoriaDe(c), m = _CAT_META[cat];
+  if (!m) return '<span style="font-size:11px;color:var(--ink4);white-space:nowrap">Sin dictamen</span>';
+  var d = _EV_DICTAMEN.filter(function(x){ return x.val === m[1]; })[0];
+  return '<span class="bd-pill" title="Categoría: ' + htmlEsc(m[0]) + '" style="color:' + d.color + ';background:' + d.bg + ';border-color:' + d.border + '">' + d.icon + ' ' + m[0] + '</span>';
 }
 // Resultado sin el dictamen cuando el dictamen ya se muestra aparte
 function _bdMirada(c) { var m = _miradaDe(c); return _BD.props.dictamen ? Object.assign({}, m, { dictamen:'' }) : m; }
@@ -11010,9 +11019,9 @@ function _bdTablero(lista) {
         + '<div style="display:flex;gap:8px;align-items:flex-start"><div style="flex:1;min-width:0"><div class="bd-nom">' + htmlEsc(((c.nombre || '') + ' ' + (c.apellido || '')).trim()) + _rutRepBadge(c) + _porArchivarBadge(c) + _enArchivoBadge(c) + '</div>'
         + (_BD.props.cargo ? '<div class="bd-sub">' + (pm.icon || '') + ' ' + htmlEsc(c.cargo || pm.label || '') + '</div>' : '')
         + (_instalacionDe(c) ? '<div class="bd-sub" style="color:var(--ink2);font-weight:600">📍 ' + htmlEsc(_instalacionDe(c)) + '</div>' : '') + '</div>' + _bdChk(c) + '</div>'
-        + (_BD.props.resultado && c.estado === 'completed' ? '<div style="margin-top:7px">' + _miradaChipsHtml(_bdMirada(c)) + '</div>' : '')
+        + (_BD.props.resultado && c.estado === 'completed' ? '<div style="margin-top:7px">' + _miradaChipsHtml(Object.assign({}, _miradaDe(c), { dictamen:'' })) + '</div>' : '')
         + (_BD.props.etapa && campo !== 'etapa' ? '<div style="margin-top:6px">' + _bdCelda(c, 'etapa') + '</div>' : '')
-        + (_BD.props.dictamen && campo !== 'dictamen' && _bdDictamen(c) ? '<div style="margin-top:6px">' + _bdDictamenCorto(c) + '</div>' : '')
+        + (campo !== 'dictamen' && _categoriaDe(c) ? '<div style="margin-top:6px">' + _bdDictamenCorto(c) + '</div>' : '')
         + '<div class="bd-card-pie">'
         + (_BD.props.estado ? statusBadge(c.estado) : '')
         + (ent ? '<span>🗓 ' + ent + '</span>' : '')
