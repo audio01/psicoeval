@@ -14073,7 +14073,7 @@ async function abrirInformeRH(id) {
     + '<div class="field"><label>Nombre y cargo de quien corrobora</label>' + input('corrobora', d.corrobora) + '</div>'
     + '<div class="field"><label>Antecedentes aportados por el empleador anterior</label>' + area('aportados', d.aportados, 3) + '</div>'
     + sec('Planilla de envío')
-    + '<div class="field"><label>Jornada</label>' + chips('jornada', _RH_JORNADAS, d.jornada).replace('<div class="reg-chips">', '<div class="reg-chips" onchange="var o=document.getElementById(\'rh-jornada-otra-c\');if(o)o.style.display=(document.querySelector(\'input[name=rh-jornada]:checked\')||{}).value===\'otra\'?\'\':\'none\'">')
+    + '<div class="field"><label>Turno <span style="text-transform:none;font-weight:500">(va en el informe y en la planilla)</span></label>' + chips('jornada', _RH_JORNADAS, d.jornada).replace('<div class="reg-chips">', '<div class="reg-chips" onchange="var o=document.getElementById(\'rh-jornada-otra-c\');if(o)o.style.display=(document.querySelector(\'input[name=rh-jornada]:checked\')||{}).value===\'otra\'?\'\':\'none\'">')
     + '<div id="rh-jornada-otra-c" style="margin-top:6px;display:' + (d.jornada === 'otra' ? '' : 'none') + '">' + input('jornada_otra', d.jornada_otra, 'Ej: 5x2 día') + '</div></div>'
     + '<div class="rh-grid2"><div class="field"><label>Referencia (cómo llegó)</label>' + input('referencia', d.referencia, 'Ej: WhatsApp, Referido: Juan Pérez') + '</div>'
     + '<div class="field"><label>Observación para el envío</label>' + input('obs_envio', d.obs_envio, 'Ej: Comprobar estado físico en terreno') + '</div></div>'
@@ -14083,7 +14083,7 @@ async function abrirInformeRH(id) {
     + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><button class="rs-btn prim" id="rh-btn-ia" onclick="_rhRedactar()">✨ Redactar integración con IA</button>'
     + '<span style="font-size:11.5px;color:var(--ink4)">Redacta las Observaciones finales y el Refuerzo de habilidades solo a partir de las fortalezas, debilidades, niveles y la recomendación que usted validó (no usa sus apuntes). No envía nombre, RUT ni datos de contacto. Revise el texto antes de generar el PDF.</span></div>'
     + '<div class="field"><label>Observaciones finales</label>'
-    + '<div style="font-size:12px;color:var(--ink3);margin:2px 0 6px">El PDF comienza con: <em>"Al momento de la evaluación, se concluye que [nombre] se encuentra en la categoría de [categoría] para el cargo de [cargo] en la instalación [instalación]."</em> Escriba aquí el resto; deje una línea en blanco entre párrafos.</div>'
+    + '<div style="font-size:12px;color:var(--ink3);margin:2px 0 6px">El PDF comienza con: <em>"Al momento de la evaluación, se concluye que [nombre] se encuentra en la categoría de [categoría] para el cargo de [cargo], turno [turno], en la instalación [instalación]."</em> Escriba aquí el resto; deje una línea en blanco entre párrafos.</div>'
     + area('observaciones', d.observaciones, 8) + '</div>'
     + '<div class="field"><label>Refuerzo de habilidades que debe observar el supervisor <span style="text-transform:none;font-weight:500">(una acción por línea)</span></label>' + area('refuerzo', d.refuerzo, 4, 'Ej: Acompañamiento explícito en cambios de protocolo…') + '</div>'
     + '<div style="font-size:11.5px;color:var(--ink4)">Las secciones B (entrevista operacional) y C (verificación de domicilio) salen en blanco para que las complete el supervisor.</div>'
@@ -14181,7 +14181,13 @@ function _rhFrase(c, d, html) {
   var nom = ((c.nombre || '') + ' ' + (c.apellido || '')).trim();
   var cargo = d.cargo || _rhCargoBase(c);
   return 'Al momento de la evaluación, se concluye que ' + b(nom) + ' se encuentra en la categoría de ' + b(cat.charAt(0) + cat.slice(1).toLowerCase())
-    + ' para el cargo de ' + b(cargo) + (d.instalacion ? ' en la instalación ' + b(d.instalacion) : '') + '.';
+    + ' para el cargo de ' + b(cargo) + (_rhTurnoTxt(d) ? ', turno ' + b(_rhTurnoTxt(d)) + ',' : '') + (d.instalacion ? ' en la instalación ' + b(d.instalacion) : '') + '.';
+}
+// Turno del informe: "4x4 rotativo", o el texto escrito en "Otra"
+function _rhTurnoTxt(d) {
+  if (d.jornada === 'otra') return d.jornada_otra || '';
+  var j = _RH_JORNADAS.filter(function(x){ return x[0] === d.jornada; })[0];
+  return j ? j[1] : '';
 }
 
 // PDF del Informe RH (formato R-GP-054) armado en el computador con jsPDF: texto real
@@ -14432,11 +14438,10 @@ function _plFecha(f) {
   return String(dd).padStart(2, '0') + '-' + String(mm).padStart(2, '0') + '-' + String(aa).slice(-2);
 }
 function _plFila(c, d) {
-  var j = _RH_JORNADAS.filter(function(x){ return x[0] === d.jornada; })[0];
   var est = d.categoria === 'no_apto' ? 'No aprobado' : d.categoria ? 'Aprobado' : '';
   return [_plFecha(''), (d.zonal || '').replace(/^./, function(x){ return x.toUpperCase(); }), est, c.rut || '',
     ((c.apellido || '') + ' ' + (c.nombre || '')).trim().toUpperCase(), c.edad ? c.edad + ' años' : '', d.instalacion || '',
-    d.jornada === 'otra' ? (d.jornada_otra || 'Otra') : (j ? j[1] : ''), d.cargo || _rhCargoBase(c),
+    _rhTurnoTxt(d) || (d.jornada === 'otra' ? 'Otra' : ''), d.cargo || _rhCargoBase(c),
     d.referencia || _canalTxt(c), _plFono(c.telefono), d.obs_envio || ''];
 }
 
