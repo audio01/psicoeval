@@ -1263,6 +1263,35 @@ body.exam-away #exam-shield{display:flex}
           <div id="comuna-suggestions" style="display:none" role="listbox" aria-label="Sugerencias de comunas"></div>
           <span class="err" id="e-comuna" role="alert" aria-live="polite"></span>
         </div>
+        <div class="field" id="canal-campo">
+          <label>¿Cómo supiste de esta oferta? *</label>
+          <div class="reg-chips">
+            <label class="reg-chip"><input type="radio" name="canal" value="whatsapp" onchange="_regCambio(this)"><span>WhatsApp</span></label>
+            <label class="reg-chip"><input type="radio" name="canal" value="facebook" onchange="_regCambio(this)"><span>Facebook</span></label>
+            <label class="reg-chip"><input type="radio" name="canal" value="trabajando" onchange="_regCambio(this)"><span>Trabajando.cl</span></label>
+            <label class="reg-chip"><input type="radio" name="canal" value="omil" onchange="_regCambio(this)"><span>OMIL (municipalidad)</span></label>
+            <label class="reg-chip"><input type="radio" name="canal" value="bne" onchange="_regCambio(this)"><span>BNE (Bolsa Nacional de Empleo)</span></label>
+            <label class="reg-chip"><input type="radio" name="canal" value="referido" onchange="_regCambio(this)"><span>Me recomendó alguien que trabaja en la empresa</span></label>
+            <label class="reg-chip"><input type="radio" name="canal" value="otro" onchange="_regCambio(this)"><span>Otro</span></label>
+          </div>
+          <span class="err" id="e-canal" role="alert" aria-live="polite"></span>
+        </div>
+        <div id="canal-referido" style="display:none">
+          <div class="field">
+            <label for="r-canal-colega">Nombre de la persona que te recomendó *</label>
+            <input id="r-canal-colega" maxlength="120" oninput="document.getElementById('e-canal-colega').textContent=''" placeholder="Nombre y apellido" autocomplete="off">
+            <span class="err" id="e-canal-colega" role="alert" aria-live="polite"></span>
+          </div>
+          <div class="field">
+            <label for="r-canal-instalacion">¿En qué instalación trabaja? (opcional)</label>
+            <input id="r-canal-instalacion" maxlength="120" placeholder="Ej: Rehau" autocomplete="off">
+          </div>
+        </div>
+        <div class="field" id="canal-otro" style="display:none">
+          <label for="r-canal-detalle">¿Dónde la viste? *</label>
+          <input id="r-canal-detalle" maxlength="120" oninput="document.getElementById('e-canal-detalle').textContent=''" placeholder="Ej: Instagram, aviso en la calle…" autocomplete="off">
+          <span class="err" id="e-canal-detalle" role="alert" aria-live="polite"></span>
+        </div>
         <div style="display:flex;gap:10px;margin-top:6px">
           <button class="btn btn-outline" onclick="_regSinCargo ? gotoLanding() : regSetStep(0)">← Anterior</button>
           <button class="btn btn-primary btn-lg" style="flex:1" onclick="regNext(1)">Continuar →</button>
@@ -4282,6 +4311,7 @@ async function addToDB(c) {
   // Embed referencia inside scores JSONB to avoid schema changes
   var scoresRow = Object.assign({}, c.scores || {});
   if (c.referencia)  scoresRow._referencia  = c.referencia;
+  if (c.canal)       scoresRow._canal       = c.canal;
   if (c.ref_notas)   scoresRow._ref_notas   = c.ref_notas;
   if (c.ref_estado)  scoresRow._ref_estado  = c.ref_estado;
 
@@ -4586,6 +4616,23 @@ function styleOs10() {
 }
 
 // ── Registro: preguntas que se muestran según la respuesta anterior ──
+// Por dónde llegó el postulante: se guarda en scores._canal (21_canal.sql)
+var CANAL_LABELS = { whatsapp:'WhatsApp', facebook:'Facebook', trabajando:'Trabajando.cl', omil:'OMIL', bne:'BNE', referido:'Referido', otro:'Otro' };
+function _regCanal() {
+  var v = _regVal('canal'); if (!v) return null;
+  var t = function(id){ return ((document.getElementById(id) || {}).value || '').trim().slice(0, 120); };
+  var o = { canal: v };
+  if (v === 'referido') { o.colega = _nombrePropio(t('r-canal-colega')); if (t('r-canal-instalacion')) o.instalacion = t('r-canal-instalacion'); }
+  if (v === 'otro') o.detalle = t('r-canal-detalle');
+  return o;
+}
+// Texto corto para el panel, la planilla y el Informe RH: "WhatsApp", "Referido: Juan Pérez (Rehau)"
+function _canalTxt(c) {
+  var k = c && (c.canal || (c.scores && c.scores._canal)); if (!k || !k.canal) return '';
+  if (k.canal === 'referido') return 'Referido' + (k.colega ? ': ' + k.colega : '') + (k.instalacion ? ' (' + k.instalacion + ')' : '');
+  if (k.canal === 'otro') return k.detalle ? 'Otro: ' + k.detalle : 'Otro';
+  return CANAL_LABELS[k.canal] || k.canal;
+}
 function _regVal(name) { var r = document.querySelector('input[name="' + name + '"]:checked'); return r ? r.value : ''; }
 function _regMostrar(id, si) { var el = document.getElementById(id); if (el) el.style.display = si ? '' : 'none'; }
 function _regLimpiar(ids, names) {
@@ -4614,6 +4661,13 @@ function _regCambio(el) {
     var otro = _regVal('exp-otro') === 'si';
     _regMostrar('exp2-block', otro);
     if (!otro) _regLimpiar(['r-emp2','r-cargo2'], ['dur2','salida2']);
+  }
+  if (n === 'canal') {
+    var cv = _regVal('canal');
+    document.getElementById('e-canal').textContent = '';
+    _regMostrar('canal-referido', cv === 'referido'); _regMostrar('canal-otro', cv === 'otro');
+    if (cv !== 'referido') _regLimpiar(['r-canal-colega', 'r-canal-instalacion']);
+    if (cv !== 'otro') _regLimpiar(['r-canal-detalle']);
   }
   // Al responder, se quita la marca de "falta"
   var f = el && el.closest && el.closest('.field, .reg-emp');
@@ -4799,6 +4853,15 @@ function regNext(fromStep) {
     } else {
       document.getElementById('e-comuna').textContent = '';
     }
+    // Por dónde llegó (21_canal.sql)
+    var canalV = _regVal('canal'), eCan = document.getElementById('e-canal');
+    eCan.textContent = canalV ? '' : 'Elige una opción';
+    if (!canalV) ok = false;
+    [['referido', 'r-canal-colega', 'e-canal-colega', 'Escribe el nombre de quien te recomendó'], ['otro', 'r-canal-detalle', 'e-canal-detalle', 'Cuéntanos dónde la viste']].forEach(function(x) {
+      var falta = canalV === x[0] && !document.getElementById(x[1]).value.trim();
+      document.getElementById(x[2]).textContent = falta ? x[3] : '';
+      if (falta) ok = false;
+    });
     if (!ok) {
       var firstErr = document.querySelector('#reg-step-1 .err:not(:empty)');
       if (firstErr) {
@@ -5049,6 +5112,7 @@ function submitRegister() {
     rubro, rubro_label: RUBRO_LABELS[rubro] || '',
     historial: historial.length ? historial : (_regVal('exp-tiene') === 'no' ? [] : null),   // [] = declaró no tener experiencia
     referencia: referencia,
+    canal: _regCanal(),
     _invitacion: (_INV && _INV.estado === 'valida') ? _INV.codigo : null,
   };
 
@@ -10544,9 +10608,9 @@ async function renderCandidatesTable() { return _bdRender(); }
 //  (estilo base de datos de Notion). Las vistas guardadas se comparten con todos
 //  los usuarios del panel (clave 'vistas' de psicoeval_config, 18_vistas.sql).
 // ═══════════════════════════════════════════════════════════
-var _BD_PROPS = [['cargo','Cargo'], ['resultado','Resultado'], ['etapa','Etapa'], ['dictamen','Dictamen'], ['estado','Estado'], ['fecha','Fecha'], ['duracion','Duración'], ['comuna','Comuna'], ['invitacion','Invitación']];
+var _BD_PROPS = [['cargo','Cargo'], ['resultado','Resultado'], ['etapa','Etapa'], ['dictamen','Dictamen'], ['estado','Estado'], ['fecha','Fecha'], ['duracion','Duración'], ['comuna','Comuna'], ['canal','Llegó por'], ['invitacion','Invitación']];
 var _BD_DEF = { vista:'tabla', filtros:{}, orden:'fecha_desc', agrupar:'', columnas:'etapa',
-                props:{ cargo:1, resultado:1, etapa:1, dictamen:1, estado:0, fecha:1, duracion:0, comuna:0, invitacion:0 } };
+                props:{ cargo:1, resultado:1, etapa:1, dictamen:1, estado:0, fecha:1, duracion:0, comuna:0, canal:0, invitacion:0 } };
 var _BD_FIJAS = [
   { id:'todos',   nombre:'Todos',       icon:'👥', cfg:{ vista:'tabla' } },
   { id:'tablero', nombre:'Tablero',     icon:'🗂', cfg:{ vista:'tablero' } },
@@ -10655,7 +10719,7 @@ function _bdFiltrar(all) {
   var qRut = _rutNorm(q);   // el RUT se encuentra con o sin puntos y guion
   return all.filter(function(c) {
     if (q) {
-      var txt = [c.nombre, c.apellido, c.email, c.rut, c.cargo, c.comuna, c.rubro].map(function(v){ return v || ''; }).join(' ').toLowerCase();
+      var txt = [c.nombre, c.apellido, c.email, c.rut, c.cargo, c.comuna, c.rubro, _canalTxt(c)].map(function(v){ return v || ''; }).join(' ').toLowerCase();
       var porRut = qRut.length >= 6 && /^[\d.\-\skK]+$/.test(q) && _rutNorm(c.rut).indexOf(qRut) === 0;
       if (txt.indexOf(q) === -1 && !porRut) return false;
     }
@@ -10774,6 +10838,7 @@ function _bdCelda(c, p) {
   if (p === 'fecha') return '<span style="color:var(--ink3);white-space:nowrap">' + htmlEsc(_momentoTxt(c)) + '</span>';
   if (p === 'duracion') { var du = _duracionDe(c); return du ? '<span title="' + htmlEsc(_duracionTip(du)) + '" style="white-space:nowrap;' + (du.rapidas.length ? 'color:#b45309;font-weight:700' : 'color:var(--ink2)') + '">' + _fmtDur(du.total) + (du.rapidas.length ? ' ⚡' : '') + '</span>' : '<span style="color:var(--ink4)">—</span>'; }
   if (p === 'comuna') return htmlEsc(c.comuna || '—');
+  if (p === 'canal') return _canalTxt(c) ? htmlEsc(_canalTxt(c)) : '<span style="color:var(--ink4)">—</span>';
   if (p === 'invitacion') { var iv = c.scores && c.scores._invitacion; return iv ? (iv.tipo === 'rut' ? '🪪 Por RUT' : '🔗 Link único') : '<span style="color:var(--ink4)">—</span>'; }
   return '';
 }
@@ -10871,6 +10936,7 @@ function _bdTablero(lista) {
         + (_BD.props.estado ? statusBadge(c.estado) : '')
         + (ent ? '<span>🗓 ' + ent + '</span>' : '')
         + (_BD.props.comuna && c.comuna ? '<span>' + htmlEsc(c.comuna) + '</span>' : '')
+        + (_BD.props.canal && _canalTxt(c) ? '<span>' + htmlEsc(_canalTxt(c)) + '</span>' : '')
         + (_BD.props.fecha ? '<span style="margin-left:auto">' + htmlEsc(_momentoTxt(c).slice(0, 10)) + '</span>' : '')
         + '</div></div>';
     });
@@ -12457,7 +12523,7 @@ function _renderDrawerHeader(c) {
   var etapa = getPipelineEtapa(c);
   var em = getPipelineMeta(etapa);
   var initials = ((c.nombre||'?')[0] + (c.apellido||'?')[0]).toUpperCase();
-  var datos = [c.cargo || pm.label || c.perfil || '', c.edad ? c.edad + ' años' : '', c.comuna || '', c.educacion_label || c.educacion || ''].filter(Boolean).map(function(x){ return htmlEsc(String(x)); }).join(' · ');
+  var datos = [c.cargo || pm.label || c.perfil || '', c.edad ? c.edad + ' años' : '', c.comuna || '', c.educacion_label || c.educacion || '', _canalTxt(c) ? 'Llegó por: ' + _canalTxt(c) : ''].filter(Boolean).map(function(x){ return htmlEsc(String(x)); }).join(' · ');
   // Una sola franja compacta: deja el máximo de alto para el contenido
   document.getElementById('drawer-header').innerHTML =
     '<div class="dh-row">'
