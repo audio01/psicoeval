@@ -837,7 +837,9 @@ input,select,textarea{font-family:inherit;outline:none}
 .bd-grp-n{font-size:12px;color:var(--ink4);font-weight:700;margin-left:4px}
 .bd-board{min-height:300px}
 .bd-board .kanban-col{flex:1 1 0;min-width:165px;width:auto}
-.bd-board .kanban-col.bd-col-desc{flex:0 0 170px;min-width:150px;background:#fffafa;border-style:dashed}
+.bd-col-lado{flex:0 0 170px;min-width:150px;display:flex;flex-direction:column;gap:12px}
+.bd-board .bd-col-lado .kanban-col.bd-col-desc{flex:0 0 auto;min-width:0;width:auto;background:#fffafa;border-style:dashed}
+.bd-board .bd-col-lado .kanban-col.bd-col-cont{background:#f7feff}
 .bd-board .kanban-card span{white-space:normal!important}
 .bd-descartar-barra{position:fixed;left:50%;bottom:28px;transform:translate(-50%,24px);opacity:0;pointer-events:none;z-index:900;display:flex;align-items:center;gap:12px;width:min(520px,calc(100vw - 40px));padding:16px 22px;border-radius:14px;border:2px dashed #fca5a5;background:#fff;color:#b91c1c;font-size:13.5px;box-shadow:0 12px 36px rgba(15,23,42,.18);transition:opacity .15s,transform .15s,background .15s,border-color .15s}
 .bd-descartar-barra small{display:block;font-size:11.5px;color:#64748b;font-weight:500;margin-top:1px}
@@ -1857,6 +1859,7 @@ body.exam-away #exam-shield{display:flex}
             <option value="postulante">📋 Postulante</option>
             <option value="entrevista">💬 Entrevista Laboral</option>
             <option value="seleccionado">✅ Seleccionado</option>
+            <option value="enviado">📨 Enviado a contratación</option>
             <option value="contratado">🤝 Contratado</option>
             <option value="descartado">❌ Descartado</option>
           </select>
@@ -8111,7 +8114,7 @@ function _porRevisarHtml(cands, desde) {
     if (et === 'descartado') { if (m.segPend.length) grupos[3].lista.push({ c:c, nota:m.segPend.map(function(p){ return p.hito.toLowerCase(); }).join(' y ') }); return; }
     if (m.integ === 'riesgo_alto' && !m.dictamen) grupos[0].lista.push({ c:c });
     if (m.incid === 'grave' && !m.dictamen) grupos[1].lista.push({ c:c });
-    if (!m.dictamen && et !== 'seleccionado' && et !== 'contratado') grupos[2].lista.push({ c:c });
+    if (!m.dictamen && et !== 'seleccionado' && et !== 'enviado' && et !== 'contratado') grupos[2].lista.push({ c:c });
     if (m.segPend.length) grupos[3].lista.push({ c:c, nota:m.segPend.map(function(p){ return p.hito.toLowerCase(); }).join(' y ') });
   });
   grupos[4].lista.sort(function(a, b){ return _diasParaArchivo(a.c) - _diasParaArchivo(b.c); });
@@ -10366,9 +10369,9 @@ async function renderDashboard() {
   var recomendados = conDict.filter(function(x){ return x.m.dictamen === 'recomendado' || x.m.dictamen === 'obs'; }).length;
   var sinTerminar = cands.filter(function(c){ return c.estado !== 'completed'; }).length;
   // Mismo criterio que "Por revisar": en proceso (ni seleccionados ni descartados) y sin dictamen
-  var sinDict = miradas.filter(function(x){ var e = getPipelineEtapa(x.c); return !x.m.dictamen && e !== 'seleccionado' && e !== 'contratado' && e !== 'descartado'; }).length;
+  var sinDict = miradas.filter(function(x){ var e = getPipelineEtapa(x.c); return !x.m.dictamen && e !== 'seleccionado' && e !== 'enviado' && e !== 'contratado' && e !== 'descartado'; }).length;
   // Seleccionados incluye a los ya contratados
-  var seleccionados = cands.filter(function(c){ var e = getPipelineEtapa(c); return e === 'seleccionado' || e === 'contratado'; }).length;
+  var seleccionados = cands.filter(function(c){ var e = getPipelineEtapa(c); return e === 'seleccionado' || e === 'enviado' || e === 'contratado'; }).length;
   // Clic en un indicador: Candidatos con el mismo cargo y período, más el filtro del indicador
   var ir = function(extra) {
     var f = Object.assign({}, extra);
@@ -10995,6 +10998,7 @@ function _bdTablero(lista) {
     if (manual) del.sort(function(a, b){ return _bdPos(a) - _bdPos(b); });
     // Descartados: van al archivo. Para descartar, la barra que aparece al arrastrar
     if (arrastra && g.id === 'descartado' && !del.length && !verArchivo) return;
+    if (arrastra && g.id === 'contratado' && !verArchivo) return;
     h += '<div class="kanban-col" id="kcol-' + g.id + '"' + (arrastra ? ' ondragover="event.preventDefault();this.classList.add(\'drag-over\');kOver(event,\'' + g.id + '\')" ondragleave="if(!this.contains(event.relatedTarget)){this.classList.remove(\'drag-over\')}" ondrop="kDrop(event,\'' + g.id + '\')"' : '') + '>'
       + '<div class="kanban-col-header" style="color:' + g.color + '"><span>' + g.label + '</span><span style="margin-left:auto;font-size:11px;background:' + g.bg + ';border:1.5px solid ' + g.border + ';color:' + g.color + ';border-radius:100px;padding:1px 8px">' + del.length + '</span></div>'
       + '<div class="kanban-cards" id="kcards-' + g.id + '">';
@@ -11023,13 +11027,20 @@ function _bdTablero(lista) {
   // Acceso fijo a los descartados (están en el archivo): cuántos hay y botón para verlos.
   // También recibe tarjetas arrastradas para descartar.
   if (arrastra && !verArchivo) {
-    var nDesc = (_dbCache || []).filter(function(c){ return getPipelineEtapa(c) === 'descartado' && (!(_BD.filtros || {}).cargo || c.perfil === _BD.filtros.cargo); }).length;
-    h += '<div class="kanban-col bd-col-desc" ondragover="event.preventDefault();this.classList.add(\'drag-over\')" ondragleave="if(!this.contains(event.relatedTarget))this.classList.remove(\'drag-over\')" ondrop="this.classList.remove(\'drag-over\');kDrop(event,\'descartado\')">'
+    var cuenta = function(et){ return (_dbCache || []).filter(function(c){ return getPipelineEtapa(c) === et && (!(_BD.filtros || {}).cargo || c.perfil === _BD.filtros.cargo); }).length; };
+    var nDesc = cuenta('descartado'), nCont = cuenta('contratado');
+    h += '<div class="bd-col-lado"><div class="kanban-col bd-col-desc" ondragover="event.preventDefault();this.classList.add(\'drag-over\')" ondragleave="if(!this.contains(event.relatedTarget))this.classList.remove(\'drag-over\')" ondrop="this.classList.remove(\'drag-over\');kDrop(event,\'descartado\')">'
       + '<div class="kanban-col-header" style="color:#991b1b"><span>❌ Descartados</span><span style="margin-left:auto;font-size:11px;background:#fef2f2;border:1.5px solid #fca5a5;color:#991b1b;border-radius:100px;padding:1px 8px">' + nDesc + '</span></div>'
       + '<div style="padding:14px;display:flex;flex-direction:column;gap:10px;align-items:stretch;text-align:center">'
       + '<div style="font-size:11.5px;color:var(--ink4);line-height:1.5">Pasan al archivo. Arrastre aquí una tarjeta para descartarla.</div>'
       + (nDesc ? '<button class="btn btn-outline btn-sm" onclick="_bdIrConFiltros({ etapa:\'descartado\' })">Ver descartados →</button>' : '')
-      + '</div></div>';
+      + '</div></div>'
+      + '<div class="kanban-col bd-col-desc bd-col-cont" ondragover="event.preventDefault();this.classList.add(\'drag-over\')" ondragleave="if(!this.contains(event.relatedTarget))this.classList.remove(\'drag-over\')" ondrop="this.classList.remove(\'drag-over\');kDrop(event,\'contratado\')">'
+      + '<div class="kanban-col-header" style="color:#0e7490"><span>🤝 Contratado</span><span style="margin-left:auto;font-size:11px;background:#ecfeff;border:1.5px solid #a5f3fc;color:#0e7490;border-radius:100px;padding:1px 8px">' + nCont + '</span></div>'
+      + '<div style="padding:14px;display:flex;flex-direction:column;gap:10px;align-items:stretch;text-align:center">'
+      + '<div style="font-size:11.5px;color:var(--ink4);line-height:1.5">Arrastre aquí una tarjeta cuando ingrese a trabajar.</div>'
+      + (nCont ? '<button class="btn btn-outline btn-sm" onclick="_bdIrConFiltros({ etapa:\'contratado\' })">Ver contratados →</button>' : '')
+      + '</div></div></div>';
   }
   if (arrastra) h += '<div id="bd-descartar" class="bd-descartar-barra" ondragover="event.preventDefault();this.classList.add(\'over\')" ondragleave="this.classList.remove(\'over\')" ondrop="kDrop(event,\'descartado\')">'
     + '<span style="font-size:18px">❌</span><span><b>Suelte aquí para descartar</b><small>El candidato pasa al archivo</small></span></div>';
@@ -12317,6 +12328,7 @@ var PIPELINE_STAGES = [
   { id:'postulante',   label:'Postulante',          icon:'📋', color:'#475569', bg:'#f1f5f9', border:'#cbd5e1' },
   { id:'entrevista',   label:'Entrevista Laboral',   icon:'💬', color:'#d97706', bg:'#fffbeb', border:'#fde68a' },
   { id:'seleccionado', label:'Seleccionado',          icon:'✅', color:'#16a34a', bg:'#f0fdf4', border:'#bbf7d0' },
+  { id:'enviado',      label:'Enviado a contratación', icon:'📨', color:'#7c3aed', bg:'#f5f3ff', border:'#ddd6fe' },
   { id:'contratado',   label:'Contratado',            icon:'🤝', color:'#0e7490', bg:'#ecfeff', border:'#a5f3fc' },
   { id:'descartado',   label:'Descartado',            icon:'❌', color:'#dc2626', bg:'#fef2f2', border:'#fecaca' },
 ];
@@ -12457,7 +12469,7 @@ function _dashProceso(cands, all, filterCargo) {
   });
   var total = cands.length;
   var completed = cands.filter(function(c){ return c.estado === 'completed'; }).length;
-  var seleccionados = (stageCounts['seleccionado'] || 0) + (stageCounts['contratado'] || 0);
+  var seleccionados = (stageCounts['seleccionado'] || 0) + (stageCounts['enviado'] || 0) + (stageCounts['contratado'] || 0);
   var descartados   = stageCounts['descartado']   || 0;
   var convRate = total > 0 ? Math.round(seleccionados / total * 100) : 0;
 
@@ -12535,7 +12547,7 @@ function _dashProceso(cands, all, filterCargo) {
       var k = c.perfil || 'sin_cargo';
       if (!byCargo[k]) byCargo[k] = { total:0, sel:0 };
       byCargo[k].total++;
-      if (getPipelineEtapa(c) === 'seleccionado' || getPipelineEtapa(c) === 'contratado') byCargo[k].sel++;
+      if (['seleccionado', 'enviado', 'contratado'].indexOf(getPipelineEtapa(c)) >= 0) byCargo[k].sel++;
     });
     var cargoKeys = Object.keys(byCargo).sort(function(a,b){ return byCargo[b].total - byCargo[a].total; });
     if (cargoKeys.length > 1) {
@@ -13688,7 +13700,7 @@ async function saveEntrevistaDrawer(candId) {
     // no recomendable → Descartado. Solo si el dictamen es nuevo o cambió, y nunca saca a un contratado.
     var etapaMsg = '', destino = dictamen === 'no_recomendable' ? 'descartado' : (dictamen === 'recomendado' || dictamen === 'obs') ? 'seleccionado' : '';
     var etapaAct = c ? getPipelineEtapa(c) : '';
-    if (destino && dictamen !== dictAntes && etapaAct !== destino && etapaAct !== 'contratado') {
+    if (destino && dictamen !== dictAntes && etapaAct !== destino && etapaAct !== 'contratado' && !(destino === 'seleccionado' && etapaAct === 'enviado')) {
       try {
         await _setPipelineEtapa(candId, destino);
         _invalidateCache(); all = await getDB(); c = all.find(function(x){ return x.id === candId; }); sc = c.scores;
@@ -14009,7 +14021,7 @@ function _estadoFichaHtml(c) {
   var pill = function(icon, txt, col, bg, bd, tip) {
     return '<span class="pipe-badge" title="' + htmlEsc(tip) + '" style="background:' + bg + ';color:' + col + ';border-color:' + bd + '">' + icon + ' ' + txt + '</span>';
   };
-  var final = etapa === 'seleccionado' || etapa === 'contratado' || etapa === 'descartado';
+  var final = etapa === 'seleccionado' || etapa === 'enviado' || etapa === 'contratado' || etapa === 'descartado';
   if (final || !d) return pill(em.icon, em.label, em.color, em.bg, em.border, 'Etapa: ' + em.label + ' · Dictamen de entrevista: ' + (d ? d.label : 'sin dictamen'));
   return pill(d.icon, d.label, d.color, d.bg, d.border, 'Dictamen de entrevista: ' + d.label + ' · Etapa: ' + em.label);
 }
@@ -14798,12 +14810,17 @@ async function _plCorreo() {
 
 // Deja constancia del envío en el Informe RH de cada postulante de la planilla
 async function _plMarcarEnviados() {
-  var hoy = new Date().toISOString(), fallos = 0;
+  var hoy = new Date().toISOString(), fallos = 0, movidos = 0;
   for (var i = 0; i < _plIds.length; i++) {
-    try { await _patchPrivado(_plIds[i], 'informe_rh', function(prev){ return Object.assign({}, prev || {}, { enviado: hoy }); }); }
+    try {
+      await _patchPrivado(_plIds[i], 'informe_rh', function(prev){ return Object.assign({}, prev || {}, { enviado: hoy }); });
+      var cc = (_dbCache || []).filter(function(x){ return x.id === _plIds[i]; })[0], et = cc ? getPipelineEtapa(cc) : '';
+      if (cc && et !== 'enviado' && et !== 'contratado' && et !== 'descartado') { await _setPipelineEtapa(_plIds[i], 'enviado'); movidos++; }
+    }
     catch(e) { fallos++; }
   }
   if (fallos) toast('No se pudo marcar como enviados a ' + fallos + ' postulante(s)', 'er');
+  if (movidos) { _invalidateCache(); toast('📨 ' + movidos + (movidos === 1 ? ' postulante pasó' : ' postulantes pasaron') + ' a "Enviado a contratación"', 'ok'); }
   try { if (document.getElementById('bd-bar')) _bdRenderCuerpo(); } catch(e) {}
 }
 
