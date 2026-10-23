@@ -880,6 +880,9 @@ input,select,textarea{font-family:inherit;outline:none}
 .rh-sec{font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#1e3a8a;background:#dbeafe;padding:6px 10px;border-radius:6px;margin-top:4px}
 .rh-in{width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--ink);box-sizing:border-box;line-height:1.5}
 textarea.rh-in{resize:vertical}
+.rh-req{color:#dc2626;font-weight:800}
+.rh-falta .reg-chips,.rh-falta .rh-in{outline:2px solid #dc2626;outline-offset:2px;border-radius:8px}
+.rh-falta label{color:#dc2626}
 .rh-tbl{width:100%;border-collapse:collapse;font-size:12.5px}
 .rh-tbl th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--ink3);padding:6px;border-bottom:1px solid var(--border)}
 .rh-tbl td{padding:5px 6px;border-bottom:1px solid var(--border)}
@@ -13939,16 +13942,16 @@ async function abrirInformeRH(id) {
     + '<div style="font-size:12px;color:var(--ink3)">' + htmlEsc(((c.nombre || '') + ' ' + (c.apellido || '')).trim()) + ' · ' + (guardado ? 'editando el informe guardado' : 'propuesta del panel a partir de las pruebas, la entrevista y la referencia') + '</div></div>'
     + '<button class="dh-close" onclick="document.getElementById(\'rh-overlay\').remove()">✕</button></div>'
     + '<div class="rh-body">'
-    + '<div class="rh-grid2"><div class="field"><label>Lista</label>' + chips('lista', [['1','1'],['2','2'],['3','3']], d.lista) + '</div>'
-    + '<div class="field"><label>Zonal</label>' + chips('zonal', [['norte','Norte'],['centro','Centro'],['sur','Sur']], d.zonal) + '</div></div>'
+    + '<div class="rh-grid2"><div class="field" data-rh="lista"><label>Lista <span class="rh-req">*</span></label>' + chips('lista', [['1','1'],['2','2'],['3','3']], d.lista) + '</div>'
+    + '<div class="field" data-rh="zonal"><label>Zonal <span class="rh-req">*</span></label>' + chips('zonal', [['norte','Norte'],['centro','Centro'],['sur','Sur']], d.zonal) + '</div></div>'
     + sec('A.- Evaluación psicolaboral')
     + '<div class="rh-grid2"><div class="field"><label>Fecha de evaluación</label>' + input('fecha', d.fecha, 'dd/mm/aaaa') + '</div>'
     + '<div class="field"><label>Psicólogo que realiza el informe</label>' + input('psicologo', d.psicologo) + '</div></div>'
-    + '<div class="field"><label>Categoría</label>' + chips('categoria', _RH_CAT, d.categoria) + '</div>'
+    + '<div class="field" data-rh="categoria"><label>Categoría <span class="rh-req">*</span></label>' + chips('categoria', _RH_CAT, d.categoria) + '</div>'
     + '<div class="rh-grid2"><div class="field"><label>Cargo del informe</label>' + input('cargo', d.cargo, 'Ej: Jefe de Turno').replace('<input ', '<input onchange="_rhCargoCambio()" ')
     + (d.cargo !== sug.cargo ? '<div style="font-size:11.5px;color:var(--ink4);margin-top:3px">Postuló a: ' + htmlEsc(sug.cargo) + '</div>' : '<div style="font-size:11.5px;color:var(--ink4);margin-top:3px">Si lo evalúa para otro cargo, cámbielo aquí. No modifica su postulación.</div>') + '</div>'
-    + '<div class="field"><label>Instalación</label>' + input('instalacion', d.instalacion, 'Ej: Rehau') + '</div></div>'
-    + '<div class="field"><label>Atención a público</label>' + chips('publico', [['si','Recomendable'],['no','No Recomendable']], d.publico) + '</div>'
+    + '<div class="field" data-rh="instalacion"><label>Instalación <span class="rh-req">*</span></label>' + input('instalacion', d.instalacion, 'Ej: Rehau') + '</div></div>'
+    + '<div class="field" data-rh="publico"><label>Atención a público <span class="rh-req">*</span></label>' + chips('publico', [['si','Recomendable'],['no','No Recomendable']], d.publico) + '</div>'
     + '<table class="rh-tbl"><thead><tr><th>Competencia</th><th>Nivel ideal</th><th>Nivel obtenido</th><th>Sugerencia</th></tr></thead><tbody>' + filas + '</tbody></table>'
     + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:4px 0 2px"><button class="rs-btn" onclick="_rhRecalcular()">↻ Recalcular desde los resultados</button>'
     + '<span style="font-size:11.5px;color:var(--ink4)">Vuelve a armar fortalezas y debilidades con los niveles e ideales de la tabla (sin IA). Úselo si cambió niveles o ideales.</span></div>'
@@ -13960,7 +13963,7 @@ async function abrirInformeRH(id) {
     + '<div class="field"><label>Nombre y cargo de quien corrobora</label>' + input('corrobora', d.corrobora) + '</div>'
     + '<div class="field"><label>Antecedentes aportados por el empleador anterior</label>' + area('aportados', d.aportados, 3) + '</div>'
     + sec('Cierre')
-    + '<div class="field"><label>Recomendación de contratación</label>' + chips('recomendacion', [['plazo_fijo','Plazo fijo'],['indefinido','Indefinido'],['no_contratar','No contratar']], d.recomendacion) + '</div>'
+    + '<div class="field" data-rh="recomendacion"><label>Recomendación de contratación <span class="rh-req">*</span></label>' + chips('recomendacion', [['plazo_fijo','Plazo fijo'],['indefinido','Indefinido'],['no_contratar','No contratar']], d.recomendacion) + '</div>'
     + '<div class="field"><label>Detalle de la recomendación <span style="text-transform:none;font-weight:500">(opcional)</span></label>' + input('detalle', d.detalle, 'Ej: con inducción clara y seguimiento cercano en terreno de la jefatura directa') + '</div>'
     + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><button class="rs-btn prim" id="rh-btn-ia" onclick="_rhRedactar()">✨ Redactar integración con IA</button>'
     + '<span style="font-size:11.5px;color:var(--ink4)">Redacta las Observaciones finales y el Refuerzo de habilidades solo a partir de las fortalezas, debilidades, niveles y la recomendación que usted validó (no usa sus apuntes). No envía nombre, RUT ni datos de contacto. Revise el texto antes de generar el PDF.</span></div>'
@@ -13974,6 +13977,8 @@ async function abrirInformeRH(id) {
     + '<button class="rs-btn" onclick="_rhGuardar()">Guardar</button><button class="rs-btn prim" onclick="_rhPdf()">⬇ Guardar y generar PDF</button></div>'
     + '</div>';
   document.body.appendChild(ov);
+  var quitarMarca = function(e){ var f = e.target.closest && e.target.closest('[data-rh]'); if (f) f.classList.remove('rh-falta'); };
+  ov.addEventListener('change', quitarMarca); ov.addEventListener('input', quitarMarca);
 }
 
 function _rhLeer() {
@@ -13989,7 +13994,7 @@ function _rhLeer() {
 // nunca el nombre, RUT ni contacto; el nombre se pone aquí, en el computador del psicólogo.
 async function _rhRedactar() {
   var d = _rhLeer(), c = _rhCand;
-  if (!d.recomendacion) { toast('Elija primero la recomendación de contratación.', 'er'); return; }
+  if (!_rhValidar(d, ['categoria', 'instalacion', 'recomendacion'])) return;
   var ta = document.getElementById('rh-observaciones'), tr = document.getElementById('rh-refuerzo');
   if (((ta && ta.value.trim()) || (tr && tr.value.trim())) && !(await appConfirm('¿Reemplazar las Observaciones finales y el Refuerzo de habilidades por la redacción de la IA?'))) return;
   var btn = document.getElementById('rh-btn-ia');
@@ -14025,6 +14030,18 @@ async function _rhRecalcular() {
   toast('Fortalezas y debilidades recalculadas', 'ok');
 }
 
+// Campos obligatorios del Informe RH: se marcan en rojo los que faltan
+var _RH_OBLIG = [['lista','Lista'],['zonal','Zonal'],['categoria','Categoría'],['instalacion','Instalación'],['publico','Atención a público'],['recomendacion','Recomendación de contratación']];
+function _rhValidar(d, campos) {
+  var faltan = _RH_OBLIG.filter(function(x){ return (!campos || campos.indexOf(x[0]) >= 0) && !String(d[x[0]] || '').trim(); });
+  _RH_OBLIG.forEach(function(x){ var el = document.querySelector('#rh-overlay [data-rh="' + x[0] + '"]'); if (el) el.classList.toggle('rh-falta', faltan.some(function(f){ return f[0] === x[0]; })); });
+  if (!faltan.length) return true;
+  var el = document.querySelector('#rh-overlay [data-rh="' + faltan[0][0] + '"]');
+  if (el) el.scrollIntoView({ behavior:'smooth', block:'center' });
+  toast('Complete los campos obligatorios: ' + faltan.map(function(x){ return x[1]; }).join(', '), 'er');
+  return false;
+}
+
 async function _rhGuardar(silencioso) {
   var d = _rhLeer();
   try {
@@ -14052,6 +14069,7 @@ function _rhFrase(c, d, html) {
 }
 
 async function _rhPdf() {
+  if (!_rhValidar(_rhLeer())) return;
   var d = await _rhGuardar(true); if (!d) return;
   var c = _rhCand, e = function(x){ return htmlEsc(x || ''); };
   var TOTAL = 6;
