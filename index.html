@@ -12799,8 +12799,7 @@ async function _rsPostulaEditar(id) {
   var p = _postulaDe(c), base = _rhCargoBase(c), el = document.getElementById('rs-postula'); if (!el) return;
   var e = htmlEsc, op = function(v, t){ return '<option value="' + v + '"' + (v === (p.turno || '4x4_rotativo') ? ' selected' : '') + '>' + t + '</option>'; };
   el.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px 0">'
-    + '<div class="ev-field" style="grid-column:1/-1"><label>Cargo al que postula</label><input id="rs-p-cargo" class="rh-in" list="rs-p-cargo-op" value="' + e(p.cargo || base) + '">'
-    + '<datalist id="rs-p-cargo-op"><option value="' + e(base) + '"><option value="' + e(base) + ' - Encargado de Turno"><option value="' + e(base) + ' - Encargado de Grupo"></datalist></div>'
+    + '<div class="ev-field" style="grid-column:1/-1"><label>Cargo al que postula</label><input id="rs-p-cargo" class="rh-in" autocomplete="off" value="' + e(p.cargo || base) + '"></div>'
     + '<div class="ev-field"><label>Instalación</label><input id="rs-p-inst" class="rh-in" value="' + e(p.instalacion) + '" placeholder="Ej: Rehau"></div>'
     + '<div class="ev-field"><label>Turno</label><select id="rs-p-turno" class="rh-in" onchange="document.getElementById(\'rs-p-otra\').style.display=this.value===\'otra\'?\'\':\'none\'">' + _RH_JORNADAS.map(function(j){ return op(j[0], j[1]); }).join('') + '</select>'
     + '<input id="rs-p-otra" class="rh-in" value="' + e(p.turno_otra) + '" placeholder="Ej: 5x2 día" style="margin-top:6px;display:' + (p.turno === 'otra' ? '' : 'none') + '"></div>'
@@ -13276,8 +13275,8 @@ function _tabEntrevistasDrawer(c) {
     + '<div class="ev-field"><label>Modalidad</label><select id="ef-modalidad">' + opcion('presencial', '🏢 Presencial', pref.modalidad) + opcion('online', '🖥 Online', pref.modalidad) + opcion('terreno', '🌍 En terreno', pref.modalidad) + '</select></div>'
     + '<div class="ev-field" style="grid-column:1/-1"><label>Entrevistador/a</label><input type="text" id="ef-entrevistador" value="' + htmlEsc(pref.entrevistador) + '" placeholder="Nombre del evaluador/a"></div>'
     // Cargo, instalación y turno a los que postula: pasan solos al Informe RH
-    + '<div class="ev-field" style="grid-column:1/-1"><label>Cargo al que postula</label><input type="text" id="ef-cargo" list="ef-cargo-op" value="' + htmlEsc(evPost.cargo || _rhCargoBase(c)) + '" placeholder="Ej: Guardia de Seguridad - Encargado de Turno">'
-    + '<datalist id="ef-cargo-op">' + [_rhCargoBase(c), _rhCargoBase(c) + ' - Encargado de Turno', _rhCargoBase(c) + ' - Encargado de Grupo'].map(function(x){ return '<option value="' + htmlEsc(x) + '">'; }).join('') + '</datalist></div>'
+    + '<div class="ev-field" style="grid-column:1/-1"><label>Cargo al que postula</label><input type="text" id="ef-cargo" autocomplete="off" value="' + htmlEsc(evPost.cargo || _rhCargoBase(c)) + '" placeholder="Ej: Guardia de Seguridad - Encargado de Turno">'
+    + '</div>'
     + '<div class="ev-field"><label>Instalación a la que postula</label><input type="text" id="ef-instalacion" value="' + htmlEsc(evPost.instalacion || '') + '" placeholder="Ej: Rehau"></div>'
     + '<div class="ev-field"><label>Turno</label><select id="ef-turno" onchange="var o=document.getElementById(\'ef-turno-otra\');if(o)o.style.display=this.value===\'otra\'?\'\':\'none\'">'
     + _RH_JORNADAS.map(function(j){ return opcion(j[0], j[1], evPost.turno || '4x4_rotativo'); }).join('') + '</select>'
