@@ -14068,80 +14068,22 @@ function _rhFrase(c, d, html) {
     + ' para el cargo de ' + b(cargo) + (d.instalacion ? ' en la instalación ' + b(d.instalacion) : '') + '.';
 }
 
+// PDF del Informe RH (formato R-GP-054) armado en el computador con jsPDF: texto real
+// (nítido y seleccionable), encabezado en cada hoja y saltos de página automáticos
+// si un texto no cabe. Se descarga directo, sin abrir la impresión.
 async function _rhPdf() {
   if (!_rhValidar(_rhLeer())) return;
   var d = await _rhGuardar(true); if (!d) return;
-  var c = _rhCand, e = function(x){ return htmlEsc(x || ''); };
-  var TOTAL = 6;
-  var caja = function(on){ return '<span class="bx' + (on ? ' on' : '') + '"></span>'; };
-  var pila = function(ops, val){ return ops.map(function(o){ return '<div class="op">' + caja(val === o[0]) + '<span>' + o[1] + '</span></div>'; }).join(''); };
-  var vinetas = function(t){ var l = e(t).split('\n').filter(function(x){ return x.trim(); }); return l.length ? '<ul>' + l.map(function(x){ return '<li>' + x + '</li>'; }).join('') + '</ul>' : ''; };
-  var parrafos = function(t){ return e(t).split(/\n\s*\n/).filter(function(x){ return x.trim(); }).map(function(x){ return '<p>' + x.replace(/\n/g, '<br>') + '</p>'; }).join(''); };
-  var enc = function(n) {
-    return '<table class="hd"><tr><td class="rh" rowspan="3">RH</td><td class="tit" rowspan="3">INFORME PSICOLABORAL<br>VERIFICACION DE DOMICILIO</td>'
-      + '<td class="cod">R-GP-054</td><td class="niv" rowspan="3"><div class="nt">Nivel de<br>Seguridad</div>'
-      + '<div>' + caja(false) + 'Público</div><div>' + caja(true) + 'Reservado</div><div>' + caja(false) + 'Secreto</div></td></tr>'
-      + '<tr><td class="cod">I-GP-001</td></tr><tr><td class="ver">Versión: 03<br>Página ' + n + ' de ' + TOTAL + '</td></tr></table>';
-  };
-  var pag = function(n, cuerpo){ return '<section class="pg">' + enc(n) + cuerpo + '</section>'; };
-  var nom = ((c.nombre || '') + ' ' + (c.apellido || '')).trim();
-  var p1 = '<div class="lz"><table class="mini lista"><tr><td class="az b">LISTA</td><td>' + pila([['1','1'],['2','2'],['3','3']], d.lista) + '</td></tr></table>'
-    + '<table class="mini zonal"><tr><td class="az b">ZONAL</td><td>' + pila([['norte','NORTE'],['centro','CENTRO'],['sur','SUR']], d.zonal) + '</td></tr></table></div>'
-    + '<table class="dt"><tr><td class="az b w30">Nombre:</td><td>' + e(nom) + '</td></tr><tr><td class="az b">Edad:</td><td>' + (c.edad ? c.edad + ' años' : '') + '</td></tr>'
-    + '<tr><td class="az b">Comuna:</td><td>' + e(c.comuna) + '</td></tr></table>'
-    + '<h3>A.- EVALUACIÓN PSICO LABORAL</h3>'
-    + '<table class="dt"><tr><td class="az b w30">Fecha de evaluación:</td><td>' + e(d.fecha) + '</td></tr>'
-    + '<tr><td class="az b">Categoría:</td><td class="ops">' + pila(_RH_CAT, d.categoria) + '</td></tr>'
-    + '<tr><td class="az b">Atención a Público:</td><td class="ops">' + pila([['si','Recomendable'],['no','No Recomendable']], d.publico) + '</td></tr></table>'
-    + '<table class="comp"><tr class="az b"><td>Competencia</td><td>Nivel Ideal</td><td>Nivel Obtenido</td></tr>'
-    + _RH_COMP.map(function(k){ return '<tr><td class="az b">' + k.label + '</td><td class="b">' + e((d.ideales || {})[k.key] || k.ideal) + '</td><td>' + e(d.niveles[k.key] || '') + '</td></tr>'; }).join('') + '</table>';
-  var p2 = '<h4>FORTALEZAS</h4><table class="dt"><tr><td class="az w20">Fortalezas</td><td>' + vinetas(d.fortalezas) + '</td></tr></table>'
-    + '<h4>DEBILIDADES</h4><table class="dt"><tr><td class="az w20">Debilidades</td><td>' + vinetas(d.debilidades) + '</td></tr></table>';
-  var p3 = '<h4 class="sep">ANTECEDENTES LABORALES</h4><table class="dt just"><tr><td class="az w35">Empresa en que trabajó anteriormente:</td><td>' + e(d.empresa) + '</td></tr>'
-    + '<tr><td class="az">Nombre y cargo de la persona que corrobora antecedentes antiguo empleo:</td><td>' + e(d.corrobora) + '</td></tr>'
-    + '<tr><td class="az">Fono o celular del empleador anterior:</td><td>' + e(d.fono) + '</td></tr>'
-    + '<tr><td class="az">Antecedentes aportados por el empleador anterior:</td><td>' + parrafos(d.aportados) + '</td></tr></table>';
-  var p4 = '<h4 class="sep">OBSERVACIONES FINALES</h4><table class="dt just"><tr><td class="az w20">Observaciones Finales</td><td><p>' + _rhFrase(c, d, true) + '</p>' + parrafos(d.observaciones) + '</td></tr></table>'
-    + '<table class="dt just"><tr><td class="az w20">Refuerzo de habilidades que debe observar el Supervisor a cargo.</td><td>' + vinetas(d.refuerzo) + '</td></tr></table>'
-    + '<table class="dt"><tr><td class="az w20">Psicólogo que realiza el informe</td><td class="h60">' + e(d.psicologo) + '</td></tr></table>';
-  var p5 = '<h2>B. ENTREVISTA OPERACIONAL</h2>'
-    + '<table class="dt"><tr><td class="az2 b w25 h60">Fecha de la entrevista</td><td></td></tr></table>'
-    + '<table class="dt mt"><tr><td class="az b">Se aprueba la contratación</td></tr><tr><td class="ops h70">' + pila([['si','Si'],['no','No']], '') + '</td></tr></table>'
-    + '<table class="dt"><tr><td class="az b">Observaciones (Obligatorias)</td></tr><tr><td class="h220"></td></tr></table>'
-    + '<table class="dt firma"><tr><td class="az w20">Subgerente o Supervisor que realizó la entrevista</td><td class="abajo">Nombre completo</td><td class="abajo w25">Firma</td></tr></table>';
-  var p6 = '<h4>C. VERIFICACION DE DOMICILIO</h4>'
-    + '<table class="dt"><tr><td class="az">Requiere verificación de domicilio por falta de recomendaciones: *</td></tr><tr><td class="ops">' + pila([['si','Si'],['no','No']], '') + '</td></tr></table>'
-    + '<table class="cierre"><tr><td>SUPERVISOR ENTREVISTADOR</td><td><div class="caja"></div></td></tr><tr><td>VERIFICADOR DE DOMICILIO</td><td><div class="caja"></div></td></tr><tr><td>CIERRE</td><td><div class="caja"></div></td></tr></table>';
-  var css = '@page{size:letter;margin:12mm 15mm 14mm 18mm}*{box-sizing:border-box}'
-    + 'body{font-family:"Times New Roman",Times,serif;font-size:12pt;color:#000;margin:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
-    + '.pg{page-break-after:always;break-after:page}.pg:last-child{page-break-after:auto;break-after:auto}'
-    + 'table{border-collapse:collapse;width:100%}td{border:1px solid #000;padding:4px 8px;vertical-align:top;line-height:1.2}'
-    + '.hd{margin:0 0 16px -14px;width:calc(100% - 20px);font-family:Arial,Helvetica,sans-serif}.hd td{text-align:center;vertical-align:middle;font-weight:700}'
-    + '.hd .rh{font-size:44pt;width:22%;letter-spacing:1px}.hd .tit{font-size:11.5pt;width:37%}.hd .cod{font-size:13pt;width:19%;height:34px}'
-    + '.hd .ver{font-size:9.5pt;height:42px}.hd .niv{text-align:left;font-size:12pt;font-weight:400;width:22%;padding:4px 8px}.hd .niv .nt{font-weight:700;margin-bottom:6px}'
-    + '.bx{display:inline-block;width:12px;height:12px;border:1px solid #000;margin-right:8px;vertical-align:-1px;background:#fff}.bx.on{background:#000}'
-    + '.az{background:#8DB3E2}.az2{background:#95B3D7}.b{font-weight:700}.w20{width:19%}.w25{width:25%}.w30{width:24%}.w35{width:34%}'
-    + '.lz{position:relative;height:170px;margin-bottom:24px}.mini{width:auto;position:absolute}.mini td{padding:2px 8px}.lista{right:9%;top:0}.zonal{left:3%;top:96px}'
-    + '.mini .op{line-height:1.25}.ops .op{margin:4px 0 6px 40px}.op .bx{width:15px;height:15px;margin-right:14px}'
-    + '.dt{margin-bottom:22px}h3{font-size:13pt;margin:26px 0 30px 10px}h4{font-size:12pt;margin:6px 0 16px 0}h4.sep{margin-top:44px}h2{font-size:16pt;margin:6px 0 22px}'
-    + '.comp{width:77%;margin-left:23%;text-align:center}.comp td{text-align:center;padding:1px 6px}'
-    + 'ul{margin:0;padding-left:28px}li{margin:0 0 2px}.just td{text-align:justify}.just td p{margin:0 0 14px}.just td p:last-child{margin:0}'
-    + '.h60{height:60px}.h70{height:76px}.h220{height:220px}.mt{margin-top:40px}.firma td{height:92px}.firma .abajo{vertical-align:bottom;text-align:center}'
-    + '.cierre{width:100%;margin-top:30px}.cierre td{border:0;padding:4px 0;vertical-align:middle}.cierre td:first-child{width:37%}.caja{border:1px solid #000;height:36px}'
-    + '.bar{position:fixed;bottom:12px;right:12px;font-family:Arial}@media print{.bar{display:none}}'
-    + '@media screen{body{background:#e5e7eb}.pg{background:#fff;width:216mm;min-height:279mm;margin:14px auto;padding:12mm 15mm 14mm 18mm;box-shadow:0 2px 10px rgba(0,0,0,.15)}}';
-  var html = '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>' + e(nom) + ' IPS</title><style>' + css + '</style></head><body>'
-    + pag(1, p1) + pag(2, p2) + pag(3, p3) + pag(4, p4) + pag(5, p5) + pag(6, p6)
-    + '</body></html>';
-  await _rhDescargarPdf(html, nom + ' IPS.pdf');
+  toast('Generando PDF…', 'ok');
+  try {
+    await _rhCargarLib(_RH_LIB_PDF);
+    var c = _rhCand, nom = ((c.nombre || '') + ' ' + (c.apellido || '')).trim();
+    _rhArmarPdf(c, d, nom).save((nom + ' IPS.pdf').replace(/[\\/:*?"<>|]/g, ''));
+    toast('PDF descargado ✓', 'ok');
+  } catch(e) { toast('No se pudo generar el PDF: ' + e.message, 'er'); }
 }
 
-// Arma el archivo PDF en el computador (sin abrir la impresión) y lo descarga.
-// Cada hoja (.pg) se dibuja en un marco oculto y se pasa a una página carta.
-var _RH_LIBS = [
-  ['https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', 'sha384-ZZ1pncU3bQe8y31yfZdMFdSpttDoPmOZg2wguVK9almUodir1PghgT0eY7Mrty8H', 'html2canvas'],
-  ['https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', 'sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk', 'jspdf']
-];
+var _RH_LIB_PDF = ['https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', 'sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk', 'jspdf'];
 function _rhCargarLib(l) {
   if (window[l[2]]) return Promise.resolve();
   return new Promise(function(ok, mal) {
@@ -14151,28 +14093,204 @@ function _rhCargarLib(l) {
     document.head.appendChild(sc);
   });
 }
-async function _rhDescargarPdf(html, archivo) {
-  var fr = null;
-  toast('Generando PDF…', 'ok');
-  try {
-    for (var i = 0; i < _RH_LIBS.length; i++) await _rhCargarLib(_RH_LIBS[i]);
-    fr = document.createElement('iframe');
-    fr.setAttribute('aria-hidden', 'true');
-    fr.style.cssText = 'position:fixed;left:-10000px;top:0;width:900px;height:1200px;border:0';
-    document.body.appendChild(fr);
-    await new Promise(function(ok){ fr.onload = ok; fr.srcdoc = html.replace('</style>', '@media screen{body{background:#fff}.pg{margin:0;box-shadow:none;height:279.4mm;overflow:hidden}}</style>'); });
-    if (fr.contentDocument.fonts) await fr.contentDocument.fonts.ready;
-    var pdf = new window.jspdf.jsPDF({ unit: 'mm', format: 'letter' });
-    var hojas = fr.contentDocument.querySelectorAll('.pg');
-    for (var j = 0; j < hojas.length; j++) {
-      var cv = await window.html2canvas(hojas[j], { scale: 2, backgroundColor: '#ffffff', logging: false });
-      if (j) pdf.addPage('letter');
-      pdf.addImage(cv.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, 215.9, 279.4);
+
+function _rhArmarPdf(c, d, nom) {
+  var J = new window.jspdf.jsPDF({ unit: 'mm', format: 'letter', compress: true });
+  var PW = 215.9, PH = 279.4, ML = 18, MR = 15, MT = 12, MB = 14, W = PW - ML - MR, HDR = 35, TOP = MT + HDR + 8;
+  var AZ = [141, 179, 226], AZ2 = [149, 179, 215], PAD = 1.8, PT = 12, y = TOP;
+  var lh = function(pt){ return pt * 0.3528 * 1.18; };
+  var fuente = function(pt, b, fam){ J.setFont(fam || 'times', b ? 'bold' : 'normal'); J.setFontSize(pt); };
+  var nueva = function(){ J.addPage('letter'); y = TOP; };
+  var caja = function(x, yy, on, s){ s = s || 3.4; J.setLineWidth(0.25); J.setFillColor(on ? 0 : 255); J.rect(x, yy, s, s, 'FD'); };
+  J.setDrawColor(0); J.setLineWidth(0.25);
+
+  // ── Texto: segmentos [{t, b}] → líneas, con justificado y negritas dentro del párrafo ──
+  var tokens = function(segs) {
+    var out = [], sp = false;
+    segs.forEach(function(s) {
+      String(s.t == null ? '' : s.t).replace(/\s+/g, ' ').split(/( )/).forEach(function(p) {
+        if (p === ' ') { sp = true; return; } if (!p) return;
+        out.push({ t: p, b: !!s.b, sp: sp && out.length > 0 }); sp = false;
+      });
+    });
+    return out;
+  };
+  var partir = function(segs, ancho, pt) {
+    fuente(pt); var esp = J.getTextWidth(' '), lines = [], cur = [], w = 0;
+    tokens(segs).forEach(function(tk) {
+      fuente(pt, tk.b); tk.w = J.getTextWidth(tk.t);
+      var add = (cur.length && tk.sp ? esp : 0) + tk.w;
+      if (cur.length && tk.sp && w + add > ancho) { lines.push({ tk: cur, w: w }); cur = []; w = 0; add = tk.w; }
+      cur.push(tk); w += add;
+    });
+    if (cur.length) lines.push({ tk: cur, w: w, ultima: true });
+    return lines;
+  };
+  // Un bloque de contenido es una lista de ítems {h, dib(x, yTop, ancho)}
+  var parrafo = function(segs, ancho, o) {
+    o = o || {}; var pt = o.pt || PT, h = lh(pt);
+    if (typeof segs === 'string') segs = [{ t: segs, b: o.b }];
+    return partir(segs, ancho, pt).map(function(l) {
+      return { h: h, dib: function(x, yy, an) {
+        fuente(pt); var esp = J.getTextWidth(' ');
+        var huecos = l.tk.filter(function(t, i){ return i && t.sp; }).length;
+        var extra = o.just && !l.ultima && huecos ? (an - l.w) / huecos : 0;
+        var cx = o.centro ? x + (an - l.w) / 2 : x;
+        l.tk.forEach(function(t, i) { if (i && t.sp) cx += esp + extra; fuente(pt, t.b); J.text(t.t, cx, yy + h * 0.78); cx += t.w; });
+      } };
+    });
+  };
+  var parrafos = function(txt, ancho, o) {
+    var it = [];
+    String(txt || '').split(/\n\s*\n/).map(function(p){ return p.trim(); }).filter(Boolean).forEach(function(p, i) {
+      if (i) it.push({ h: 3.5, dib: function(){} });
+      it = it.concat(parrafo(p, ancho, o));
+    });
+    return it;
+  };
+  var vinetas = function(txt, ancho, o) {
+    var it = [];
+    String(txt || '').split('\n').map(function(p){ return p.trim(); }).filter(Boolean).forEach(function(p) {
+      parrafo(p, ancho - 8, o).forEach(function(l, i) {
+        it.push({ h: l.h, dib: function(x, yy, an) { if (!i) { fuente(PT); J.text('•', x + 2.5, yy + l.h * 0.78); } l.dib(x + 8, yy, an - 8); } });
+      });
+    });
+    return it;
+  };
+  var pila = function(ops, val, sangria) {
+    return ops.map(function(op) { return { h: 6.6, dib: function(x, yy) { caja(x + sangria, yy + 1.4, val === op[0], 3.8); fuente(PT); J.text(op[1], x + sangria + 9, yy + 4.6); } }; });
+  };
+
+  // ── Fila de tabla: celdas con fondo y borde; si no cabe, sigue en la hoja siguiente ──
+  var fila = function(cols, o) {
+    o = o || {};
+    var x0 = o.x == null ? ML : o.x, ancho = o.ancho || W, xs = [], acc = x0, PV = o.pad == null ? 1.1 : o.pad;
+    cols.forEach(function(col){ xs.push(acc); col.an = col.w * ancho; acc += col.an; col.it = col.c ? col.c(col.an - 2 * PAD) : []; });
+    var alto = function(it){ return it.reduce(function(s, i){ return s + i.h; }, 0); };
+    var primera = true;
+    while (true) {
+      var resto = cols.map(function(col){ return alto(col.it); });
+      var H = Math.max(o.minH || 0, lh(PT) + 2 * PV, Math.max.apply(null, resto) + 2 * PV);
+      var libre = PH - MB - y;
+      if (H > libre && (primera && H <= PH - MB - TOP || libre < 20)) { nueva(); primera = false; continue; }
+      var cabe = Math.min(H, libre), partes = cols.map(function(col) {
+        var tomo = [], s = 0;
+        while (col.it.length && s + col.it[0].h <= cabe - 2 * PV + 0.01) { s += col.it[0].h; tomo.push(col.it.shift()); }
+        return { it: tomo, h: s };
+      });
+      var Hp = H <= libre ? H : Math.max.apply(null, partes.map(function(p){ return p.h; })) + 2 * PV;
+      cols.forEach(function(col, i) {
+        if (col.fill) J.setFillColor.apply(J, col.fill); else J.setFillColor(255);
+        if (o.borde !== false) J.rect(xs[i], y, col.an, Hp, 'FD');
+        var yy = col.abajo ? y + Hp - PV - partes[i].h : y + PV;
+        partes[i].it.forEach(function(it){ it.dib(xs[i] + PAD, yy, col.an - 2 * PAD); yy += it.h; });
+      });
+      y += Hp;
+      if (!cols.some(function(col){ return col.it.length; })) break;
+      nueva(); primera = false;
     }
-    pdf.save(archivo.replace(/[\\/:*?"<>|]/g, ''));
-    toast('PDF descargado ✓', 'ok');
-  } catch(e) { toast('No se pudo generar el PDF: ' + e.message, 'er'); }
-  finally { if (fr) fr.remove(); }
+    y += o.despues == null ? 0 : o.despues;
+  };
+  var celda = function(w, fill, c, extra){ return Object.assign({ w: w, fill: fill, c: c }, extra || {}); };
+  var txt = function(t, o){ return function(an){ return parrafo(t, an, o); }; };
+  var titulo = function(t, pt, antes, despues, sangria) {
+    y += antes; fuente(pt, true); J.text(t, ML + (sangria || 0), y + lh(pt) * 0.78); y += lh(pt) + despues;
+  };
+  var seccion = function(){ if (J.getNumberOfPages() > 1 || y > TOP) nueva(); };
+
+  // ── Hoja 1 ──
+  var mini = function(x, yy, rot, ops, val) {
+    var h = ops.length * 5.4 + 2.4;
+    J.setFillColor.apply(J, AZ); J.rect(x, yy, 22, h, 'FD'); J.setFillColor(255); J.rect(x + 22, yy, 27, h, 'FD');
+    fuente(PT, true); J.text(rot, x + 1.8, yy + 5);
+    ops.forEach(function(op, i) { var b = yy + 1.2 + i * 5.4; caja(x + 24, b + 0.8, val === op[0], 3.4); fuente(PT); J.text(op[1], x + 31, b + 3.9); });
+  };
+  mini(ML + W * 0.66, y, 'LISTA', [['1','1'],['2','2'],['3','3']], d.lista);
+  mini(ML + 4, y + 25, 'ZONAL', [['norte','NORTE'],['centro','CENTRO'],['sur','SUR']], d.zonal);
+  y += 25 + 18.6 + 8;
+  [['Nombre:', nom], ['Edad:', c.edad ? c.edad + ' años' : ''], ['Comuna:', c.comuna || '']].forEach(function(r) {
+    fila([celda(0.24, AZ, txt(r[0], { b: true })), celda(0.76, null, txt(r[1]))]);
+  });
+  titulo('A.- EVALUACIÓN PSICO LABORAL', 13, 7, 6, 2.6);
+  fila([celda(0.24, AZ, txt('Fecha de evaluación:', { b: true })), celda(0.76, null, txt(d.fecha || ''))]);
+  fila([celda(0.24, AZ, txt('Categoría:', { b: true })), celda(0.76, null, function(){ return pila(_RH_CAT, d.categoria, 16); })]);
+  fila([celda(0.24, AZ, txt('Atención a Público:', { b: true })), celda(0.76, null, function(){ return pila([['si','Recomendable'],['no','No Recomendable']], d.publico, 16); })], { despues: 7 });
+  var comp = { x: ML + W * 0.23, ancho: W * 0.77, pad: 0.7 }, cw = [0.53, 0.2, 0.27];
+  fila([celda(cw[0], AZ, txt('Competencia', { b: true, centro: true })), celda(cw[1], AZ, txt('Nivel Ideal', { b: true, centro: true })), celda(cw[2], AZ, txt('Nivel Obtenido', { b: true, centro: true }))], comp);
+  _RH_COMP.forEach(function(k) {
+    fila([celda(cw[0], AZ, txt(k.label, { b: true, centro: true })), celda(cw[1], null, txt((d.ideales || {})[k.key] || k.ideal, { b: true, centro: true })),
+          celda(cw[2], null, txt(d.niveles[k.key] || '', { centro: true }))], comp);
+  });
+
+  // ── Hoja 2: fortalezas y debilidades ──
+  seccion();
+  titulo('FORTALEZAS', PT, 0, 3);
+  fila([celda(0.19, AZ, txt('Fortalezas')), celda(0.81, null, function(an){ return vinetas(d.fortalezas, an); })], { despues: 6 });
+  titulo('DEBILIDADES', PT, 0, 3);
+  fila([celda(0.19, AZ, txt('Debilidades')), celda(0.81, null, function(an){ return vinetas(d.debilidades, an); })]);
+
+  // ── Hoja 3: antecedentes laborales ──
+  seccion();
+  titulo('ANTECEDENTES LABORALES', PT, 4, 3);
+  [['Empresa en que trabajó anteriormente:', d.empresa], ['Nombre y cargo de la persona que corrobora antecedentes antiguo empleo:', d.corrobora],
+   ['Fono o celular del empleador anterior:', d.fono]].forEach(function(r) {
+    fila([celda(0.34, AZ, txt(r[0], { just: true })), celda(0.66, null, txt(r[1] || ''))]);
+  });
+  fila([celda(0.34, AZ, txt('Antecedentes aportados por el empleador anterior:', { just: true })), celda(0.66, null, function(an){ return parrafos(d.aportados, an, { just: true }); })]);
+
+  // ── Hoja 4: observaciones finales y refuerzo ──
+  seccion();
+  titulo('OBSERVACIONES FINALES', PT, 4, 3);
+  var frase = (_rhFrase(c, d, true) || '').split(/<b>|<\/b>/).map(function(t, i) {
+    return { t: t.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&'), b: i % 2 === 1 };
+  });
+  fila([celda(0.19, AZ, txt('Observaciones Finales')), celda(0.81, null, function(an) {
+    var it = frase.some(function(s){ return s.t.trim(); }) ? parrafo(frase, an, { just: true }) : [];
+    var resto = parrafos(d.observaciones, an, { just: true });
+    if (it.length && resto.length) it.push({ h: 3.5, dib: function(){} });
+    return it.concat(resto);
+  })], { despues: 6 });
+  fila([celda(0.19, AZ, txt('Refuerzo de habilidades que debe observar el Supervisor a cargo.', { just: true })), celda(0.81, null, function(an){ return vinetas(d.refuerzo, an, { just: true }); })], { despues: 6 });
+  fila([celda(0.19, AZ, txt('Psicólogo que realiza el informe')), celda(0.81, null, txt(d.psicologo || ''))], { minH: 16 });
+
+  // ── Hoja 5: entrevista operacional (la completa el supervisor) ──
+  seccion();
+  titulo('B. ENTREVISTA OPERACIONAL', 16, 0, 5);
+  fila([celda(0.25, AZ2, txt('Fecha de la entrevista', { b: true })), celda(0.75, null, null)], { minH: 16, despues: 10 });
+  fila([celda(1, AZ, txt('Se aprueba la contratación', { b: true }))]);
+  fila([celda(1, null, function(){ return pila([['si','Si'],['no','No']], '', 10); })], { minH: 20, despues: 6 });
+  fila([celda(1, AZ, txt('Observaciones (Obligatorias)', { b: true }))]);
+  fila([celda(1, null, null)], { minH: 58, despues: 6 });
+  fila([celda(0.19, AZ, txt('Subgerente o Supervisor que realizó la entrevista')), celda(0.56, null, txt('Nombre completo', { centro: true }), { abajo: true }),
+        celda(0.25, null, txt('Firma', { centro: true }), { abajo: true })], { minH: 24 });
+
+  // ── Hoja 6: verificación de domicilio y cierre ──
+  seccion();
+  titulo('C. VERIFICACION DE DOMICILIO', PT, 0, 4);
+  fila([celda(1, AZ, txt('Requiere verificación de domicilio por falta de recomendaciones: *'))]);
+  fila([celda(1, null, function(){ return pila([['si','Si'],['no','No']], '', 10); })], { despues: 8 });
+  ['SUPERVISOR ENTREVISTADOR', 'VERIFICADOR DE DOMICILIO', 'CIERRE'].forEach(function(t) {
+    if (y + 12 > PH - MB) nueva();
+    fuente(PT); J.text(t, ML, y + 6); J.setFillColor(255); J.rect(ML + W * 0.37, y + 0.5, W * 0.63, 9.5, 'FD'); y += 12;
+  });
+
+  // ── Encabezado en cada hoja, con el total real de páginas ──
+  var N = J.getNumberOfPages(), cw2 = [0.22, 0.37, 0.19, 0.22].map(function(f){ return f * W; });
+  var x1 = ML + cw2[0], x2 = x1 + cw2[1], x3 = x2 + cw2[2];
+  for (var n = 1; n <= N; n++) {
+    J.setPage(n); J.setLineWidth(0.3); J.setFillColor(255);
+    J.rect(ML, MT, W, HDR); J.line(x1, MT, x1, MT + HDR); J.line(x2, MT, x2, MT + HDR); J.line(x3, MT, x3, MT + HDR);
+    J.line(x2, MT + 11, x3, MT + 11); J.line(x2, MT + 22, x3, MT + 22);
+    fuente(44, true, 'helvetica'); J.text('RH', ML + cw2[0] / 2, MT + HDR / 2 + 5.6, { align: 'center' });
+    fuente(11, true, 'helvetica'); J.text(['INFORME PSICOLABORAL', 'VERIFICACION DE DOMICILIO'], x1 + cw2[1] / 2, MT + HDR / 2 - 0.8, { align: 'center', lineHeightFactor: 1.25 });
+    fuente(13, true, 'helvetica'); J.text('R-GP-054', x2 + cw2[2] / 2, MT + 7.4, { align: 'center' }); J.text('I-GP-001', x2 + cw2[2] / 2, MT + 18.4, { align: 'center' });
+    fuente(9, true, 'helvetica'); J.text(['Versión: 03', 'Página ' + n + ' de ' + N], x2 + cw2[2] / 2, MT + 27.2, { align: 'center', lineHeightFactor: 1.25 });
+    fuente(11.5, true, 'helvetica'); J.text(['Nivel de', 'Seguridad'], x3 + 2.2, MT + 5, { lineHeightFactor: 1.15 });
+    fuente(11.5, false, 'helvetica');
+    ['Público', 'Reservado', 'Secreto'].forEach(function(t, i) { var b = MT + 17 + i * 5.6; caja(x3 + 2.2, b - 3, i === 1, 3.2); J.text(t, x3 + 7.2, b); });
+  }
+  J.setProperties({ title: nom + ' IPS', subject: 'Informe psicolaboral R-GP-054' });
+  return J;
 }
 
 async function drawerSetEtapa(candId, etapa) {
