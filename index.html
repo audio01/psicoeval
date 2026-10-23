@@ -837,6 +837,7 @@ input,select,textarea{font-family:inherit;outline:none}
 .bd-grp-n{font-size:12px;color:var(--ink4);font-weight:700;margin-left:4px}
 .bd-board{min-height:300px}
 .bd-board .kanban-col{flex:1 1 0;min-width:165px;width:auto}
+.bd-board .kanban-col.bd-col-desc{flex:0 0 170px;min-width:150px;background:#fffafa;border-style:dashed}
 .bd-board .kanban-card span{white-space:normal!important}
 .bd-descartar-barra{position:fixed;left:50%;bottom:28px;transform:translate(-50%,24px);opacity:0;pointer-events:none;z-index:900;display:flex;align-items:center;gap:12px;width:min(520px,calc(100vw - 40px));padding:16px 22px;border-radius:14px;border:2px dashed #fca5a5;background:#fff;color:#b91c1c;font-size:13.5px;box-shadow:0 12px 36px rgba(15,23,42,.18);transition:opacity .15s,transform .15s,background .15s,border-color .15s}
 .bd-descartar-barra small{display:block;font-size:11.5px;color:#64748b;font-weight:500;margin-top:1px}
@@ -11018,6 +11019,17 @@ function _bdTablero(lista) {
     if (del.length > _bdLimite) h += '<button class="btn btn-ghost btn-sm" onclick="_bdLimite+=60;_bdRenderCuerpo()">Mostrar más (' + (del.length - _bdLimite) + ')</button>';
     h += '</div></div>';
   });
+  // Acceso fijo a los descartados (están en el archivo): cuántos hay y botón para verlos.
+  // También recibe tarjetas arrastradas para descartar.
+  if (arrastra && !verArchivo) {
+    var nDesc = (_dbCache || []).filter(function(c){ return getPipelineEtapa(c) === 'descartado' && (!(_BD.filtros || {}).cargo || c.perfil === _BD.filtros.cargo); }).length;
+    h += '<div class="kanban-col bd-col-desc" ondragover="event.preventDefault();this.classList.add(\'drag-over\')" ondragleave="if(!this.contains(event.relatedTarget))this.classList.remove(\'drag-over\')" ondrop="this.classList.remove(\'drag-over\');kDrop(event,\'descartado\')">'
+      + '<div class="kanban-col-header" style="color:#991b1b"><span>❌ Descartados</span><span style="margin-left:auto;font-size:11px;background:#fef2f2;border:1.5px solid #fca5a5;color:#991b1b;border-radius:100px;padding:1px 8px">' + nDesc + '</span></div>'
+      + '<div style="padding:14px;display:flex;flex-direction:column;gap:10px;align-items:stretch;text-align:center">'
+      + '<div style="font-size:11.5px;color:var(--ink4);line-height:1.5">Pasan al archivo. Arrastre aquí una tarjeta para descartarla.</div>'
+      + (nDesc ? '<button class="btn btn-outline btn-sm" onclick="_bdIrConFiltros({ etapa:\'descartado\' })">Ver descartados →</button>' : '')
+      + '</div></div>';
+  }
   if (arrastra) h += '<div id="bd-descartar" class="bd-descartar-barra" ondragover="event.preventDefault();this.classList.add(\'over\')" ondragleave="this.classList.remove(\'over\')" ondrop="kDrop(event,\'descartado\')">'
     + '<span style="font-size:18px">❌</span><span><b>Suelte aquí para descartar</b><small>El candidato pasa al archivo</small></span></div>';
   return h + '</div>';
