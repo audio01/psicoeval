@@ -13982,6 +13982,19 @@ function _rhFortDeb(c, niveles, ideales, sinDato) {
   return { fortalezas: fort.join('\n'), debilidades: deb.join('\n'), notas: notas };
 }
 
+// Fecha de evaluación del informe = fecha de la última entrevista (dd/mm/aaaa)
+function _rhFechaEntrevista(s) {
+  var t = 0;
+  ((s && s._entrevistas) || []).concat(s && s._entrevista_fecha ? [{ fecha: s._entrevista_fecha }] : []).forEach(function(e) {
+    var m = String((e && e.fecha) || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+    var x = m ? new Date(+m[1], m[2] - 1, +m[3]).getTime() : Date.parse(e && e.fecha);
+    if (x > t) t = x;
+  });
+  if (!t) return '';
+  var f = new Date(t);
+  return String(f.getDate()).padStart(2, '0') + '/' + String(f.getMonth() + 1).padStart(2, '0') + '/' + f.getFullYear();
+}
+
 // Propuesta del panel (se usa cuando aún no hay informe guardado)
 function _rhSugerencias(c) {
   var s = c.scores || {}, niveles = {};
@@ -14007,7 +14020,7 @@ function _rhSugerencias(c) {
     cargo:_rhCargoBase(c), ideales:ideales,
     lista:'', zonal:'', instalacion:'', recomendacion:'', detalle:'', categoria:cat, publico:'',
     jornada:'4x4_rotativo', jornada_otra:'', referencia:_canalTxt(c), obs_envio:'',
-    fecha:(_momentoTxt(c) || '').slice(0, 10).replace(/-/g, '/'),
+    fecha:_rhFechaEntrevista(s) || (_momentoTxt(c) || '').slice(0, 10).replace(/-/g, '/'),
     niveles:nv, fuentes:niveles, sinDato:sinDato,
     fortalezas:fd.fortalezas, debilidades:fd.debilidades,
     empresa:ref.empresa || (h0 && h0.empresa) || '',
@@ -14027,6 +14040,8 @@ async function abrirInformeRH(id) {
   _rhSinDato = sug.sinDato;
   var d = Object.assign({}, sug, g, { niveles: Object.assign({}, sug.niveles, g.niveles || {}) });
   if (g.cargo && !g.ideales) d.ideales = _rhIdealesDe(g.cargo);
+  var fEnt = _rhFechaEntrevista(c.scores || {}), fEval = (_momentoTxt(c) || '').slice(0, 10).replace(/-/g, '/');
+  if (fEnt && (!g.fecha || g.fecha === fEval)) d.fecha = fEnt;
   d.ideales = Object.assign({}, sug.ideales, d.ideales || {});
   var guardado = !!Object.keys(g).length;
   var chips = function(name, ops, val) {
