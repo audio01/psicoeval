@@ -13165,7 +13165,7 @@ function _tabEntrevistasDrawer(c) {
   main += '<div id="ev-borrador-aviso"></div>';
   if (entrevistas.length) {
     var tipoIc = { rrhh:'🧑‍💼', tecnica:'🔧', psicolaboral:'🧠', panel:'👥' };
-    main += '<details class="ev-prev"><summary><span>🗓 Entrevistas anteriores (' + entrevistas.length + ')</span>'
+    main += '<details class="ev-prev"><summary><span>🗓 Entrevistas guardadas (' + entrevistas.length + ')</span>'
       + entrevistas.slice().reverse().slice(0, 3).map(function(ev){
           var dm = _EV_DICTAMEN.filter(function(d){ return d.val === ev.dictamen; })[0];
           var f = ev.fecha || '';
@@ -13350,7 +13350,15 @@ function _evInit(c) {
   _evCompIdx = 0; _evBorradorTs = null;
   m.addEventListener('input', _evCambio);
   m.addEventListener('change', _evCambio);
-  _evBorradorRestaurar(c.id);
+  var evs = ((c.scores || {})._entrevistas) || [], nueva = _evForzarNueva;
+  _evForzarNueva = false;
+  if (!_evBorradorRestaurar(c.id) && evs.length && !nueva) {
+    var ult = evs[evs.length - 1];
+    _evAplicar(_evDesdeGuardada(ult));
+    var av = document.getElementById('ev-borrador-aviso'), f = ult.fecha ? ult.fecha.split('-').reverse().join('-') : '';
+    if (av) av.innerHTML = '<div class="ev-aviso" style="background:#eff6ff;border-color:#bfdbfe;color:#1e40af">✏️ Editando la entrevista guardada' + (f ? ' del ' + f : '')
+      + '. Al guardar, los cambios quedan en esta misma entrevista. <a onclick="_evNuevaEntrevista(\'' + c.id + '\')">Iniciar otra entrevista distinta</a></div>';
+  }
   _evCompIr(_evCompIdx);
   _evProgreso();
 }
@@ -13447,7 +13455,7 @@ function _evCambio() {
 }
 function _evBorradorGuardar() {
   var m = document.getElementById('ev-main'); if (!m) return;
-  var d = { ts: Date.now(), campos: {}, niveles: {}, pills: {}, dictamen: '', comp: _evCompIdx };
+  var d = { ts: Date.now(), edita: m.dataset.edita || '', campos: {}, niveles: {}, pills: {}, dictamen: '', comp: _evCompIdx };
   m.querySelectorAll('input[id],textarea[id],select[id]').forEach(function(el){
     if (el.type === 'radio') return;
     d.campos[el.id] = el.type === 'checkbox' ? el.checked : el.value;
@@ -13468,8 +13476,20 @@ function _evBorradorBorrar(candId) { clearTimeout(_evBorradorTimer); _evBorrador
 function _evBorradorRestaurar(candId) {
   var d = null;
   try { d = JSON.parse(localStorage.getItem(_EV_BORRADOR + candId) || 'null'); } catch(e) {}
-  if (!d) return;
-  if (!d.ts || Date.now() - d.ts > 14 * 86400000) { _evBorradorBorrar(candId); return; }   // vence a los 14 días
+  if (!d) return false;
+  if (!d.ts || Date.now() - d.ts > 14 * 86400000) { _evBorradorBorrar(candId); return false; }   // vence a los 14 días
+  _evAplicar(d);
+  _evBorradorTs = d.ts;
+  var av = document.getElementById('ev-borrador-aviso');
+  if (av) av.innerHTML = '<div class="ev-aviso">📝 Se recuperaron cambios sin guardar del ' + new Date(d.ts).toLocaleDateString('es-CL') + ' a las '
+    + new Date(d.ts).toLocaleTimeString('es-CL', { hour:'2-digit', minute:'2-digit', hour12:false })
+    + (d.edita ? ' (sobre la entrevista guardada)' : '') + '. <a onclick="_evBorradorDescartar(\'' + candId + '\')">Descartar cambios</a></div>';
+  return true;
+}
+// Pone en el formulario un estado guardado (borrador o entrevista ya registrada)
+function _evAplicar(d) {
+  var m = document.getElementById('ev-main');
+  if (m) m.dataset.edita = d.edita || '';
   Object.keys(d.campos || {}).forEach(function(id){
     var el = document.getElementById(id); if (!el) return;
     if (el.type === 'checkbox') { el.checked = !!d.campos[id]; var lb = el.closest('.ev-flag'); if (lb) lb.classList.toggle('active', el.checked); }
@@ -13496,13 +13516,43 @@ function _evBorradorRestaurar(candId) {
     var r = document.querySelector('#ev-main input[name="ev-dictamen"][value="' + d.dictamen + '"]');
     if (r) { r.checked = true; _evDictamenSel(d.dictamen); }
   }
+  var to = document.getElementById('ef-turno-otra'), tu = document.getElementById('ef-turno');
+  if (to && tu) to.style.display = tu.value === 'otra' ? '' : 'none';
   _evCompIdx = d.comp || 0;
-  _evBorradorTs = d.ts;
   _evResultadoVivo();
-  var av = document.getElementById('ev-borrador-aviso');
-  if (av) av.innerHTML = '<div class="ev-aviso">📝 Se recuperó un borrador del ' + new Date(d.ts).toLocaleDateString('es-CL') + ' a las '
-    + new Date(d.ts).toLocaleTimeString('es-CL', { hour:'2-digit', minute:'2-digit', hour12:false })
-    + '. <a onclick="_evBorradorDescartar(\'' + candId + '\')">Descartar y empezar de nuevo</a></div>';
+}
+// Entrevista ya guardada → mismo formato que un borrador, para seguir editándola
+function _evDesdeGuardada(ev) {
+  var d = { edita: String(ev.id), campos: {}, niveles: {}, pills: Object.assign({}, ev.screening || {}), dictamen: ev.dictamen || '', comp: 0 };
+  var C = d.campos;
+  [['ef-fecha','fecha'], ['ef-hora','hora'], ['ef-tipo','tipo'], ['ef-modalidad','modalidad'], ['ef-entrevistador','entrevistador'], ['ef-notas-inicio','notas_inicio'],
+   ['ef-instalacion','instalacion'], ['ef-turno','turno'], ['ef-turno-otra','turno_otra'], ['ef-sintesis','sintesis'], ['ef-motivo','motivo'], ['ef-notas','notas'], ['ef-apuntes-psico','apuntes_psico']]
+    .forEach(function(x){ if (ev[x[1]] != null && ev[x[1]] !== '') C[x[0]] = ev[x[1]]; });
+  (ev.experiencia || []).forEach(function(x, i) {
+    if (!x) return; var n = i + 1;
+    ['cargo','empresa','desde','hasta','tiempo','contrato','jefatura','motivo','notas'].forEach(function(k){ if (x[k]) C['ef-exp' + n + '-' + k] = x[k]; });
+    (x.tareas || []).forEach(function(t, j){ if (t) C['ef-exp' + n + '-tarea' + (j + 1)] = t; });
+    if (x.verificacion) C['ef-exp' + n + '-ver'] = x.verificacion;
+  });
+  (ev.checks_op || []).forEach(function(v, i){ if (v) C['ev-chk-' + i] = true; });
+  var comps = ev.comp || {};
+  document.querySelectorAll('#ev-main [data-ev-comp]').forEach(function(r, i) {
+    var x = comps[r.dataset.evComp]; if (!x) return;
+    d.niveles[r.dataset.evComp] = { n: x.nivel || 0, sin: !!x.sinEjemplo };
+    if (x.nota) C['ef-comp-nota-' + i] = x.nota;
+  });
+  (ev.desde_pruebas || []).forEach(function(x) {
+    var el = [].filter.call(document.querySelectorAll('#ev-main [data-ev-dp]'), function(e){ return e.dataset.q === x.q; })[0];
+    if (el && x.nota) C['ef-dp-' + el.dataset.evDp] = x.nota;
+  });
+  return d;
+}
+// Iniciar otra entrevista distinta (por ejemplo, una técnica después de la psicolaboral)
+var _evForzarNueva = false;
+async function _evNuevaEntrevista(candId) {
+  if (!(await appConfirm('¿Iniciar otra entrevista distinta? La entrevista guardada no se modifica. Use esto solo si corresponde una entrevista nueva (por ejemplo, una segunda etapa).'))) return;
+  _evBorradorBorrar(candId); _evForzarNueva = true;
+  switchDrawerTabById('entrevistas');
 }
 async function _evBorradorDescartar(candId) {
   if (!(await appConfirm('¿Descartar el borrador? Se perderá lo escrito en esta entrevista.'))) return;
@@ -13606,12 +13656,20 @@ async function saveEntrevistaDrawer(candId) {
     ts: new Date().toISOString()
   };
   try {
-    var sc = await _patchPrivado(candId, 'entrevistas', function(prev){ return (prev || []).concat([entry]); });
+    var edita = +(((document.getElementById('ev-main') || {}).dataset || {}).edita || 0);
+    var sc = await _patchPrivado(candId, 'entrevistas', function(prev) {
+      prev = prev || [];
+      if (edita && prev.some(function(e){ return e.id === edita; })) {
+        entry.id = edita;
+        return prev.map(function(e){ return e.id === edita ? Object.assign({ creada: e.creada || e.ts }, entry) : e; });
+      }
+      return prev.concat([entry]);
+    });
     _evBorradorBorrar(candId);
     try { localStorage.setItem(_EV_PREF_KEY, JSON.stringify({ tipo: tipo, modalidad: modal, entrevistador: entrev })); } catch(e) {}
     var all = await getDB();
     var c = all.find(function(x){ return x.id === candId; });
-    toast('🗓 Entrevista guardada ✓', 'ok');
+    toast(edita ? '🗓 Entrevista actualizada ✓' : '🗓 Entrevista guardada ✓', 'ok');
     var updated = Object.assign({}, c, { scores: sc });
     _renderDrawerHeader(updated);   // el encabezado muestra el dictamen nuevo
     _switchDrawerTab('entrevistas', updated);
