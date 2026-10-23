@@ -13865,10 +13865,11 @@ function _rhNivelPrueba(c, tid) {
 }
 
 // Fortalezas y debilidades armadas en el computador a partir de los niveles y los ideales
-function _rhFortDeb(c, niveles, ideales) {
+// sinDato: competencias sin resultado (quedan en Medio por defecto y no generan frases)
+function _rhFortDeb(c, niveles, ideales, sinDato) {
   var fort = [], deb = [];
   _RH_COMP.forEach(function(k) {
-    var n = niveles[k.key]; if (!n) return;
+    var n = niveles[k.key]; if (!n || (sinDato && sinDato[k.key] && n === 'Medio')) return;
     if (n === 'Bajo' && _RH_DEB[k.key]) deb.push(_RH_DEB[k.key]);
     else if (_RH_NIVELES.indexOf(n) <= _RH_NIVELES.indexOf(ideales[k.key] || k.ideal) && _RH_FORT[k.key]) fort.push(_RH_FORT[k.key]);
   });
@@ -13922,8 +13923,10 @@ function _rhSugerencias(c) {
     if ((x.key === 'comunicacion' || x.key === 'equipo') && x.nivel) niveles[x.key] = { v: x.nivel >= 4 ? 'Alto' : x.nivel === 3 ? 'Medio' : 'Bajo', fuente: 'Entrevista: ' + x.nivel + ' de 5' };
   });
   var ideales = _rhIdealesDe(_rhCargoBase(c));
-  var nv = {}; Object.keys(niveles).forEach(function(k){ nv[k] = niveles[k].v; });
-  var fd = _rhFortDeb(c, nv, ideales), h0 = Array.isArray(c.historial) && c.historial[0];
+  // Sin resultado, el nivel obtenido queda en Medio por defecto (el psicólogo lo ajusta)
+  var nv = {}, sinDato = {};
+  _RH_COMP.forEach(function(k){ if (niveles[k.key]) nv[k.key] = niveles[k.key].v; else { nv[k.key] = 'Medio'; sinDato[k.key] = true; } });
+  var fd = _rhFortDeb(c, nv, ideales, sinDato), h0 = Array.isArray(c.historial) && c.historial[0];
   var dic = _dictamenDe(s);
   var cat = dic === 'recomendado' ? 'apto' : dic === 'obs' ? 'obs' : dic === 'no_recomendable' ? 'no_apto' : '';
   var ref = c.referencia || s._referencia || {};
@@ -13933,7 +13936,7 @@ function _rhSugerencias(c) {
     cargo:_rhCargoBase(c), ideales:ideales,
     lista:'', zonal:'', instalacion:'', recomendacion:'', detalle:'', categoria:cat, publico:'',
     fecha:(_momentoTxt(c) || '').slice(0, 10).replace(/-/g, '/'),
-    niveles:nv, fuentes:niveles,
+    niveles:nv, fuentes:niveles, sinDato:sinDato,
     fortalezas:fd.fortalezas, debilidades:fd.debilidades,
     empresa:ref.empresa || (h0 && h0.empresa) || '',
     corrobora:[ref.nombre, ref.cargo].filter(Boolean).join(', '),
@@ -13943,12 +13946,13 @@ function _rhSugerencias(c) {
   };
 }
 
-var _rhCand = null;
+var _rhCand = null, _rhSinDato = {};
 async function abrirInformeRH(id) {
   var all = await getDB();
   var c = all.find(function(x){ return x.id === id; }); if (!c) return;
   _rhCand = c;
   var sug = _rhSugerencias(c), g = (c.scores && c.scores._informe_rh) || {};
+  _rhSinDato = sug.sinDato;
   var d = Object.assign({}, sug, g, { niveles: Object.assign({}, sug.niveles, g.niveles || {}) });
   if (g.cargo && !g.ideales) d.ideales = _rhIdealesDe(g.cargo);
   d.ideales = Object.assign({}, sug.ideales, d.ideales || {});
@@ -13965,7 +13969,7 @@ async function abrirInformeRH(id) {
       + _RH_NIVELES.map(function(n){ return '<option' + (d.ideales[k.key] === n ? ' selected' : '') + '>' + n + '</option>'; }).join('') + '</select></td><td>'
       + '<select id="rh-n-' + k.key + '" class="rh-in" style="padding:5px 8px"><option value="">—</option>'
       + _RH_NIVELES.map(function(n){ return '<option' + (d.niveles[k.key] === n ? ' selected' : '') + '>' + n + '</option>'; }).join('') + '</select></td>'
-      + '<td style="font-size:11px;color:var(--ink4)">' + (f ? '💡 ' + htmlEsc(f.fuente) : 'Lo define usted') + '</td></tr>';
+      + '<td style="font-size:11px;color:var(--ink4)">' + (f ? '💡 ' + htmlEsc(f.fuente) : 'Sin resultado: Medio por defecto') + '</td></tr>';
   }).join('');
   var sec = function(t){ return '<div class="rh-sec">' + t + '</div>'; };
   var ov = document.createElement('div');
@@ -14056,7 +14060,7 @@ async function _rhRedactar() {
 
 // Recalcula fortalezas y debilidades con lo que hay en la tabla (en el computador, sin IA)
 async function _rhRecalcular() {
-  var d = _rhLeer(), fd = _rhFortDeb(_rhCand, d.niveles, d.ideales);
+  var d = _rhLeer(), fd = _rhFortDeb(_rhCand, d.niveles, d.ideales, _rhSinDato);
   var tf = document.getElementById('rh-fortalezas'), td = document.getElementById('rh-debilidades');
   if (((tf.value.trim() && tf.value.trim() !== fd.fortalezas) || (td.value.trim() && td.value.trim() !== fd.debilidades))
       && !(await appConfirm('¿Reemplazar las Fortalezas y Debilidades por las calculadas desde los resultados? Se perderá lo que editó en ellas.'))) return;
