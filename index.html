@@ -10828,6 +10828,7 @@ function _bdBarPintar() {
     + '<button class="bd-btn" onclick="_bdMenuOrden(this)">↕ Ordenar</button>'
     + '<button class="bd-btn" onclick="_bdMenuAgrupar(this)">' + (tab ? '▥ Columnas' : '☰ Agrupar') + (tab ? ': ' + (_BD.columnas === 'dictamen' ? 'Dictamen' : 'Etapa') : (_BD.agrupar ? ': ' + _BD_AGRUPAR.filter(function(a){ return a[0] === _BD.agrupar; })[0][1] : '')) + '</button>'
     + '<button class="bd-btn" onclick="_bdMenuProps(this)">⚙ Propiedades</button>'
+    + (S.role === 'admin' ? '<button class="bd-btn" onclick="abrirPlanillaEnvio()" title="Tabla con los datos básicos para enviar a RRHH por correo">📋 Planilla de envío</button>' : '')
     + '</div>';
 }
 
@@ -14439,10 +14440,13 @@ function _plFila(c, d) {
     d.referencia || _canalTxt(c), _plFono(c.telefono), d.obs_envio || ''];
 }
 
-async function abrirPlanillaEnvio() {
-  var ids = [].map.call(document.querySelectorAll('.row-chk:checked'), function(x){ return x.dataset.id; });
-  if (!ids.length) return;
+// Con postulantes marcados en Candidatos, arma la planilla con ellos; si no hay ninguno
+// marcado, primero muestra los que tienen Informe RH para elegir
+async function abrirPlanillaEnvio(idsElegidos) {
+  var ids = idsElegidos || [].map.call(document.querySelectorAll('.row-chk:checked'), function(x){ return x.dataset.id; });
   var all = await getDB(), sinInforme = [];
+  var prev = document.getElementById('pl-overlay'); if (prev) prev.remove();
+  if (!ids.length) { _plElegir(all); return; }
   _plFilas = [];
   all.filter(function(c){ return ids.indexOf(c.id) >= 0; }).forEach(function(c) {
     var g = (c.scores && c.scores._informe_rh) || {};
@@ -14469,6 +14473,37 @@ async function abrirPlanillaEnvio() {
     + (_plFilas.length ? '<button class="rs-btn" onclick="_plExcel()">⬇ Descargar Excel</button><button class="rs-btn prim" onclick="_plCopiar()">📋 Copiar para el correo</button>' : '')
     + '</div></div>';
   document.body.appendChild(ov);
+}
+
+function _plElegir(all) {
+  var e = function(x){ return htmlEsc(x || ''); };
+  var con = all.filter(function(c){ var g = c.scores && c.scores._informe_rh; return g && Object.keys(g).length; })
+    .sort(function(a, b){ return String(b.scores._informe_rh.actualizado || '').localeCompare(String(a.scores._informe_rh.actualizado || '')); });
+  var ov = document.createElement('div');
+  ov.id = 'pl-overlay'; ov.className = 'rh-ov';
+  ov.onclick = function(ev){ if (ev.target === ov) ov.remove(); };
+  ov.innerHTML = '<div class="rh-box" style="width:min(640px,96vw)">'
+    + '<div class="rh-top"><div><div style="font-size:17px;font-weight:800">📋 Planilla de envío</div>'
+    + '<div style="font-size:12px;color:var(--ink3)">Elija los postulantes que va a enviar (tienen Informe RH guardado, los más recientes primero)</div></div>'
+    + '<button class="dh-close" onclick="document.getElementById(\'pl-overlay\').remove()">✕</button></div>'
+    + '<div class="rh-body" style="gap:4px">'
+    + (con.length ? con.map(function(c) {
+        var g = c.scores._informe_rh;
+        return '<label style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--border);border-radius:10px;cursor:pointer">'
+          + '<input type="checkbox" class="pl-chk" value="' + e(c.id) + '" onchange="_plContar()">'
+          + '<span style="flex:1"><b>' + e(((c.nombre || '') + ' ' + (c.apellido || '')).trim()) + '</b>'
+          + '<span style="display:block;font-size:12px;color:var(--ink3)">' + e([g.cargo || _rhCargoBase(c), g.instalacion, g.fecha ? 'evaluado ' + g.fecha : ''].filter(Boolean).join(' · ')) + '</span></span></label>';
+      }).join('')
+      : '<div style="font-size:13px;color:var(--ink3)">Aún no hay postulantes con Informe RH guardado. Abra la ficha de un postulante → 📄 Informe RH y guárdelo.</div>')
+    + '</div>'
+    + '<div class="rh-pie"><span id="pl-contar" style="margin-right:auto;font-size:12.5px;color:var(--ink3)"></span>'
+    + '<button class="rs-btn prim" id="pl-generar" disabled onclick="abrirPlanillaEnvio([].map.call(document.querySelectorAll(\'.pl-chk:checked\'), function(x){ return x.value; }))">Generar planilla</button></div></div>';
+  document.body.appendChild(ov);
+}
+function _plContar() {
+  var n = document.querySelectorAll('.pl-chk:checked').length, b = document.getElementById('pl-generar'), t = document.getElementById('pl-contar');
+  if (b) b.disabled = !n;
+  if (t) t.textContent = n ? n + (n === 1 ? ' seleccionado' : ' seleccionados') : '';
 }
 
 // Tabla con estilos en línea: así se conserva el formato al pegarla en Outlook o Gmail
