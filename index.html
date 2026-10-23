@@ -14128,7 +14128,8 @@ async function _rhRedactar() {
     });
     var j = await r.json().catch(function(){ return {}; });
     if (!r.ok || !j.texto) throw new Error(j.error || (r.status === 404 ? 'La función de redacción aún no está instalada en Supabase.' : 'Error ' + r.status));
-    var nom = ((c.nombre || '') + ' ' + (c.apellido || '')).trim();
+    // La primera frase del informe ya lleva el nombre completo: aquí basta el primer nombre
+    var nom = ((c.nombre || '').trim().split(/\s+/)[0]) || ((c.nombre || '') + ' ' + (c.apellido || '')).trim();
     if (ta) ta.value = j.texto.replace(/\[NOMBRE\]/g, nom);
     if (tr && Array.isArray(j.refuerzo) && j.refuerzo.length) tr.value = _rhMayusTras2p(j.refuerzo.join('\n'));
     toast('✨ Texto redactado: revíselo antes de generar el PDF', 'ok');
