@@ -14337,7 +14337,7 @@ function _rhArmarPdf(c, d, nom) {
   [['Nombre:', nom], ['Edad:', c.edad ? c.edad + ' años' : ''], ['Comuna:', c.comuna || '']].forEach(function(r) {
     fila([celda(0.24, AZ, txt(r[0], { b: true })), celda(0.76, null, txt(r[1]))]);
   });
-  titulo('A.- EVALUACIÓN PSICOLABORAL', 13, 7, 6, 2.6);
+  titulo('A.- EVALUACIÓN PSICO LABORAL', 13, 7, 6, 2.6);
   fila([celda(0.24, AZ, txt('Fecha de evaluación:', { b: true })), celda(0.76, null, txt(d.fecha || ''))]);
   fila([celda(0.24, AZ, txt('Categoría:', { b: true })), celda(0.76, null, function(){ return pila(_RH_CAT, d.categoria, 16); })]);
   fila([celda(0.24, AZ, txt('Atención a Público:', { b: true })), celda(0.76, null, function(){ return pila([['si','Recomendable'],['no','No Recomendable']], d.publico, 16); })], { despues: 7 });
@@ -14392,7 +14392,7 @@ function _rhArmarPdf(c, d, nom) {
 
   // ── Hoja 6: verificación de domicilio y cierre ──
   seccion();
-  titulo('C. VERIFICACIÓN DE DOMICILIO', PT, 0, 4);
+  titulo('C. VERIFICACION DE DOMICILIO', PT, 0, 4);
   fila([celda(1, AZ, txt('Requiere verificación de domicilio por falta de recomendaciones: *'))]);
   fila([celda(1, null, function(){ return pila([['si','Si'],['no','No']], '', 10); })], { despues: 8 });
   ['SUPERVISOR ENTREVISTADOR', 'VERIFICADOR DE DOMICILIO', 'CIERRE'].forEach(function(t) {
@@ -14408,7 +14408,7 @@ function _rhArmarPdf(c, d, nom) {
     J.rect(ML, MT, W, HDR); J.line(x1, MT, x1, MT + HDR); J.line(x2, MT, x2, MT + HDR); J.line(x3, MT, x3, MT + HDR);
     J.line(x2, MT + 11, x3, MT + 11); J.line(x2, MT + 22, x3, MT + 22);
     fuente(44, true, 'helvetica'); J.text('RH', ML + cw2[0] / 2, MT + HDR / 2 + 5.6, { align: 'center' });
-    fuente(11, true, 'helvetica'); J.text(['INFORME PSICOLABORAL', 'VERIFICACIÓN DE DOMICILIO'], x1 + cw2[1] / 2, MT + HDR / 2 - 0.8, { align: 'center', lineHeightFactor: 1.25 });
+    fuente(11, true, 'helvetica'); J.text(['INFORME PSICOLABORAL', 'VERIFICACION DE DOMICILIO'], x1 + cw2[1] / 2, MT + HDR / 2 - 0.8, { align: 'center', lineHeightFactor: 1.25 });
     fuente(13, true, 'helvetica'); J.text('R-GP-054', x2 + cw2[2] / 2, MT + 7.4, { align: 'center' }); J.text('I-GP-001', x2 + cw2[2] / 2, MT + 18.4, { align: 'center' });
     fuente(9, true, 'helvetica'); J.text(['Versión: 03', 'Página ' + n + ' de ' + N], x2 + cw2[2] / 2, MT + 27.2, { align: 'center', lineHeightFactor: 1.25 });
     fuente(11.5, true, 'helvetica'); J.text(['Nivel de', 'Seguridad'], x3 + 2.2, MT + 5, { lineHeightFactor: 1.15 });
