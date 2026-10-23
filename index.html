@@ -8045,6 +8045,124 @@ function _cargosParaFiltro(cands) {
   return out;
 }
 
+// Estilos DISC por combinación de factor primario y secundario.
+// Redacción neutra en género y descriptiva: se describen conductas y preferencias,
+// no rasgos de la persona; las limitaciones se formulan como riesgos situacionales. Global: también los usa el Informe RH.
+var _DISC_PROFILES = {
+  D:  { name:'Dominancia',
+        tagline:'Orientación a la acción y a los resultados. Decide con rapidez, se expresa de forma directa y asume el control en situaciones exigentes.',
+        fortalezas:['Toma decisiones con rapidez, incluso con información incompleta.','Asume la conducción en situaciones de crisis o alta presión.','Impulsa al equipo hacia resultados concretos con autonomía.','Aborda los conflictos de manera directa y sin postergarlos.'],
+        dificultades:['Su ritmo y franqueza pueden percibirse como impaciencia o falta de tacto.','Al concentrarse en el resultado, puede pasar por alto detalles o procedimientos.','Tiende a retener el control y le cuesta delegar.','Su nivel de exigencia ante los errores puede generar tensión en el equipo.'],
+        motivaciones:['Autonomía para tomar decisiones.','Desafíos nuevos y metas exigentes.','Reconocimiento por logros concretos.'],
+        frustraciones:['Procesos lentos o trámites que no agregan valor.','Supervisión excesivamente estrecha.','Tareas rutinarias sin desafío.'],
+        trabajaMejorCon:'Estilos S, que aportan constancia en la ejecución, y C, que cuidan los detalles y la calidad. Este estilo aporta dirección y decisión; los otros aseguran que lo acordado se ejecute bien.' },
+  I:  { name:'Influencia',
+        tagline:'Orientación a las personas y a la comunicación. Se expresa con entusiasmo, persuade con facilidad y contribuye a un buen clima de trabajo.',
+        fortalezas:['Motiva al equipo y transmite energía.','Genera confianza con rapidez en personas nuevas y clientes.','Comunica con claridad y capacidad de persuasión.','Ayuda a resolver tensiones interpersonales con empatía y buen humor.'],
+        dificultades:['Puede prestar menos atención a los detalles y al seguimiento de tareas.','Su entusiasmo puede llevarle a comprometerse con más de lo que alcanza a cumplir.','Puede perder motivación en tareas rutinarias o con poca interacción.','La interacción social puede restar tiempo a las tareas individuales.'],
+        motivaciones:['Reconocimiento y valoración de su aporte.','Variedad, interacción y proyectos nuevos.','Ambientes con buenas relaciones de trabajo.'],
+        frustraciones:['Trabajo aislado, sin contacto con otras personas.','Falta de reconocimiento.','Rutinas muy estructuradas o repetitivas.'],
+        trabajaMejorCon:'Estilos C, que aportan estructura, y S, que dan seguimiento. Este estilo aporta energía y visión; los otros aseguran que las ideas se concreten y que se cumplan los procedimientos.' },
+  S:  { name:'Estabilidad',
+        tagline:'Orientación a la constancia y la colaboración. Trabaja con paciencia, cumple sus compromisos y aporta estabilidad y previsibilidad al equipo.',
+        fortalezas:['Cumple sus compromisos sin necesidad de recordatorios.','Aporta calma al equipo en momentos de tensión.','Construye relaciones de confianza duraderas.','Escucha con atención y hace que las demás personas se sientan consideradas.'],
+        dificultades:['Los cambios repentinos pueden requerirle más tiempo de adaptación.','Puede esperar a que se lo pidan antes de tomar la iniciativa.','Tiende a evitar los conflictos, incluso cuando abordarlos es parte de su rol.'],
+        motivaciones:['Seguridad y un entorno predecible.','Reconocimiento por su constancia.','Relaciones de trabajo cercanas.'],
+        frustraciones:['Cambios frecuentes o sin una explicación clara.','Incertidumbre prolongada o roles poco definidos.','Presión para decidir sin tiempo para evaluar.'],
+        trabajaMejorCon:'Estilos D, que dan dirección, e I, que aportan dinamismo. Este estilo aporta la constancia y la ejecución confiable que permiten dar continuidad a lo que los otros impulsan.' },
+  C:  { name:'Cumplimiento',
+        tagline:'Orientación a la calidad y la precisión. Analiza antes de actuar, sigue las normas y prioriza hacer las cosas bien por sobre hacerlas rápido.',
+        fortalezas:['Detecta errores, inconsistencias y riesgos con anticipación.','Entrega trabajo de alta calidad y bien documentado.','Sigue protocolos y normativas de manera consistente.','Fundamenta sus posiciones en evidencia y la solicita antes de cambiar de opinión.'],
+        dificultades:['En entornos de alta velocidad, su cautela puede percibirse como lentitud.','Le cuesta decidir cuando la información está incompleta.','Su búsqueda de precisión puede retrasar entregas en trabajos colaborativos.'],
+        motivaciones:['Calidad, exactitud y normas claras.','Reconocimiento por su conocimiento técnico y su rigor.','Procedimientos bien definidos.'],
+        frustraciones:['Imprecisión, errores o normas ambiguas.','Presión para actuar sin datos suficientes.','Decisiones tomadas sin análisis previo.'],
+        trabajaMejorCon:'Estilos D, que impulsan la acción, e I, que comunican y generan entusiasmo. Este estilo aporta la profundidad de análisis y el control de calidad que complementan a los demás.' },
+  DI: { name:'Dominancia-Influencia',
+        tagline:'Dinamismo y capacidad de convocatoria. Combina orientación a resultados con influencia sobre las personas.',
+        fortalezas:['Conduce con energía: decide, inspira y moviliza al equipo.','Genera entusiasmo en torno a metas exigentes.','Se desenvuelve con agilidad en entornos cambiantes sin perder el rumbo.','Destaca en funciones comerciales, de liderazgo visible o de coordinación de proyectos.'],
+        dificultades:['Puede restar atención a los detalles y al seguimiento operativo.','Tiende a abarcar muchos proyectos a la vez, con riesgo para la calidad.','Su presencia puede restar espacio a la participación de otras personas del equipo.'],
+        motivaciones:['Visibilidad, impacto y reconocimiento de su liderazgo.','Proyectos nuevos con desafío y autonomía.','Espacios donde pueda influir y decidir.'],
+        frustraciones:['Procesos lentos o supervisión excesiva.','Falta de autonomía para actuar según su criterio.','Tareas rutinarias sin impacto visible.'],
+        trabajaMejorCon:'Estilos S y C, que aportan estructura, seguimiento y control de calidad. Este estilo aporta energía y dirección; los otros aseguran que los proyectos lleguen a buen término.' },
+  DS: { name:'Dominancia-Estabilidad',
+        tagline:'Firmeza y constancia. Decide cuando es necesario y sostiene el esfuerzo con paciencia hasta lograr el resultado.',
+        fortalezas:['Ejecuta con convicción y persistencia hasta completar lo que inicia.','Mantiene la calma en situaciones de alta presión.','Cumple de forma confiable sin necesidad de supervisión estrecha.'],
+        dificultades:['Puede mostrar poca flexibilidad ante cambios de estrategia.','Los entornos o métodos muy distintos a los habituales pueden requerirle más tiempo de adaptación.','Expresa poco sus emociones, lo que puede dificultar que el equipo interprete sus reacciones.'],
+        motivaciones:['Logros sostenidos y reconocimiento por resultados consistentes.','Estabilidad con autonomía para conducir.'],
+        frustraciones:['Cambios de dirección sin justificación clara.','Pérdida de control sobre los resultados por factores externos.'],
+        trabajaMejorCon:'Estilos I, que aportan comunicación y dinamismo, y C, que aportan análisis. Este estilo aporta dirección firme y ejecución constante.' },
+  DC: { name:'Dominancia-Cumplimiento',
+        tagline:'Exigencia y precisión. Combina un alto estándar de calidad con una fuerte orientación al resultado.',
+        fortalezas:['Toma decisiones fundamentadas bajo presión, combinando rapidez y rigor.','Mantiene estándares de calidad altos en su trabajo y en el del equipo.','Anticipa errores y riesgos antes de que se transformen en problemas.'],
+        dificultades:['Su nivel de exigencia puede generar tensión en el equipo.','La combinación de urgencia y búsqueda de precisión puede dificultar algunas decisiones.','Tolera poco la imprecisión o el trabajo que no cumple el estándar.'],
+        motivaciones:['Excelencia técnica, autoridad basada en la competencia y resultados bien ejecutados.'],
+        frustraciones:['Trabajo poco riguroso o errores que se repiten.','Decisiones tomadas sin datos ni análisis previo.'],
+        trabajaMejorCon:'Estilos I, que cuidan el clima del equipo, y S, que dan constancia a la ejecución. Este estilo aporta calidad técnica y foco en el resultado.' },
+  ID: { name:'Influencia-Dominancia',
+        tagline:'Iniciativa y sociabilidad. Lidera con entusiasmo y convicción, y moviliza a otras personas hacia sus ideas.',
+        fortalezas:['Genera entusiasmo en torno a sus ideas y las lleva a la acción.','Decide con rapidez en entornos dinámicos.','Construye redes de apoyo y las moviliza hacia los objetivos.'],
+        dificultades:['Puede iniciar más proyectos de los que alcanza a cerrar.','Puede perder motivación en tareas rutinarias u operativas.','En ocasiones se compromete antes de evaluar todas las consecuencias.'],
+        motivaciones:['Proyectos nuevos, impacto visible y liderazgo con autonomía.'],
+        frustraciones:['Tareas administrativas o procedimientos repetitivos.','Falta de reconocimiento de sus ideas e iniciativas.'],
+        trabajaMejorCon:'Estilos S, que ejecutan con constancia, y C, que estructuran y controlan la calidad. Este estilo aporta visión e impulso; los otros aseguran que los proyectos se completen con rigor.' },
+  IS: { name:'Influencia-Estabilidad',
+        tagline:'Calidez y colaboración. Combina entusiasmo en el trato con paciencia y constancia en el trabajo en equipo.',
+        fortalezas:['Construye relaciones duraderas y favorece un buen clima de equipo.','Escucha y motiva a la vez: las personas se sienten valoradas.','Contribuye a mediar en conflictos interpersonales.'],
+        dificultades:['Puede postergar conversaciones difíciles para preservar la armonía del grupo.','Le cuesta tomar decisiones que afecten negativamente a personas cercanas.','Puede comprometerse con lo que otros le piden aunque no le alcance el tiempo, para no decir que no.'],
+        motivaciones:['Armonía, conexión y sentido de pertenencia al equipo.'],
+        frustraciones:['Conflictos interpersonales prolongados o alta competencia interna.'],
+        trabajaMejorCon:'Estilos D, que asumen las decisiones difíciles, y C, que estructuran los procedimientos. Este estilo aporta cohesión y motivación al equipo.' },
+  IC: { name:'Influencia-Cumplimiento',
+        tagline:'Persuasión con método. Influye en otras personas sin descuidar los procedimientos.',
+        fortalezas:['Comunica normas y procedimientos de manera clara y convincente.','Genera confianza combinando cercanía con rigor técnico.','Combina organización y sociabilidad, algo muy valioso en funciones de coordinación.'],
+        dificultades:['Puede buscar mucho consenso antes de actuar, lo que alarga los tiempos de decisión.','Le cuesta avanzar cuando los datos no son claros o los procedimientos son ambiguos.','Puede depender de la aprobación de otras personas para validar su trabajo.'],
+        motivaciones:['Reconocimiento por la calidad de su trabajo y de sus relaciones.'],
+        frustraciones:['Improvisación, falta de procedimientos o cambios normativos frecuentes.'],
+        trabajaMejorCon:'Estilos D, que deciden con rapidez, y S, que aportan constancia en la ejecución. Este estilo asegura una comunicación clara y el respeto de los procedimientos.' },
+  SD: { name:'Estabilidad-Dominancia',
+        tagline:'Constancia con iniciativa. Trabaja desde la estabilidad y asume desafíos cuando la situación lo requiere.',
+        fortalezas:['Ejecuta sin necesidad de supervisión y mantiene el rumbo bajo presión.','Toma la iniciativa cuando la situación lo requiere, sin esperar instrucciones.'],
+        dificultades:['Puede tardar en cambiar de estrategia cuando el entorno lo exige.','Expresa poco sus emociones, lo que puede dificultar que el equipo interprete sus reacciones.','Puede sostener su postura con obstinación cuando cree que el método conocido es el correcto.'],
+        motivaciones:['Control con estabilidad y logros sostenidos en el tiempo.'],
+        frustraciones:['Cambios frecuentes de dirección u objetivos sin justificación.'],
+        trabajaMejorCon:'Estilos I, que aportan comunicación y dinamismo, y C, que aportan análisis en profundidad. Este estilo aporta dirección firme y constancia en la ejecución.' },
+  SI: { name:'Estabilidad-Influencia',
+        tagline:'Empatía y colaboración. Combina paciencia y constancia con calidez y una comunicación cercana.',
+        fortalezas:['Genera confianza y bienestar en el equipo de forma genuina.','Construye relaciones de largo plazo basadas en el respeto mutuo.','Escucha con atención: las personas sienten que sus opiniones son consideradas.'],
+        dificultades:['Puede evitar confrontaciones necesarias para mantener la armonía.','Le cuesta poner límites o entregar retroalimentación negativa de forma directa.','Puede priorizar la armonía del grupo por sobre el cumplimiento de metas o normas.'],
+        motivaciones:['Armonía en el grupo y contribuir al bienestar del equipo.'],
+        frustraciones:['Conflictos prolongados o alta competencia interna.'],
+        trabajaMejorCon:'Estilos D, que asumen las decisiones difíciles, y C, que estructuran los procedimientos. Este estilo aporta cohesión y bienestar al equipo.' },
+  SC: { name:'Estabilidad-Cumplimiento',
+        tagline:'Método y confiabilidad. Combina constancia con rigor normativo, con un desempeño consistente y predecible.',
+        fortalezas:['Sigue protocolos y procedimientos con gran confiabilidad.','Comete pocos errores: trabaja con constancia y revisa antes de entregar.'],
+        dificultades:['Puede mostrar resistencia a los cambios, lo que ralentiza procesos de mejora.','Puede tardar en reaccionar ante crisis que exigen actuar fuera del protocolo.','Puede tomar poca iniciativa y esperar instrucciones antes de actuar.'],
+        motivaciones:['Claridad, orden y reconocimiento por su consistencia y precisión.'],
+        frustraciones:['Desorden organizacional, cambios frecuentes de procedimiento o normas ambiguas.'],
+        trabajaMejorCon:'Estilos D, que aportan dirección y sentido de urgencia, e I, que aportan dinamismo. Este estilo aporta una base sólida de confiabilidad y cumplimiento.' },
+  CD: { name:'Cumplimiento-Dominancia',
+        tagline:'Análisis con foco en el resultado. Decide a partir de datos y mantiene una alta exigencia de calidad.',
+        fortalezas:['Fundamenta sus decisiones con datos y evidencia sólida.','Genera credibilidad técnica y conduce con firmeza.'],
+        dificultades:['Su estilo directo y analítico puede percibirse como distante o poco empático.','Le cuesta avanzar con rapidez cuando la información está incompleta, incluso bajo presión.','Puede señalar los errores de otras personas con dureza y tolerar poco las diferencias de criterio.'],
+        motivaciones:['Excelencia técnica, autoridad basada en el conocimiento y resultados bien ejecutados.'],
+        frustraciones:['Trabajo poco riguroso o errores que se repiten.'],
+        trabajaMejorCon:'Estilos I, que cuidan el clima del equipo, y S, que aportan constancia. Este estilo asegura la calidad técnica y el resultado.' },
+  CI: { name:'Cumplimiento-Influencia',
+        tagline:'Precisión con habilidad de relación. Combina atención al detalle con una comunicación clara y cercana.',
+        fortalezas:['Comunica con claridad y precisión: las personas entienden exactamente lo que se espera.','Combina organización y empatía, algo muy valioso en funciones de coordinación o formación.'],
+        dificultades:['Puede buscar mucho consenso o validación antes de actuar.','Le cuesta avanzar con información incompleta o en escenarios ambiguos.','Puede evitar asumir riesgos o responsabilidades sin el respaldo de otras personas.'],
+        motivaciones:['Reconocimiento por la calidad de su trabajo y de sus relaciones.'],
+        frustraciones:['Improvisación o presión para decidir sin datos ni consulta al equipo.'],
+        trabajaMejorCon:'Estilos D, que impulsan la acción, y S, que aportan constancia en la ejecución. Este estilo asegura una comunicación precisa y el respeto de los procedimientos.' },
+  CS: { name:'Cumplimiento-Estabilidad',
+        tagline:'Sistematicidad y confiabilidad. Combina alta adherencia a las normas con constancia y bajo nivel de conflicto.',
+        fortalezas:['Trabaja de forma constante y precisa, con muy pocos errores.','Su desempeño es consistente: jefaturas y equipo saben qué esperar.'],
+        dificultades:['Puede mostrar resistencia a los cambios, lo que ralentiza procesos de mejora o adaptación.','Puede tomar poca iniciativa más allá de sus funciones definidas.','Puede volverse perfeccionista y demorar entregas por revisar en exceso.'],
+        motivaciones:['Normas claras, orden y reconocimiento por su consistencia y precisión.'],
+        frustraciones:['Desorden, cambios frecuentes de procedimiento o normas ambiguas.'],
+        trabajaMejorCon:'Estilos D, que aportan dirección y sentido de urgencia, e I, que aportan dinamismo. Este estilo aporta una base sólida de rigor y confiabilidad.' },
+};
+
 function buildReportHtml(c, withClose) {
   var s = c.scores || {};
   var nombre = htmlEsc(((c.nombre||'') + ' ' + (c.apellido||'')).trim()) || '—';
@@ -8075,123 +8193,6 @@ function buildReportHtml(c, withClose) {
     ML: { hi:'Alta motivación laboral intrínseca. Muestra compromiso proactivo con sus tareas, busca superar los estándares mínimos y mantiene el entusiasmo ante los desafíos.',
           md:'Motivación laboral adecuada. Cumple con sus funciones de forma consistente, aunque puede requerir reconocimiento externo para sostener el desempeño.',
           lo:'Baja motivación laboral aparente. Puede mostrar dificultades para mantenerse comprometido/a con las tareas, especialmente en períodos sin reconocimiento o variedad.' },
-  };
-  // Estilos DISC por combinación de factor primario y secundario.
-  // Redacción neutra en género y descriptiva: se describen conductas y preferencias,
-  // no rasgos de la persona; las limitaciones se formulan como riesgos situacionales.
-  var _DISC_PROFILES = {
-    D:  { name:'Dominancia',
-          tagline:'Orientación a la acción y a los resultados. Decide con rapidez, se expresa de forma directa y asume el control en situaciones exigentes.',
-          fortalezas:['Toma decisiones con rapidez, incluso con información incompleta.','Asume la conducción en situaciones de crisis o alta presión.','Impulsa al equipo hacia resultados concretos con autonomía.','Aborda los conflictos de manera directa y sin postergarlos.'],
-          dificultades:['Su ritmo y franqueza pueden percibirse como impaciencia o falta de tacto.','Al concentrarse en el resultado, puede pasar por alto detalles o procedimientos.','Tiende a retener el control y le cuesta delegar.','Su nivel de exigencia ante los errores puede generar tensión en el equipo.'],
-          motivaciones:['Autonomía para tomar decisiones.','Desafíos nuevos y metas exigentes.','Reconocimiento por logros concretos.'],
-          frustraciones:['Procesos lentos o trámites que no agregan valor.','Supervisión excesivamente estrecha.','Tareas rutinarias sin desafío.'],
-          trabajaMejorCon:'Estilos S, que aportan constancia en la ejecución, y C, que cuidan los detalles y la calidad. Este estilo aporta dirección y decisión; los otros aseguran que lo acordado se ejecute bien.' },
-    I:  { name:'Influencia',
-          tagline:'Orientación a las personas y a la comunicación. Se expresa con entusiasmo, persuade con facilidad y contribuye a un buen clima de trabajo.',
-          fortalezas:['Motiva al equipo y transmite energía.','Genera confianza con rapidez en personas nuevas y clientes.','Comunica con claridad y capacidad de persuasión.','Ayuda a resolver tensiones interpersonales con empatía y buen humor.'],
-          dificultades:['Puede prestar menos atención a los detalles y al seguimiento de tareas.','Su entusiasmo puede llevarle a comprometerse con más de lo que alcanza a cumplir.','Puede perder motivación en tareas rutinarias o con poca interacción.','La interacción social puede restar tiempo a las tareas individuales.'],
-          motivaciones:['Reconocimiento y valoración de su aporte.','Variedad, interacción y proyectos nuevos.','Ambientes con buenas relaciones de trabajo.'],
-          frustraciones:['Trabajo aislado, sin contacto con otras personas.','Falta de reconocimiento.','Rutinas muy estructuradas o repetitivas.'],
-          trabajaMejorCon:'Estilos C, que aportan estructura, y S, que dan seguimiento. Este estilo aporta energía y visión; los otros aseguran que las ideas se concreten y que se cumplan los procedimientos.' },
-    S:  { name:'Estabilidad',
-          tagline:'Orientación a la constancia y la colaboración. Trabaja con paciencia, cumple sus compromisos y aporta estabilidad y previsibilidad al equipo.',
-          fortalezas:['Cumple sus compromisos sin necesidad de recordatorios.','Aporta calma al equipo en momentos de tensión.','Construye relaciones de confianza duraderas.','Escucha con atención y hace que las demás personas se sientan consideradas.'],
-          dificultades:['Los cambios repentinos pueden requerirle más tiempo de adaptación.','Puede esperar a que se lo pidan antes de tomar la iniciativa.','Tiende a evitar los conflictos, incluso cuando abordarlos es parte de su rol.'],
-          motivaciones:['Seguridad y un entorno predecible.','Reconocimiento por su constancia.','Relaciones de trabajo cercanas.'],
-          frustraciones:['Cambios frecuentes o sin una explicación clara.','Incertidumbre prolongada o roles poco definidos.','Presión para decidir sin tiempo para evaluar.'],
-          trabajaMejorCon:'Estilos D, que dan dirección, e I, que aportan dinamismo. Este estilo aporta la constancia y la ejecución confiable que permiten dar continuidad a lo que los otros impulsan.' },
-    C:  { name:'Cumplimiento',
-          tagline:'Orientación a la calidad y la precisión. Analiza antes de actuar, sigue las normas y prioriza hacer las cosas bien por sobre hacerlas rápido.',
-          fortalezas:['Detecta errores, inconsistencias y riesgos con anticipación.','Entrega trabajo de alta calidad y bien documentado.','Sigue protocolos y normativas de manera consistente.','Fundamenta sus posiciones en evidencia y la solicita antes de cambiar de opinión.'],
-          dificultades:['En entornos de alta velocidad, su cautela puede percibirse como lentitud.','Le cuesta decidir cuando la información está incompleta.','Su búsqueda de precisión puede retrasar entregas en trabajos colaborativos.'],
-          motivaciones:['Calidad, exactitud y normas claras.','Reconocimiento por su conocimiento técnico y su rigor.','Procedimientos bien definidos.'],
-          frustraciones:['Imprecisión, errores o normas ambiguas.','Presión para actuar sin datos suficientes.','Decisiones tomadas sin análisis previo.'],
-          trabajaMejorCon:'Estilos D, que impulsan la acción, e I, que comunican y generan entusiasmo. Este estilo aporta la profundidad de análisis y el control de calidad que complementan a los demás.' },
-    DI: { name:'Dominancia-Influencia',
-          tagline:'Dinamismo y capacidad de convocatoria. Combina orientación a resultados con influencia sobre las personas.',
-          fortalezas:['Conduce con energía: decide, inspira y moviliza al equipo.','Genera entusiasmo en torno a metas exigentes.','Se desenvuelve con agilidad en entornos cambiantes sin perder el rumbo.','Destaca en funciones comerciales, de liderazgo visible o de coordinación de proyectos.'],
-          dificultades:['Puede restar atención a los detalles y al seguimiento operativo.','Tiende a abarcar muchos proyectos a la vez, con riesgo para la calidad.','Su presencia puede restar espacio a la participación de otras personas del equipo.'],
-          motivaciones:['Visibilidad, impacto y reconocimiento de su liderazgo.','Proyectos nuevos con desafío y autonomía.','Espacios donde pueda influir y decidir.'],
-          frustraciones:['Procesos lentos o supervisión excesiva.','Falta de autonomía para actuar según su criterio.','Tareas rutinarias sin impacto visible.'],
-          trabajaMejorCon:'Estilos S y C, que aportan estructura, seguimiento y control de calidad. Este estilo aporta energía y dirección; los otros aseguran que los proyectos lleguen a buen término.' },
-    DS: { name:'Dominancia-Estabilidad',
-          tagline:'Firmeza y constancia. Decide cuando es necesario y sostiene el esfuerzo con paciencia hasta lograr el resultado.',
-          fortalezas:['Ejecuta con convicción y persistencia hasta completar lo que inicia.','Mantiene la calma en situaciones de alta presión.','Cumple de forma confiable sin necesidad de supervisión estrecha.'],
-          dificultades:['Puede mostrar poca flexibilidad ante cambios de estrategia.','Los entornos o métodos muy distintos a los habituales pueden requerirle más tiempo de adaptación.','Expresa poco sus emociones, lo que puede dificultar que el equipo interprete sus reacciones.'],
-          motivaciones:['Logros sostenidos y reconocimiento por resultados consistentes.','Estabilidad con autonomía para conducir.'],
-          frustraciones:['Cambios de dirección sin justificación clara.','Pérdida de control sobre los resultados por factores externos.'],
-          trabajaMejorCon:'Estilos I, que aportan comunicación y dinamismo, y C, que aportan análisis. Este estilo aporta dirección firme y ejecución constante.' },
-    DC: { name:'Dominancia-Cumplimiento',
-          tagline:'Exigencia y precisión. Combina un alto estándar de calidad con una fuerte orientación al resultado.',
-          fortalezas:['Toma decisiones fundamentadas bajo presión, combinando rapidez y rigor.','Mantiene estándares de calidad altos en su trabajo y en el del equipo.','Anticipa errores y riesgos antes de que se transformen en problemas.'],
-          dificultades:['Su nivel de exigencia puede generar tensión en el equipo.','La combinación de urgencia y búsqueda de precisión puede dificultar algunas decisiones.','Tolera poco la imprecisión o el trabajo que no cumple el estándar.'],
-          motivaciones:['Excelencia técnica, autoridad basada en la competencia y resultados bien ejecutados.'],
-          frustraciones:['Trabajo poco riguroso o errores que se repiten.','Decisiones tomadas sin datos ni análisis previo.'],
-          trabajaMejorCon:'Estilos I, que cuidan el clima del equipo, y S, que dan constancia a la ejecución. Este estilo aporta calidad técnica y foco en el resultado.' },
-    ID: { name:'Influencia-Dominancia',
-          tagline:'Iniciativa y sociabilidad. Lidera con entusiasmo y convicción, y moviliza a otras personas hacia sus ideas.',
-          fortalezas:['Genera entusiasmo en torno a sus ideas y las lleva a la acción.','Decide con rapidez en entornos dinámicos.','Construye redes de apoyo y las moviliza hacia los objetivos.'],
-          dificultades:['Puede iniciar más proyectos de los que alcanza a cerrar.','Puede perder motivación en tareas rutinarias u operativas.','En ocasiones se compromete antes de evaluar todas las consecuencias.'],
-          motivaciones:['Proyectos nuevos, impacto visible y liderazgo con autonomía.'],
-          frustraciones:['Tareas administrativas o procedimientos repetitivos.','Falta de reconocimiento de sus ideas e iniciativas.'],
-          trabajaMejorCon:'Estilos S, que ejecutan con constancia, y C, que estructuran y controlan la calidad. Este estilo aporta visión e impulso; los otros aseguran que los proyectos se completen con rigor.' },
-    IS: { name:'Influencia-Estabilidad',
-          tagline:'Calidez y colaboración. Combina entusiasmo en el trato con paciencia y constancia en el trabajo en equipo.',
-          fortalezas:['Construye relaciones duraderas y favorece un buen clima de equipo.','Escucha y motiva a la vez: las personas se sienten valoradas.','Contribuye a mediar en conflictos interpersonales.'],
-          dificultades:['Puede postergar conversaciones difíciles para preservar la armonía del grupo.','Le cuesta tomar decisiones que afecten negativamente a personas cercanas.','Puede comprometerse con lo que otros le piden aunque no le alcance el tiempo, para no decir que no.'],
-          motivaciones:['Armonía, conexión y sentido de pertenencia al equipo.'],
-          frustraciones:['Conflictos interpersonales prolongados o alta competencia interna.'],
-          trabajaMejorCon:'Estilos D, que asumen las decisiones difíciles, y C, que estructuran los procedimientos. Este estilo aporta cohesión y motivación al equipo.' },
-    IC: { name:'Influencia-Cumplimiento',
-          tagline:'Persuasión con método. Influye en otras personas sin descuidar los procedimientos.',
-          fortalezas:['Comunica normas y procedimientos de manera clara y convincente.','Genera confianza combinando cercanía con rigor técnico.','Combina organización y sociabilidad, algo muy valioso en funciones de coordinación.'],
-          dificultades:['Puede buscar mucho consenso antes de actuar, lo que alarga los tiempos de decisión.','Le cuesta avanzar cuando los datos no son claros o los procedimientos son ambiguos.','Puede depender de la aprobación de otras personas para validar su trabajo.'],
-          motivaciones:['Reconocimiento por la calidad de su trabajo y de sus relaciones.'],
-          frustraciones:['Improvisación, falta de procedimientos o cambios normativos frecuentes.'],
-          trabajaMejorCon:'Estilos D, que deciden con rapidez, y S, que aportan constancia en la ejecución. Este estilo asegura una comunicación clara y el respeto de los procedimientos.' },
-    SD: { name:'Estabilidad-Dominancia',
-          tagline:'Constancia con iniciativa. Trabaja desde la estabilidad y asume desafíos cuando la situación lo requiere.',
-          fortalezas:['Ejecuta sin necesidad de supervisión y mantiene el rumbo bajo presión.','Toma la iniciativa cuando la situación lo requiere, sin esperar instrucciones.'],
-          dificultades:['Puede tardar en cambiar de estrategia cuando el entorno lo exige.','Expresa poco sus emociones, lo que puede dificultar que el equipo interprete sus reacciones.','Puede sostener su postura con obstinación cuando cree que el método conocido es el correcto.'],
-          motivaciones:['Control con estabilidad y logros sostenidos en el tiempo.'],
-          frustraciones:['Cambios frecuentes de dirección u objetivos sin justificación.'],
-          trabajaMejorCon:'Estilos I, que aportan comunicación y dinamismo, y C, que aportan análisis en profundidad. Este estilo aporta dirección firme y constancia en la ejecución.' },
-    SI: { name:'Estabilidad-Influencia',
-          tagline:'Empatía y colaboración. Combina paciencia y constancia con calidez y una comunicación cercana.',
-          fortalezas:['Genera confianza y bienestar en el equipo de forma genuina.','Construye relaciones de largo plazo basadas en el respeto mutuo.','Escucha con atención: las personas sienten que sus opiniones son consideradas.'],
-          dificultades:['Puede evitar confrontaciones necesarias para mantener la armonía.','Le cuesta poner límites o entregar retroalimentación negativa de forma directa.','Puede priorizar la armonía del grupo por sobre el cumplimiento de metas o normas.'],
-          motivaciones:['Armonía en el grupo y contribuir al bienestar del equipo.'],
-          frustraciones:['Conflictos prolongados o alta competencia interna.'],
-          trabajaMejorCon:'Estilos D, que asumen las decisiones difíciles, y C, que estructuran los procedimientos. Este estilo aporta cohesión y bienestar al equipo.' },
-    SC: { name:'Estabilidad-Cumplimiento',
-          tagline:'Método y confiabilidad. Combina constancia con rigor normativo, con un desempeño consistente y predecible.',
-          fortalezas:['Sigue protocolos y procedimientos con gran confiabilidad.','Comete pocos errores: trabaja con constancia y revisa antes de entregar.'],
-          dificultades:['Puede mostrar resistencia a los cambios, lo que ralentiza procesos de mejora.','Puede tardar en reaccionar ante crisis que exigen actuar fuera del protocolo.','Puede tomar poca iniciativa y esperar instrucciones antes de actuar.'],
-          motivaciones:['Claridad, orden y reconocimiento por su consistencia y precisión.'],
-          frustraciones:['Desorden organizacional, cambios frecuentes de procedimiento o normas ambiguas.'],
-          trabajaMejorCon:'Estilos D, que aportan dirección y sentido de urgencia, e I, que aportan dinamismo. Este estilo aporta una base sólida de confiabilidad y cumplimiento.' },
-    CD: { name:'Cumplimiento-Dominancia',
-          tagline:'Análisis con foco en el resultado. Decide a partir de datos y mantiene una alta exigencia de calidad.',
-          fortalezas:['Fundamenta sus decisiones con datos y evidencia sólida.','Genera credibilidad técnica y conduce con firmeza.'],
-          dificultades:['Su estilo directo y analítico puede percibirse como distante o poco empático.','Le cuesta avanzar con rapidez cuando la información está incompleta, incluso bajo presión.','Puede señalar los errores de otras personas con dureza y tolerar poco las diferencias de criterio.'],
-          motivaciones:['Excelencia técnica, autoridad basada en el conocimiento y resultados bien ejecutados.'],
-          frustraciones:['Trabajo poco riguroso o errores que se repiten.'],
-          trabajaMejorCon:'Estilos I, que cuidan el clima del equipo, y S, que aportan constancia. Este estilo asegura la calidad técnica y el resultado.' },
-    CI: { name:'Cumplimiento-Influencia',
-          tagline:'Precisión con habilidad de relación. Combina atención al detalle con una comunicación clara y cercana.',
-          fortalezas:['Comunica con claridad y precisión: las personas entienden exactamente lo que se espera.','Combina organización y empatía, algo muy valioso en funciones de coordinación o formación.'],
-          dificultades:['Puede buscar mucho consenso o validación antes de actuar.','Le cuesta avanzar con información incompleta o en escenarios ambiguos.','Puede evitar asumir riesgos o responsabilidades sin el respaldo de otras personas.'],
-          motivaciones:['Reconocimiento por la calidad de su trabajo y de sus relaciones.'],
-          frustraciones:['Improvisación o presión para decidir sin datos ni consulta al equipo.'],
-          trabajaMejorCon:'Estilos D, que impulsan la acción, y S, que aportan constancia en la ejecución. Este estilo asegura una comunicación precisa y el respeto de los procedimientos.' },
-    CS: { name:'Cumplimiento-Estabilidad',
-          tagline:'Sistematicidad y confiabilidad. Combina alta adherencia a las normas con constancia y bajo nivel de conflicto.',
-          fortalezas:['Trabaja de forma constante y precisa, con muy pocos errores.','Su desempeño es consistente: jefaturas y equipo saben qué esperar.'],
-          dificultades:['Puede mostrar resistencia a los cambios, lo que ralentiza procesos de mejora o adaptación.','Puede tomar poca iniciativa más allá de sus funciones definidas.','Puede volverse perfeccionista y demorar entregas por revisar en exceso.'],
-          motivaciones:['Normas claras, orden y reconocimiento por su consistencia y precisión.'],
-          frustraciones:['Desorden, cambios frecuentes de procedimiento o normas ambiguas.'],
-          trabajaMejorCon:'Estilos D, que aportan dirección y sentido de urgencia, e I, que aportan dinamismo. Este estilo aporta una base sólida de rigor y confiabilidad.' },
   };
 
   var TAB_ORDER = ['integridad','dc0','pai','disc','pf16','situacional','vigilancia','comprension','normativa_ohs','gonogo','bart'];
@@ -13873,6 +13874,34 @@ function _rhFortDeb(c, niveles, ideales) {
   });
   var h0 = Array.isArray(c.historial) && c.historial[0];
   if (h0 && /guardia|vigilan|seguridad|conserje|portero|control de acceso/i.test(h0.cargo || '')) fort.push('Experiencia como ' + h0.cargo.toLowerCase() + (h0.empresa ? ' en ' + h0.empresa : '') + '.');
+  var s = c.scores || {}, sumar = function(lista, t){ if (t && lista.indexOf(t) === -1) lista.push(t); };
+  // DISC (descriptivo, sin perfil esperado): fortalezas del estilo y riesgos de conducta
+  // de los factores marcados. Un perfil equilibrado no aporta frases.
+  var dc = s.disc, K = ['D', 'I', 'S', 'C'];
+  if (dc && K.every(function(k){ return typeof dc[k] === 'number'; })) {
+    var v = function(k){ return Math.round(dc[k]); }, o = K.slice().sort(function(a, b){ return v(b) - v(a); });
+    if (v(o[0]) - v(o[3]) >= 20) {
+      var prof = _DISC_PROFILES[o[0] + (v(o[1]) >= 55 ? o[1] : '')] || _DISC_PROFILES[o[0]] || {};
+      (prof.fortalezas || []).slice(0, 2).forEach(function(t){ sumar(fort, t); });
+      if (v(o[0]) >= 70) sumar(deb, DISC_RPT.riesgos[o[0]].alto[0]);
+      sumar(deb, (prof.dificultades || [])[0]);
+      if (v(o[3]) < 40) sumar(deb, DISC_RPT.riesgos[o[3]].bajo[0]);
+    }
+  }
+  // Personalidad laboral (descriptiva): lo que aportan y lo que conviene considerar de las
+  // dimensiones altas o bajas. Se omite si la validez de las respuestas es dudosa.
+  var pf = s.pf16;
+  if (pf && _pf16ValidezNivel(_pf16Validez(c, s)).label !== 'Dudosa') {
+    PF16_RPT.orden.forEach(function(k) {
+      if (pf[k] == null || (k === 'EX' && pf._v !== 2)) return;
+      var z = pf16ZoneOf(Math.round(pf[k])); if (z === 'medio') return;
+      var t = PF16_RPT.dim[k][z];
+      sumar(fort, t.aporta);
+      // Ajuste emocional: alto solo advierte deseabilidad social; bajo se informa como rasgo
+      if (k === 'AN') { if (z === 'bajo') sumar(deb, t.txt); }
+      else sumar(deb, t.considerar);
+    });
+  }
   return { fortalezas: fort.join('\n'), debilidades: deb.join('\n') };
 }
 
@@ -13954,7 +13983,7 @@ async function abrirInformeRH(id) {
     + '<div class="field" data-rh="publico"><label>Atención a público <span class="rh-req">*</span></label>' + chips('publico', [['si','Recomendable'],['no','No Recomendable']], d.publico) + '</div>'
     + '<table class="rh-tbl"><thead><tr><th>Competencia</th><th>Nivel ideal</th><th>Nivel obtenido</th><th>Sugerencia</th></tr></thead><tbody>' + filas + '</tbody></table>'
     + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:4px 0 2px"><button class="rs-btn" onclick="_rhRecalcular()">↻ Recalcular desde los resultados</button>'
-    + '<span style="font-size:11.5px;color:var(--ink4)">Vuelve a armar fortalezas y debilidades con los niveles e ideales de la tabla (sin IA). Úselo si cambió niveles o ideales.</span></div>'
+    + '<span style="font-size:11.5px;color:var(--ink4)">Vuelve a armar fortalezas y debilidades con los niveles e ideales de la tabla y los perfiles DISC y Personalidad laboral (sin IA). Úselo si cambió niveles o ideales.</span></div>'
     + '<div class="field"><label>Fortalezas <span style="text-transform:none;font-weight:500">(una por línea)</span></label>' + area('fortalezas', d.fortalezas, 5) + '</div>'
     + '<div class="field"><label>Debilidades <span style="text-transform:none;font-weight:500">(una por línea)</span></label>' + area('debilidades', d.debilidades, 3) + '</div>'
     + sec('Antecedentes laborales')
