@@ -1847,6 +1847,7 @@ body.exam-away #exam-shield{display:flex}
             <option value="contratado">🤝 Contratado</option>
             <option value="descartado">❌ Descartado</option>
           </select>
+          <button id="bulk-planilla" class="btn btn-sm" onclick="abrirPlanillaEnvio()" style="display:none;background:var(--surface);border:1.5px solid var(--accent-m);color:var(--accent)" title="Tabla con los datos básicos para enviar a RRHH por correo">📋 Planilla de envío</button>
           <button id="bulk-del" class="btn btn-outline btn-sm" onclick="deleteSelected()" style="border-color:#fecdd3;color:#be123c;background:var(--surface)">🗑 Eliminar</button>
           <button class="btn btn-outline btn-sm" onclick="clearSelection()" title="Quitar la selección">✕</button>
         </div>
@@ -9630,6 +9631,8 @@ function updateBulkBar() {
     // Seleccionar todos los visibles, solo si quedan sin marcar
     var tot = document.querySelectorAll('.row-chk').length, all = document.getElementById('bulk-all');
     if (all) { all.textContent = 'Seleccionar los ' + tot; all.style.display = tot > checked.length ? '' : 'none'; }
+    var pla = document.getElementById('bulk-planilla');
+    if (pla) pla.style.display = S.role === 'admin' ? 'inline-flex' : 'none';
     var del = document.getElementById('bulk-del');
     if (del) del.textContent = '🗑 Eliminar' + (checked.length > 1 ? ' ' + checked.length : '');
     // Show compare button only when 2-5 completed candidates are selected
@@ -13880,6 +13883,7 @@ var _RH_COMP = [
   { key:'razonamiento',   label:'Razonamiento General',               ideal:'Medio' }
 ];
 var _RH_NIVELES = ['Alto', 'Medio', 'Bajo'];
+var _RH_JORNADAS = [['4x4_rotativo','4x4 rotativo'], ['4x4_dia','4x4 día'], ['4x4_noche','4x4 noche'], ['7x7_noche','7x7 noche'], ['otra','Otra']];
 // Niveles ideales: los define el psicólogo según su organización. Se recuerdan por cargo
 // en este computador para no tener que ingresarlos de nuevo en el siguiente informe.
 function _rhCargoBase(c) { return c.cargo || (PERFIL_META[c.perfil] || {}).label || ''; }
@@ -14001,6 +14005,7 @@ function _rhSugerencias(c) {
   return {
     cargo:_rhCargoBase(c), ideales:ideales,
     lista:'', zonal:'', instalacion:'', recomendacion:'', detalle:'', categoria:cat, publico:'',
+    jornada:'4x4_rotativo', jornada_otra:'', referencia:_canalTxt(c), obs_envio:'',
     fecha:(_momentoTxt(c) || '').slice(0, 10).replace(/-/g, '/'),
     niveles:nv, fuentes:niveles, sinDato:sinDato,
     fortalezas:fd.fortalezas, debilidades:fd.debilidades,
@@ -14066,6 +14071,11 @@ async function abrirInformeRH(id) {
     + '<div class="field"><label>Fono del empleador anterior</label>' + input('fono', d.fono) + '</div></div>'
     + '<div class="field"><label>Nombre y cargo de quien corrobora</label>' + input('corrobora', d.corrobora) + '</div>'
     + '<div class="field"><label>Antecedentes aportados por el empleador anterior</label>' + area('aportados', d.aportados, 3) + '</div>'
+    + sec('Planilla de envío')
+    + '<div class="field"><label>Jornada</label>' + chips('jornada', _RH_JORNADAS, d.jornada).replace('<div class="reg-chips">', '<div class="reg-chips" onchange="var o=document.getElementById(\'rh-jornada-otra-c\');if(o)o.style.display=(document.querySelector(\'input[name=rh-jornada]:checked\')||{}).value===\'otra\'?\'\':\'none\'">')
+    + '<div id="rh-jornada-otra-c" style="margin-top:6px;display:' + (d.jornada === 'otra' ? '' : 'none') + '">' + input('jornada_otra', d.jornada_otra, 'Ej: 5x2 día') + '</div></div>'
+    + '<div class="rh-grid2"><div class="field"><label>Referencia (cómo llegó)</label>' + input('referencia', d.referencia, 'Ej: WhatsApp, Referido: Juan Pérez') + '</div>'
+    + '<div class="field"><label>Observación para el envío</label>' + input('obs_envio', d.obs_envio, 'Ej: Comprobar estado físico en terreno') + '</div></div>'
     + sec('Cierre')
     + '<div class="field" data-rh="recomendacion"><label>Recomendación de contratación <span class="rh-req">*</span></label>' + chips('recomendacion', [['plazo_fijo','Plazo fijo'],['indefinido','Indefinido'],['no_contratar','No contratar']], d.recomendacion) + '</div>'
     + '<div class="field"><label>Detalle de la recomendación <span style="text-transform:none;font-weight:500">(opcional)</span></label>' + input('detalle', d.detalle, 'Ej: con inducción clara y seguimiento cercano en terreno de la jefatura directa') + '</div>'
@@ -14092,6 +14102,7 @@ function _rhLeer() {
   _RH_COMP.forEach(function(k){ var x = v('n-' + k.key); if (x) niveles[k.key] = x; ideales[k.key] = v('i-' + k.key) || k.ideal; });
   return { cargo:v('cargo'), ideales:ideales, lista:r('lista'), zonal:r('zonal'), instalacion:v('instalacion'), recomendacion:r('recomendacion'), detalle:v('detalle'), categoria:r('categoria'), publico:r('publico'), fecha:v('fecha'), psicologo:v('psicologo'),
            niveles:niveles, fortalezas:v('fortalezas'), debilidades:v('debilidades'), empresa:v('empresa'), corrobora:v('corrobora'),
+           jornada:r('jornada'), jornada_otra:v('jornada_otra'), referencia:v('referencia'), obs_envio:v('obs_envio'),
            fono:v('fono'), aportados:v('aportados'), observaciones:v('observaciones'), refuerzo:v('refuerzo'), actualizado:new Date().toISOString() };
 }
 // Redacción con IA (Edge Function psicoeval-redactar). Solo viajan textos del informe,
@@ -14395,6 +14406,126 @@ function _rhArmarPdf(c, d, nom) {
   }
   J.setProperties({ title: nom + ' IPS', subject: 'Informe psicolaboral R-GP-054' });
   return J;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PLANILLA DE ENVÍO — tabla con los datos básicos de los postulantes que se envían
+//  a RRHH por correo (mismo formato que el correo habitual). Sale del Informe RH de
+//  cada seleccionado; se copia para pegar en el correo o se descarga en Excel.
+// ═══════════════════════════════════════════════════════════
+var _PL_COLS = ['Fecha envío', 'Zonal', 'Estado', 'Rut', 'Nombre', 'EDAD', 'Instalación', 'Jornada', 'Cargo', 'Referencia', 'Número', 'Observación'];
+var _PL_AZUL = '#1F5BA8';
+var _RH_LIB_XLSX = ['https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js', 'sha384-Pqp51FUN2/qzfxZxBCtF0stpc9ONI6MYZpVqmo8m20SoaQCzf+arZvACkLkirlPz', 'ExcelJS'];
+var _plFilas = [];
+
+function _plFono(t) {
+  var d = String(t || '').replace(/\D/g, '').replace(/^56/, '');
+  return d.length === 9 ? '+56 ' + d[0] + ' ' + d.slice(1, 5) + ' ' + d.slice(5) : String(t || '');
+}
+// "20/10/2026" o "2026-10-20" → "20-10-26"
+function _plFecha(f) {
+  var m = String(f || '').match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})$/), n = String(f || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  var dd, mm, aa;
+  if (m) { dd = m[1]; mm = m[2]; aa = m[3]; } else if (n) { dd = n[3]; mm = n[2]; aa = n[1]; }
+  else { var h = new Date(); dd = h.getDate(); mm = h.getMonth() + 1; aa = h.getFullYear(); }
+  return String(dd).padStart(2, '0') + '-' + String(mm).padStart(2, '0') + '-' + String(aa).slice(-2);
+}
+function _plFila(c, d) {
+  var j = _RH_JORNADAS.filter(function(x){ return x[0] === d.jornada; })[0];
+  var est = d.categoria === 'no_apto' ? 'No aprobado' : d.categoria ? 'Aprobado' : '';
+  return [_plFecha(d.fecha), (d.zonal || '').replace(/^./, function(x){ return x.toUpperCase(); }), est, c.rut || '',
+    ((c.apellido || '') + ' ' + (c.nombre || '')).trim().toUpperCase(), c.edad ? c.edad + ' años' : '', d.instalacion || '',
+    d.jornada === 'otra' ? (d.jornada_otra || 'Otra') : (j ? j[1] : ''), d.cargo || _rhCargoBase(c),
+    d.referencia || _canalTxt(c), _plFono(c.telefono), d.obs_envio || ''];
+}
+
+async function abrirPlanillaEnvio() {
+  var ids = [].map.call(document.querySelectorAll('.row-chk:checked'), function(x){ return x.dataset.id; });
+  if (!ids.length) return;
+  var all = await getDB(), sinInforme = [];
+  _plFilas = [];
+  all.filter(function(c){ return ids.indexOf(c.id) >= 0; }).forEach(function(c) {
+    var g = (c.scores && c.scores._informe_rh) || {};
+    if (!Object.keys(g).length) { sinInforme.push(((c.nombre || '') + ' ' + (c.apellido || '')).trim()); return; }
+    var d = Object.assign({ jornada:'4x4_rotativo' }, g);
+    _plFilas.push(_plFila(c, d));
+  });
+  _plFilas.sort(function(a, b){ return a[0].split('-').reverse().join('').localeCompare(b[0].split('-').reverse().join('')); });
+  var e = function(x){ return htmlEsc(x || ''); };
+  var ov = document.createElement('div');
+  ov.id = 'pl-overlay'; ov.className = 'rh-ov';
+  ov.onclick = function(ev){ if (ev.target === ov) ov.remove(); };
+  ov.innerHTML = '<div class="rh-box" style="max-width:min(1180px,96vw);width:min(1180px,96vw)">'
+    + '<div class="rh-top"><div><div style="font-size:17px;font-weight:800">📋 Planilla de envío</div>'
+    + '<div style="font-size:12px;color:var(--ink3)">' + _plFilas.length + (_plFilas.length === 1 ? ' postulante' : ' postulantes') + ' · los datos salen del Informe RH de cada uno</div></div>'
+    + '<button class="dh-close" onclick="document.getElementById(\'pl-overlay\').remove()">✕</button></div>'
+    + '<div class="rh-body">'
+    + (sinInforme.length ? '<div style="padding:10px 14px;border-radius:10px;background:#fffbeb;border:1.5px solid #fde68a;color:#92400e;font-size:12.5px;line-height:1.5"><strong>Sin Informe RH guardado (no se incluyen):</strong> ' + sinInforme.map(e).join(', ') + '. Complete su Informe RH y vuelva a generar la planilla.</div>' : '')
+    + (_plFilas.length ? '<div style="overflow-x:auto">' + _plTablaHtml() + '</div>'
+      + '<div style="font-size:11.5px;color:var(--ink4)">Fecha envío = fecha de evaluación del Informe RH. Para corregir un dato, edítelo en el Informe RH del postulante.</div>'
+      : '<div style="font-size:13px;color:var(--ink3)">Ninguno de los seleccionados tiene Informe RH guardado.</div>')
+    + '</div>'
+    + '<div class="rh-pie"><span style="margin-right:auto"></span>'
+    + (_plFilas.length ? '<button class="rs-btn" onclick="_plExcel()">⬇ Descargar Excel</button><button class="rs-btn prim" onclick="_plCopiar()">📋 Copiar para el correo</button>' : '')
+    + '</div></div>';
+  document.body.appendChild(ov);
+}
+
+// Tabla con estilos en línea: así se conserva el formato al pegarla en Outlook o Gmail
+function _plTablaHtml() {
+  var e = function(x){ return htmlEsc(x || ''); };
+  var td = 'border:1px solid #000;padding:3px 6px;font-family:Arial,sans-serif;font-size:11px;text-align:center;vertical-align:middle';
+  return '<table id="pl-tabla" style="border-collapse:collapse;background:#fff;color:#000">'
+    + '<tr>' + _PL_COLS.map(function(h){ return '<th style="' + td + ';background:' + _PL_AZUL + ';color:#fff;font-weight:700;white-space:nowrap">' + e(h) + '</th>'; }).join('') + '</tr>'
+    + _plFilas.map(function(f) {
+      return '<tr>' + f.map(function(v, i) {
+        var nw = i === 0 || i === 3 || i === 4 || i === 5 || i === 10 ? ';white-space:nowrap' : '';
+        return '<td style="' + td + nw + (i === 11 ? ';min-width:200px' : '') + '">' + e(v) + '</td>';
+      }).join('') + '</tr>';
+    }).join('')
+    + '</table>';
+}
+
+async function _plCopiar() {
+  var html = _plTablaHtml();
+  var texto = [_PL_COLS].concat(_plFilas).map(function(f){ return f.join('\t'); }).join('\n');
+  try {
+    await navigator.clipboard.write([new ClipboardItem({ 'text/html': new Blob([html], { type:'text/html' }), 'text/plain': new Blob([texto], { type:'text/plain' }) })]);
+  } catch(e) {
+    // Navegadores sin ClipboardItem: se copia la tabla visible como selección
+    var t = document.getElementById('pl-tabla'), rg = document.createRange(), sel = window.getSelection();
+    rg.selectNode(t); sel.removeAllRanges(); sel.addRange(rg);
+    var ok = false; try { ok = document.execCommand('copy'); } catch(x) {}
+    sel.removeAllRanges();
+    if (!ok) { toast('No se pudo copiar. Seleccione la tabla y cópiela con Cmd+C.', 'er'); return; }
+  }
+  toast('✓ Tabla copiada: péguela en el correo', 'ok');
+}
+
+async function _plExcel() {
+  try {
+    await _rhCargarLib(_RH_LIB_XLSX);
+    var wb = new window.ExcelJS.Workbook(), ws = wb.addWorksheet('Envío');
+    var anchos = [11, 9, 12, 13, 34, 8, 16, 13, 16, 24, 15, 50];
+    ws.columns = _PL_COLS.map(function(h, i){ return { header: h, width: anchos[i] }; });
+    _plFilas.forEach(function(f){ ws.addRow(f); });
+    var borde = { style:'thin', color:{ argb:'FF000000' } };
+    ws.eachRow(function(row, n) {
+      row.eachCell({ includeEmpty: true }, function(cell) {
+        cell.border = { top:borde, left:borde, bottom:borde, right:borde };
+        cell.alignment = { horizontal:'center', vertical:'middle', wrapText:true };
+        cell.font = n === 1 ? { name:'Arial', size:10, bold:true, color:{ argb:'FFFFFFFF' } } : { name:'Arial', size:10 };
+        if (n === 1) cell.fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FF' + _PL_AZUL.slice(1) } };
+      });
+    });
+    var buf = await wb.xlsx.writeBuffer();
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([buf], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+    a.download = 'Planilla envío ' + _plFecha('').replace(/-/g, '-') + '.xlsx';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 5000);
+    toast('Excel descargado ✓', 'ok');
+  } catch(e) { toast('No se pudo generar el Excel: ' + e.message, 'er'); }
 }
 
 async function drawerSetEtapa(candId, etapa) {
