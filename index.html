@@ -12787,6 +12787,36 @@ function _rsExplorar(c, m) {
   return h + '<ul class="rs-lista">' + items.map(function(x){ return '<li>' + x + '</li>'; }).join('') + '</ul></div>';
 }
 
+// Resumen: a qué postula (cargo, instalación, turno), editable por el administrador
+function _rsPostulaHtml(c) {
+  var p = _postulaDe(c), turno = p.turno ? _rhTurnoTxt({ jornada: p.turno, jornada_otra: p.turno_otra }) : '';
+  var txt = [p.cargo || _rhCargoBase(c), p.instalacion, turno ? 'turno ' + turno : ''].filter(Boolean).join(' · ');
+  var edit = S.role === 'admin' ? ' <a class="rs-link" onclick="_rsPostulaEditar(\'' + htmlEsc(c.id) + '\')" style="font-weight:600">✏️ Editar</a>' : '';
+  return '<div id="rs-postula"><div class="rs-kv"><span>Postula a</span><b>' + htmlEsc(txt) + edit + '</b></div></div>';
+}
+async function _rsPostulaEditar(id) {
+  var c = (await getDB()).find(function(x){ return x.id === id; }); if (!c) return;
+  var p = _postulaDe(c), base = _rhCargoBase(c), el = document.getElementById('rs-postula'); if (!el) return;
+  var e = htmlEsc, op = function(v, t){ return '<option value="' + v + '"' + (v === (p.turno || '4x4_rotativo') ? ' selected' : '') + '>' + t + '</option>'; };
+  el.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px 0">'
+    + '<div class="ev-field" style="grid-column:1/-1"><label>Cargo al que postula</label><input id="rs-p-cargo" class="rh-in" list="rs-p-cargo-op" value="' + e(p.cargo || base) + '">'
+    + '<datalist id="rs-p-cargo-op"><option value="' + e(base) + '"><option value="' + e(base) + ' - Encargado de Turno"><option value="' + e(base) + ' - Encargado de Grupo"></datalist></div>'
+    + '<div class="ev-field"><label>Instalación</label><input id="rs-p-inst" class="rh-in" value="' + e(p.instalacion) + '" placeholder="Ej: Rehau"></div>'
+    + '<div class="ev-field"><label>Turno</label><select id="rs-p-turno" class="rh-in" onchange="document.getElementById(\'rs-p-otra\').style.display=this.value===\'otra\'?\'\':\'none\'">' + _RH_JORNADAS.map(function(j){ return op(j[0], j[1]); }).join('') + '</select>'
+    + '<input id="rs-p-otra" class="rh-in" value="' + e(p.turno_otra) + '" placeholder="Ej: 5x2 día" style="margin-top:6px;display:' + (p.turno === 'otra' ? '' : 'none') + '"></div>'
+    + '<div style="grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end"><button class="rs-btn" onclick="_switchDrawerTab(\'resumen\', (_dbCache || []).find(function(x){ return x.id === \'' + e(id) + '\'; }))">Cancelar</button>'
+    + '<button class="rs-btn prim" onclick="_rsPostulaGuardar(\'' + e(id) + '\')">Guardar</button></div></div>';
+}
+async function _rsPostulaGuardar(id) {
+  var v = function(x){ return (document.getElementById(x) || {}).value || ''; };
+  try {
+    var c = await _guardarPostula(id, { cargo: v('rs-p-cargo'), instalacion: v('rs-p-inst'), turno: v('rs-p-turno'), turno_otra: v('rs-p-otra') }, 'resumen');
+    toast('Guardado ✓ (también en la entrevista y el Informe RH)', 'ok');
+    if (c) _switchDrawerTab('resumen', c);
+    try { _bdRenderCuerpo(); } catch(e) {}
+  } catch(e) { toast('No se pudo guardar: ' + e.message, 'er'); }
+}
+
 function _tabResumen(c) {
   var sc = c.scores || {};
   var m = _miradaDe(c);
@@ -12820,6 +12850,7 @@ function _tabResumen(c) {
             ['Invitación', iv ? (iv.tipo === 'rut' ? 'Por RUT' : 'Link único') + (iv.creada_por ? ' · ' + iv.creada_por : '') : 'Link general'],
             ['Entrevistas', !_verEntrevistas() ? '' : ents.length ? ents.length + (ult && ult.fecha ? ' · última ' + ult.fecha.split('-').reverse().join('-') : '') + (ult && ult.entrevistador ? ' · ' + ult.entrevistador : '') : 'Ninguna']];
   h += '<div class="rs-card"><div class="rs-lbl">Antecedentes</div>';
+  h += _rsPostulaHtml(c);
   kv.forEach(function(x){ if (x[1]) h += '<div class="rs-kv"><span>' + x[0] + '</span><b>' + htmlEsc(String(x[1])) + '</b></div>'; });
   var du = _duracionDe(c);
   if (du) h += '<div class="rs-kv"><span>Duración</span><b title="' + htmlEsc(_duracionTip(du)) + '" style="cursor:help">' + _fmtDur(du.total) + ' respondiendo'
@@ -13234,7 +13265,7 @@ function _tabEntrevistasDrawer(c) {
   // 1. Inicio: por defecto, lo último usado en este navegador y la hora actual
   var pref = _evPreferencias();
   // Instalación y turno: los de la última entrevista de esta persona, si ya se anotaron
-  var evPost = (((c.scores || {})._entrevistas) || []).filter(function(e){ return e && (e.instalacion || e.turno || e.cargo); }).pop() || {};
+  var evPost = _postulaDe(c);
   var horaAhora = String(_hoy.getHours()).padStart(2, '0') + ':' + String(_hoy.getMinutes()).padStart(2, '0');
   var opcion = function(val, txt, sel){ return '<option value="' + val + '"' + (val === sel ? ' selected' : '') + '>' + txt + '</option>'; };
   var p1 = '<div class="ev-hint">Presente el objetivo de la conversación y su duración aproximada (30 a 40 minutos).</div>'
@@ -13705,6 +13736,8 @@ async function saveEntrevistaDrawer(candId) {
       return prev.concat([entry]);
     });
     _evBorradorBorrar(candId);
+    // Cargo, instalación y turno quedan iguales en Resumen y en el Informe RH
+    try { var cP = await _guardarPostula(candId, entry, 'entrevista'); if (cP) sc = cP.scores; } catch(e) {}
     try { localStorage.setItem(_EV_PREF_KEY, JSON.stringify({ tipo: tipo, modalidad: modal, entrevistador: entrev })); } catch(e) {}
     var all = await getDB();
     var c = all.find(function(x){ return x.id === candId; });
@@ -14172,13 +14205,44 @@ function _rhFortDeb(c, niveles, ideales, sinDato) {
   return { fortalezas: fort.join('\n'), debilidades: deb.join('\n'), notas: notas };
 }
 
-// Instalación a la que postula: la del Informe RH o, si no, la anotada en la entrevista
-// (ambas son datos privados: solo las ve el administrador)
-function _instalacionDe(c) {
-  var s = (c && c.scores) || {}, g = s._informe_rh || {};
-  if (g.instalacion) return g.instalacion;
-  var ev = (s._entrevistas || []).filter(function(e){ return e && e.instalacion; }).pop();
-  return ev ? ev.instalacion : '';
+// A qué postula (cargo, instalación, turno). Se edita en Resumen, en la entrevista o en el
+// Informe RH, y los tres quedan iguales. Fuente principal: scores._postula.
+function _postulaDe(c) {
+  var s = (c && c.scores) || {}, p = s._postula || {}, g = s._informe_rh || {};
+  var ev = (s._entrevistas || []).filter(function(e){ return e && (e.instalacion || e.turno || e.cargo); }).pop() || {};
+  var turno = p.turno || ev.turno || g.jornada || '';
+  return {
+    cargo: p.cargo || ev.cargo || g.cargo || '',
+    instalacion: p.instalacion || ev.instalacion || g.instalacion || '',
+    turno: turno,
+    turno_otra: turno === 'otra' ? (p.turno_otra || ev.turno_otra || g.jornada_otra || '') : ''
+  };
+}
+function _instalacionDe(c) { return _postulaDe(c).instalacion; }
+// Guarda a qué postula y lo copia a la última entrevista y al Informe RH (si existen)
+async function _guardarPostula(candId, p, desde) {
+  p = { cargo: (p.cargo || '').trim(), instalacion: (p.instalacion || '').trim(), turno: p.turno || '', turno_otra: p.turno === 'otra' ? (p.turno_otra || '').trim() : '' };
+  await _patchScoresField(candId, '_postula', p);
+  var all = await getDB(), c = all.find(function(x){ return x.id === candId; }) || {}, s = c.scores || {};
+  if (desde !== 'entrevista' && (s._entrevistas || []).length) {
+    await _patchPrivado(candId, 'entrevistas', function(prev) {
+      prev = (prev || []).slice(); var i = prev.length - 1;
+      prev[i] = Object.assign({}, prev[i], { cargo: p.cargo, instalacion: p.instalacion, turno: p.turno, turno_otra: p.turno_otra });
+      return prev;
+    });
+  }
+  if (desde !== 'informe' && s._informe_rh && Object.keys(s._informe_rh).length) {
+    await _patchPrivado(candId, 'informe_rh', function(prev) {
+      var n = Object.assign({}, prev || {});
+      if (p.cargo) n.cargo = p.cargo;
+      n.instalacion = p.instalacion;
+      if (p.turno) { n.jornada = p.turno; n.jornada_otra = p.turno_otra; }
+      return n;
+    });
+  }
+  _invalidateCache();
+  var c2 = (await getDB()).find(function(x){ return x.id === candId; });
+  return c2;
 }
 
 // Estado del Informe RH de un postulante (solo lo ve el administrador)
@@ -14215,7 +14279,7 @@ function _rhFechaEntrevista(s) {
 function _rhSugerencias(c) {
   var s = c.scores || {}, niveles = {};
   // Instalación y turno anotados en la entrevista (la última que los tenga)
-  var evPost = (s._entrevistas || []).filter(function(e){ return e && (e.instalacion || e.turno || e.cargo); }).pop() || {};
+  var evPost = _postulaDe(c);
   var ig = s.integridad && s.integridad.nivel;
   if (ig && ig !== 'no_interpretable') niveles.integridad = { v: ig === 'sin_indicadores' ? 'Alto' : ig === 'explorar' ? 'Medio' : 'Bajo', fuente: 'Integridad laboral: ' + INTEG_NIVELES[ig].titulo.toLowerCase() };
   Object.keys(_RH_FUENTE).forEach(function(k){ var n = _rhNivelPrueba(c, _RH_FUENTE[k]); if (n) niveles[k] = n; });
@@ -14259,9 +14323,10 @@ async function abrirInformeRH(id) {
   var d = Object.assign({}, sug, g, { niveles: Object.assign({}, sug.niveles, g.niveles || {}) });
   if (g.cargo && !g.ideales) d.ideales = _rhIdealesDe(g.cargo);
   // Informe guardado sin instalación o sin turno: se completan con lo anotado en la entrevista
-  if (!g.instalacion && sug.instalacion) d.instalacion = sug.instalacion;
-  if ((!g.cargo || g.cargo === _rhCargoBase(c)) && sug.cargo) d.cargo = sug.cargo;
-  if (!g.jornada) { d.jornada = sug.jornada; d.jornada_otra = sug.jornada_otra; }
+  var pz = _postulaDe(c);
+  if (pz.instalacion) d.instalacion = pz.instalacion;
+  if (pz.cargo) d.cargo = pz.cargo;
+  if (pz.turno) { d.jornada = pz.turno; d.jornada_otra = pz.turno_otra; }
   var fEnt = _rhFechaEntrevista(c.scores || {}), fEval = (_momentoTxt(c) || '').slice(0, 10).replace(/-/g, '/');
   if (fEnt && (!g.fecha || g.fecha === fEval)) d.fecha = fEnt;
   d.ideales = Object.assign({}, sug.ideales, d.ideales || {});
@@ -14405,6 +14470,11 @@ async function _rhGuardar(silencioso, marcas) {
       return Object.assign(d, { pdf: prev.pdf || null, enviado: prev.enviado || null }, marcas || {});
     });
     _rhRecordarIdeales(d.cargo, d.ideales);
+    // Lo que cambie aquí en cargo, instalación o turno se ve igual en Resumen y en la entrevista
+    var pa = _postulaDe(_rhCand);
+    if (pa.instalacion !== d.instalacion || pa.cargo !== d.cargo || pa.turno !== d.jornada || (d.jornada === 'otra' && pa.turno_otra !== d.jornada_otra)) {
+      try { await _guardarPostula(_rhCand.id, { cargo: d.cargo, instalacion: d.instalacion, turno: d.jornada, turno_otra: d.jornada_otra }, 'informe'); } catch(e) {}
+    }
     if (!silencioso) toast('Informe RH guardado ✓', 'ok');
     return d;
   } catch(e) { toast('No se pudo guardar: ' + e.message, 'er'); return null; }
