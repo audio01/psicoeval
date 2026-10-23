@@ -14130,7 +14130,7 @@ async function _rhRedactar() {
     if (!r.ok || !j.texto) throw new Error(j.error || (r.status === 404 ? 'La función de redacción aún no está instalada en Supabase.' : 'Error ' + r.status));
     var nom = ((c.nombre || '') + ' ' + (c.apellido || '')).trim();
     if (ta) ta.value = j.texto.replace(/\[NOMBRE\]/g, nom);
-    if (tr && Array.isArray(j.refuerzo) && j.refuerzo.length) tr.value = j.refuerzo.join('\n');
+    if (tr && Array.isArray(j.refuerzo) && j.refuerzo.length) tr.value = _rhMayusTras2p(j.refuerzo.join('\n'));
     toast('✨ Texto redactado: revíselo antes de generar el PDF', 'ok');
   } catch(e) { toast('No se pudo redactar: ' + e.message, 'er'); }
   finally { if (btn) { btn.disabled = false; btn.textContent = '✨ Redactar integración con IA'; } }
@@ -14182,6 +14182,10 @@ function _rhFrase(c, d, html) {
   var cargo = d.cargo || _rhCargoBase(c);
   return 'Al momento de la evaluación, se concluye que ' + b(nom) + ' se encuentra en la categoría de ' + b(cat.charAt(0) + cat.slice(1).toLowerCase())
     + ' para el cargo de ' + b(cargo) + (_rhTurnoTxt(d) ? ', turno ' + b(_rhTurnoTxt(d)) + ',' : '') + (d.instalacion ? ' en la instalación ' + b(d.instalacion) : '') + '.';
+}
+// Refuerzo: "Título: acción" → la acción parte con mayúscula ("Gestión de cambios: Anticipar…")
+function _rhMayusTras2p(t) {
+  return String(t || '').split('\n').map(function(l){ return l.replace(/^([^:\n]{2,80}:\s*)(\S)/, function(m, a, b){ return a + b.toUpperCase(); }); }).join('\n');
 }
 // Turno del informe: "4x4 rotativo", o el texto escrito en "Otra"
 function _rhTurnoTxt(d) {
@@ -14372,7 +14376,7 @@ function _rhArmarPdf(c, d, nom) {
     if (it.length && resto.length) it.push({ h: 3.5, dib: function(){} });
     return it.concat(resto);
   })], { despues: 6 });
-  fila([celda(0.19, AZ, txt('Refuerzo de habilidades que debe observar el Supervisor a cargo.', { just: true })), celda(0.81, null, function(an){ return vinetas(d.refuerzo, an, { just: true }); })], { despues: 6 });
+  fila([celda(0.19, AZ, txt('Refuerzo de habilidades que debe observar el Supervisor a cargo.', { just: true })), celda(0.81, null, function(an){ return vinetas(_rhMayusTras2p(d.refuerzo), an, { just: true }); })], { despues: 6 });
   fila([celda(0.19, AZ, txt('Psicólogo que realiza el informe')), celda(0.81, null, txt(d.psicologo || ''))], { minH: 16 });
 
   // ── Hoja 5: entrevista operacional (la completa el supervisor) ──
