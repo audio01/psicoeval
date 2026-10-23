@@ -12754,7 +12754,7 @@ function _tabResumen(c) {
     + '</div></div>';
 
   // Antecedentes (lo que no está en el encabezado)
-  var kv = [['RUT', c.rut], ['Experiencia', exp], ['Rubro', c.rubro_label || c.rubro], ['Evaluación', _momentoTxt(c)],
+  var kv = [['RUT', c.rut], ['Comuna', c.comuna], ['Experiencia', exp], ['Rubro', c.rubro_label || c.rubro], ['Evaluación', _momentoTxt(c)],
             ['Invitación', iv ? (iv.tipo === 'rut' ? 'Por RUT' : 'Link único') + (iv.creada_por ? ' · ' + iv.creada_por : '') : 'Link general'],
             ['Entrevistas', !_verEntrevistas() ? '' : ents.length ? ents.length + (ult && ult.fecha ? ' · última ' + ult.fecha.split('-').reverse().join('-') : '') + (ult && ult.entrevistador ? ' · ' + ult.entrevistador : '') : 'Ninguna']];
   h += '<div class="rs-card"><div class="rs-lbl">Antecedentes</div>';
