@@ -14423,7 +14423,7 @@ function _plFono(t) {
   var d = String(t || '').replace(/\D/g, '').replace(/^56/, '');
   return d.length === 9 ? '+56 ' + d[0] + ' ' + d.slice(1, 5) + ' ' + d.slice(5) : String(t || '');
 }
-// "20/10/2026" o "2026-10-20" → "20-10-26"
+// "20/10/2026" o "2026-10-20" → "20-10-26"; vacío → hoy (fecha de envío)
 function _plFecha(f) {
   var m = String(f || '').match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})$/), n = String(f || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
   var dd, mm, aa;
@@ -14434,7 +14434,7 @@ function _plFecha(f) {
 function _plFila(c, d) {
   var j = _RH_JORNADAS.filter(function(x){ return x[0] === d.jornada; })[0];
   var est = d.categoria === 'no_apto' ? 'No aprobado' : d.categoria ? 'Aprobado' : '';
-  return [_plFecha(d.fecha), (d.zonal || '').replace(/^./, function(x){ return x.toUpperCase(); }), est, c.rut || '',
+  return [_plFecha(''), (d.zonal || '').replace(/^./, function(x){ return x.toUpperCase(); }), est, c.rut || '',
     ((c.apellido || '') + ' ' + (c.nombre || '')).trim().toUpperCase(), c.edad ? c.edad + ' años' : '', d.instalacion || '',
     d.jornada === 'otra' ? (d.jornada_otra || 'Otra') : (j ? j[1] : ''), d.cargo || _rhCargoBase(c),
     d.referencia || _canalTxt(c), _plFono(c.telefono), d.obs_envio || ''];
@@ -14454,7 +14454,7 @@ async function abrirPlanillaEnvio(idsElegidos) {
     var d = Object.assign({ jornada:'4x4_rotativo' }, g);
     _plFilas.push(_plFila(c, d));
   });
-  _plFilas.sort(function(a, b){ return a[0].split('-').reverse().join('').localeCompare(b[0].split('-').reverse().join('')); });
+  _plFilas.sort(function(a, b){ return a[4].localeCompare(b[4], 'es'); });
   var e = function(x){ return htmlEsc(x || ''); };
   var ov = document.createElement('div');
   ov.id = 'pl-overlay'; ov.className = 'rh-ov';
@@ -14466,7 +14466,7 @@ async function abrirPlanillaEnvio(idsElegidos) {
     + '<div class="rh-body">'
     + (sinInforme.length ? '<div style="padding:10px 14px;border-radius:10px;background:#fffbeb;border:1.5px solid #fde68a;color:#92400e;font-size:12.5px;line-height:1.5"><strong>Sin Informe RH guardado (no se incluyen):</strong> ' + sinInforme.map(e).join(', ') + '. Complete su Informe RH y vuelva a generar la planilla.</div>' : '')
     + (_plFilas.length ? '<div style="overflow-x:auto">' + _plTablaHtml() + '</div>'
-      + '<div style="font-size:11.5px;color:var(--ink4)">Fecha envío = fecha de evaluación del Informe RH. Para corregir un dato, edítelo en el Informe RH del postulante.</div>'
+      + '<div style="font-size:11.5px;color:var(--ink4)">Fecha envío = hoy, día en que se genera la planilla. Para corregir un dato, edítelo en el Informe RH del postulante.</div>'
       : '<div style="font-size:13px;color:var(--ink3)">Ninguno de los seleccionados tiene Informe RH guardado.</div>')
     + '</div>'
     + '<div class="rh-pie"><span style="margin-right:auto"></span>'
