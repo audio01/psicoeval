@@ -13063,6 +13063,7 @@ function _evInformeHtml(ev, compacto) {
   }
   if (ev.motivo) h += '<div style="font-size:12px;color:#334155;line-height:1.6;margin-top:10px;padding:8px 12px;background:#f8fafc;border-radius:8px"><strong>' + (ev.dictamen === 'obs' ? 'Observaciones' : 'Motivo') + ':</strong> ' + htmlEsc(ev.motivo) + '</div>';
   if (!compacto) {
+    if (ev.instalacion || ev.turno) h += '<div style="font-size:12px;color:#334155;line-height:1.6;margin-top:10px"><strong>Postula a:</strong> ' + htmlEsc([ev.instalacion, ev.turno ? 'turno ' + (_rhTurnoTxt({ jornada: ev.turno, jornada_otra: ev.turno_otra }) || 'otro') : ''].filter(Boolean).join(' · ')) + '</div>';
     if (ev.notas_inicio) h += '<div style="font-size:12px;color:#334155;line-height:1.6;margin-top:10px;white-space:pre-line"><strong>Anotaciones al inicio:</strong> ' + htmlEsc(ev.notas_inicio) + '</div>';
     if (ev.sintesis) h += '<div style="font-size:12px;color:#334155;line-height:1.6;margin-top:10px"><strong>Síntesis:</strong> ' + htmlEsc(ev.sintesis) + '</div>';
     var dp = (ev.desde_pruebas || []).filter(function(x){ return x.nota; });
@@ -13198,6 +13199,8 @@ function _tabEntrevistasDrawer(c) {
 
   // 1. Inicio: por defecto, lo último usado en este navegador y la hora actual
   var pref = _evPreferencias();
+  // Instalación y turno: los de la última entrevista de esta persona, si ya se anotaron
+  var evPost = (((c.scores || {})._entrevistas) || []).filter(function(e){ return e && (e.instalacion || e.turno); }).pop() || {};
   var horaAhora = String(_hoy.getHours()).padStart(2, '0') + ':' + String(_hoy.getMinutes()).padStart(2, '0');
   var opcion = function(val, txt, sel){ return '<option value="' + val + '"' + (val === sel ? ' selected' : '') + '>' + txt + '</option>'; };
   var p1 = '<div class="ev-hint">Presente el objetivo de la conversación y su duración aproximada (30 a 40 minutos).</div>'
@@ -13207,6 +13210,11 @@ function _tabEntrevistasDrawer(c) {
     + '<div class="ev-field"><label>Tipo</label><select id="ef-tipo">' + opcion('rrhh', '🧑‍💼 RRHH', pref.tipo) + opcion('psicolaboral', '🧠 Psicolaboral', pref.tipo) + opcion('tecnica', '🔧 Técnica', pref.tipo) + opcion('panel', '👥 Panel', pref.tipo) + '</select></div>'
     + '<div class="ev-field"><label>Modalidad</label><select id="ef-modalidad">' + opcion('presencial', '🏢 Presencial', pref.modalidad) + opcion('online', '🖥 Online', pref.modalidad) + opcion('terreno', '🌍 En terreno', pref.modalidad) + '</select></div>'
     + '<div class="ev-field" style="grid-column:1/-1"><label>Entrevistador/a</label><input type="text" id="ef-entrevistador" value="' + htmlEsc(pref.entrevistador) + '" placeholder="Nombre del evaluador/a"></div>'
+    // Instalación y turno a los que postula: pasan solos al Informe RH
+    + '<div class="ev-field"><label>Instalación a la que postula</label><input type="text" id="ef-instalacion" value="' + htmlEsc(evPost.instalacion || '') + '" placeholder="Ej: Rehau"></div>'
+    + '<div class="ev-field"><label>Turno</label><select id="ef-turno" onchange="var o=document.getElementById(\'ef-turno-otra\');if(o)o.style.display=this.value===\'otra\'?\'\':\'none\'">'
+    + _RH_JORNADAS.map(function(j){ return opcion(j[0], j[1], evPost.turno || '4x4_rotativo'); }).join('') + '</select>'
+    + '<input type="text" id="ef-turno-otra" value="' + htmlEsc(evPost.turno_otra || '') + '" placeholder="Ej: 5x2 día" style="margin-top:6px;display:' + (evPost.turno === 'otra' ? '' : 'none') + '"></div>'
     + '</div>'
     + '<div class="ev-field" style="margin-top:12px"><label>📝 Anotaciones al inicio</label>'
     + '<textarea id="ef-notas-inicio" rows="5" placeholder="Primeras impresiones y lo que surja al comenzar: puntualidad, presentación, disposición, cómo llega a la entrevista, condiciones de la sesión (lugar, conexión), lo que la persona comenta espontáneamente…"></textarea></div>';
@@ -13584,7 +13592,10 @@ async function saveEntrevistaDrawer(candId) {
   }
   var entry = {
     id: Date.now(), fecha: fecha, hora: hora, tipo: tipo, modalidad: modal,
-    entrevistador: entrev, notas_inicio: notasInicio, notas: notas, sintesis: sintesis, dictamen: dictamen,
+    entrevistador: entrev, notas_inicio: notasInicio,
+    instalacion: ((document.getElementById('ef-instalacion') || {}).value || '').trim(),
+    turno: (document.getElementById('ef-turno') || {}).value || '',
+    turno_otra: ((document.getElementById('ef-turno-otra') || {}).value || '').trim(), notas: notas, sintesis: sintesis, dictamen: dictamen,
     v: 2, comp: comp, promedio: _evPromedio(_evCompsDe({ comp:comp })), motivo: motivoReq ? motivo : '',
     desde_pruebas: desdePruebas,
     competencias: comps, notas_comp: notasComp,
@@ -14086,6 +14097,8 @@ function _rhFechaEntrevista(s) {
 // Propuesta del panel (se usa cuando aún no hay informe guardado)
 function _rhSugerencias(c) {
   var s = c.scores || {}, niveles = {};
+  // Instalación y turno anotados en la entrevista (la última que los tenga)
+  var evPost = (s._entrevistas || []).filter(function(e){ return e && (e.instalacion || e.turno); }).pop() || {};
   var ig = s.integridad && s.integridad.nivel;
   if (ig && ig !== 'no_interpretable') niveles.integridad = { v: ig === 'sin_indicadores' ? 'Alto' : ig === 'explorar' ? 'Medio' : 'Bajo', fuente: 'Integridad laboral: ' + INTEG_NIVELES[ig].titulo.toLowerCase() };
   Object.keys(_RH_FUENTE).forEach(function(k){ var n = _rhNivelPrueba(c, _RH_FUENTE[k]); if (n) niveles[k] = n; });
@@ -14106,8 +14119,8 @@ function _rhSugerencias(c) {
   var catTxt = (_RH_CAT.filter(function(x){ return x[0] === cat; })[0] || [])[1];
   return {
     cargo:_rhCargoBase(c), ideales:ideales,
-    lista:'', zonal:'', instalacion:'', recomendacion:'', detalle:'', categoria:cat, publico:'',
-    jornada:'4x4_rotativo', jornada_otra:'', referencia:_canalTxt(c), obs_envio:'',
+    lista:'', zonal:'', instalacion:evPost.instalacion || '', recomendacion:'', detalle:'', categoria:cat, publico:'',
+    jornada:evPost.turno || '4x4_rotativo', jornada_otra:evPost.turno === 'otra' ? (evPost.turno_otra || '') : '', referencia:_canalTxt(c), obs_envio:'',
     fecha:_rhFechaEntrevista(s) || (_momentoTxt(c) || '').slice(0, 10).replace(/-/g, '/'),
     niveles:nv, fuentes:niveles, sinDato:sinDato,
     fortalezas:fd.fortalezas, debilidades:fd.debilidades,
@@ -14128,6 +14141,9 @@ async function abrirInformeRH(id) {
   _rhSinDato = sug.sinDato;
   var d = Object.assign({}, sug, g, { niveles: Object.assign({}, sug.niveles, g.niveles || {}) });
   if (g.cargo && !g.ideales) d.ideales = _rhIdealesDe(g.cargo);
+  // Informe guardado sin instalación o sin turno: se completan con lo anotado en la entrevista
+  if (!g.instalacion && sug.instalacion) d.instalacion = sug.instalacion;
+  if (!g.jornada) { d.jornada = sug.jornada; d.jornada_otra = sug.jornada_otra; }
   var fEnt = _rhFechaEntrevista(c.scores || {}), fEval = (_momentoTxt(c) || '').slice(0, 10).replace(/-/g, '/');
   if (fEnt && (!g.fecha || g.fecha === fEval)) d.fecha = fEnt;
   d.ideales = Object.assign({}, sug.ideales, d.ideales || {});
