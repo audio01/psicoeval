@@ -893,10 +893,35 @@ input,select,textarea{font-family:inherit;outline:none}
 #cand-drawer-overlay.open{display:flex}
 #cand-drawer{width:min(1520px,100%);height:100%;max-height:calc(100vh - 24px);background:var(--bg);border-radius:16px;box-shadow:0 24px 70px rgba(0,0,0,.28);display:flex;flex-direction:column;overflow:hidden;transform:translateY(14px) scale(.985);opacity:0;transition:transform .22s cubic-bezier(.4,0,.2,1),opacity .22s ease}
 #cand-drawer-overlay.open #cand-drawer{transform:none;opacity:1}
-.dh-row{display:flex;align-items:center;gap:14px;padding:14px 24px;border-bottom:1px solid var(--border)}
-.dh-av{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#2747D8,#5E5CE6);color:#fff;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.dh-row{display:flex;align-items:center;gap:8px 10px;padding:8px 18px;border-bottom:1px solid var(--border);flex-wrap:wrap;transition:padding .15s}
+#cand-drawer{container-type:inline-size}
+.dh-l1{display:flex;align-items:center;gap:10px;flex-wrap:nowrap;min-width:0}
+.dh-l1 .dh-name{white-space:nowrap;flex-shrink:0}
+.dh-l1 .dh-chips{margin-top:0;flex-wrap:nowrap;flex-shrink:1;min-width:0;overflow:hidden}
+.dh-txt{flex:1 0 auto;max-width:100%}
+.dh-paso .rs-paso-t{min-width:0;flex-shrink:1}
+.dh-meta .dh-cargo{font-size:11.5px;margin:0;color:var(--ink2)}
+.dh-tabs-slot{flex-shrink:0}
+.dh-tabs-slot .drawer-tabs{border:none;padding:0;background:none;gap:2px;overflow:visible}
+.dh-tabs-slot .drawer-tabs>:first-child,.dh-tabs-slot .drawer-tabs>:last-child{margin:0}
+.dh-tabs-slot .drawer-tab-btn{padding:6px 9px;font-size:13px;border-radius:8px;border-bottom:none;margin:0}
+.dh-tabs-slot .dt-n{margin-left:4px;min-width:16px;padding:0 5px;line-height:15px}
+.dh-tabs-slot .drawer-tab-btn.active{background:var(--surface2);color:var(--ink);box-shadow:inset 0 0 0 1px var(--border)}
+.dh-paso{flex-wrap:nowrap!important;padding:3px 3px 3px 11px!important;gap:8px!important;border-radius:10px!important;flex-shrink:1;min-width:0}
+.dh-paso .rs-paso-t{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dh-paso .rs-btn{padding:5px 10px;font-size:11.5px}
+.dh-badges .dh-pdf{padding:5px 9px}
+@container (max-width:1560px){.dh-badges .dh-pdf .dh-pdf-t{display:none}}
+.dh-paso .rs-paso-acc{flex-wrap:nowrap}
+#cand-drawer.dh-min .dh-meta{display:none}
+#cand-drawer.dh-min .dh-row{padding-top:5px;padding-bottom:5px}
+#cand-drawer.dh-min .dh-av{width:28px;height:28px;font-size:11px}
+#cand-drawer.dh-min .dh-name{font-size:15px}
+@container (max-width:1180px){.dh-paso .rs-paso-t{display:none}.dh-paso{padding:3px!important}.dh-tabs-slot{order:10;flex-basis:100%;border-top:1px solid var(--border);margin:2px -18px -8px;padding:3px 14px}.dh-tabs-slot .drawer-tabs{justify-content:center}}
+@container (max-width:760px){.dh-paso{order:11;flex-basis:100%;justify-content:space-between}}
+.dh-av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#2747D8,#5E5CE6);color:#fff;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .dh-txt{flex:1;min-width:0;display:block;overflow:hidden}
-.dh-name{font-size:19px;font-weight:800;color:var(--ink);letter-spacing:-.02em;line-height:1.2}
+.dh-name{font-size:17px;font-weight:800;color:var(--ink);letter-spacing:-.02em;line-height:1.2;transition:font-size .15s}
 .dh-chips{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:5px}
 .dh-chips .bd-pill,.dh-chips .pipe-badge{font-size:11px}
 .dh-cargo{font-size:12.5px;font-weight:700;color:var(--ink2);margin-left:2px}
@@ -905,7 +930,7 @@ input,select,textarea{font-family:inherit;outline:none}
 .dt-n{display:inline-block;margin-left:6px;min-width:18px;padding:0 6px;border-radius:999px;background:var(--surface2);color:var(--ink3);font-size:10.5px;font-weight:700;line-height:17px;text-align:center}
 .drawer-tab-btn.active .dt-n{background:var(--accent-l);color:var(--accent)}
 .dt-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#f59e0b;margin-left:6px;vertical-align:1px}
-.dh-meta{font-size:12px;color:var(--ink3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:4px}
+.dh-meta{font-size:11.5px;color:var(--ink3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px}
 .dh-badges{display:flex;gap:6px;align-items:center;flex-shrink:0}
 .reg-ops{display:flex;flex-direction:column;gap:7px;margin-top:4px}
 .reg-op{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;font-size:13.5px;font-weight:600;color:var(--ink);transition:all .15s}
@@ -1070,7 +1095,15 @@ textarea.rh-in{resize:vertical}
   #cand-drawer{max-height:100vh;border-radius:0}
   .dh-row{padding:10px 12px;flex-wrap:wrap}
   .dh-txt{flex-direction:column;gap:0;white-space:normal}
-  .dh-badges{order:3;width:100%;padding-left:46px}
+  .dh-badges{order:3;padding-left:0}
+  .dh-txt{flex:1 1 calc(100% - 90px);min-width:0}
+  .dh-close{order:2}
+  .dh-badges{flex-basis:100%;justify-content:flex-start}
+  .dh-l1{flex-wrap:wrap;gap:4px 8px}
+  .dh-l1 .dh-name{white-space:normal;flex-shrink:1}
+  .dh-l1 .dh-chips{flex-wrap:wrap;overflow:visible}
+  .dh-tabs-slot{margin:2px -12px -10px!important;padding:3px 8px!important;max-width:calc(100% + 24px)}
+  .dh-tabs-slot .drawer-tabs{overflow-x:auto;justify-content:flex-start!important}
   .drawer-tabs{padding:0 8px}
   .drawer-body{padding:18px 16px 32px}
 }
@@ -12955,17 +12988,32 @@ function _renderDrawerHeader(c) {
   var pz = _postulaDe(c), cat = _categoriaDe(c);
   var linea = [pz.instalacion ? '📍\u00a0' + htmlEsc(pz.instalacion) : '', c.edad ? c.edad + ' años' : '', htmlEsc(c.comuna || ''),
                _canalTxt(c) ? 'Llegó por: ' + htmlEsc(_canalTxt(c)) : '', _rhEstado(c) === 'enviado' ? '📤 Enviado a RRHH ' + _rhFechaCorta(c.scores._informe_rh.enviado) : ''].filter(Boolean).join(' · ');
-  document.getElementById('drawer-header').innerHTML =
+  // Las pestañas viven dentro del encabezado: se sacan antes de redibujarlo y se vuelven a poner
+  var hdr = document.getElementById('drawer-header'), tabsEl = document.getElementById('drawer-tabs');
+  if (tabsEl && tabsEl.parentNode) tabsEl.parentNode.removeChild(tabsEl);
+  var paso = '';
+  try { paso = _rsProximoPaso(c, _miradaDe(c), 'header'); } catch(e) {}
+  hdr.innerHTML =
     '<div class="dh-row">'
     + '<div class="dh-av">' + initials + '</div>'
-    + '<div class="dh-txt"><div class="dh-name">' + htmlEsc(c.nombre + ' ' + c.apellido) + '</div>'
-    + '<div class="dh-chips">' + _estadoFichaHtml(c) + (cat ? _bdDictamenCorto(c) : '') + '<span class="dh-cargo">' + htmlEsc(pz.cargo || c.cargo || pm.label || '') + '</span></div>'
-    + (linea ? '<div class="dh-meta">' + linea + '</div>' : '') + '</div>'
+    + '<div class="dh-txt"><div class="dh-l1"><span class="dh-name">' + htmlEsc(c.nombre + ' ' + c.apellido) + '</span>'
+    + '<span class="dh-chips">' + _estadoFichaHtml(c) + (cat ? _bdDictamenCorto(c) : '') + '</span></div>'
+    + '<div class="dh-meta"><span class="dh-cargo">' + htmlEsc(pz.cargo || c.cargo || pm.label || '') + '</span>' + (linea ? ' · ' + linea : '') + '</div></div>'
+    + '<div class="dh-tabs-slot"></div>'
+    + paso
     + '<div class="dh-badges">'
-    + (c.estado === 'completed' && S.role === 'admin' ? '<button class="dh-pdf" onclick="abrirInformeRH(\'' + c.id + '\')" title="Informe en formato RH (R-GP-054)"><svg class="ico"><use href="#i-doc"/></svg>Informe RH</button>' : '')
+    + (c.estado === 'completed' && S.role === 'admin' ? '<button class="dh-pdf" onclick="abrirInformeRH(\'' + c.id + '\')" title="Informe RH (formato R-GP-054)"><svg class="ico"><use href="#i-doc"/></svg>RH<span class="dh-pdf-t"> · Informe</span></button>' : '')
     + (c.estado === 'completed' ? '<button class="dh-pdf" onclick="downloadPdfReport(\'' + c.id + '\')" title="Descargar el informe en PDF"><svg class="ico"><use href="#i-down"/></svg>PDF</button>' : '') + '</div>'
     + '<button onclick="closeCandDrawer()" class="dh-close" title="Cerrar (Esc)" aria-label="Cerrar">✕</button>'
     + '</div>';
+  if (tabsEl) hdr.querySelector('.dh-tabs-slot').appendChild(tabsEl);
+  // Al bajar en la ficha, el encabezado se reduce a una línea
+  var body = document.getElementById('drawer-body'), dr = document.getElementById('cand-drawer');
+  if (body && dr && !body.dataset.dhScroll) {
+    body.dataset.dhScroll = '1';
+    body.addEventListener('scroll', function(){ dr.classList.toggle('dh-min', body.scrollTop > 24); }, { passive: true });
+  }
+  if (dr) dr.classList.toggle('dh-min', !!(body && body.scrollTop > 24));
 }
 
 // La entrevista (pauta, notas y apuntes del psicólogo) solo la ve el administrador
@@ -13020,7 +13068,7 @@ async function _fichaVerPrueba(tid) {
 }
 
 // Lo que conviene hacer ahora con este candidato
-function _rsProximoPaso(c, m) {
+function _rsProximoPaso(c, m, modo) {
   var etapa = getPipelineEtapa(c);
   var btn = function(txt, fn, prim){
     if (S.role !== 'admin') return '';   // el lector no puede registrar ni cambiar etapas
@@ -13055,6 +13103,10 @@ function _rsProximoPaso(c, m) {
     t = 'Decidir'; d = 'La entrevista ya tiene dictamen: <strong>' + htmlEsc(dd.label || m.dictamen) + '</strong>.';
     acc = btn('✅ Seleccionar', "drawerSetEtapa('" + c.id + "','seleccionado')", true) + btn('❌ Descartar', "drawerSetEtapa('" + c.id + "','descartado')");
   }
+  if (modo === 'header') return '<div class="rs-paso dh-paso rs-' + tono + '" title="' + htmlEsc(String(d).replace(/<[^>]+>/g, '')) + '"><span class="rs-paso-t">' + t.replace(/^Siguiente paso: /, 'Siguiente: ') + '</span>'
+    + (acc ? '<span class="rs-paso-acc">' + acc + '</span>' : '') + '</div>';
+  // En el Resumen solo se repite como franja cuando es una alerta (por ejemplo, riesgo alto de integridad)
+  if (modo === 'cuerpo' && tono !== 'alerta') return '';
   return '<div class="rs-paso rs-' + tono + '"><div class="rs-paso-txt"><div class="rs-paso-t">' + t + '</div><div class="rs-paso-d">' + d + '</div></div>'
     + (acc ? '<div class="rs-paso-acc">' + acc + '</div>' : '') + '</div>';
 }
@@ -13226,7 +13278,7 @@ function _tabResumen(c) {
 
   var h = '<div class="rs-wrap">';
   h += _rsMotivoHtml(c);
-  h += _rsProximoPaso(c, m);
+  h += _rsProximoPaso(c, m, 'cuerpo');
   var estilo = _rsEstilo(c, m);
   h += '<div class="rs-grid' + (estilo ? ' rs-grid3' : '') + '"><div class="rs-col rs-c1">';
   h += _rsResultados(c, m);
