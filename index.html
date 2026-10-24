@@ -1106,6 +1106,24 @@ textarea.rh-in{resize:vertical}
 .ev-ancla{display:flex;gap:8px;font-size:12px;color:var(--ink3);line-height:1.45;padding:5px 8px;border-radius:7px}
 .ev-ancla b{flex-shrink:0;width:14px;color:var(--ink2)}
 .ev-ancla.on{background:var(--accent-l);color:var(--ink)}
+.ev-filas{display:flex;flex-direction:column;gap:8px}
+.ev-fila{padding:0;overflow:hidden}
+.ev-fila-h{display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer}
+.ev-fila-ic{font-size:18px;flex-shrink:0}
+.ev-fila-nm{flex:1;min-width:0;display:flex;flex-direction:column}
+.ev-fila-nm b{font-size:14px;color:var(--ink)}
+.ev-fila-nm small{font-size:12px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ev-fila-tag{font-size:11px;font-weight:800;color:#c2410c;background:#fff7ed;padding:3px 9px;border-radius:100px;white-space:nowrap}
+.ev-fila-lv{font-size:12px;font-weight:800;color:var(--ink2);white-space:nowrap}
+.ev-fila-tg{color:var(--ink3);font-size:17px;transition:transform .2s;width:14px;text-align:center}
+.ev-fila.open .ev-fila-tg{transform:rotate(90deg)}
+.ev-fila-con{font-size:12.5px;color:var(--ink2);line-height:1.5;margin:0 14px 10px;padding:7px 10px;border-radius:8px;background:#fff7ed}
+.ev-fila-con b{color:#c2410c}
+.ev-fila-con span{color:var(--ink3)}
+.ev-fila .ev-sug-rev{margin:0 14px 10px}
+.ev-fila-b{display:none;padding:2px 14px 14px;border-top:1px solid var(--border)}
+.ev-fila.open .ev-fila-b{display:block;padding-top:12px}
+[data-theme="dark"] .ev-fila-con,[data-theme="dark"] .ev-fila-tag{background:rgba(234,88,12,.14);color:#fdba74}
 .ev-q-seg{font-size:12.5px;color:var(--ink3);margin-top:4px}
 .ev-q-contraste{background:#fff7ed;border-left-color:#ea580c;margin-bottom:8px}
 .ev-q-contraste span{color:#c2410c}
@@ -13376,6 +13394,10 @@ function _evLevelClick(btn) {
   _evResultadoVivo();
   _evCambio();
 }
+function _evFilaToggle(h, ev) {
+  if (ev && ev.target.closest('button')) return;
+  var f = h.closest('.ev-fila'); if (f) f.classList.toggle('open');
+}
 function _evConfirmarSug(btn) {
   var row = btn.closest('[data-ev-comp]'); if (!row) return;
   var sug = +row.dataset.sug || 0; if (!sug) return;
@@ -13393,6 +13415,8 @@ function _evSinEjemplo(cb) {
 function _evPintarComp(row) {
   var lv = +row.dataset.nivel || 0, sug = +row.dataset.sug || 0;
   var cfg = _evCfg(row.dataset.evComp);
+  var fl = row.querySelector('.ev-fila-lv');
+  if (fl) { fl.textContent = lv && lv !== sug ? 'Puntaje ' + lv : ''; fl.style.display = lv && lv !== sug ? '' : 'none'; }
   var dif = row.querySelector('.ev-sug-dif');
   if (dif) dif.style.display = sug && lv && lv !== sug ? '' : 'none';
   var cb = row.querySelector('.ev-sug-ok');
@@ -13616,7 +13640,7 @@ function _tabEntrevistasDrawer(c) {
       + '<span class="ev-step-t">' + p[1] + ' ' + p[0] + '<small>' + sub + '</small></span>'
       + '<span class="ev-step-st" id="ev-st-' + n + '"></span><span class="ev-step-chev">▾</span></button>'
       + '<div class="ev-step-b">' + cuerpo
-      + (n < 5 ? '<div style="text-align:right;margin-top:16px"><button type="button" class="btn btn-outline btn-sm" onclick="_evIrPaso(' + (n + 1) + ')">Siguiente: ' + _EV_PASOS[n][0] + ' →</button></div>' : '')
+      + (n < _EV_PASOS.length ? '<div style="text-align:right;margin-top:16px"><button type="button" class="btn btn-outline btn-sm" onclick="_evIrPaso(' + (n + 1) + ')">Siguiente: ' + _EV_PASOS[n][0] + ' →</button></div>' : '')
       + '</div></section>';
   };
 
@@ -13682,60 +13706,77 @@ function _tabEntrevistasDrawer(c) {
   else p2 += '<details class="ev-mas"><summary>＋ Agregar otra experiencia</summary>' + expBlock(2, null) + '</details>';
   main += paso(2, hist.length ? 'Verificar lo que declaró' : 'Experiencia laboral', p2);
 
-  // 3. Competencias, de a una: 3 con STAR y 6 con puntaje sugerido para confirmar
+  // 3. Competencias STAR, de a una · 4. Las otras 6, con puntaje sugerido, en lista para confirmar
   var _sug = _evSugerencias(c);
-  var p3 = '<div class="ev-hint">Las <strong>3 primeras</strong> se exploran siempre con STAR: puntúe lo que la persona <strong>hizo</strong>, no lo que haría (sin un ejemplo concreto, el máximo es 2). '
-    + 'Las <strong>otras 6</strong> traen un puntaje sugerido desde las pruebas o la estabilidad laboral: confírmelo con un clic o ajústelo. Si la sugerencia es 1 o 2, profundice con sus preguntas.</div>';
-  p3 += '<div class="ev-comp-nav"><button type="button" class="btn btn-ghost btn-sm" onclick="_evComp(-1)">← Anterior</button>'
-    + '<div class="ev-comp-dots" id="ev-comp-dots"></div>'
-    + '<button type="button" class="btn btn-ghost btn-sm" onclick="_evComp(1)">Siguiente →</button></div>';
   var _preg = function(q, i){ return '<div class="ev-q-main"' + (i ? ' style="margin-top:6px"' : '') + '><span>' + (i ? 'Otra pregunta' : 'Pregunte') + '</span>' + q[0] + '<div class="ev-q-seg">Seguimiento: ' + q[1] + '</div></div>'; };
-  var _MODO = { star:['STAR', 'Explore con STAR'], explorar:['Sin sugerencia', 'Sin resultado para sugerir un puntaje: explórela con sus preguntas.'],
-                profundizar:['Profundizar', 'El puntaje sugerido es bajo: profundice con las preguntas antes de confirmar.'],
-                confirmar:['Confirmar', ''], contraste:['Confirmar + contraste', 'Puntaje sugerido muy alto: haga la pregunta de contraste antes de confirmar.'] };
-  _COMP_CONFIG.forEach(function(comp, i) {
-    var sg = _sug[comp.key] || null, modo = _evModo(comp, sg), abiertas = modo === 'star' || modo === 'explorar' || modo === 'profundizar';
-    var contraste = comp.contraste && (modo === 'contraste' || comp.key === 'integridad');
-    p3 += '<div class="ev-comp" data-ev-comp="' + comp.key + '" data-nivel="0" data-idx="' + i + '" data-modo="' + modo + '"' + (sg ? ' data-sug="' + sg.n + '" data-fuente="' + htmlEsc(sg.fuente) + '"' : '') + ' style="display:' + (i ? 'none' : '') + '">'
-      + '<div class="ev-comp-cnt">Competencia ' + (i + 1) + ' de ' + _COMP_CONFIG.length + ' · <span class="ev-modo ev-modo-' + modo + '">' + _MODO[modo][0] + '</span></div>'
-      + '<div class="ev-comp-h"><span style="font-size:20px">' + comp.icon + '</span><div><div class="ev-comp-name">' + comp.name + '</div><div class="ev-comp-def">' + comp.def + '</div></div></div>';
-    if (sg) p3 += '<div class="ev-sug"><div class="ev-sug-n">' + sg.n + '</div><div style="flex:1;min-width:0"><div class="ev-sug-t">Puntaje sugerido</div><div class="ev-sug-f">' + htmlEsc(sg.fuente) + '</div></div>'
-      + '<button type="button" class="btn btn-ghost btn-sm ev-sug-ok" onclick="_evConfirmarSug(this)">Confirmar ' + sg.n + '</button></div>';
-    if (comp.key === 'identificacion') p3 += '<div class="ev-sug-rev" id="ev-ident-rev" style="display:none">⚠ La trayectoria declarada se corrigió o no se pudo verificar en la entrevista: revise la sugerencia.</div>';
-    if (!comp.star && _MODO[modo][1]) p3 += '<div class="ev-sug-aviso ev-sug-aviso-' + modo + '">' + _MODO[modo][1] + '</div>';
-    if (contraste) p3 += '<div class="ev-q-main ev-q-contraste"><span>Pregunta de contraste</span>' + comp.contraste[0] + '<div class="ev-q-seg">Seguimiento: ' + comp.contraste[1] + '</div></div>';
-    var qs = comp.questions.map(_preg).join('');
-    p3 += abiertas ? qs : '<details class="ev-mas" style="margin-top:8px"><summary>Abrir preguntas (si observa algo distinto)</summary><div style="padding-top:6px">' + qs + '</div></details>';
-    p3 += '<div class="ev-escala">';
-    for (var lv = 1; lv <= 5; lv++) {
-      p3 += '<button type="button" class="ev-lv" data-lv="' + lv + '" onclick="_evLevelClick(this)" title="' + htmlEsc(comp.anclas[lv] || (lv === 2 ? 'Intermedio entre 1 y 3' : 'Intermedio entre 3 y 5')) + '">' + lv + '</button>';
-    }
-    p3 += '</div><div class="ev-anclas">' + [1, 3, 5].map(function(n){ return '<div class="ev-ancla" data-a="' + n + '"><b>' + n + '</b><span>' + comp.anclas[n] + '</span></div>'; }).join('') + '</div>'
+  var _AVISO = { explorar:'Sin resultado para sugerir un puntaje: explórela con sus preguntas.',
+                 profundizar:'El puntaje sugerido es bajo: profundice con las preguntas antes de confirmar.',
+                 contraste:'Puntaje sugerido muy alto: haga la pregunta de contraste antes de confirmar.' };
+  // Escala, anclas y evidencia (iguales en las dos secciones)
+  var _escala = function(comp, sg, abiertas, contraste, i) {
+    var h = '<div class="ev-escala">';
+    for (var lv = 1; lv <= 5; lv++) h += '<button type="button" class="ev-lv" data-lv="' + lv + '" onclick="_evLevelClick(this)" title="' + htmlEsc(comp.anclas[lv] || (lv === 2 ? 'Intermedio entre 1 y 3' : 'Intermedio entre 3 y 5')) + '">' + lv + '</button>';
+    return h + '</div><div class="ev-anclas">' + [1, 3, 5].map(function(n){ return '<div class="ev-ancla" data-a="' + n + '"><b>' + n + '</b><span>' + comp.anclas[n] + '</span></div>'; }).join('') + '</div>'
       + '<div class="ev-lv-desc" style="display:none"></div>'
       + (sg ? '<div class="ev-sug-dif" style="display:none">Cambió el puntaje sugerido (' + sg.n + '): anote en la evidencia por qué.</div>' : '')
       + '<label class="ev-sin-ej-lbl"><input type="checkbox" class="ev-sin-ej" onchange="_evSinEjemplo(this)"> No dio un ejemplo concreto (máximo 2)</label>'
-      + '<div class="ev-field"><textarea id="ef-comp-nota-' + i + '" rows="3" placeholder="' + (abiertas ? 'Evidencia: situación que relató, qué hizo y qué resultado tuvo…' : 'Opcional si confirma: lo que respondió' + (contraste ? ' a la pregunta de contraste' : '') + ' u observó…') + '"></textarea></div>'
-      + '</div>';
+      + '<div class="ev-field"><textarea id="ef-comp-nota-' + i + '" rows="3" placeholder="' + (abiertas ? 'Evidencia: situación que relató, qué hizo y qué resultado tuvo…' : 'Opcional si confirma: lo que respondió' + (contraste ? ' a la pregunta de contraste' : '') + ' u observó…') + '"></textarea></div>';
+  };
+  var _star = _COMP_CONFIG.filter(function(x){ return x.star; }).length, nS = 0;
+  var p3 = '<div class="ev-hint">Explore cada una con STAR: puntúe lo que la persona <strong>hizo</strong>, no lo que haría. Sin un ejemplo concreto, el máximo es 2. '
+    + 'Si nunca vivió la situación, use otra pregunta: valen ejemplos de estudios, servicio militar o voluntariado.</div>'
+    + '<div class="ev-comp-nav"><button type="button" class="btn btn-ghost btn-sm" onclick="_evComp(-1)">← Anterior</button>'
+    + '<div class="ev-comp-dots" id="ev-comp-dots"></div>'
+    + '<button type="button" class="btn btn-ghost btn-sm" onclick="_evComp(1)">Siguiente →</button></div>';
+  var p4 = '<div class="ev-hint">Cada una trae un puntaje sugerido desde las pruebas o la estabilidad laboral. <strong>Confírmelo con un clic</strong> o ábrala (▸) para ver sus preguntas y ajustar el puntaje. '
+    + 'Las sugeridas en 1 o 2 se abren solas para profundizar.</div><div class="ev-filas">';
+  _COMP_CONFIG.forEach(function(comp, i) {
+    var sg = _sug[comp.key] || null, modo = _evModo(comp, sg), abiertas = modo === 'star' || modo === 'explorar' || modo === 'profundizar';
+    var contraste = comp.contraste && (modo === 'contraste' || comp.key === 'integridad');
+    var attrs = ' data-ev-comp="' + comp.key + '" data-nivel="0" data-idx="' + i + '" data-modo="' + modo + '"' + (sg ? ' data-sug="' + sg.n + '" data-fuente="' + htmlEsc(sg.fuente) + '"' : '');
+    var qs = comp.questions.map(_preg).join('');
+    if (comp.star) {
+      p3 += '<div class="ev-comp" data-star="1" data-sidx="' + nS + '"' + attrs + ' style="display:' + (nS ? 'none' : '') + '">'
+        + '<div class="ev-comp-cnt">Competencia ' + (nS + 1) + ' de ' + _star + '</div>'
+        + '<div class="ev-comp-h"><span style="font-size:20px">' + comp.icon + '</span><div><div class="ev-comp-name">' + comp.name + '</div><div class="ev-comp-def">' + comp.def + '</div></div></div>'
+        + qs + _escala(comp, sg, true, false, i) + '</div>';
+      nS++;
+      return;
+    }
+    p4 += '<div class="ev-comp ev-fila' + (abiertas ? ' open' : '') + '"' + attrs + '>'
+      + '<div class="ev-fila-h" onclick="_evFilaToggle(this, event)"><span class="ev-fila-ic">' + comp.icon + '</span>'
+      + '<div class="ev-fila-nm"><b>' + comp.name + '</b><small>' + (sg ? htmlEsc(sg.fuente) : 'Sin resultado para sugerir un puntaje') + '</small></div>'
+      + (modo === 'profundizar' ? '<span class="ev-fila-tag">Profundizar</span>' : modo === 'explorar' ? '<span class="ev-fila-tag">Explorar</span>' : '')
+      + '<span class="ev-fila-lv"></span>'
+      + (sg ? '<button type="button" class="btn btn-ghost btn-sm ev-sug-ok" onclick="event.stopPropagation();_evConfirmarSug(this)">Confirmar ' + sg.n + '</button>' : '')
+      + '<span class="ev-fila-tg">▸</span></div>'
+      + (contraste ? '<div class="ev-fila-con"><b>Contraste:</b> ' + comp.contraste[0] + ' <span>' + comp.contraste[1] + '</span></div>' : '')
+      + (comp.key === 'identificacion' ? '<div class="ev-sug-rev" id="ev-ident-rev" style="display:none">⚠ La trayectoria declarada se corrigió o no se pudo verificar en la entrevista: revise la sugerencia.</div>' : '')
+      + '<div class="ev-fila-b"><div class="ev-comp-def" style="margin:0 0 8px">' + comp.def + '</div>'
+      + (_AVISO[modo] ? '<div class="ev-sug-aviso ev-sug-aviso-' + modo + '">' + _AVISO[modo] + '</div>' : '')
+      + qs + _escala(comp, sg, abiertas, contraste, i) + '</div></div>';
   });
-  main += paso(3, '3 con STAR · 6 para confirmar · escala de 1 a 5', p3);
+  p4 += '</div>';
+  main += paso(3, 'Explorar con STAR · escala de 1 a 5', p3);
+  main += paso(4, 'Puntaje sugerido desde las pruebas y la trayectoria', p4);
 
-  // 4. Desde las pruebas
-  var p4 = '';
+  // 5. Desde las pruebas
+  var p5dp = '';
   if (_dp.length) {
-    p4 += '<div class="ev-hint">Preguntas que surgen de los resultados de esta persona. Se registran sin puntaje.</div>';
+    p5dp += '<div class="ev-hint">Preguntas que surgen de los resultados de esta persona. Se registran sin puntaje.</div>';
     _dp.forEach(function(x, i) {
-      if (i === 3) p4 += '<div id="ev-dp-mas" style="display:none">';
-      p4 += '<div class="ev-dp" data-ev-dp="' + i + '" data-fuente="' + htmlEsc(x.fuente) + '" data-q="' + htmlEsc(x.q) + '">'
+      if (i === 3) p5dp += '<div id="ev-dp-mas" style="display:none">';
+      p5dp += '<div class="ev-dp" data-ev-dp="' + i + '" data-fuente="' + htmlEsc(x.fuente) + '" data-q="' + htmlEsc(x.q) + '">'
         + '<div class="ev-dp-q"><span>' + htmlEsc(x.fuente) + '</span>' + htmlEsc(x.q) + '</div>'
         + '<div class="ev-field"><textarea id="ef-dp-' + i + '" rows="2" placeholder="Lo que respondió…"></textarea></div></div>';
     });
-    if (_dp.length > 3) p4 += '</div><button type="button" class="btn btn-ghost btn-sm" id="ev-dp-btn" onclick="document.getElementById(\'ev-dp-mas\').style.display=\'\';this.remove()">Ver ' + (_dp.length - 3) + ' preguntas más</button>';
+    if (_dp.length > 3) p5dp += '</div><button type="button" class="btn btn-ghost btn-sm" id="ev-dp-btn" onclick="document.getElementById(\'ev-dp-mas\').style.display=\'\';this.remove()">Ver ' + (_dp.length - 3) + ' preguntas más</button>';
   } else {
-    p4 += '<div style="font-size:13px;color:var(--ink4)">Los resultados no generan preguntas adicionales.</div>';
+    p5dp += '<div style="font-size:13px;color:var(--ink4)">Los resultados no generan preguntas adicionales.</div>';
   }
-  main += paso(4, 'Contrastar los resultados', p4);
+  main += paso(5, 'Contrastar los resultados', p5dp);
 
-  // 5. Cierre y dictamen
+  // 6. Cierre y dictamen
   var p5 = '<div class="ev-sub">Resultado de las competencias</div><div id="ev-resultado" style="margin-bottom:16px">' + _evResultadoHtml(_COMP_CONFIG.map(function(x){ return { name:x.name, nivel:0 }; })) + '</div>';
   p5 += '<div class="ev-field" style="margin-bottom:14px"><label>Síntesis</label><textarea id="ef-sintesis" rows="4" placeholder="Fortalezas observadas, aspectos a desarrollar, ajuste al cargo, impresión general…"></textarea></div>';
   p5 += '<div class="ev-sub">Dictamen</div><div class="ev-dictamen" id="ev-dictamen-group">';
@@ -13760,7 +13801,7 @@ function _tabEntrevistasDrawer(c) {
       + '<span style="font-size:12.5px;color:var(--ink);line-height:1.45">' + chk + '</span></label>';
   });
   p5 += '</div></details>';
-  main += paso(5, 'Síntesis y decisión', p5);
+  main += paso(6, 'Síntesis y decisión', p5);
 
   // Barra fija: resultado en vivo, borrador y finalizar
   main += '<div class="ev-barra"><div class="ev-barra-info" id="ev-barra-info"></div>'
@@ -13780,7 +13821,7 @@ function _evPreferencias() {
   try { var g = JSON.parse(localStorage.getItem(_EV_PREF_KEY) || 'null'); if (g) Object.keys(d).forEach(function(k){ if (g[k]) d[k] = g[k]; }); } catch(e) {}
   return d;
 }
-var _EV_PASOS = [['Inicio', '🗓'], ['Trayectoria', '💼'], ['Competencias', '⭐'], ['Desde las pruebas', '🧪'], ['Cierre y dictamen', '📝']];
+var _EV_PASOS = [['Inicio', '🗓'], ['Trayectoria', '💼'], ['Competencias STAR', '⭐'], ['Confirmar competencias', '✅'], ['Desde las pruebas', '🧪'], ['Cierre y dictamen', '📝']];
 var _evCompIdx = 0, _evBorradorTimer = null, _evBorradorTs = null;
 
 function _evInit(c) {
@@ -13811,15 +13852,15 @@ function _evIrPaso(n) {
 }
 
 // Competencias: una a la vez
-function _evComp(delta) { _evCompIr(Math.max(0, Math.min(_COMP_CONFIG.length - 1, _evCompIdx + delta))); }
+function _evComp(delta) { _evCompIr(Math.max(0, Math.min(document.querySelectorAll('#ev-main .ev-comp[data-star]').length - 1, _evCompIdx + delta))); }
 function _evCompIr(i) {
   _evCompIdx = i;
-  document.querySelectorAll('#ev-main .ev-comp').forEach(function(r){ r.style.display = +r.dataset.idx === i ? '' : 'none'; });
+  document.querySelectorAll('#ev-main .ev-comp[data-star]').forEach(function(r){ r.style.display = +r.dataset.sidx === i ? '' : 'none'; });
   var COL = { 1:'#dc2626', 2:'#ea580c', 3:'#ca8a04', 4:'#16a34a', 5:'#15803d' };
   var dots = document.getElementById('ev-comp-dots'); if (!dots) return;
-  dots.innerHTML = [].map.call(document.querySelectorAll('#ev-main .ev-comp'), function(r){
-    var n = +r.dataset.nivel || 0, k = +r.dataset.idx;
-    var cfg = _COMP_CONFIG[k] || {};
+  dots.innerHTML = [].map.call(document.querySelectorAll('#ev-main .ev-comp[data-star]'), function(r){
+    var n = +r.dataset.nivel || 0, k = +r.dataset.sidx;
+    var cfg = _evCfg(r.dataset.evComp);
     return '<button type="button" onclick="_evCompIr(' + k + ')" title="' + htmlEsc(cfg.name || '') + (n ? ': ' + n : ': sin puntaje') + '" class="ev-dot' + (k === i ? ' on' : '') + '"'
       + (n ? ' style="background:' + COL[n] + ';border-color:' + COL[n] + ';color:#fff"' : '') + '>' + (n || (k + 1)) + '</button>';
   }).join('');
@@ -13860,14 +13901,17 @@ function _evProgreso() {
   }
   var comps = [].slice.call(m.querySelectorAll('[data-ev-comp]'));
   var hechas = comps.filter(function(r){ return +r.dataset.nivel > 0; }).length;
-  est[3] = [hechas === comps.length, hechas === comps.length ? '✓' : hechas + '/' + comps.length];
+  [[3, true], [4, false]].forEach(function(x) {
+    var g = comps.filter(function(r){ return !!r.dataset.star === x[1]; }), h = g.filter(function(r){ return +r.dataset.nivel > 0; }).length;
+    est[x[0]] = [h === g.length, h === g.length ? '✓' : h + '/' + g.length];
+  });
   var dps = [].slice.call(m.querySelectorAll('[data-ev-dp]'));
   var resp = dps.filter(function(d){ return val('ef-dp-' + d.dataset.evDp); }).length;
-  est[4] = dps.length ? [resp === dps.length, resp === dps.length ? '✓' : resp + '/' + dps.length] : [true, '✓'];
+  est[5] = dps.length ? [resp === dps.length, resp === dps.length ? '✓' : resp + '/' + dps.length] : [true, '✓'];
   var dict = (m.querySelector('input[name="ev-dictamen"]:checked') || {}).value || '';
   var motivoOk = !_evMotivoRequerido() || val('ef-motivo');
-  est[5] = [!!dict && !!motivoOk, dict && motivoOk ? '✓' : ''];
-  for (var n = 1; n <= 5; n++) {
+  est[6] = [!!dict && !!motivoOk, dict && motivoOk ? '✓' : ''];
+  for (var n = 1; n <= _EV_PASOS.length; n++) {
     var ix = document.getElementById('ev-ix-st-' + n), sh = document.getElementById('ev-st-' + n);
     if (ix) ix.textContent = est[n][1];
     if (sh) sh.textContent = est[n][0] ? '✓ Listo' : est[n][1];
@@ -14060,14 +14104,16 @@ async function saveEntrevistaDrawer(candId) {
   });
   if (faltaNota.length) {
     faltaNota.forEach(function(r){ var t = r.querySelector('textarea'); if (t) t.style.borderColor = '#dc2626'; });
-    _evIrPaso(3); _evCompIr(+faltaNota[0].dataset.idx || 0);
+    var f0 = faltaNota[0];
+    if (f0.dataset.star) { _evIrPaso(3); _evCompIr(+f0.dataset.sidx || 0); }
+    else { f0.classList.add('open'); _evIrPaso(4); }
     toast('Anote la evidencia: es obligatoria en las competencias exploradas con preguntas y cuando cambia el puntaje sugerido', 'er'); return;
   }
   var motivoReq = _evMotivoRequerido();
   var motivo = ((document.getElementById('ef-motivo') || {}).value || '').trim();
   if (motivoReq && !motivo) {
     var mw = document.getElementById('ef-motivo');
-    _evIrPaso(5);
+    _evIrPaso(6);
     if (mw) { mw.style.borderColor = '#dc2626'; setTimeout(function(){ mw.scrollIntoView({ block:'center', behavior:'smooth' }); }, 300); }
     toast(motivoReq + ': es obligatorio para este dictamen', 'er'); return;
   }
@@ -14769,8 +14815,10 @@ async function abrirInformeRH(id) {
     + sec('Cierre')
     + '<div class="field" data-rh="recomendacion"><label>Recomendación de contratación <span class="rh-req">*</span></label>' + chips('recomendacion', [['plazo_fijo','Plazo fijo'],['indefinido','Indefinido'],['no_contratar','No contratar']], d.recomendacion) + '</div>'
     + '<div class="field"><label>Detalle de la recomendación <span style="text-transform:none;font-weight:500">(opcional)</span></label>' + input('detalle', d.detalle, 'Ej: con inducción clara y seguimiento cercano en terreno de la jefatura directa') + '</div>'
-    + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><button class="rs-btn prim" id="rh-btn-ia" onclick="_rhRedactar()">✨ Redactar integración con IA</button>'
-    + '<span style="font-size:11.5px;color:var(--ink4)">Redacta las Observaciones finales y el Refuerzo de habilidades solo a partir de las fortalezas, debilidades, niveles y la recomendación que usted validó (no usa sus apuntes). No envía nombre, RUT ni datos de contacto. Revise el texto antes de generar el PDF.</span></div>'
+    + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><button class="rs-btn prim" onclick="_rhRedactarLocal()">📝 Redactar integración</button>'
+    + '<button class="rs-btn" id="rh-btn-ia" onclick="_rhRedactar()">✨ Redactar con IA</button></div>'
+    + '<div style="font-size:11.5px;color:var(--ink4);margin-top:6px">Ambas redactan las Observaciones finales y el Refuerzo de habilidades solo a partir de las fortalezas, debilidades, niveles y la recomendación que usted validó (no usan sus apuntes). '
+    + '<strong>Redactar integración</strong> trabaja en este computador, al instante y sin costo. <strong>Con IA</strong> logra una prosa más elaborada; no envía nombre, RUT ni datos de contacto. Revise el texto antes de generar el PDF.</div>'
     + '<div class="field"><label>Observaciones finales</label>'
     + '<div style="font-size:12px;color:var(--ink3);margin:2px 0 6px">El PDF comienza con: <em>"Al momento de la evaluación, se concluye que [nombre] se encuentra en la categoría de [categoría] para el cargo de [cargo], turno [turno], en la instalación [instalación]."</em> Escriba aquí el resto; deje una línea en blanco entre párrafos.</div>'
     + area('observaciones', d.observaciones, 8) + '</div>'
@@ -14823,7 +14871,129 @@ async function _rhRedactar() {
     if (tr && Array.isArray(j.refuerzo) && j.refuerzo.length) tr.value = _rhMayusTras2p(j.refuerzo.join('\n'));
     toast('✨ Texto redactado: revíselo antes de generar el PDF', 'ok');
   } catch(e) { toast('No se pudo redactar: ' + e.message, 'er'); }
-  finally { if (btn) { btn.disabled = false; btn.textContent = '✨ Redactar integración con IA'; } }
+  finally { if (btn) { btn.disabled = false; btn.textContent = '✨ Redactar con IA'; } }
+}
+
+// ── Redacción sin IA (en el computador): plantillas a partir de lo que el psicólogo validó ──
+// Las frases fijas de fortalezas y debilidades (_RH_FORT / _RH_DEB) tienen aquí su versión
+// en prosa; las demás (DISC, Personalidad laboral o escritas a mano) se integran como oraciones.
+var _RH_NOMBRE_TXT = { integridad:'integridad', autocontrol:'autocontrol', alerta:'alerta', identificacion:'identificación con la organización',
+  cliente:'orientación al cliente', criterio:'criterio', comunicacion:'comunicación', equipo:'trabajo en equipo', razonamiento:'razonamiento general' };
+var _RH_PROSA_FORT = {
+  integridad:'Muestra una actitud consistente con el respeto de las normas y el uso correcto de las atribuciones del cargo.',
+  autocontrol:'Mantiene un adecuado control de impulsos, lo que le permite evaluar la situación antes de responder cuando el contexto lo exige.',
+  alerta:'Presenta una adecuada capacidad de vigilancia y de detección de irregularidades, aspecto central en las funciones de seguridad.',
+  criterio:'Muestra buen criterio para resolver las situaciones habituales del cargo dentro de sus atribuciones.',
+  razonamiento:'Comprende y aplica instrucciones con varias condiciones sin omitir pasos, lo que favorece el cumplimiento de consignas y procedimientos.',
+  comunicacion:'Se comunica de forma clara y respetuosa, lo que favorece la entrega de novedades y el relevo de turno.',
+  equipo:'Colabora con su equipo de trabajo y presta apoyo cuando la situación lo requiere.'
+};
+var _RH_PROSA_DEB = {
+  integridad:'Se observan indicadores en el ámbito de la integridad que deben contrastarse con referencias laborales antes de concretar la contratación.',
+  autocontrol:'Presenta dificultad para frenar respuestas automáticas, por lo que podría actuar antes de evaluar adecuadamente la situación.',
+  alerta:'Su capacidad de vigilancia y de detección de irregularidades se ubica bajo lo esperado para el cargo.',
+  criterio:'Su desempeño al resolver situaciones habituales del cargo se ubica bajo lo esperado, por lo que podría requerir orientación ante escenarios no previstos.',
+  razonamiento:'Presenta dificultad para seguir instrucciones con varias condiciones, lo que puede llevar a omitir pasos en procedimientos o consignas complejas.',
+  comunicacion:'Su comunicación tiende a ser poco clara o escueta, lo que podría afectar la calidad de los reportes y del relevo de turno.',
+  equipo:'Refiere dificultades para colaborar con su equipo, aspecto que requiere seguimiento en un trabajo por turnos.'
+};
+// Acción para el supervisor por competencia bajo el nivel ideal ("Título: Qué hacer y para qué")
+var _RH_REFUERZO = {
+  integridad:'Cumplimiento de normas: Revisar periódicamente el registro de rondas, accesos y novedades, para asegurar que las normas se cumplan también sin supervisión directa.',
+  autocontrol:'Manejo de situaciones tensas: Observar cómo responde ante personas alteradas o provocaciones, y reforzar la aplicación del protocolo por sobre la reacción personal.',
+  alerta:'Atención sostenida: Supervisar el cumplimiento de rondas y controles en los horarios de menor actividad, para asegurar que se mantenga atento durante todo el turno.',
+  identificacion:'Integración a la empresa: Explicar el sentido de su función para el cliente y hacer seguimiento de su adaptación durante los primeros meses, para favorecer su permanencia.',
+  cliente:'Trato con el público: Observar su atención a visitas y usuarios, y reforzar que explique las normas con amabilidad sin dejar de cumplir el protocolo.',
+  criterio:'Decisiones en situaciones no previstas: Revisar con la persona los casos que se aparten del procedimiento, para orientar qué decidir y a quién informar.',
+  comunicacion:'Reportes y relevo de turno: Revisar el libro de novedades y la entrega de turno, y pedir que complete la información que falte, para asegurar reportes claros y completos.',
+  equipo:'Coordinación con el equipo: Observar su colaboración con los compañeros de turno y abordar a tiempo los desacuerdos, para mantener un trabajo coordinado.',
+  razonamiento:'Consignas paso a paso: Entregar los procedimientos por escrito y verificar que los explique con sus palabras, para asegurar que no omita pasos.'
+};
+var _RH_REFUERZO_BASE = [
+  'Inducción en el puesto: Presentar las consignas específicas de la instalación y verificar que las conozca, para asegurar un inicio ordenado en sus funciones.',
+  'Seguimiento del período de adaptación: Retroalimentar su desempeño durante las primeras semanas, para consolidar las conductas esperadas en el cargo.'
+];
+function _rhListaY(a) { return a.length <= 1 ? (a[0] || '') : a.slice(0, -1).join(', ') + ' y ' + a[a.length - 1]; }
+function _rhMinus(t) { return t ? t.charAt(0).toLowerCase() + t.slice(1) : t; }
+// Una línea de fortalezas o debilidades → oración. Las frases nominales ("Facilidad para…")
+// se completan con un verbo para que se lean como redacción y no como lista.
+function _rhOracion(l, tipo) {
+  var t = String(l || '').trim().replace(/^[-•·*\s]+/, '').replace(/\s*[.;]+$/, '');
+  if (!t) return '';
+  if (/^experiencia\b/i.test(t)) t = 'Cuenta con ' + _rhMinus(t);
+  else if (/^(buen[ao]?|adecuad[ao]s?|alt[ao]|baj[ao]|gran|mayor|poc[ao]|escas[ao])\b/i.test(t) || /^[a-záéíóúñ]+(dad|ción|sión|ncia|miento|eza|ez|ura|ismo)\b/i.test(t))
+    t = (tipo === 'deb' ? 'Presenta ' : 'Aporta ') + _rhMinus(t);
+  return t.charAt(0).toUpperCase() + t.slice(1) + '.';
+}
+function _rhUnir(oraciones, inicio) {
+  var con = ['Asimismo, ', 'Además, ', 'Por otra parte, '], k = 0;
+  return oraciones.map(function(o, i) {
+    if (i === 0) return inicio ? inicio + _rhMinus(o) : o;
+    if (i % 2 === 1) return con[k++ % con.length] + _rhMinus(o);
+    return o;
+  }).join(' ');
+}
+function _rhRedaccionLocal(d, c) {
+  var nom = ((c.nombre || '').trim().split(/\s+/)[0]) || 'La persona evaluada';
+  var cargo = (d.cargo || _rhCargoBase(c) || 'el cargo').toLowerCase();
+  var idx = function(n){ return _RH_NIVELES.indexOf(n); };
+  var prosa = function(lineas, mapa, base, tipo) {
+    return String(lineas || '').split('\n').map(function(l){
+      var t = l.trim(); if (!t) return '';
+      var k = Object.keys(base).filter(function(x){ return base[x] === t; })[0];
+      return k && mapa[k] ? mapa[k] : _rhOracion(t, tipo);
+    }).filter(Boolean);
+  };
+  var altos = [], brecha = [];
+  _RH_COMP.forEach(function(k) {
+    var n = d.niveles[k.key], id = d.ideales[k.key] || k.ideal; if (!n) return;
+    if (n === 'Alto') altos.push(_RH_NOMBRE_TXT[k.key]);
+    if (idx(n) > idx(id)) brecha.push({ key:k.key, n:n, gap:idx(n) - idx(id) });
+  });
+  // 1. Perfil y fortalezas
+  var fort = prosa(d.fortalezas, _RH_PROSA_FORT, _RH_FORT, 'fort');
+  var p1 = nom + ' demuestra un perfil ' + (d.categoria === 'no_apto' ? 'con brechas relevantes respecto de las exigencias del cargo de ' + cargo
+      : altos.length ? 'ajustado a las exigencias del cargo de ' + cargo : 'acorde a las exigencias básicas del cargo de ' + cargo)
+    + (altos.length ? (d.categoria === 'no_apto' ? ', aunque presenta un desempeño destacado en ' : ', con un desempeño destacado en ') + _rhListaY(altos) : '') + '.';
+  if (fort.length) p1 += ' ' + _rhUnir(fort);
+  // 2. Oportunidades de mejora: debilidades y competencias bajo el ideal que no tengan ya su frase
+  var deb = prosa(d.debilidades, _RH_PROSA_DEB, _RH_DEB, 'deb');
+  var conFrase = Object.keys(_RH_DEB).filter(function(k){ return String(d.debilidades || '').indexOf(_RH_DEB[k]) !== -1; });
+  var resto = brecha.filter(function(b){ return conFrase.indexOf(b.key) === -1; });
+  var bajos = resto.filter(function(b){ return b.n === 'Bajo'; }).map(function(b){ return _RH_NOMBRE_TXT[b.key]; });
+  var medios = resto.filter(function(b){ return b.n === 'Medio'; }).map(function(b){ return _RH_NOMBRE_TXT[b.key]; });
+  var art = function(a){ return (a.length > 1 ? 'las competencias de ' : 'la competencia de ') + _rhListaY(a); };
+  if (bajos.length) deb.push(_rhMayus(art(bajos)) + (bajos.length > 1 ? ' se ubican' : ' se ubica') + ' en un nivel bajo respecto de lo requerido para el cargo.');
+  if (medios.length) deb.push(_rhMayus(art(medios)) + (medios.length > 1 ? ' se ubican' : ' se ubica') + ' en un nivel medio, bajo el nivel ideal definido para el cargo.');
+  var p2 = deb.length ? _rhUnir(deb, 'Como oportunidades de mejora, ')
+    : 'Como oportunidades de mejora, no se observan brechas relevantes respecto del nivel ideal definido para el cargo; se sugiere mantener el seguimiento habitual del período de adaptación.';
+  // 3. Recomendación
+  var det = String(d.detalle || '').trim().replace(/\s*\.+$/, '');
+  det = det ? ', ' + _rhMinus(det) : '';
+  var hayBrechas = deb.length > 0, p3;
+  if (d.recomendacion === 'no_contratar')
+    p3 = 'En consecuencia, no se recomienda su contratación para el cargo de ' + cargo + det + ', dado que las brechas descritas son relevantes para el desempeño seguro de sus funciones.';
+  else {
+    var tipo = d.recomendacion === 'indefinido' ? 'con contrato indefinido' : 'a plazo fijo';
+    p3 = (hayBrechas ? 'Para mitigar estas brechas, se recomienda su contratación ' : 'En consecuencia, se recomienda su contratación ') + tipo + det
+      + (d.recomendacion === 'plazo_fijo' ? ', lo que permitirá verificar su adaptación al cargo antes de definir su continuidad.' : '.');
+    if (d.categoria === 'obs') p3 += ' Se sugiere que la jefatura directa considere las observaciones señaladas durante el período de inducción.';
+  }
+  // Refuerzo: las competencias más alejadas del ideal (hasta 3)
+  var ref = brecha.slice().sort(function(a, b){ return (b.gap - a.gap) || ((b.n === 'Bajo') - (a.n === 'Bajo')); }).map(function(b){ return _RH_REFUERZO[b.key]; }).filter(Boolean).slice(0, 3);
+  if (ref.length < 2 && d.recomendacion !== 'no_contratar') _RH_REFUERZO_BASE.forEach(function(x){ if (ref.length < 2) ref.push(x); });
+  return { texto: [p1, p2, p3].join('\n\n'), refuerzo: ref };
+}
+function _rhMayus(t) { return t ? t.charAt(0).toUpperCase() + t.slice(1) : t; }
+async function _rhRedactarLocal() {
+  var d = _rhLeer(), c = _rhCand;
+  if (!_rhValidar(d, ['categoria', 'instalacion', 'recomendacion'])) return;
+  var ta = document.getElementById('rh-observaciones'), tr = document.getElementById('rh-refuerzo');
+  if (((ta && ta.value.trim()) || (tr && tr.value.trim())) && !(await appConfirm('¿Reemplazar las Observaciones finales y el Refuerzo de habilidades por la redacción nueva?'))) return;
+  var r = _rhRedaccionLocal(d, c);
+  if (ta) ta.value = r.texto;
+  if (tr) tr.value = _rhMayusTras2p(r.refuerzo.join('\n'));
+  toast('📝 Texto redactado: revíselo antes de generar el PDF', 'ok');
 }
 
 // Recalcula fortalezas y debilidades con lo que hay en la tabla (en el computador, sin IA)
