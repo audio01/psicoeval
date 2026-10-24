@@ -857,6 +857,27 @@ input,select,textarea{font-family:inherit;outline:none}
 .bd-board .bd-col-lado .kanban-col.bd-col-cont{background:#f7feff}
 .bd-board .kanban-card span{white-space:normal!important}
 .bd-board .kanban-card{padding:10px 11px;border-radius:12px}
+/* Tablero minimalista */
+.bd-board .kanban-col{background:transparent;border:none}
+.bd-board .kanban-col-header{border-bottom:none;padding:4px 4px 10px;font-size:12.5px;font-weight:700;color:var(--ink2);gap:8px;background:transparent}
+.bd-col-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.bd-col-n{margin-left:auto;font-size:12px;font-weight:600;color:var(--ink4)}
+.bd-board .kanban-cards{padding:0 2px 8px;gap:8px}
+.bd-board .bd-kc{background:var(--surface);border:1px solid var(--border);box-shadow:0 1px 2px rgba(15,23,42,.04);padding:11px 12px}
+.bd-board .bd-kc:hover{border-color:var(--border2);box-shadow:0 4px 14px -6px rgba(15,23,42,.18)}
+.bd-kc-top{display:flex;gap:8px;align-items:flex-start;justify-content:space-between}
+.bd-kc .bd-nom{font-size:13px;line-height:1.3}
+.bd-kc-sub{margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bd-kc-est{margin-top:8px}
+.bd-est{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;color:var(--ink2)}
+.bd-est i{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.bd-kc .row-chk{opacity:0;transition:opacity .15s;margin-top:1px}
+.bd-kc:hover .row-chk,.bd-kc .row-chk:checked,.bd-kc .row-chk:focus-visible{opacity:1}
+.bd-board .bd-col-lado .kanban-col.bd-col-desc{border:1px dashed var(--border2)!important;background:transparent!important;border-radius:12px}
+.bd-lado-b{padding:2px 12px 12px;font-size:12px;color:var(--ink4)}
+.bd-icobtn{width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--ink3);cursor:pointer}
+.bd-icobtn:hover{color:var(--accent);border-color:var(--accent-m)}
+.bd-icobtn .ico{width:16px;height:16px}
 .bd-descartar-barra{position:fixed;left:50%;bottom:28px;transform:translate(-50%,24px);opacity:0;pointer-events:none;z-index:900;display:flex;align-items:center;gap:12px;width:min(520px,calc(100vw - 40px));padding:16px 22px;border-radius:14px;border:2px dashed #fca5a5;background:#fff;color:#b91c1c;font-size:13.5px;box-shadow:0 12px 36px rgba(15,23,42,.18);transition:opacity .15s,transform .15s,background .15s,border-color .15s}
 .bd-descartar-barra small{display:block;font-size:11.5px;color:#64748b;font-weight:500;margin-top:1px}
 .bd-descartar-barra.visible{opacity:1;transform:translate(-50%,0);pointer-events:auto}
@@ -2004,12 +2025,10 @@ body.pub #inv-banner>div{border-radius:16px!important;box-shadow:0 10px 30px -20
       <div id="tab-candidates" style="display:none">
         <div class="bd-head">
           <div>
-            <h2 style="font-size:24px;font-weight:800;margin-bottom:2px">Candidatos</h2>
-            <p style="font-size:13px;color:var(--ink3)">Tabla y tablero del proceso de selección</p>
+            <h2 style="font-size:24px;font-weight:800">Candidatos</h2>
           </div>
           <div style="display:flex;gap:8px" id="cand-action-btns">
-            <button class="btn btn-outline btn-sm" onclick="exportCSV()">⬇ Exportar CSV</button>
-            <button class="btn btn-outline btn-sm" id="btn-refresh-cand" onclick="refreshCandView()">↻ Actualizar</button>
+            <button class="bd-icobtn" id="btn-refresh-cand" onclick="refreshCandView()" title="Actualizar" aria-label="Actualizar"><svg class="ico"><use href="#i-redo"/></svg></button>
           </div>
         </div>
         <!-- Vistas guardadas -->
@@ -11014,7 +11033,7 @@ function _bdOrdenar(lista) {
 
 // ── Grupos (agrupar en tabla, columnas en tablero) ──
 function _bdGrupos(campo) {
-  if (campo === 'etapa') return PIPELINE_STAGES.map(function(s){ return { id:s.id, label:s.icon + ' ' + s.label, color:s.color, bg:s.bg, border:s.border }; });
+  if (campo === 'etapa') return PIPELINE_STAGES.map(function(s){ return { id:s.id, label:s.label, color:s.color, bg:s.bg, border:s.border }; });
   if (campo === 'dictamen') return _EV_DICTAMEN.map(function(d){ return { id:d.val, label:d.icon + ' ' + d.label, color:d.color, bg:d.bg, border:d.border }; })
     .concat([{ id:'sin', label:'Sin dictamen', color:'#64748b', bg:'#f8fafc', border:'#e2e8f0' }]);
   if (campo === 'estado') return [['completed', 'Completada', '#15803d', '#f0fdf4', '#bbf7d0'], ['in_progress', 'En curso', '#b45309', '#fffbeb', '#fde68a'], ['pending', 'Pendiente', '#64748b', '#f8fafc', '#e2e8f0']]
@@ -11046,11 +11065,9 @@ function _bdCuerpoPintar(all) {
   var lista = _bdOrdenar(_bdFiltrar(all));
   var cnt = document.getElementById('bd-count');
   if (cnt) {
-    var arch = (!(_BD.filtros || {}).archivo && !(_bdBuscarTxt || '').trim()) ? all.filter(_bdEnArchivo).length : 0;
     cnt.innerHTML = (lista.length === all.length ? all.length + ' candidatos' : lista.length + ' de ' + all.length)
       + (function(){ var pr = (_BD.filtros || {}).archivo ? 0 : all.filter(function(c){ return _diasParaArchivo(c) !== null; }).length;
-          return pr ? ' · <a class="bd-arch" style="color:#c2410c" onclick="_BD.filtros.archivo=\'pronto\';_bdCambio()">⏳ ' + pr + ' se archiva' + (pr > 1 ? 'n' : '') + ' esta semana</a>' : ''; })()
-      + (arch ? ' · <a class="bd-arch" onclick="_bdAbrirVista(\'archivo\')" title="Descartados y postulantes sin movimiento hace más de ' + _BD_ARCH_DIAS + ' días. No se borran.">🗄 ' + arch + ' en archivo</a>' : '');
+          return pr ? ' · <a class="bd-arch" style="color:#c2410c" onclick="_BD.filtros.archivo=\'pronto\';_bdCambio()">' + pr + ' se archiva' + (pr > 1 ? 'n' : '') + ' pronto</a>' : ''; })();
   }
   cuerpo.innerHTML = _BD.vista === 'tablero' ? _bdTablero(lista) : _bdTabla(lista);
   updateBulkBar();
@@ -11086,16 +11103,27 @@ function _bdBarPintar() {
   }).join('');
   var tab = _BD.vista === 'tablero';
   el.innerHTML = '<div class="bd-bar-l">'
-    + '<input class="bd-buscar" id="bd-buscar" placeholder="🔍 Buscar nombre, RUT, correo…" value="' + htmlEsc(_bdBuscarTxt) + '" oninput="_bdBuscar(this.value)">'
+    + '<input class="bd-buscar" id="bd-buscar" placeholder="Buscar nombre, RUT o correo" value="' + htmlEsc(_bdBuscarTxt) + '" oninput="_bdBuscar(this.value)">'
     + chips + '<button class="bd-add" onclick="_bdMenuCampos(this)">＋ Filtro</button>'
     + '<span class="bd-count" id="bd-count"></span></div>'
     + '<div class="bd-bar-r">'
-    + '<div class="bd-seg"><button class="' + (tab ? '' : 'on') + '" onclick="_bdSetVista(\'tabla\')"><svg class="ico"><use href="#i-table"/></svg>Tabla</button><button class="' + (tab ? 'on' : '') + '" onclick="_bdSetVista(\'tablero\')"><svg class="ico"><use href="#i-cols"/></svg>Tablero</button></div>'
-    + '<button class="bd-btn" onclick="_bdMenuOrden(this)"><svg class="ico"><use href="#i-sort"/></svg>Ordenar</button>'
-    + '<button class="bd-btn" onclick="_bdMenuAgrupar(this)">' + (tab ? '<svg class="ico"><use href="#i-cols"/></svg>Columnas' : '<svg class="ico"><use href="#i-group"/></svg>Agrupar') + (tab ? ': ' + (_BD.columnas === 'dictamen' ? 'Dictamen' : 'Etapa') : (_BD.agrupar ? ': ' + _BD_AGRUPAR.filter(function(a){ return a[0] === _BD.agrupar; })[0][1] : '')) + '</button>'
-    + '<button class="bd-btn" onclick="_bdMenuProps(this)"><svg class="ico"><use href="#i-sliders"/></svg>Propiedades</button>'
-    + (S.role === 'admin' ? '<button class="bd-btn" onclick="abrirPlanillaEnvio()" title="Tabla con los datos básicos para enviar a RRHH por correo"><svg class="ico"><use href="#i-sheet"/></svg>Planilla de envío</button>' : '')
+    + '<div class="bd-seg"><button class="' + (tab ? '' : 'on') + '" onclick="_bdSetVista(\'tabla\')" title="Tabla"><svg class="ico"><use href="#i-table"/></svg>Tabla</button><button class="' + (tab ? 'on' : '') + '" onclick="_bdSetVista(\'tablero\')" title="Tablero"><svg class="ico"><use href="#i-cols"/></svg>Tablero</button></div>'
+    + '<button class="bd-btn" onclick="_bdMenuVista(this)"><svg class="ico"><use href="#i-sliders"/></svg>Vista</button>'
     + '</div>';
+}
+// Un solo menú con lo que antes eran cuatro botones: ordenar, columnas/agrupar, propiedades,
+// planilla de envío y exportar
+function _bdMenuVista(anchor) {
+  var tab = _BD.vista === 'tablero';
+  var items = [{ titulo:'Ordenar por' }].concat(_BD_ORDEN.map(function(o){ return { label:o[1], on:_BD.orden === o[0], fn:function(){ _bdSetOrden(o[0]); } }; }));
+  if (tab) items = items.concat([{ titulo:'Columnas del tablero' },
+    { label:'Etapa del proceso', on:_BD.columnas !== 'dictamen', fn:function(){ _BD.columnas = 'etapa'; _bdCambio(); } },
+    { label:'Dictamen de entrevista', on:_BD.columnas === 'dictamen', fn:function(){ _BD.columnas = 'dictamen'; _bdCambio(); } }]);
+  else items = items.concat([{ titulo:'Agrupar por' }].concat(_BD_AGRUPAR.map(function(a){ return { label:a[1], on:(_BD.agrupar || '') === a[0], fn:function(){ _BD.agrupar = a[0]; _bdCambio(); } }; })));
+  items = items.concat([{ titulo:'Más' }, { label:'Propiedades visibles…', fn:function(){ setTimeout(function(){ _bdMenuProps(anchor); }, 0); } }]);
+  if (S.role === 'admin') items.push({ label:'Planilla de envío', fn:function(){ abrirPlanillaEnvio(); } });
+  items.push({ label:'Exportar CSV', fn:function(){ exportCSV(); } });
+  _bdMenu(anchor, items);
 }
 
 function _bdCelda(c, p) {
@@ -11202,26 +11230,24 @@ function _bdTablero(lista) {
     if (arrastra && g.id === 'descartado' && !del.length && !verArchivo) return;
     if (arrastra && g.id === 'contratado' && !verArchivo) return;
     h += '<div class="kanban-col" id="kcol-' + g.id + '"' + (arrastra ? ' ondragover="event.preventDefault();this.classList.add(\'drag-over\');kOver(event,\'' + g.id + '\')" ondragleave="if(!this.contains(event.relatedTarget)){this.classList.remove(\'drag-over\')}" ondrop="kDrop(event,\'' + g.id + '\')"' : '') + '>'
-      + '<div class="kanban-col-header" style="color:' + g.color + '"><span>' + g.label + '</span><span style="margin-left:auto;font-size:11px;background:' + g.bg + ';border:1.5px solid ' + g.border + ';color:' + g.color + ';border-radius:100px;padding:1px 8px">' + del.length + '</span></div>'
+      + '<div class="kanban-col-header"><span class="bd-col-dot" style="background:' + g.color + '"></span><span>' + g.label + '</span><span class="bd-col-n">' + del.length + '</span></div>'
       + '<div class="kanban-cards" id="kcards-' + g.id + '">';
     if (!del.length) h += '<div class="bd-vacio">Sin candidatos</div>';
     del.slice(0, _bdLimite).forEach(function(c) {
       var id = htmlEsc(c.id), pm = PERFIL_META[c.perfil] || {};
       var ent = ((c.scores && c.scores._entrevistas) || []).length;
-      h += '<div class="kanban-card" id="kcard-' + id + '"' + (arrastra ? ' draggable="true" ondragstart="kDragStart(event,\'' + id + '\')" ondragend="kDragEnd(event)"' : '') + ' onclick="openCandDrawer(\'' + id + '\')">'
-        + '<div style="display:flex;gap:8px;align-items:flex-start"><div style="flex:1;min-width:0"><div class="bd-nom">' + htmlEsc(((c.nombre || '') + ' ' + (c.apellido || '')).trim()) + _rutRepBadge(c) + _porArchivarBadge(c) + _enArchivoBadge(c) + '</div>'
-        + (_BD.props.cargo ? '<div class="bd-sub">' + (pm.icon || '') + ' ' + htmlEsc(_postulaDe(c).cargo || c.cargo || pm.label || '') + '</div>' : '')
-        + (_instalacionDe(c) ? '<div class="bd-sub" style="color:var(--ink2);font-weight:600">📍 ' + htmlEsc(_instalacionDe(c)) + '</div>' : '') + '</div>' + _bdChk(c) + '</div>'
-        + (_BD.props.resultado && c.estado === 'completed' ? '<div style="margin-top:7px">' + _miradaChipsHtml(Object.assign({}, _miradaDe(c), { dictamen:'' })) + '</div>' : '')
-        + (_BD.props.etapa && campo !== 'etapa' ? '<div style="margin-top:6px">' + _bdCelda(c, 'etapa') + '</div>' : '')
-        + (campo !== 'dictamen' && _categoriaDe(c) ? '<div style="margin-top:6px">' + _bdDictamenCorto(c) + '</div>' : '')
-        + '<div class="bd-card-pie">'
-        + (_BD.props.estado ? statusBadge(c.estado) : '')
-        + (ent ? '<span>🗓 ' + ent + '</span>' : '')
-        + (_BD.props.comuna && c.comuna ? '<span>' + htmlEsc(c.comuna) + '</span>' : '')
-        + (_BD.props.canal && _canalTxt(c) ? '<span>' + htmlEsc(_canalTxt(c)) + '</span>' : '')
-        + (_BD.props.fecha ? '<span style="margin-left:auto" title="' + htmlEsc(_momentoTxt(c)) + '">' + htmlEsc(_fechaCorta(c)) + '</span>' : '')
-        + '</div></div>';
+      // Tarjeta mínima: nombre, a qué postula y un solo estado (categoría o, si no hay, aptitud)
+      var pz = _postulaDe(c), m = _miradaDe(c), cat = campo !== 'dictamen' ? _categoriaDe(c) : '';
+      var sub = [pz.cargo || c.cargo || pm.label || '', pz.instalacion].filter(Boolean).join(' · ');
+      var est = '';
+      if (cat) { var cm = { apto:['Apto', '#16a34a'], obs:['Apto con observaciones', '#d97706'], no_apto:['No apto', '#dc2626'] }[cat]; est = '<span class="bd-est"><i style="background:' + cm[1] + '"></i>' + cm[0] + '</span>'; }
+      else if (c.estado !== 'completed') est = '<span class="bd-est"><i style="background:#cbd5e1"></i>Evaluación sin terminar</span>';
+      else if (m.apt.length) { var ok = m.aptOk === m.apt.length, nada = m.aptOk === 0; est = '<span class="bd-est" title="Pruebas de aptitud sobre el mínimo"><i style="background:' + (ok ? '#16a34a' : nada ? '#dc2626' : '#d97706') + '"></i>Aptitud ' + m.aptOk + ' de ' + m.apt.length + '</span>'; }
+      h += '<div class="kanban-card bd-kc" id="kcard-' + id + '" title="' + htmlEsc(_momentoTxt(c)) + '"' + (arrastra ? ' draggable="true" ondragstart="kDragStart(event,\'' + id + '\')" ondragend="kDragEnd(event)"' : '') + ' onclick="openCandDrawer(\'' + id + '\')">'
+        + '<div class="bd-kc-top"><div class="bd-nom">' + htmlEsc(((c.nombre || '') + ' ' + (c.apellido || '')).trim()) + _rutRepBadge(c) + _porArchivarBadge(c) + _enArchivoBadge(c) + '</div>' + _bdChk(c) + '</div>'
+        + (sub ? '<div class="bd-sub bd-kc-sub">' + htmlEsc(sub) + '</div>' : '')
+        + (est ? '<div class="bd-kc-est">' + est + '</div>' : '')
+        + '</div>';
     });
     if (del.length > _bdLimite) h += '<button class="btn btn-ghost btn-sm" onclick="_bdLimite+=60;_bdRenderCuerpo()">Mostrar más (' + (del.length - _bdLimite) + ')</button>';
     h += '</div></div>';
@@ -11232,17 +11258,11 @@ function _bdTablero(lista) {
     var cuenta = function(et){ return (_dbCache || []).filter(function(c){ return getPipelineEtapa(c) === et && (!(_BD.filtros || {}).cargo || c.perfil === _BD.filtros.cargo); }).length; };
     var nDesc = cuenta('descartado'), nCont = cuenta('contratado');
     h += '<div class="bd-col-lado"><div class="kanban-col bd-col-desc" ondragover="event.preventDefault();this.classList.add(\'drag-over\')" ondragleave="if(!this.contains(event.relatedTarget))this.classList.remove(\'drag-over\')" ondrop="this.classList.remove(\'drag-over\');kDrop(event,\'descartado\')">'
-      + '<div class="kanban-col-header" style="color:#991b1b"><span>❌ Descartados</span><span style="margin-left:auto;font-size:11px;background:#fef2f2;border:1.5px solid #fca5a5;color:#991b1b;border-radius:100px;padding:1px 8px">' + nDesc + '</span></div>'
-      + '<div style="padding:14px;display:flex;flex-direction:column;gap:10px;align-items:stretch;text-align:center">'
-      + '<div style="font-size:11.5px;color:var(--ink4);line-height:1.5">Pasan al archivo. Arrastre aquí una tarjeta para descartarla.</div>'
-      + (nDesc ? '<button class="btn btn-outline btn-sm" onclick="_bdIrConFiltros({ etapa:\'descartado\' })">Ver descartados →</button>' : '')
-      + '</div></div>'
+      + '<div class="kanban-col-header"><span class="bd-col-dot" style="background:#dc2626"></span><span>Descartados</span><span class="bd-col-n">' + nDesc + '</span></div>'
+      + '<div class="bd-lado-b">' + (nDesc ? '<a class="bd-lnk" onclick="_bdIrConFiltros({ etapa:\'descartado\' })">Ver →</a>' : '<span>Arrastre aquí para descartar</span>') + '</div></div>'
       + '<div class="kanban-col bd-col-desc bd-col-cont" ondragover="event.preventDefault();this.classList.add(\'drag-over\')" ondragleave="if(!this.contains(event.relatedTarget))this.classList.remove(\'drag-over\')" ondrop="this.classList.remove(\'drag-over\');kDrop(event,\'contratado\')">'
-      + '<div class="kanban-col-header" style="color:#0e7490"><span>🤝 Contratado</span><span style="margin-left:auto;font-size:11px;background:#ecfeff;border:1.5px solid #a5f3fc;color:#0e7490;border-radius:100px;padding:1px 8px">' + nCont + '</span></div>'
-      + '<div style="padding:14px;display:flex;flex-direction:column;gap:10px;align-items:stretch;text-align:center">'
-      + '<div style="font-size:11.5px;color:var(--ink4);line-height:1.5">Arrastre aquí una tarjeta cuando ingrese a trabajar.</div>'
-      + (nCont ? '<button class="btn btn-outline btn-sm" onclick="_bdIrConFiltros({ etapa:\'contratado\' })">Ver contratados →</button>' : '')
-      + '</div></div></div>';
+      + '<div class="kanban-col-header"><span class="bd-col-dot" style="background:#0e7490"></span><span>Contratado</span><span class="bd-col-n">' + nCont + '</span></div>'
+      + '<div class="bd-lado-b">' + (nCont ? '<a class="bd-lnk" onclick="_bdIrConFiltros({ etapa:\'contratado\' })">Ver →</a>' : '<span>Arrastre aquí al contratar</span>') + '</div></div></div>';
   }
   if (arrastra) h += '<div id="bd-descartar" class="bd-descartar-barra" ondragover="event.preventDefault();this.classList.add(\'over\')" ondragleave="this.classList.remove(\'over\')" ondrop="kDrop(event,\'descartado\')">'
     + '<span style="font-size:18px">❌</span><span><b>Suelte aquí para descartar</b><small>El candidato pasa al archivo</small></span></div>';
