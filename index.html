@@ -1118,6 +1118,7 @@ textarea.rh-in{resize:vertical}
 .ev-reloj-n{text-align:right;line-height:1.1}
 .ev-reloj-n b{display:block;font-size:22px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--ink)}
 .ev-reloj-n small{font-size:11px;color:var(--ink3)}
+.ev-reloj-dur{font:inherit;font-size:11px;font-weight:700;color:var(--ink2);background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:0 2px;height:20px;width:auto}
 .ev-step-tm{font-size:11.5px;color:var(--ink4);white-space:nowrap;margin-right:8px}
 .ev-step-tm.sobre{color:#c2410c}
 .ev-encuadre{font-size:14px;color:var(--ink);line-height:1.6;background:#eff6ff;border-left:3px solid var(--accent);border-radius:0 9px 9px 0;padding:10px 12px;margin-bottom:10px}
@@ -1220,7 +1221,7 @@ textarea.rh-in{resize:vertical}
 body.exam-mode #view-test,
 body.exam-mode #view-test *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 body.exam-mode #view-test img{-webkit-user-drag:none;pointer-events:none}
-#exam-watermark{position:fixed;inset:0;z-index:9000;pointer-events:none;background-repeat:repeat;opacity:.09}
+#exam-watermark{position:fixed;right:12px;bottom:10px;z-index:9000;pointer-events:none;font-size:11.5px;font-weight:600;color:var(--ink3);background:var(--surface);border:1px solid var(--border);border-radius:100px;padding:4px 11px;max-width:calc(100vw - 24px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #exam-shield{position:fixed;inset:0;z-index:10000;display:none;align-items:center;justify-content:center;padding:24px;
   background:var(--bg);text-align:center}
 body.exam-away #exam-shield{display:flex}
@@ -5585,8 +5586,8 @@ function onVisibilityChange() {
 //  Una página web no puede impedir una foto con el celular ni bloquear del todo
 //  la captura del sistema operativo. Lo que sí hace: impide copiar/seleccionar/
 //  imprimir, oculta las preguntas cuando el candidato sale de la ventana (otra
-//  pestaña, otra app, la mayoría de las herramientas de captura), pone una marca
-//  de agua con su nombre y RUT (disuade de fotografiar) y registra cada incidente
+//  pestaña, otra app, la mayoría de las herramientas de captura), pone una etiqueta
+//  con su nombre y la fecha (disuade de fotografiar) y registra cada incidente
 //  en S.integrity, que viaja con la evaluación como scores._integridad.
 // ═══════════════════════════════════════════════════════════
 var _integOn = false;
@@ -5619,18 +5620,15 @@ function _integStop() {
   if (wm) wm.remove();
 }
 
-// Marca de agua repetida con nombre, RUT y fecha (o "MODO PRUEBA")
+// Etiqueta discreta en una esquina con el nombre y la fecha (o "MODO PRUEBA"). Sin RUT: no hace
+// falta mostrarlo y alguien cercano podría verlo. Si circula una foto, identifica de quién salió.
 function _integWatermark() {
   var c = S.candidate || {};
   var txt = c._testMode ? 'MODO PRUEBA'
-    : [((c.nombre || '') + ' ' + (c.apellido || '')).trim(), c.rut, new Date().toLocaleDateString('es-CL')].filter(Boolean).join(' · ');
-  var esc = String(txt).replace(/[&<>"']/g, function(ch){ return '&#' + ch.charCodeAt(0) + ';'; });
-  var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="420" height="220">'
-    + '<text x="20" y="130" transform="rotate(-24 210 110)" font-family="-apple-system,Segoe UI,sans-serif" '
-    + 'font-size="17" font-weight="700" fill="#64748b">' + esc + '</text></svg>';
+    : ['Evaluación de ' + ((c.nombre || '') + ' ' + (c.apellido || '')).trim(), new Date().toLocaleDateString('es-CL')].filter(Boolean).join(' · ');
   var wm = document.getElementById('exam-watermark');
   if (!wm) { wm = document.createElement('div'); wm.id = 'exam-watermark'; document.body.appendChild(wm); }
-  wm.style.backgroundImage = 'url("data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg) + '")';
+  wm.textContent = txt;
 }
 
 function _integWarn(msg) {
@@ -13689,7 +13687,7 @@ function _tabEntrevistasDrawer(c) {
   var horaAhora = String(_hoy.getHours()).padStart(2, '0') + ':' + String(_hoy.getMinutes()).padStart(2, '0');
   var opcion = function(val, txt, sel){ return '<option value="' + val + '"' + (val === sel ? ' selected' : '') + '>' + txt + '</option>'; };
   var p1 = '<div class="ev-encuadre"><span>Encuadre para leer al inicio</span>“Le voy a pedir que me cuente situaciones reales que haya vivido en el trabajo. Me interesa qué hizo usted, paso a paso, y cómo terminó.”</div>'
-    + '<div class="ev-hint">Presente el objetivo de la conversación y su duración aproximada (unos 45 minutos). El reloj de arriba parte con el primer dato que anote; puede pausarlo.</div>'
+    + '<div class="ev-hint">Presente el objetivo de la conversación y su duración aproximada (unos <span id="ev-dur-txt">30 minutos</span>). El reloj de arriba parte con el primer dato que anote; puede pausarlo o cambiar la duración.</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
     + '<div class="ev-field"><label>Fecha</label><input type="date" id="ef-fecha" value="' + today + '"></div>'
     + '<div class="ev-field"><label>Hora</label><input type="time" id="ef-hora" value="' + horaAhora + '"></div>'
@@ -13910,7 +13908,7 @@ function _evCompIr(i) {
   var rows = [].slice.call(document.querySelectorAll('#ev-main .ev-comp[data-star]'));
   rows.forEach(function(r){ r.style.display = +r.dataset.sidx === i ? '' : 'none'; });
   var cards = document.getElementById('ev-comp-dots'); if (!cards) return;
-  var lim = _EV_MIN_COMP * 60;
+  var lim = _evSegComp();
   cards.innerHTML = rows.map(function(r){
     var n = +r.dataset.nivel || 0, k = +r.dataset.sidx, seg = _evT.comps[r.dataset.evComp] || 0, on = k === i;
     var est = on ? 'en curso · ' + _evMmss(seg) + ' de ' + _evMmss(lim) : n ? n + (seg ? ' · usó ' + _evMmss(seg) : '') : seg ? 'sin puntaje · ' + _evMmss(seg) : 'pendiente';
@@ -13946,7 +13944,14 @@ function _evPintarStar(row) {
 }
 
 // ── Reloj de la entrevista: total, por paso y por competencia STAR (referencia, no bloquea) ──
-var _EV_MIN = [5, 8, 18, 8, 4, 2], _EV_MIN_COMP = 6;
+// Duración configurable (por defecto 30 min, se recuerda en este navegador). Cada paso recibe
+// una parte fija del total: Inicio 11 %, Trayectoria 18 %, STAR 40 %, Confirmar 18 %, Pruebas 9 %, Cierre 4 %.
+var _EV_PESO = [5, 8, 18, 8, 4, 2], _EV_DUR_KEY = 'psicoeval_ev_duracion', _EV_DURACIONES = [20, 30, 40, 45, 60];
+function _evDuracion() { var d = 30; try { d = +localStorage.getItem(_EV_DUR_KEY) || 30; } catch(e) {} return d; }
+function _evDuracionSet(v) { try { localStorage.setItem(_EV_DUR_KEY, String(+v)); } catch(e) {} _evRelojPintar(); _evCompIr(_evCompIdx); }
+function _evSegPaso(i) { var tot = _EV_PESO.reduce(function(a, b){ return a + b; }, 0); return Math.round(_EV_PESO[i] / tot * _evDuracion() * 60); }
+function _evSegComp() { return Math.round(_evSegPaso(2) / 3); }
+function _evMinTxt(s) { var m = s / 60; return (m < 2 ? String(Math.round(m * 2) / 2).replace('.', ',') : Math.round(m)) + ' min'; }
 var _evT = { total:0, pasos:{}, comps:{} }, _evTCorre = false, _evTPaso = 1, _evTInt = null;
 function _evMmss(s) { s = Math.round(s || 0); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
 function _evRelojIniciar(t) {
@@ -13971,21 +13976,26 @@ function _evRelojToggle() { _evTCorre = !_evTCorre; _evRelojPintar(); }
 function _evPasoActivo(n) { if (n && n !== _evTPaso) { _evTPaso = n; _evRelojPintar(); } }
 function _evRelojPintar() {
   var box = document.getElementById('ev-reloj'); if (!box) return;
-  var tot = _EV_MIN.reduce(function(a, b){ return a + b; }, 0);
-  box.innerHTML = '<div class="ev-reloj-barra"><div class="ev-reloj-t">Tiempo de entrevista</div><div class="ev-reloj-seg">'
-    + _EV_MIN.map(function(m, i){
-        var u = (_evT.pasos[i + 1] || 0) / (m * 60);
-        return '<span style="flex:' + m + '" title="' + _EV_PASOS[i][0] + ': ' + m + ' min sugeridos' + (u ? ', usó ' + _evMmss(_evT.pasos[i + 1]) : '') + '"><i style="width:' + Math.min(100, Math.round(u * 100)) + '%' + (u > 1 ? ';background:#ea580c' : '') + '"></i></span>';
+  var tot = _evDuracion();
+  // Mientras se elige la duración no se redibuja (cerraría la lista)
+  var ae = document.activeElement;
+  if (!(ae && ae.classList && ae.classList.contains('ev-reloj-dur'))) box.innerHTML = '<div class="ev-reloj-barra"><div class="ev-reloj-t">Tiempo de entrevista</div><div class="ev-reloj-seg">'
+    + _EV_PESO.map(function(m, i){
+        var u = (_evT.pasos[i + 1] || 0) / _evSegPaso(i);
+        return '<span style="flex:' + m + '" title="' + _EV_PASOS[i][0] + ': ' + _evMinTxt(_evSegPaso(i)) + ' sugeridos' + (u ? ', usó ' + _evMmss(_evT.pasos[i + 1]) : '') + '"><i style="width:' + Math.min(100, Math.round(u * 100)) + '%' + (u > 1 ? ';background:#ea580c' : '') + '"></i></span>';
       }).join('') + '</div><div class="ev-reloj-lb">'
-    + _EV_MIN.map(function(m, i){ return '<span style="flex:' + m + '"' + (i + 1 === _evTPaso ? ' class="on"' : '') + '>' + (m >= 4 ? _EV_PASOS[i][0].replace(' competencias', '').replace('Competencias ', '') : '') + '</span>'; }).join('')
-    + '</div></div><div class="ev-reloj-n"><b>' + _evMmss(_evT.total) + '</b><small>de ' + tot + ' min sugeridos</small></div>'
+    + _EV_PESO.map(function(m, i){ return '<span style="flex:' + m + '"' + (i + 1 === _evTPaso ? ' class="on"' : '') + '>' + (m >= 4 ? _EV_PASOS[i][0].replace(' competencias', '').replace('Competencias ', '') : '') + '</span>'; }).join('')
+    + '</div></div><div class="ev-reloj-n"><b>' + _evMmss(_evT.total) + '</b><small>de <select class="ev-reloj-dur" onchange="this.blur();_evDuracionSet(this.value)" title="Duración sugerida de la entrevista">'
+    + _EV_DURACIONES.concat(_EV_DURACIONES.indexOf(tot) < 0 ? [tot] : []).map(function(d){ return '<option value="' + d + '"' + (d === tot ? ' selected' : '') + '>' + d + '</option>'; }).join('')
+    + '</select> min sugeridos</small></div>'
     + '<button type="button" class="btn btn-ghost btn-sm" onclick="_evRelojToggle()">' + (_evTCorre ? '⏸ Pausar' : (_evT.total ? '▶ Seguir' : '▶ Iniciar')) + '</button>';
-  _EV_MIN.forEach(function(m, i) {
+  _EV_PESO.forEach(function(m, i) {
     var el = document.getElementById('ev-tm-' + (i + 1)); if (!el) return;
-    var u = _evT.pasos[i + 1] || 0;
-    el.textContent = '⏱ ' + m + ' min' + (u >= 30 ? ' · usó ' + Math.round(u / 60) : '');
-    el.classList.toggle('sobre', u > m * 60 + 60);
+    var u = _evT.pasos[i + 1] || 0, s = _evSegPaso(i);
+    el.textContent = '⏱ ' + _evMinTxt(s) + (i === 2 ? ' (≈ ' + _evMinTxt(_evSegComp()) + ' c/u)' : '') + (u >= 30 ? ' · usó ' + Math.round(u / 60) : '');
+    el.classList.toggle('sobre', u > s + 60);
   });
+  var du = document.getElementById('ev-dur-txt'); if (du) du.textContent = tot + ' minutos';
 }
 
 // Trayectoria: coincide / corregir / no se pudo verificar
