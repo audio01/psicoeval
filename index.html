@@ -907,7 +907,7 @@ input,select,textarea{font-family:inherit;outline:none}
 .dh-tabs-slot .drawer-tab-btn{padding:10px 14px;font-size:13.5px;margin:0 0 -1px}
 .dh-tabs-slot .drawer-tab-btn.active{color:var(--ink);border-bottom-color:var(--ink)}
 /* Pestañas al centro del encabezado, con la línea activa sobre el borde inferior (como antes) */
-@container (min-width:1400px){.dh-tabs-slot{position:absolute;left:50%;bottom:0;transform:translateX(-50%)}.dh-txt{flex:1 1 auto;max-width:calc(50% - 250px);overflow:hidden}.dh-l1 .dh-name{overflow:hidden;text-overflow:ellipsis;flex-shrink:1;min-width:120px}.dh-badges{margin-left:auto}}
+@container (min-width:1400px){.dh-tabs-slot{position:absolute;left:50%;bottom:0;transform:translateX(-50%)}.dh-txt{flex:1 1 auto;max-width:calc(50% - 310px);overflow:hidden}.dh-l1 .dh-name{overflow:hidden;text-overflow:ellipsis;flex-shrink:1;min-width:120px}.dh-badges{margin-left:auto}}
 .dh-paso{flex-wrap:nowrap!important;padding:3px 3px 3px 11px!important;gap:8px!important;border-radius:10px!important;flex-shrink:1;min-width:0}
 .dh-paso .rs-paso-t{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dh-paso .rs-btn{padding:5px 10px;font-size:11.5px}
@@ -1134,9 +1134,9 @@ textarea.rh-in{resize:vertical}
 .ev-ix.done .ev-ix-n{background:#16a34a;color:#fff}
 .ev-ix-st{font-size:11px;color:var(--ink4);font-weight:700}
 .ev-ix.done .ev-ix-st{color:#16a34a}
-.ev-step{background:var(--surface);border:1px solid var(--border);border-radius:12px;scroll-margin-top:70px}
+.ev-step{background:var(--surface);border:1px solid var(--border);border-radius:12px;scroll-margin-top:104px}
 .ev-step.done{border-color:#bbf7d0}
-.ev-step-h{width:100%;display:flex;align-items:center;gap:12px;padding:14px 18px;background:none;border:none;cursor:pointer;font-family:inherit;text-align:left}
+.ev-step-h{width:100%;display:flex;align-items:center;gap:12px;padding:11px 18px;background:none;border:none;cursor:pointer;font-family:inherit;text-align:left}
 .ev-step-n{width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;font-size:12.5px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .ev-step.done .ev-step-n{background:#16a34a}
 .ev-step-t{flex:1;font-size:15px;font-weight:800;color:var(--ink);display:flex;flex-direction:column}
@@ -1145,8 +1145,26 @@ textarea.rh-in{resize:vertical}
 .ev-step.done .ev-step-st{color:#16a34a}
 .ev-step-chev{color:var(--ink4);transition:transform .2s}
 .ev-step:not(.open) .ev-step-chev{transform:rotate(-90deg)}
-.ev-step-b{padding:0 18px 18px}
-.ev-step:not(.open) .ev-step-b{display:none}
+.ev-step-b{display:grid;grid-template-rows:1fr;transition:grid-template-rows .2s ease}
+.ev-step-in{min-height:0;overflow:hidden;padding:0 18px 18px}
+.ev-step:not(.open) .ev-step-b{grid-template-rows:0fr}
+.ev-step:not(.open) .ev-step-in{visibility:hidden;transition:visibility 0s .2s}
+.ev-step-sum{display:none;font-size:12px;font-weight:600;color:var(--ink2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ev-step:not(.open) .ev-step-sum:not(:empty){display:block}
+.ev-step:not(.open):has(.ev-step-sum:not(:empty)) .ev-step-t small{display:none}
+.ev-step-t{min-width:0}
+.ev-step:not(.open) .ev-step-h:hover .ev-step-st::after{content:' · Abrir';color:var(--accent)}
+.ev-main>*{width:100%;max-width:900px;align-self:center}
+#ev-main textarea{min-height:52px;overflow:hidden;resize:none}
+.ev-datos-res{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:9px 12px;border:1px solid var(--border);border-radius:10px;background:var(--bg);margin-bottom:12px}
+.ev-datos-t{flex:1;min-width:0;font-size:12.5px;color:var(--ink2);line-height:1.5}
+.ev-datos-falta{font-size:11.5px;font-weight:700;color:#b45309;background:#fffbeb;border:1px solid #fde68a;padding:2px 9px;border-radius:100px}
+.ev-datos{margin-bottom:12px}
+.ev-q-prueba{font-size:12.5px;color:var(--ink2);line-height:1.55;background:var(--surface2);border-radius:8px;padding:8px 11px;margin-bottom:8px}
+.ev-q-prueba span{display:block;font-size:10.5px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px}
+.ev-q-prueba div+div{margin-top:3px}
+[data-theme="dark"] .ev-datos-falta{background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.4);color:#fcd34d}
+@media (prefers-reduced-motion: reduce){.ev-step-b,.ev-fila-b,.ev-step-chev,.ev-fila-tg,.ev-step:not(.open) .ev-step-in,.ev-fila:not(.open) .ev-fila-in{transition:none}}
 .ev-hint{font-size:12.5px;color:var(--ink3);line-height:1.55;background:var(--surface2);border-radius:9px;padding:9px 12px;margin-bottom:14px}
 .ev-sub{font-size:11px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
 .ev-aviso{font-size:12.5px;color:#1e3a8a;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:9px 12px}
@@ -1170,7 +1188,8 @@ textarea.rh-in{resize:vertical}
 .ev-q-main span{display:block;font-size:10.5px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
 .ev-escala{display:flex;gap:6px;margin:14px 0 8px}
 .ev-escala .ev-lv{width:40px;height:36px;font-size:14px;border-radius:9px}
-.ev-anclas{display:flex;flex-direction:column;gap:4px;margin-bottom:8px}
+.ev-anclas{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-bottom:8px}
+@media(max-width:700px){.ev-anclas{grid-template-columns:1fr}}
 .ev-ancla{display:flex;gap:8px;font-size:12px;color:var(--ink3);line-height:1.45;padding:5px 8px;border-radius:7px}
 .ev-ancla b{flex-shrink:0;width:14px;color:var(--ink2)}
 .ev-ancla.on{background:var(--accent-l);color:var(--ink)}
@@ -1227,8 +1246,11 @@ textarea.rh-in{resize:vertical}
 .ev-fila-con b{color:#c2410c}
 .ev-fila-con span{color:var(--ink3)}
 .ev-fila .ev-sug-rev{margin:0 14px 10px}
-.ev-fila-b{display:none;padding:2px 14px 14px;border-top:1px solid var(--border)}
-.ev-fila.open .ev-fila-b{display:block;padding-top:12px}
+.ev-fila-b{display:grid;grid-template-rows:0fr;transition:grid-template-rows .2s ease;border-top:1px solid transparent}
+.ev-fila.open .ev-fila-b{grid-template-rows:1fr;border-top-color:var(--border)}
+.ev-fila-in{min-height:0;overflow:hidden;padding:0 14px}
+.ev-fila.open .ev-fila-in{padding:12px 14px 14px}
+.ev-fila:not(.open) .ev-fila-in{visibility:hidden;transition:visibility 0s .2s}
 [data-theme="dark"] .ev-fila-con,[data-theme="dark"] .ev-fila-tag{background:rgba(234,88,12,.14);color:#fdba74}
 .ev-q-seg{font-size:12.5px;color:var(--ink3);margin-top:4px}
 .ev-q-contraste{background:#fff7ed;border-left-color:#ea580c;margin-bottom:8px}
@@ -13795,6 +13817,14 @@ function _tabEntrevistasDrawer(c) {
 
   // ── Pauta: 5 pasos en el orden de la entrevista, con índice fijo y barra para finalizar ──
   var _dp = _evDesdePruebas(c);
+  // Integridad va en su fila del paso 4; lo que ya cubren las pruebas con mínimo, en sus filas.
+  // "Desde las pruebas" queda con lo demás (estilo personal, incidentes), hasta 3.
+  var _dpInteg = _dp.filter(function(x){ return x.fuente === 'Integridad'; }).slice(0, 2);
+  var _dpCubre = ['gonogo', 'vigilancia', 'situacional', 'comprension', 'dc0'].map(function(t){ return (TESTS_META[t] || {}).name; }).filter(Boolean);
+  var _dp5 = _dp.filter(function(x){
+    if (x.fuente === 'Integridad') return false;
+    return !(x.fuente === 'Resumen' && (/integridad/i.test(x.q) || _dpCubre.some(function(nm){ return x.q.indexOf(nm) !== -1; })));
+  }).slice(0, 3);
   var hist = (Array.isArray(c.historial) ? c.historial : []).filter(function(x){ return x && (x.empresa || x.cargo); }).slice(0, 2);
   var main = '<div class="ev-main" id="ev-main" data-cand="' + c.id + '">';
 
@@ -13827,11 +13857,11 @@ function _tabEntrevistasDrawer(c) {
     return '<section class="ev-step' + (n === 1 ? ' open' : '') + '" id="ev-step-' + n + '">'
       + '<button type="button" class="ev-step-h" onclick="_evToggle(' + n + ')">'
       + '<span class="ev-step-n">' + n + '</span>'
-      + '<span class="ev-step-t">' + p[1] + ' ' + p[0] + '<small>' + sub + '</small></span>'
+      + '<span class="ev-step-t">' + p[1] + ' ' + p[0] + '<small>' + sub + '</small><span class="ev-step-sum" id="ev-sum-' + n + '"></span></span>'
       + '<span class="ev-step-tm" id="ev-tm-' + n + '"></span><span class="ev-step-st" id="ev-st-' + n + '"></span><span class="ev-step-chev">▾</span></button>'
-      + '<div class="ev-step-b">' + cuerpo
+      + '<div class="ev-step-b"><div class="ev-step-in">' + cuerpo
       + (n < _EV_PASOS.length && n !== 3 ? '<div style="text-align:right;margin-top:16px"><button type="button" class="btn btn-outline btn-sm" onclick="_evIrPaso(' + (n + 1) + ')">Siguiente: ' + _EV_PASOS[n][0] + ' →</button></div>' : '')
-      + '</div></section>';
+      + '</div></div></section>';
   };
 
   // 1. Inicio: por defecto, lo último usado en este navegador y la hora actual
@@ -13842,7 +13872,8 @@ function _tabEntrevistasDrawer(c) {
   var opcion = function(val, txt, sel){ return '<option value="' + val + '"' + (val === sel ? ' selected' : '') + '>' + txt + '</option>'; };
   var p1 = '<div class="ev-encuadre"><span>Encuadre para leer al inicio</span>“Le voy a pedir que me cuente situaciones reales que haya vivido en el trabajo. Me interesa qué hizo usted, paso a paso, y cómo terminó.”</div>'
     + '<div class="ev-hint">Presente el objetivo de la conversación y su duración aproximada (unos <span id="ev-dur-txt">30 minutos</span>). El reloj de arriba parte con el primer dato que anote; puede pausarlo o cambiar la duración.</div>'
-    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    + '<div class="ev-datos-res" id="ev-datos-res"></div>'
+    + '<div class="ev-datos" id="ev-datos" hidden><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
     + '<div class="ev-field"><label>Fecha</label><input type="date" id="ef-fecha" value="' + today + '"></div>'
     + '<div class="ev-field"><label>Hora</label><input type="time" id="ef-hora" value="' + horaAhora + '"></div>'
     + '<div class="ev-field"><label>Tipo</label><select id="ef-tipo">' + opcion('rrhh', '🧑‍💼 RRHH', pref.tipo) + opcion('psicolaboral', '🧠 Psicolaboral', pref.tipo) + opcion('tecnica', '🔧 Técnica', pref.tipo) + opcion('panel', '👥 Panel', pref.tipo) + '</select></div>'
@@ -13855,9 +13886,9 @@ function _tabEntrevistasDrawer(c) {
     + '<div class="ev-field"><label>Turno</label><select id="ef-turno" onchange="var o=document.getElementById(\'ef-turno-otra\');if(o)o.style.display=this.value===\'otra\'?\'\':\'none\'">'
     + _RH_JORNADAS.map(function(j){ return opcion(j[0], j[1], evPost.turno || '4x4_rotativo'); }).join('') + '</select>'
     + '<input type="text" id="ef-turno-otra" value="' + htmlEsc(evPost.turno_otra || '') + '" placeholder="Ej: 5x2 día" style="margin-top:6px;display:' + (evPost.turno === 'otra' ? '' : 'none') + '"></div>'
-    + '</div>'
+    + '</div></div>'
     + '<div class="ev-field" style="margin-top:12px"><label>📝 Anotaciones al inicio</label>'
-    + '<textarea id="ef-notas-inicio" rows="5" placeholder="Primeras impresiones y lo que surja al comenzar: puntualidad, presentación, disposición, cómo llega a la entrevista, condiciones de la sesión (lugar, conexión), lo que la persona comenta espontáneamente…"></textarea></div>';
+    + '<textarea id="ef-notas-inicio" rows="2" placeholder="Primeras impresiones y lo que surja al comenzar: puntualidad, presentación, disposición, cómo llega a la entrevista, condiciones de la sesión (lugar, conexión), lo que la persona comenta espontáneamente…"></textarea></div>';
   main += paso(1, 'Datos de la sesión', p1);
 
   // 2. Trayectoria: lo que la persona declaró al postular, para verificar
@@ -13911,7 +13942,7 @@ function _tabEntrevistasDrawer(c) {
       + '<div class="ev-lv-desc" style="display:none"></div>'
       + (sg ? '<div class="ev-sug-dif" style="display:none">Cambió el puntaje sugerido (' + sg.n + '): anote en la evidencia por qué.</div>' : '')
       + '<label class="ev-sin-ej-lbl"><input type="checkbox" class="ev-sin-ej" onchange="_evSinEjemplo(this)"> No dio un ejemplo concreto (máximo 2)</label>'
-      + '<div class="ev-field"><textarea id="ef-comp-nota-' + i + '" rows="3" placeholder="' + (abiertas ? 'Evidencia: situación que relató, qué hizo y qué resultado tuvo…' : 'Opcional si confirma: lo que respondió' + (contraste ? ' a la pregunta de contraste' : '') + ' u observó…') + '"></textarea></div>';
+      + '<div class="ev-field"><textarea id="ef-comp-nota-' + i + '" rows="2" placeholder="' + (abiertas ? 'Evidencia: situación que relató, qué hizo y qué resultado tuvo…' : 'Opcional si confirma: lo que respondió' + (contraste ? ' a la pregunta de contraste' : '') + ' u observó…') + '"></textarea></div>';
   };
   var _star = _COMP_CONFIG.filter(function(x){ return x.star; }).length, nS = 0;
   var p3 = '<div class="ev-hint">Explore cada una con STAR: puntúe lo que la persona <strong>hizo</strong>, no lo que haría. Sin un ejemplo concreto, el máximo es 2. '
@@ -13945,9 +13976,12 @@ function _tabEntrevistasDrawer(c) {
       + '<span class="ev-fila-tg">▸</span></div>'
       + (contraste ? '<div class="ev-fila-con"><b>Contraste:</b> ' + comp.contraste[0] + ' <span>' + comp.contraste[1] + '</span></div>' : '')
       + (comp.key === 'identificacion' ? '<div class="ev-sug-rev" id="ev-ident-rev" style="display:none">⚠ La trayectoria declarada se corrigió o no se pudo verificar en la entrevista: revise la sugerencia.</div>' : '')
-      + '<div class="ev-fila-b"><div class="ev-comp-def" style="margin:0 0 8px">' + comp.def + '</div>'
+      + '<div class="ev-fila-b"><div class="ev-fila-in"><div class="ev-comp-def" style="margin:0 0 8px">' + comp.def + '</div>'
       + (_AVISO[modo] ? '<div class="ev-sug-aviso ev-sug-aviso-' + modo + '">' + _AVISO[modo] + '</div>' : '')
-      + qs + _escala(comp, sg, abiertas, contraste, i) + '</div></div>';
+      + (comp.key === 'integridad' && _dpInteg.length ? '<div class="ev-q-prueba"><span>Desde la prueba de integridad</span>' + _dpInteg.map(function(x){ return '<div>' + htmlEsc(x.q) + '</div>'; }).join('') + '</div>' : '')
+      + _preg(comp.questions[0], 0)
+      + '<details class="ev-mas" style="margin-top:6px"><summary>' + (comp.questions.length - 1) + ' preguntas más</summary><div style="padding-top:4px">' + comp.questions.slice(1).map(function(q){ return _preg(q, 1); }).join('') + '</div></details>'
+      + _escala(comp, sg, abiertas, contraste, i) + '</div></div></div>';
   });
   p4 += '</div>';
   p3 += '<div class="ev-comp-nav" style="margin:12px 0 0"><button type="button" class="btn btn-ghost btn-sm" id="ev-comp-prev" onclick="_evComp(-1)"></button>'
@@ -13957,15 +13991,15 @@ function _tabEntrevistasDrawer(c) {
 
   // 5. Desde las pruebas
   var p5dp = '';
-  if (_dp.length) {
+  if (_dp5.length) {
     p5dp += '<div class="ev-hint">Preguntas que surgen de los resultados de esta persona. Se registran sin puntaje.</div>';
-    _dp.forEach(function(x, i) {
+    _dp5.forEach(function(x, i) {
       if (i === 3) p5dp += '<div id="ev-dp-mas" style="display:none">';
       p5dp += '<div class="ev-dp" data-ev-dp="' + i + '" data-fuente="' + htmlEsc(x.fuente) + '" data-q="' + htmlEsc(x.q) + '">'
         + '<div class="ev-dp-q"><span>' + htmlEsc(x.fuente) + '</span>' + htmlEsc(x.q) + '</div>'
         + '<div class="ev-field"><textarea id="ef-dp-' + i + '" rows="2" placeholder="Lo que respondió…"></textarea></div></div>';
     });
-    if (_dp.length > 3) p5dp += '</div><button type="button" class="btn btn-ghost btn-sm" id="ev-dp-btn" onclick="document.getElementById(\'ev-dp-mas\').style.display=\'\';this.remove()">Ver ' + (_dp.length - 3) + ' preguntas más</button>';
+    if (_dp5.length > 3) p5dp += '</div><button type="button" class="btn btn-ghost btn-sm" id="ev-dp-btn" onclick="document.getElementById(\'ev-dp-mas\').style.display=\'\';this.remove()">Ver ' + (_dp5.length - 3) + ' preguntas más</button>';
   } else {
     p5dp += '<div style="font-size:13px;color:var(--ink4)">Los resultados no generan preguntas adicionales.</div>';
   }
@@ -14026,6 +14060,7 @@ function _evInit(c) {
   m.addEventListener('change', _evCambio);
   var pasoDe = function(e){ var s = e.target.closest && e.target.closest('.ev-step'); if (s) _evPasoActivo(+s.id.replace('ev-step-', '')); };
   m.addEventListener('focusin', pasoDe);
+  m.addEventListener('input', function(e){ _evAutoAlto(e.target); });
   m.addEventListener('click', pasoDe);
   _evRelojIniciar(null);
   var evs = ((c.scores || {})._entrevistas) || [], nueva = _evForzarNueva;
@@ -14039,16 +14074,26 @@ function _evInit(c) {
   }
   _evCompIr(_evCompIdx);
   _evProgreso();
+  _evAutoAltoTodo();
 }
 
+// Un paso abierto a la vez: los demás se cierran en una línea con lo registrado
+function _evMovReducido() { try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch(e) { return false; } }
+function _evSoloPaso(n) {
+  document.querySelectorAll('#ev-main .ev-step').forEach(function(s){ s.classList.toggle('open', s.id === 'ev-step-' + n); });
+  _evPasoActivo(n);
+  _evProgreso();
+}
 function _evToggle(n) {
-  var st = document.getElementById('ev-step-' + n); if (st) { st.classList.toggle('open'); if (st.classList.contains('open')) _evPasoActivo(n); }
+  var st = document.getElementById('ev-step-' + n); if (!st) return;
+  if (st.classList.contains('open')) { st.classList.remove('open'); _evProgreso(); return; }
+  _evIrPaso(n);
 }
 function _evIrPaso(n) {
   var st = document.getElementById('ev-step-' + n); if (!st) return;
-  st.classList.add('open');
-  _evPasoActivo(n);
-  st.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  _evSoloPaso(n);
+  // Se desplaza cuando terminó de cerrarse el paso anterior (200 ms), para llegar al lugar exacto
+  setTimeout(function(){ st.scrollIntoView({ behavior: _evMovReducido() ? 'auto' : 'smooth', block: 'start' }); _evAutoAltoTodo(st); }, _evMovReducido() ? 0 : 210);
 }
 
 // Competencias STAR: una a la vez, con tarjetas que muestran puntaje y tiempo
@@ -14197,6 +14242,8 @@ function _evProgreso() {
   var dict = (m.querySelector('input[name="ev-dictamen"]:checked') || {}).value || '';
   var motivoOk = !_evMotivoRequerido() || val('ef-motivo');
   est[6] = [!!dict && !!motivoOk, dict && motivoOk ? '✓' : ''];
+  _evResumenesPasos(m, comps, dict);
+  _evDatosPintar();
   for (var n = 1; n <= _EV_PASOS.length; n++) {
     var ix = document.getElementById('ev-ix-st-' + n), sh = document.getElementById('ev-st-' + n);
     if (ix) ix.textContent = est[n][1];
@@ -14215,6 +14262,45 @@ function _evProgreso() {
       + (_evBorradorTs ? '<span style="font-size:11px;color:var(--ink4);margin-left:10px">· Borrador guardado a las ' + new Date(_evBorradorTs).toLocaleTimeString('es-CL', { hour:'2-digit', minute:'2-digit', hour12:false }) + '</span>' : '');
   }
 }
+
+function _evTxtSel(id) { var el = document.getElementById(id); return el && el.options && el.selectedIndex >= 0 ? el.options[el.selectedIndex].text.replace(/^[^A-Za-zÁÉÍÓÚÑáéíóúñ0-9]+/, '') : ''; }
+function _evResumenesPasos(m, comps, dict) {
+  var v = function(id){ return ((document.getElementById(id) || {}).value || '').trim(); };
+  var set = function(n, txt){ var el = document.getElementById('ev-sum-' + n); if (el) el.textContent = txt; };
+  var f = v('ef-fecha').split('-').reverse().join('-');
+  set(1, [f, _evTxtSel('ef-modalidad'), v('ef-instalacion') || 'sin instalación', _evTxtSel('ef-turno')].filter(Boolean).join(' · '));
+  var VER = { si:'coincide', corregida:'corregida', no_verificable:'no verificable' };
+  var ver = [1, 2].map(function(k){ return VER[v('ef-exp' + k + '-ver')]; }).filter(Boolean);
+  set(2, ver.length ? 'Experiencia ' + ver.join(' · ') : [v('ef-exp1-cargo'), v('ef-exp1-empresa')].filter(Boolean).join(' · '));
+  set(3, comps.filter(function(r){ return r.dataset.star; }).map(function(r){ return _evCfg(r.dataset.evComp).name.split(' ').slice(-1)[0].replace(/^./, function(x){ return x.toUpperCase(); }) + ' ' + (+r.dataset.nivel || '–'); }).join(' · '));
+  var c4 = comps.filter(function(r){ return !r.dataset.star; }), h4 = c4.filter(function(r){ return +r.dataset.nivel > 0; });
+  var aj = h4.filter(function(r){ return +r.dataset.sug && +r.dataset.nivel !== +r.dataset.sug; }).length;
+  set(4, h4.length ? h4.length + ' de ' + c4.length + ' puntuadas' + (aj ? ' · ' + aj + (aj > 1 ? ' ajustadas' : ' ajustada') : '') : '');
+  var dps = [].slice.call(m.querySelectorAll('[data-ev-dp]')), resp = dps.filter(function(d){ return v('ef-dp-' + d.dataset.evDp); }).length;
+  set(5, dps.length && resp ? resp + ' de ' + dps.length + ' respondidas' : '');
+  var dm = _EV_DICTAMEN.filter(function(d){ return d.val === dict; })[0];
+  set(6, dm ? dm.label : '');
+}
+// Inicio: los datos de la sesión en una línea; se abren para cambiarlos o si falta algo obligatorio
+function _evDatosAbrir(abrir) {
+  var d = document.getElementById('ev-datos'); if (!d) return;
+  d.hidden = abrir === undefined ? !d.hidden : !abrir;
+  _evDatosPintar();
+}
+function _evDatosPintar() {
+  var box = document.getElementById('ev-datos-res'), d = document.getElementById('ev-datos'); if (!box || !d) return;
+  var v = function(id){ return ((document.getElementById(id) || {}).value || '').trim(); };
+  if (!v('ef-fecha') || !v('ef-entrevistador')) d.hidden = false;
+  var f = v('ef-fecha').split('-').reverse().join('-'), turno = v('ef-turno') === 'otra' ? v('ef-turno-otra') : _evTxtSel('ef-turno');
+  var partes = [f + (v('ef-hora') ? ' · ' + v('ef-hora') : ''), _evTxtSel('ef-tipo'), _evTxtSel('ef-modalidad'), v('ef-entrevistador'), v('ef-cargo'), v('ef-instalacion') ? '📍 ' + v('ef-instalacion') : '', turno].filter(Boolean);
+  box.innerHTML = '<span class="ev-datos-t">' + htmlEsc(partes.join(' · ')) + '</span>'
+    + (v('ef-instalacion') ? '' : '<span class="ev-datos-falta">Falta la instalación</span>')
+    + '<button type="button" class="btn btn-ghost btn-sm" onclick="_evDatosAbrir()">' + (d.hidden ? 'Cambiar datos' : 'Listo') + '</button>';
+}
+
+// Notas que crecen al escribir
+function _evAutoAlto(el) { if (!el || el.tagName !== 'TEXTAREA') return; el.style.height = 'auto'; el.style.height = (el.scrollHeight + 2) + 'px'; }
+function _evAutoAltoTodo(box) { (box || document).querySelectorAll('#ev-main textarea').forEach(_evAutoAlto); }
 
 // ── Borrador automático (en este navegador) ──
 var _EV_BORRADOR = 'psicoeval_ev_borrador_';
