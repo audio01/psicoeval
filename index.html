@@ -12964,8 +12964,10 @@ async function openCandDrawer(id) {
   if (!overlay) return;
   overlay.classList.add('open');
   document.getElementById('drawer-body').innerHTML = '<div style="padding:30px;text-align:center;color:var(--ink3)">Cargando…</div>';
+  // Las pestañas viven dentro del encabezado: se sacan antes de vaciarlo para no perderlas
+  var tb = document.getElementById('drawer-tabs');
+  if (tb) { tb.innerHTML = ''; document.getElementById('cand-drawer').insertBefore(tb, document.getElementById('drawer-body')); }
   document.getElementById('drawer-header').innerHTML = '';
-  document.getElementById('drawer-tabs').innerHTML = '';
   var all = await getDB();
   var c = all.find(function(x){ return x.id === id; });
   if (!c) { document.getElementById('drawer-body').innerHTML = '<div style="padding:20px;color:#e11d48">Candidato no encontrado</div>'; return; }
@@ -12992,6 +12994,7 @@ function _renderDrawerHeader(c) {
                _canalTxt(c) ? 'Llegó por: ' + htmlEsc(_canalTxt(c)) : '', _rhEstado(c) === 'enviado' ? '📤 Enviado a RRHH ' + _rhFechaCorta(c.scores._informe_rh.enviado) : ''].filter(Boolean).join(' · ');
   // Las pestañas viven dentro del encabezado: se sacan antes de redibujarlo y se vuelven a poner
   var hdr = document.getElementById('drawer-header'), tabsEl = document.getElementById('drawer-tabs');
+  if (!tabsEl) { tabsEl = document.createElement('div'); tabsEl.className = 'drawer-tabs'; tabsEl.id = 'drawer-tabs'; }
   if (tabsEl && tabsEl.parentNode) tabsEl.parentNode.removeChild(tabsEl);
   // Sin aviso de siguiente paso en el encabezado: las acciones están en las pestañas y en Etapa del proceso
   var paso = '';
