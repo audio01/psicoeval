@@ -893,7 +893,7 @@ input,select,textarea{font-family:inherit;outline:none}
 #cand-drawer-overlay.open{display:flex}
 #cand-drawer{width:min(1520px,100%);height:100%;max-height:calc(100vh - 24px);background:var(--bg);border-radius:16px;box-shadow:0 24px 70px rgba(0,0,0,.28);display:flex;flex-direction:column;overflow:hidden;transform:translateY(14px) scale(.985);opacity:0;transition:transform .22s cubic-bezier(.4,0,.2,1),opacity .22s ease}
 #cand-drawer-overlay.open #cand-drawer{transform:none;opacity:1}
-.dh-row{display:flex;align-items:center;gap:8px 10px;padding:8px 18px;border-bottom:1px solid var(--border);flex-wrap:wrap;transition:padding .15s}
+.dh-row{position:relative;display:flex;align-items:center;gap:8px 10px;padding:8px 18px;border-bottom:1px solid var(--border);flex-wrap:wrap;transition:padding .15s}
 #cand-drawer{container-type:inline-size}
 .dh-l1{display:flex;align-items:center;gap:10px;flex-wrap:nowrap;min-width:0}
 .dh-l1 .dh-name{white-space:nowrap;flex-shrink:0}
@@ -904,9 +904,10 @@ input,select,textarea{font-family:inherit;outline:none}
 .dh-tabs-slot{flex-shrink:0}
 .dh-tabs-slot .drawer-tabs{border:none;padding:0;background:none;gap:2px;overflow:visible}
 .dh-tabs-slot .drawer-tabs>:first-child,.dh-tabs-slot .drawer-tabs>:last-child{margin:0}
-.dh-tabs-slot .drawer-tab-btn{padding:6px 9px;font-size:13px;border-radius:8px;border-bottom:none;margin:0}
-.dh-tabs-slot .dt-n{margin-left:4px;min-width:16px;padding:0 5px;line-height:15px}
-.dh-tabs-slot .drawer-tab-btn.active{background:var(--surface2);color:var(--ink);box-shadow:inset 0 0 0 1px var(--border)}
+.dh-tabs-slot .drawer-tab-btn{padding:10px 14px;font-size:13.5px;margin:0 0 -1px}
+.dh-tabs-slot .drawer-tab-btn.active{color:var(--ink);border-bottom-color:var(--ink)}
+/* Pestañas al centro del encabezado, con la línea activa sobre el borde inferior (como antes) */
+@container (min-width:1400px){.dh-tabs-slot{position:absolute;left:50%;bottom:0;transform:translateX(-50%)}.dh-txt{flex:1 1 auto;max-width:calc(50% - 250px);overflow:hidden}.dh-l1 .dh-name{overflow:hidden;text-overflow:ellipsis;flex-shrink:1;min-width:120px}.dh-badges{margin-left:auto}}
 .dh-paso{flex-wrap:nowrap!important;padding:3px 3px 3px 11px!important;gap:8px!important;border-radius:10px!important;flex-shrink:1;min-width:0}
 .dh-paso .rs-paso-t{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dh-paso .rs-btn{padding:5px 10px;font-size:11.5px}
@@ -917,7 +918,7 @@ input,select,textarea{font-family:inherit;outline:none}
 #cand-drawer.dh-min .dh-row{padding-top:5px;padding-bottom:5px}
 #cand-drawer.dh-min .dh-av{width:28px;height:28px;font-size:11px}
 #cand-drawer.dh-min .dh-name{font-size:15px}
-@container (max-width:1180px){.dh-paso .rs-paso-t{display:none}.dh-paso{padding:3px!important}.dh-tabs-slot{order:10;flex-basis:100%;border-top:1px solid var(--border);margin:2px -18px -8px;padding:3px 14px}.dh-tabs-slot .drawer-tabs{justify-content:center}}
+@container (max-width:1399px){.dh-paso .rs-paso-t{display:none}.dh-paso{padding:3px!important}.dh-tabs-slot{order:10;flex-basis:100%;border-top:1px solid var(--border);margin:2px -18px -8px;padding:3px 14px}.dh-tabs-slot .drawer-tabs{justify-content:center}}
 @container (max-width:760px){.dh-paso{order:11;flex-basis:100%;justify-content:space-between}}
 .dh-av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#2747D8,#5E5CE6);color:#fff;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .dh-txt{flex:1;min-width:0;display:block;overflow:hidden}
@@ -930,7 +931,8 @@ input,select,textarea{font-family:inherit;outline:none}
 .dt-n{display:inline-block;margin-left:6px;min-width:18px;padding:0 6px;border-radius:999px;background:var(--surface2);color:var(--ink3);font-size:10.5px;font-weight:700;line-height:17px;text-align:center}
 .drawer-tab-btn.active .dt-n{background:var(--accent-l);color:var(--accent)}
 .dt-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#f59e0b;margin-left:6px;vertical-align:1px}
-.dh-meta{font-size:11.5px;color:var(--ink3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px}
+.dh-meta{font-size:11.5px;color:var(--ink3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:3px}
+.dh-meta .dh-chips{display:inline-flex;vertical-align:middle;margin:0 8px 0 0;gap:5px}
 .dh-badges{display:flex;gap:6px;align-items:center;flex-shrink:0}
 .reg-ops{display:flex;flex-direction:column;gap:7px;margin-top:4px}
 .reg-op{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;font-size:13.5px;font-weight:600;color:var(--ink);transition:all .15s}
@@ -12997,8 +12999,8 @@ function _renderDrawerHeader(c) {
     '<div class="dh-row">'
     + '<div class="dh-av">' + initials + '</div>'
     + '<div class="dh-txt"><div class="dh-l1"><span class="dh-name">' + htmlEsc(c.nombre + ' ' + c.apellido) + '</span>'
-    + '<span class="dh-chips">' + _estadoFichaHtml(c) + (cat ? _bdDictamenCorto(c) : '') + '</span></div>'
-    + '<div class="dh-meta"><span class="dh-cargo">' + htmlEsc(pz.cargo || c.cargo || pm.label || '') + '</span>' + (linea ? ' · ' + linea : '') + '</div></div>'
+    + '</div>'
+    + '<div class="dh-meta"><span class="dh-chips">' + _estadoFichaHtml(c) + (cat ? _bdDictamenCorto(c) : '') + '</span><span class="dh-cargo">' + htmlEsc(pz.cargo || c.cargo || pm.label || '') + '</span>' + (linea ? ' · ' + linea : '') + '</div></div>'
     + '<div class="dh-tabs-slot"></div>'
     + paso
     + '<div class="dh-badges">'
