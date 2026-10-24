@@ -1106,6 +1106,23 @@ textarea.rh-in{resize:vertical}
 .ev-ancla{display:flex;gap:8px;font-size:12px;color:var(--ink3);line-height:1.45;padding:5px 8px;border-radius:7px}
 .ev-ancla b{flex-shrink:0;width:14px;color:var(--ink2)}
 .ev-ancla.on{background:var(--accent-l);color:var(--ink)}
+.ev-q-seg{font-size:12.5px;color:var(--ink3);margin-top:4px}
+.ev-q-contraste{background:#fff7ed;border-left-color:#ea580c;margin-bottom:8px}
+.ev-q-contraste span{color:#c2410c}
+.ev-modo{font-weight:800;color:var(--accent)}
+.ev-modo-profundizar,.ev-modo-contraste{color:#c2410c}
+.ev-modo-confirmar{color:#15803d}
+.ev-sug{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--surface);margin-bottom:8px}
+.ev-sug-n{width:34px;height:34px;flex-shrink:0;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:900;background:var(--accent-l);color:var(--accent)}
+.ev-sug-t{font-size:10.5px;font-weight:800;color:var(--ink4);text-transform:uppercase;letter-spacing:.5px}
+.ev-sug-f{font-size:12.5px;color:var(--ink2);line-height:1.4}
+.ev-sug-ok.on{background:#15803d;border-color:#15803d;color:#fff}
+.ev-sug-aviso{font-size:12.5px;color:var(--ink2);line-height:1.5;padding:7px 10px;border-radius:8px;background:var(--accent-l);margin-bottom:8px}
+.ev-sug-aviso-profundizar,.ev-sug-aviso-contraste{background:#fff7ed;color:#9a3412}
+.ev-sug-rev,.ev-sug-dif{font-size:12px;color:#9a3412;line-height:1.5;margin:0 0 8px}
+[data-theme="dark"] .ev-q-main{background:rgba(85,116,255,.14)}
+[data-theme="dark"] .ev-q-contraste,[data-theme="dark"] .ev-sug-aviso-profundizar,[data-theme="dark"] .ev-sug-aviso-contraste{background:rgba(234,88,12,.14);color:#fdba74}
+[data-theme="dark"] .ev-sug-rev,[data-theme="dark"] .ev-sug-dif{color:#fdba74}
 .ev-sin-ej-lbl{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink2);margin:8px 0 6px;cursor:pointer}
 .ev-dp{margin-bottom:12px}
 .ev-dp-q{font-size:13px;color:var(--ink);line-height:1.55;margin-bottom:4px}
@@ -13131,61 +13148,150 @@ function _tabEvaluaciones(c) {
 }
 
 
-// ── Competencias del perfil de la empresa (entrevista estructurada) ──
-// Las 5 de siempre, con definición y escala descrita en 1, 3 y 5 (propuestas/entrevista_estructurada.md).
-// key: se guarda por clave, así un cambio de orden no mezcla las entrevistas antiguas.
+// ── Competencias de la entrevista = las 9 del Informe RH (R-GP-054) ──
+// Definición y escala descrita en 1, 3 y 5 (propuestas/competencias_rh.md). Se guardan por clave
+// (las mismas de _RH_COMP), así el Informe RH toma los niveles sin traducir.
+// star: se exploran siempre con STAR. El resto trae un puntaje sugerido (pruebas o estabilidad
+// laboral) que el psicólogo confirma o ajusta. Cada pregunta: [relato de un hecho real, seguimiento].
 var _COMP_CONFIG = [
-  { key:'equipo', name:'Trabajo en equipo', icon:'🤝',
-    def:'Colabora con su equipo, comparte información y apoya cuando hace falta.',
-    anclas:{ 1:'Relata conflictos frecuentes con su equipo o prefiere no involucrarse en tareas comunes.',
-             3:'Colabora cuando se le pide; en desacuerdos tiende a ceder o a evitar el tema.',
-             5:'Describe una situación en que apoyó al equipo más allá de su tarea o resolvió un desacuerdo de forma constructiva.' },
+  { key:'cliente', name:'Orientación al cliente', icon:'🙋', star:true,
+    def:'Atiende con respeto y disposición a visitas, usuarios y personal del cliente, equilibrando el buen trato con el cumplimiento del protocolo.',
+    anclas:{ 1:'Relata trato brusco o indiferente; ve al público como una molestia.',
+             3:'Es cortés en lo simple; ante personas difíciles se limita a aplicar la norma sin explicarla.',
+             5:'Relata un caso con una persona molesta o exigente en que la escuchó, explicó la norma con amabilidad y lo resolvió sin saltarse el protocolo.' },
     questions:[
-      'Cuénteme una situación en que debió colaborar con personas muy distintas a usted. ¿Cuál fue su rol y el resultado?',
-      '¿Cómo maneja los desacuerdos dentro de un equipo? Deme un ejemplo concreto.',
-      'Describa un proyecto grupal en que el equipo enfrentó una dificultad. ¿Qué hizo usted?'
+      ['Cuénteme de una vez en que atendió a una persona molesta o exigente en un control de acceso o en recepción. ¿Qué hizo usted?', '¿Cómo terminó? ¿Qué haría distinto?'],
+      ['Cuénteme de una vez en que alguien importante del cliente le pidió saltarse un procedimiento.', '¿Qué le respondió y qué pasó después?'],
+      ['Cuénteme de una vez en que ayudó a una visita o a un usuario más allá de lo que le correspondía.', '¿Qué resultado tuvo?']
   ]},
-  { key:'comunicacion', name:'Comunicación', icon:'💬',
-    def:'Transmite información de forma clara y respetuosa, escucha y ajusta su mensaje a la persona.',
-    anclas:{ 1:'Relata malentendidos frecuentes que atribuye a los demás, o un trato brusco que considera normal.',
-             3:'Se comunica de forma clara en situaciones simples; en conversaciones difíciles le cuesta mantener el tono o asegurarse de que le entendieron.',
-             5:'Describe una conversación difícil (mala noticia, crítica, desacuerdo con una jefatura) y cómo la preparó, la condujo y verificó que se entendiera.' },
+  { key:'comunicacion', name:'Comunicación', icon:'💬', star:true,
+    def:'Transmite información clara, completa y oportuna (radio, libro de novedades, relevo de turno) y se expresa con respeto.',
+    anclas:{ 1:'Relato desordenado; menciona novedades que no informó o malentendidos frecuentes.',
+             3:'Comunica lo básico con claridad; sus reportes omiten detalles importantes.',
+             5:'Relata un reporte o relevo bien hecho: qué informó, a quién y cómo verificó que se entendiera.' },
     questions:[
-      'Cuénteme de una situación en que debió comunicar algo difícil (una mala noticia, una crítica, un cambio de planes). ¿Cómo lo hizo?',
-      'Deme un ejemplo en que su comunicación fue clave para el éxito de una tarea.',
-      '¿Ha tenido que convencer a una jefatura o a un colega de una idea con la que no estaba de acuerdo? ¿Cómo lo logró?'
+      ['Cuénteme de la última vez que entregó el turno a su relevo con una novedad importante.', '¿Qué informó, por qué medio y cómo supo que se entendió?'],
+      ['Cuénteme de una vez en que tuvo que informar un incidente por radio o en el libro de novedades.', '¿Qué dijo o escribió? ¿Faltó algo?'],
+      ['Cuénteme de un malentendido con un compañero o una jefatura por una información mal entregada.', '¿Cómo se resolvió y qué hace distinto ahora?']
   ]},
-  { key:'problemas', name:'Resolución de problemas', icon:'🔧',
-    def:'Analiza las causas de un problema, considera alternativas, aplica una solución y revisa si funcionó.',
-    anclas:{ 1:'Relata problemas que resolvió con la primera idea o que traspasó a otros, sin revisar si la solución funcionó.',
-             3:'Resuelve problemas habituales con pasos conocidos; ante problemas nuevos le cuesta identificar la causa o pensar alternativas.',
-             5:'Describe un problema complejo: cómo identificó la causa, qué alternativas consideró, cuál aplicó, cómo verificó el resultado y qué aprendió.' },
+  { key:'equipo', name:'Trabajo en equipo', icon:'🤝', star:true,
+    def:'Colabora con sus compañeros y con otras áreas, comparte información y apoya cuando se necesita, respetando los roles.',
+    anclas:{ 1:'Conflictos frecuentes con compañeros; prefiere no involucrarse en tareas comunes.',
+             3:'Colabora cuando se le pide; evita los desacuerdos en vez de resolverlos.',
+             5:'Relata una situación en que apoyó a un compañero más allá de su tarea o resolvió un desacuerdo de forma constructiva.' },
     questions:[
-      'Cuénteme de un problema complejo que debió resolver. ¿Cuál fue su proceso y el resultado?',
-      'Describa un momento en que tomó una decisión rápida con información incompleta. ¿Qué pasó?',
-      '¿Hubo alguna solución que usted propuso y que no funcionó? ¿Qué aprendió de eso?'
+      ['Cuénteme de una vez en que un compañero necesitó ayuda durante el turno. ¿Qué hizo usted?', '¿Qué resultado tuvo?'],
+      ['Cuénteme de un desacuerdo que tuvo con un compañero de trabajo.', '¿Cómo lo resolvieron? ¿Qué haría distinto?'],
+      ['Cuénteme de una vez en que tuvo que cubrir a un compañero o cambiar su turno por el equipo.', '¿Cómo lo vivió y cómo terminó?']
   ]},
-  { key:'resultados', name:'Orientación a resultados', icon:'🎯',
-    def:'Se fija metas, persiste ante los obstáculos y cumple los plazos y el estándar de calidad.',
-    anclas:{ 1:'Relata metas o plazos incumplidos que atribuye solo a factores externos, sin acciones propias para revertirlos.',
-             3:'Cumple las metas asignadas con el esfuerzo esperado; ante obstáculos importantes depende de que otros los resuelvan.',
-             5:'Describe una meta desafiante, los obstáculos concretos, lo que hizo para superarlos y un resultado verificable.' },
+  { key:'integridad', name:'Integridad', icon:'🛡️',
+    def:'Actúa con honestidad y respeta las normas aunque nadie lo supervise; informa las irregularidades y no saca provecho de su puesto.',
+    anclas:{ 1:'Justifica o minimiza faltas propias o ajenas (sacar materiales, dejar pasar a conocidos, "favores"); relata haber ocultado errores.',
+             3:'Cumple las normas en lo habitual; ante presión de compañeros o de una jefatura duda o deja pasar faltas menores.',
+             5:'Relata una situación concreta en que informó una irregularidad o rechazó una ventaja indebida, aunque le significara un costo.' },
     questions:[
-      'Cuénteme de una meta desafiante que logró alcanzar. ¿Qué estrategias usó?',
-      'Describa una situación en que superó las expectativas de su jefatura.',
-      '¿Alguna vez no cumplió un objetivo? ¿Cómo lo manejó y qué aprendió?'
-  ]},
-  { key:'adaptabilidad', name:'Adaptabilidad', icon:'🔄',
-    def:'Se ajusta a cambios de prioridades, procesos o equipos y mantiene su desempeño.',
-    anclas:{ 1:'Relata resistencia persistente a los cambios o un desempeño que bajó claramente tras un cambio.',
-             3:'Se adapta a cambios cuando se le explican, aunque tarda o necesita apoyo.',
-             5:'Describe un cambio importante que enfrentó, qué hizo para aprender rápido y cómo ayudó a otros a adaptarse.' },
+      ['Cuénteme de una vez en que vio a un compañero cometer una falta en el servicio (dejar pasar a alguien, sacar algo, firmar una ronda que no hizo). ¿Qué hizo usted?', '¿Qué pasó después? ¿Haría algo distinto?'],
+      ['Cuénteme de un error suyo en un turno que nadie más había notado. ¿Qué hizo con él?', '¿Qué consecuencias tuvo informarlo (o no)?'],
+      ['Cuénteme de una vez en que alguien le ofreció un favor o una ventaja a cambio de saltarse una norma.', '¿Cómo respondió y qué resultado tuvo?']
+    ],
+    contraste:['Cuénteme de una vez en que no cumplió del todo una norma del trabajo.', '¿Qué pasó y cómo lo ve ahora?'] },
+  { key:'autocontrol', name:'Autocontrol', icon:'🧘',
+    def:'Mantiene la calma y el juicio ante provocaciones, presión o situaciones de riesgo; responde según el protocolo y no por impulso.',
+    anclas:{ 1:'Relata reacciones impulsivas (discusiones, contacto físico, abandonar el puesto) y las considera justificadas.',
+             3:'Se controla en lo habitual; reconoce haber perdido la calma ante provocaciones intensas.',
+             5:'Relata una situación de alta tensión (persona alterada, agresión verbal) en que mantuvo la calma, aplicó el protocolo y bajó la tensión.' },
     questions:[
-      'Cuénteme de una situación en que debió adaptarse rápidamente a un cambio inesperado en su trabajo.',
-      '¿Cómo reacciona cuando cambian los planes a último momento? Deme un ejemplo.',
-      '¿Ha tenido que aprender nuevas herramientas o procedimientos rápidamente? ¿Cómo se adaptó?'
+      ['Cuénteme de la última vez que alguien lo trató mal o lo insultó durante su turno. ¿Qué hizo usted?', '¿Cómo terminó la situación? ¿Qué haría distinto?'],
+      ['Cuénteme de una vez en que perdió la paciencia en el trabajo.', '¿Qué hizo después y qué aprendió?'],
+      ['Cuénteme de una situación de riesgo (pelea, persona alterada, emergencia) que le tocó enfrentar.', '¿Qué hizo primero y cuál fue el resultado?']
   ]},
+  { key:'alerta', name:'Alerta', icon:'👁️',
+    def:'Se mantiene atento al entorno durante todo el turno, detecta lo anormal y actúa o informa a tiempo.',
+    anclas:{ 1:'No logra relatar situaciones que haya detectado; describe distracciones frecuentes (celular, quedarse dormido) como normales.',
+             3:'Detecta lo evidente y lo informa; le cuesta explicar cómo mantiene la atención en turnos largos o de noche.',
+             5:'Relata una anomalía que detectó antes que otros (persona sospechosa, acceso forzado), cómo la verificó y a quién avisó.' },
+    questions:[
+      ['Cuénteme de algo irregular que detectó en un turno (una persona, un vehículo, una puerta, un ruido).', '¿Cómo se dio cuenta, qué hizo y a quién avisó?'],
+      ['Cuénteme de un turno de noche largo y tranquilo. ¿Qué hizo para mantenerse atento?', '¿Alguna vez se le pasó algo por cansancio? ¿Qué cambió después?'],
+      ['Cuénteme de una vez en que se le pasó algo que debió haber detectado.', '¿Qué consecuencias tuvo y qué hace distinto ahora?']
+  ]},
+  { key:'criterio', name:'Criterio', icon:'⚖️',
+    def:'Evalúa la situación antes de actuar, distingue lo urgente de lo importante y decide con sensatez dentro de sus atribuciones.',
+    anclas:{ 1:'Relata decisiones apresuradas o fuera de su rol, sin considerar las consecuencias.',
+             3:'Resuelve bien lo conocido siguiendo instrucciones; ante lo imprevisto espera que otro decida.',
+             5:'Relata una situación imprevista en que evaluó opciones, eligió lo correcto dentro del protocolo y avisó a quien correspondía.' },
+    questions:[
+      ['Cuénteme de una situación que no estaba en el procedimiento ni en las consignas. ¿Qué hizo y por qué?', '¿Qué resultado tuvo? ¿Qué haría distinto?'],
+      ['Cuénteme de una vez en que tuvo que decidir rápido sin poder consultar a su supervisor.', '¿Qué opciones consideró y a quién informó después?'],
+      ['Cuénteme de una vez en que una instrucción de su jefatura le pareció un error.', '¿Qué hizo y cómo terminó?']
+    ],
+    contraste:['Cuénteme de una decisión que tomó en un turno y que después resultó equivocada.', '¿Qué aprendió de eso?'] },
+  { key:'razonamiento', name:'Razonamiento general', icon:'🧠',
+    def:'Comprende instrucciones, procedimientos y consignas con varias condiciones, y los aplica sin omitir pasos.',
+    anclas:{ 1:'Le cuesta explicar con sus palabras un procedimiento que conoce; confunde los pasos.',
+             3:'Aplica procedimientos simples; con consignas de varias condiciones necesita apoyo.',
+             5:'Explica con claridad un procedimiento complejo que aplicó, con sus excepciones, y cómo se aseguró de no omitir pasos.' },
+    questions:[
+      ['Explíqueme cómo funcionaba el control de acceso en su último trabajo, incluidas las excepciones.', '¿Qué hacía cuando llegaba un caso que no calzaba?'],
+      ['Cuénteme de una consigna difícil de cumplir, con varias condiciones o pasos.', '¿Cómo se aseguró de no omitir pasos?'],
+      ['Cuénteme de una vez en que tuvo que aprender rápido un procedimiento nuevo.', '¿Cómo lo aprendió y cuánto le tomó aplicarlo bien?']
+  ]},
+  { key:'identificacion', name:'Identificación con la organización', icon:'🏢',
+    def:'Se compromete con la empresa y con el cliente, permanece en el tiempo y cuida la imagen y los recursos de la organización.',
+    anclas:{ 1:'Cambios frecuentes de trabajo sin explicación clara; habla mal de empleadores anteriores; ve el cargo solo como algo transitorio.',
+             3:'Permanencias moderadas con motivos razonables; su interés se centra en las condiciones (sueldo, turno).',
+             5:'Trayectoria estable; explica qué valora de pertenecer a una empresa y da ejemplos de haber cuidado su imagen o sus recursos.' },
+    questions:[
+      ['Cuénteme por qué dejó su último trabajo (o por qué quiere dejar el actual).', '¿Cómo fue la salida? ¿Qué opina hoy de esa empresa?'],
+      ['Cuénteme de una vez en que cuidó los recursos o la imagen de la empresa sin que se lo pidieran.', '¿Qué resultado tuvo?'],
+      ['Cuénteme de un momento en que pensó en renunciar y se quedó.', '¿Qué lo hizo quedarse? ¿Qué espera de esta empresa?']
+  ]}
 ];
+// Pauta anterior (5 competencias): solo para mostrar las entrevistas guardadas antes del cambio
+var _COMP_CONFIG_V2 = [
+  { key:'equipo', name:'Trabajo en equipo', icon:'🤝' },
+  { key:'comunicacion', name:'Comunicación', icon:'💬' },
+  { key:'problemas', name:'Resolución de problemas', icon:'🔧' },
+  { key:'resultados', name:'Orientación a resultados', icon:'🎯' },
+  { key:'adaptabilidad', name:'Adaptabilidad', icon:'🔄' }
+];
+function _evCfg(key) { return _COMP_CONFIG.filter(function(x){ return x.key === key; })[0] || {}; }
+
+// Puntaje sugerido (1 a 5) para las competencias que no se exploran con STAR.
+// Pruebas con mínimo: muy bajo el mínimo 1 · bajo 2 · en el mínimo 3 · sobre 4 · muy sobre 5.
+function _evNivelDesdeMin(score, min, max) {
+  var r = (max || 100) - min, t4 = min + Math.min(15, r * 0.5), t5 = min + Math.min(25, r * 0.8);
+  return score < min - 15 ? 1 : score < min ? 2 : score < t4 ? 3 : score < t5 ? 4 : 5;
+}
+var _EV_SUG_PRUEBA = { autocontrol:['gonogo'], alerta:['vigilancia'], criterio:['situacional'], razonamiento:['comprension', 'dc0'] };
+function _evSugerencias(c) {
+  var s = (c && c.scores) || {}, out = {}, rows = [];
+  try { rows = _aptRowsDe(c); } catch(e) {}
+  Object.keys(_EV_SUG_PRUEBA).forEach(function(k) {
+    var r = _EV_SUG_PRUEBA[k].map(function(t){ return rows.filter(function(x){ return x.tid === t && x.min !== undefined; })[0]; }).filter(Boolean)[0];
+    if (!r) return;
+    var u = r.u === undefined ? '%' : r.u;
+    out[k] = { n: _evNivelDesdeMin(r.score, r.min, r.max), fuente: ((TESTS_META[r.tid] || {}).name || r.label) + ': ' + r.score + u + ' (mínimo ' + r.min + u + ')' };
+  });
+  var ig = s.integridad && s.integridad.nivel, IG = { sin_indicadores:4, explorar:3, riesgo_alto:1 };
+  if (IG[ig]) out.integridad = { n: IG[ig], fuente: 'Integridad laboral: ' + INTEG_NIVELES[ig].titulo.toLowerCase() };
+  // Identificación: estabilidad en el último empleo declarado al postular
+  var h0 = Array.isArray(c && c.historial) ? c.historial.filter(function(x){ return x && (x.empresa || x.cargo); })[0] : null;
+  if (h0 && (h0.duracion || h0.salida)) {
+    var n = h0.salida === 'despido' ? 2 : /^(2_5a|mas_5a)$/.test(h0.duracion) ? 4 : h0.duracion === '1_2a' ? 3 : h0.duracion ? 2 : 0;
+    if (n) out.identificacion = { n: n, fuente: 'Estabilidad laboral: ' + [h0.empresa || h0.cargo, h0.duracion_label, h0.salida_label].filter(Boolean).join(' · ') };
+  }
+  return out;
+}
+// Qué hacer con cada competencia según la sugerencia:
+// star → STAR siempre · sin dato → explorar con sus preguntas · 1–2 → profundizar ·
+// 3–4 → confirmar · 5 en Integridad o Criterio → confirmar + contraste · 5 en el resto → confirmar
+function _evModo(cfg, sug) {
+  if (cfg.star) return 'star';
+  if (!sug) return 'explorar';
+  if (sug.n <= 2) return 'profundizar';
+  return sug.n === 5 && cfg.contraste ? 'contraste' : 'confirmar';
+}
 
 // Lectura orientativa del promedio (se revisa con datos, como los mínimos de las pruebas)
 function _evBanda(prom) {
@@ -13195,14 +13301,16 @@ function _evBanda(prom) {
        :             { label:'Débil',    color:'#b91c1c', bg:'#fef2f2' };
 }
 
-// Competencias de una entrevista guardada: formato nuevo (ev.comp, por clave) o antiguo
-// (ev.competencias / ev.notas_comp, por posición en _COMP_CONFIG)
+// Competencias de una entrevista guardada. v3: las 9 del Informe RH (ev.comp, por clave).
+// Antes: las 5 de la pauta anterior (ev.comp por clave, o ev.competencias / ev.notas_comp por posición)
 function _evCompsDe(ev) {
   if (!ev) return [];
-  return _COMP_CONFIG.map(function(cc, i) {
+  var cfg = ev.v >= 3 ? _COMP_CONFIG : _COMP_CONFIG_V2;
+  return cfg.map(function(cc, i) {
     var r = ev.comp ? ev.comp[cc.key] : { nivel:(ev.competencias || [])[i], nota:(ev.notas_comp || [])[i] };
     r = r || {};
-    return { key:cc.key, name:cc.name, icon:cc.icon, nivel:+r.nivel || 0, nota:r.nota || '', sinEjemplo:!!r.sinEjemplo };
+    return { key:cc.key, name:cc.name, icon:cc.icon, nivel:+r.nivel || 0, nota:r.nota || '', sinEjemplo:!!r.sinEjemplo,
+             sugerido:+r.sugerido || 0, fuente:r.fuente || '' };
   });
 }
 
@@ -13268,6 +13376,14 @@ function _evLevelClick(btn) {
   _evResultadoVivo();
   _evCambio();
 }
+function _evConfirmarSug(btn) {
+  var row = btn.closest('[data-ev-comp]'); if (!row) return;
+  var sug = +row.dataset.sug || 0; if (!sug) return;
+  row.dataset.nivel = +row.dataset.nivel === sug ? 0 : sug;
+  _evPintarComp(row);
+  _evResultadoVivo();
+  _evCambio();
+}
 function _evSinEjemplo(cb) {
   var row = cb.closest('[data-ev-comp]'); if (!row) return;
   if (cb.checked && +row.dataset.nivel > 2) { row.dataset.nivel = 2; toast('Sin un ejemplo concreto el máximo es 2: se ajustó a 2', 'ok'); }
@@ -13275,8 +13391,12 @@ function _evSinEjemplo(cb) {
   _evResultadoVivo();
 }
 function _evPintarComp(row) {
-  var lv = +row.dataset.nivel || 0;
-  var cfg = _COMP_CONFIG.filter(function(x){ return x.key === row.dataset.evComp; })[0] || {};
+  var lv = +row.dataset.nivel || 0, sug = +row.dataset.sug || 0;
+  var cfg = _evCfg(row.dataset.evComp);
+  var dif = row.querySelector('.ev-sug-dif');
+  if (dif) dif.style.display = sug && lv && lv !== sug ? '' : 'none';
+  var cb = row.querySelector('.ev-sug-ok');
+  if (cb) { cb.classList.toggle('on', !!sug && lv === sug); cb.textContent = sug && lv === sug ? '✓ Confirmado ' + sug : 'Confirmar ' + sug; }
   var COL = { 1:'#dc2626', 2:'#ea580c', 3:'#ca8a04', 4:'#16a34a', 5:'#15803d' };
   row.querySelectorAll('.ev-lv').forEach(function(b){
     var on = +b.dataset.lv === lv;
@@ -13295,8 +13415,7 @@ function _evPintarComp(row) {
 function _evResultadoVivo() {
   var box = document.getElementById('ev-resultado'); if (!box) return;
   var comps = [].map.call(document.querySelectorAll('#drawer-body [data-ev-comp]'), function(r){
-    var cc = _COMP_CONFIG.filter(function(x){ return x.key === r.dataset.evComp; })[0] || {};
-    return { name:cc.name, nivel:+r.dataset.nivel || 0 };
+    return { name:_evCfg(r.dataset.evComp).name, nivel:+r.dataset.nivel || 0 };
   });
   box.innerHTML = _evResultadoHtml(comps);
   _evMotivoVisible();
@@ -13350,12 +13469,18 @@ function _evInformeHtml(ev, compacto) {
     h += '<div style="padding:8px 0;border-top:1px solid #f1f5f9">'
       + '<div style="display:flex;align-items:center;gap:10px">'
       + '<span style="font-size:15px">' + x.icon + '</span>'
-      + '<span style="flex:1;font-size:12.5px;font-weight:700;color:#0f172a">' + htmlEsc(x.name) + (x.sinEjemplo && x.nivel ? ' <span style="font-size:10px;font-weight:600;color:#94a3b8">· sin ejemplo concreto</span>' : '') + '</span>'
+      + '<span style="flex:1;font-size:12.5px;font-weight:700;color:#0f172a">' + htmlEsc(x.name) + (x.sinEjemplo && x.nivel ? ' <span style="font-size:10px;font-weight:600;color:#94a3b8">· sin ejemplo concreto</span>' : '')
+        + (x.sugerido && x.nivel ? ' <span style="font-size:10px;font-weight:600;color:#94a3b8">· ' + (x.nivel === x.sugerido ? 'confirmó lo sugerido' : 'ajustado (sugerido: ' + x.sugerido + ')') + '</span>' : '') + '</span>'
       + '<span style="display:flex;gap:3px">' + [1,2,3,4,5].map(function(n){ return '<span style="width:16px;height:7px;border-radius:2px;background:' + (n <= x.nivel ? COL[x.nivel] : '#e2e8f0') + '"></span>'; }).join('') + '</span>'
       + '<span style="font-size:13px;font-weight:900;min-width:14px;text-align:right;color:' + (x.nivel ? COL[x.nivel] : '#cbd5e1') + '">' + (x.nivel || '–') + '</span></div>'
       + (!compacto && x.nota ? '<div style="font-size:12px;color:#475569;line-height:1.55;margin:5px 0 0 25px">' + htmlEsc(x.nota) + '</div>' : '')
+      + (!compacto && !x.nota && x.fuente && x.nivel === x.sugerido ? '<div style="font-size:11.5px;color:#94a3b8;line-height:1.55;margin:5px 0 0 25px">' + htmlEsc(x.fuente) + '</div>' : '')
       + '</div>';
   });
+  if (!compacto && (ev.comp_previo || []).length) {
+    h += '<div style="font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.7px;margin:14px 0 6px">Pauta anterior (antes de editar)</div>'
+      + ev.comp_previo.map(function(x){ return '<div style="font-size:12px;line-height:1.55;margin-bottom:5px"><strong>' + htmlEsc(x.name) + ': ' + x.nivel + '</strong>' + (x.nota ? ' · <span style="color:#475569">' + htmlEsc(x.nota) + '</span>' : '') + '</div>'; }).join('');
+  }
   if (comps.some(function(x){ return x.nivel === 1; })) {
     h += '<div style="font-size:12px;color:#b91c1c;margin-top:8px">⚠ Hay competencias en 1.</div>';
   }
@@ -13557,29 +13682,42 @@ function _tabEntrevistasDrawer(c) {
   else p2 += '<details class="ev-mas"><summary>＋ Agregar otra experiencia</summary>' + expBlock(2, null) + '</details>';
   main += paso(2, hist.length ? 'Verificar lo que declaró' : 'Experiencia laboral', p2);
 
-  // 3. Competencias, de a una
-  var p3 = '<div class="ev-hint">Puntúe lo que la persona <strong>hizo</strong>, no lo que haría. Sin un ejemplo concreto, el máximo es 2. '
-    + 'Si nunca vivió la situación, use otra pregunta: valen ejemplos de estudios, servicio militar o voluntariado. Cada puntaje necesita la evidencia.</div>';
+  // 3. Competencias, de a una: 3 con STAR y 6 con puntaje sugerido para confirmar
+  var _sug = _evSugerencias(c);
+  var p3 = '<div class="ev-hint">Las <strong>3 primeras</strong> se exploran siempre con STAR: puntúe lo que la persona <strong>hizo</strong>, no lo que haría (sin un ejemplo concreto, el máximo es 2). '
+    + 'Las <strong>otras 6</strong> traen un puntaje sugerido desde las pruebas o la estabilidad laboral: confírmelo con un clic o ajústelo. Si la sugerencia es 1 o 2, profundice con sus preguntas.</div>';
   p3 += '<div class="ev-comp-nav"><button type="button" class="btn btn-ghost btn-sm" onclick="_evComp(-1)">← Anterior</button>'
     + '<div class="ev-comp-dots" id="ev-comp-dots"></div>'
     + '<button type="button" class="btn btn-ghost btn-sm" onclick="_evComp(1)">Siguiente →</button></div>';
+  var _preg = function(q, i){ return '<div class="ev-q-main"' + (i ? ' style="margin-top:6px"' : '') + '><span>' + (i ? 'Otra pregunta' : 'Pregunte') + '</span>' + q[0] + '<div class="ev-q-seg">Seguimiento: ' + q[1] + '</div></div>'; };
+  var _MODO = { star:['STAR', 'Explore con STAR'], explorar:['Sin sugerencia', 'Sin resultado para sugerir un puntaje: explórela con sus preguntas.'],
+                profundizar:['Profundizar', 'El puntaje sugerido es bajo: profundice con las preguntas antes de confirmar.'],
+                confirmar:['Confirmar', ''], contraste:['Confirmar + contraste', 'Puntaje sugerido muy alto: haga la pregunta de contraste antes de confirmar.'] };
   _COMP_CONFIG.forEach(function(comp, i) {
-    p3 += '<div class="ev-comp" data-ev-comp="' + comp.key + '" data-nivel="0" data-idx="' + i + '" style="display:' + (i ? 'none' : '') + '">'
-      + '<div class="ev-comp-cnt">Competencia ' + (i + 1) + ' de ' + _COMP_CONFIG.length + '</div>'
-      + '<div class="ev-comp-h"><span style="font-size:20px">' + comp.icon + '</span><div><div class="ev-comp-name">' + comp.name + '</div><div class="ev-comp-def">' + comp.def + '</div></div></div>'
-      + '<div class="ev-q-main"><span>Pregunte</span>' + comp.questions[0] + '</div>'
-      + (comp.questions.length > 1 ? '<details class="ev-mas" style="margin-top:6px"><summary>Otras preguntas</summary><ul>' + comp.questions.slice(1).map(function(q){ return '<li>' + q + '</li>'; }).join('') + '</ul></details>' : '')
-      + '<div class="ev-escala">';
+    var sg = _sug[comp.key] || null, modo = _evModo(comp, sg), abiertas = modo === 'star' || modo === 'explorar' || modo === 'profundizar';
+    var contraste = comp.contraste && (modo === 'contraste' || comp.key === 'integridad');
+    p3 += '<div class="ev-comp" data-ev-comp="' + comp.key + '" data-nivel="0" data-idx="' + i + '" data-modo="' + modo + '"' + (sg ? ' data-sug="' + sg.n + '" data-fuente="' + htmlEsc(sg.fuente) + '"' : '') + ' style="display:' + (i ? 'none' : '') + '">'
+      + '<div class="ev-comp-cnt">Competencia ' + (i + 1) + ' de ' + _COMP_CONFIG.length + ' · <span class="ev-modo ev-modo-' + modo + '">' + _MODO[modo][0] + '</span></div>'
+      + '<div class="ev-comp-h"><span style="font-size:20px">' + comp.icon + '</span><div><div class="ev-comp-name">' + comp.name + '</div><div class="ev-comp-def">' + comp.def + '</div></div></div>';
+    if (sg) p3 += '<div class="ev-sug"><div class="ev-sug-n">' + sg.n + '</div><div style="flex:1;min-width:0"><div class="ev-sug-t">Puntaje sugerido</div><div class="ev-sug-f">' + htmlEsc(sg.fuente) + '</div></div>'
+      + '<button type="button" class="btn btn-ghost btn-sm ev-sug-ok" onclick="_evConfirmarSug(this)">Confirmar ' + sg.n + '</button></div>';
+    if (comp.key === 'identificacion') p3 += '<div class="ev-sug-rev" id="ev-ident-rev" style="display:none">⚠ La trayectoria declarada se corrigió o no se pudo verificar en la entrevista: revise la sugerencia.</div>';
+    if (!comp.star && _MODO[modo][1]) p3 += '<div class="ev-sug-aviso ev-sug-aviso-' + modo + '">' + _MODO[modo][1] + '</div>';
+    if (contraste) p3 += '<div class="ev-q-main ev-q-contraste"><span>Pregunta de contraste</span>' + comp.contraste[0] + '<div class="ev-q-seg">Seguimiento: ' + comp.contraste[1] + '</div></div>';
+    var qs = comp.questions.map(_preg).join('');
+    p3 += abiertas ? qs : '<details class="ev-mas" style="margin-top:8px"><summary>Abrir preguntas (si observa algo distinto)</summary><div style="padding-top:6px">' + qs + '</div></details>';
+    p3 += '<div class="ev-escala">';
     for (var lv = 1; lv <= 5; lv++) {
       p3 += '<button type="button" class="ev-lv" data-lv="' + lv + '" onclick="_evLevelClick(this)" title="' + htmlEsc(comp.anclas[lv] || (lv === 2 ? 'Intermedio entre 1 y 3' : 'Intermedio entre 3 y 5')) + '">' + lv + '</button>';
     }
     p3 += '</div><div class="ev-anclas">' + [1, 3, 5].map(function(n){ return '<div class="ev-ancla" data-a="' + n + '"><b>' + n + '</b><span>' + comp.anclas[n] + '</span></div>'; }).join('') + '</div>'
       + '<div class="ev-lv-desc" style="display:none"></div>'
+      + (sg ? '<div class="ev-sug-dif" style="display:none">Cambió el puntaje sugerido (' + sg.n + '): anote en la evidencia por qué.</div>' : '')
       + '<label class="ev-sin-ej-lbl"><input type="checkbox" class="ev-sin-ej" onchange="_evSinEjemplo(this)"> No dio un ejemplo concreto (máximo 2)</label>'
-      + '<div class="ev-field"><textarea id="ef-comp-nota-' + i + '" rows="3" placeholder="Evidencia: situación que relató, qué hizo y qué resultado tuvo…"></textarea></div>'
+      + '<div class="ev-field"><textarea id="ef-comp-nota-' + i + '" rows="3" placeholder="' + (abiertas ? 'Evidencia: situación que relató, qué hizo y qué resultado tuvo…' : 'Opcional si confirma: lo que respondió' + (contraste ? ' a la pregunta de contraste' : '') + ' u observó…') + '"></textarea></div>'
       + '</div>';
   });
-  main += paso(3, 'Método STAR · escala de 1 a 5', p3);
+  main += paso(3, '3 con STAR · 6 para confirmar · escala de 1 a 5', p3);
 
   // 4. Desde las pruebas
   var p4 = '';
@@ -13699,6 +13837,9 @@ function _evVerificar(n, val) {
   });
   var det = document.getElementById('ef-exp' + n + '-det');
   if (det) det.style.display = inp.value === 'corregida' ? '' : 'none';
+  // Identificación con la organización se sugiere desde la trayectoria declarada: si no calzó, revisarla
+  var rev = document.getElementById('ev-ident-rev');
+  if (rev) rev.style.display = [1, 2].some(function(k){ return /^(corregida|no_verificable)$/.test((document.getElementById('ef-exp' + k + '-ver') || {}).value || ''); }) ? '' : 'none';
   _evCambio();
 }
 
@@ -13908,15 +14049,19 @@ async function saveEntrevistaDrawer(candId) {
   document.querySelectorAll('#drawer-body [data-ev-comp]').forEach(function(row, i) {
     var key = row.dataset.evComp, nivel = +row.dataset.nivel || 0;
     var nota = (document.getElementById('ef-comp-nota-' + i) || {}).value || '';
-    var sinEj = !!(row.querySelector('.ev-sin-ej') || {}).checked;
-    if (nivel && !nota.trim()) faltaNota.push(row);
+    var sinEj = !!(row.querySelector('.ev-sin-ej') || {}).checked, sug = +row.dataset.sug || 0;
+    // La evidencia es obligatoria en las exploradas con preguntas o si cambió el puntaje sugerido;
+    // al confirmar la sugerencia, la fuente (prueba o estabilidad) es la evidencia
+    var exige = !/^(confirmar|contraste)$/.test(row.dataset.modo || '') || nivel !== sug;
+    if (nivel && exige && !nota.trim()) faltaNota.push(row);
     comp[key] = { nivel:nivel, nota:nota.trim(), sinEjemplo:sinEj };
+    if (sug) { comp[key].sugerido = sug; comp[key].fuente = row.dataset.fuente || ''; }
     comps.push(nivel); notasComp.push(nota);
   });
   if (faltaNota.length) {
     faltaNota.forEach(function(r){ var t = r.querySelector('textarea'); if (t) t.style.borderColor = '#dc2626'; });
     _evIrPaso(3); _evCompIr(+faltaNota[0].dataset.idx || 0);
-    toast('Cada competencia puntuada necesita una nota con la evidencia', 'er'); return;
+    toast('Anote la evidencia: es obligatoria en las competencias exploradas con preguntas y cuando cambia el puntaje sugerido', 'er'); return;
   }
   var motivoReq = _evMotivoRequerido();
   var motivo = ((document.getElementById('ef-motivo') || {}).value || '').trim();
@@ -13947,9 +14092,8 @@ async function saveEntrevistaDrawer(candId) {
     instalacion: ((document.getElementById('ef-instalacion') || {}).value || '').trim(),
     turno: (document.getElementById('ef-turno') || {}).value || '',
     turno_otra: ((document.getElementById('ef-turno-otra') || {}).value || '').trim(), notas: notas, sintesis: sintesis, dictamen: dictamen,
-    v: 2, comp: comp, promedio: _evPromedio(_evCompsDe({ comp:comp })), motivo: motivoReq ? motivo : '',
+    v: 3, comp: comp, promedio: _evPromedio(_evCompsDe({ v:3, comp:comp })), motivo: motivoReq ? motivo : '',
     desde_pruebas: desdePruebas,
-    competencias: comps, notas_comp: notasComp,
     screening: _evGetScreen(),
     checks_op: _evGetChecksOp(),
     apuntes_psico: apuntesPsico,
@@ -13962,6 +14106,11 @@ async function saveEntrevistaDrawer(candId) {
       prev = prev || [];
       var ant = edita && prev.filter(function(e){ return e.id === edita; })[0];
       dictAntes = ant ? (ant.dictamen || '') : null;
+      // Una entrevista de la pauta anterior que se edita conserva sus 5 competencias como registro
+      if (ant && !(ant.v >= 3)) {
+        var prev5 = ant.comp_previo || _evCompsDe(ant).filter(function(x){ return x.nivel > 0; }).map(function(x){ return { name:x.name, nivel:x.nivel, nota:x.nota }; });
+        if (prev5.length) entry.comp_previo = prev5;
+      } else if (ant && ant.comp_previo) entry.comp_previo = ant.comp_previo;
       if (edita && prev.some(function(e){ return e.id === edita; })) {
         entry.id = edita;
         return prev.map(function(e){ return e.id === edita ? Object.assign({ creada: e.creada || e.ts }, entry) : e; });
@@ -14518,8 +14667,11 @@ function _rhSugerencias(c) {
   Object.keys(_RH_FUENTE).forEach(function(k){ var n = _rhNivelPrueba(c, _RH_FUENTE[k]); if (n) niveles[k] = n; });
   if (!niveles.razonamiento) { var d = _rhNivelPrueba(c, 'dc0'); if (d) niveles.razonamiento = d; }
   var ev = _evUltima(s);
+  var _rhN = function(n){ return n >= 4 ? 'Alto' : n === 3 ? 'Medio' : 'Bajo'; };
+  if (!niveles.identificacion) { var sI = _evSugerencias(c).identificacion; if (sI) niveles.identificacion = { v: _rhN(sI.n), fuente: sI.fuente }; }
+  // La entrevista manda: 4–5 Alto · 3 Medio · 1–2 Bajo (entrevistas antiguas: solo Comunicación y Trabajo en equipo)
   _evCompsDe(ev).forEach(function(x) {
-    if ((x.key === 'comunicacion' || x.key === 'equipo') && x.nivel) niveles[x.key] = { v: x.nivel >= 4 ? 'Alto' : x.nivel === 3 ? 'Medio' : 'Bajo', fuente: 'Entrevista: ' + x.nivel + ' de 5' };
+    if (x.nivel && _RH_COMP.some(function(k){ return k.key === x.key; })) niveles[x.key] = { v: _rhN(x.nivel), fuente: 'Entrevista: ' + x.nivel + ' de 5' };
   });
   var ideales = _rhIdealesDe(evPost.cargo || _rhCargoBase(c));
   // Sin resultado, el nivel obtenido queda en Medio por defecto (el psicólogo lo ajusta)
