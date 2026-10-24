@@ -8243,11 +8243,11 @@ function _miradaFichaHtml(c) {
 // "Por revisar" del Dashboard: lo que requiere una acción del evaluador
 function _porRevisarHtml(cands, desde) {
   var grupos = [
-    { titulo:'Integridad con riesgo alto', icon:'🔴', lista:[] },
-    { titulo:'Incidentes durante la evaluación', icon:'⚠️', lista:[] },
-    { titulo:'Completadas sin dictamen de entrevista', icon:'🗓', lista:[] },
-    { titulo:'Seguimientos después de la contratación', icon:'⏰', lista:[] },
-    { titulo:'Se archivan esta semana', icon:'⏳', lista:[] }
+    { titulo:'Integridad con riesgo alto', color:'#be123c', accion:['Revisar', 'evaluaciones'], lista:[] },
+    { titulo:'Incidentes durante la evaluación', color:'#b45309', accion:['Revisar', 'evaluaciones'], lista:[] },
+    { titulo:'Completadas sin dictamen de entrevista', color:'var(--accent)', accion:['Entrevistar', 'entrevistas'], lista:[] },
+    { titulo:'Seguimientos después de la contratación', color:'#0e7490', accion:['Registrar', 'seguimiento'], lista:[] },
+    { titulo:'Se archivan esta semana', color:'#94a3b8', accion:['Abrir', 'resumen'], lista:[] }
   ];
   cands.forEach(function(c) {
     var dpa = _diasParaArchivo(c);
@@ -8269,15 +8269,23 @@ function _porRevisarHtml(cands, desde) {
   h += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--ink4);margin-bottom:10px">Por revisar</div>';
   h += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px">';
   activos.forEach(function(g) {
-    h += '<div><div style="font-size:12.5px;font-weight:800;color:var(--ink);margin-bottom:4px">' + g.icon + ' ' + g.titulo + ' <span style="color:var(--ink4);font-weight:600">(' + g.lista.length + ')</span></div>';
+    h += '<div><div style="font-size:12.5px;font-weight:800;color:var(--ink);margin-bottom:6px;display:flex;align-items:center;gap:7px"><span style="width:8px;height:8px;border-radius:50%;background:' + g.color + ';flex-shrink:0"></span>' + g.titulo + ' <span style="color:var(--ink4);font-weight:600">' + g.lista.length + '</span></div>';
     g.lista.slice(0, 5).forEach(function(x) {
-      h += '<div style="font-size:12px;line-height:1.75"><a onclick="openCandDrawer(\'' + x.c.id + '\')" style="cursor:pointer;color:var(--accent);font-weight:600">' + htmlEsc((x.c.nombre || '') + ' ' + (x.c.apellido || '')) + '</a>'
-        + '<span style="color:var(--ink4)"> · ' + htmlEsc(x.nota || (PERFIL_META[x.c.perfil] || {}).label || x.c.cargo || '') + '</span></div>';
+      var accion = g.accion || ['Abrir', ''];
+      h += '<div class="pr-row"><span><a onclick="openCandDrawer(\'' + x.c.id + '\')" style="cursor:pointer;color:var(--ink);font-weight:700">' + htmlEsc((x.c.nombre || '') + ' ' + (x.c.apellido || '')) + '</a>'
+        + '<span style="color:var(--ink4)"> · ' + htmlEsc(x.nota || (PERFIL_META[x.c.perfil] || {}).label || x.c.cargo || '') + '</span></span>'
+        + '<button class="pr-go" onclick="_prIr(\'' + x.c.id + '\',\'' + accion[1] + '\')">' + accion[0] + ' →</button></div>';
     });
     if (g.lista.length > 5) h += '<div style="font-size:11px;color:var(--ink4)">y ' + (g.lista.length - 5) + ' más</div>';
     h += '</div>';
   });
   return h + '</div></div>';
+}
+
+// "Por revisar": abre la ficha directo en la pestaña que corresponde a la acción
+async function _prIr(id, tab) {
+  await openCandDrawer(id);
+  if (tab && tab !== 'resumen') try { switchDrawerTabById(tab); } catch(e) {}
 }
 
 // Cargos para filtrar: los activos y además los que tengan candidatos (aunque estén inactivos)
@@ -10539,7 +10547,12 @@ async function renderDashboard() {
   if (subEl) subEl.textContent = (perfil === 'all' ? 'Todos los cargos' : PICON[perfil] + ' ' + PLABEL[perfil]) + ' · ' + PER_LBL[dias].toLowerCase();
 
   var h = '<style>'
-    + '.dash-grid4{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:22px}'
+    + '.dash-grid4{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin-bottom:22px}'
+    + '@media (max-width:1250px){.dash-grid4{grid-template-columns:repeat(3,minmax(0,1fr))}}'
+    + '.dash-grid4 .dash-card{padding:16px 16px}.dash-grid4 .dash-kpi{font-size:30px!important}'
+    + '.dash-al{align-items:start}.dash-stack{display:flex;flex-direction:column;gap:16px}'
+    + '.pr-row{display:flex;align-items:center;gap:8px;font-size:12px;line-height:1.5;padding:4px 0;border-top:1px solid var(--border)}.pr-row:first-of-type{border-top:none}'
+    + '.pr-go{margin-left:auto;flex-shrink:0;font-size:11.5px;font-weight:700;color:var(--accent);background:var(--accent-l);border:none;border-radius:999px;padding:3px 10px;cursor:pointer;font-family:inherit}.pr-go:hover{filter:brightness(.96)}'
     + '.dash-grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;margin-bottom:22px}'
     + '.dash-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px}'
     + '.dash-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--ink4)}'
@@ -10593,18 +10606,15 @@ async function renderDashboard() {
 
   // ── El proceso: embudo y dictamen ──
   var proc = _dashProceso(cands, cands, perfil);
-  h += '<div class="dash-grid2">' + proc.embudo + proc.dictamen + '</div>';
-
-  // ── Por dónde llegan los postulantes (pregunta del registro, 21_canal.sql) ──
-  h += _dashCanalesHtml(cands, ir);
-
-  // ── Resultados: evaluaciones por semana y pruebas de aptitud ──
-  h += '<div class="dash-grid2">';
-  h += '<div class="dash-card"><div class="dash-lbl" style="margin-bottom:12px">Evaluaciones completadas por semana</div><canvas id="chart-weekly" height="170"></canvas></div>';
-  h += '<div class="dash-card"><div class="dash-lbl" style="margin-bottom:4px">Resultados por prueba</div>'
+  // Embudo (alto) junto a dictamen y referidos apilados; luego canales junto al gráfico
+  // semanal; y resultados por prueba a lo ancho. Así no quedan tarjetas con espacio vacío.
+  var can = _dashCanalesPartes(cands, ir);
+  h += '<div class="dash-grid2 dash-al">' + proc.embudo + '<div class="dash-stack">' + proc.dictamen + can.refs + '</div></div>';
+  h += '<div class="dash-grid2 dash-al">' + can.canales
+    + '<div class="dash-card"><div class="dash-lbl" style="margin-bottom:12px">Evaluaciones completadas por semana</div><canvas id="chart-weekly" height="170"></canvas></div></div>';
+  h += '<div class="dash-card" style="margin-bottom:22px"><div class="dash-lbl" style="margin-bottom:4px">Resultados por prueba</div>'
     + '<div style="font-size:11.5px;color:var(--ink3);margin-bottom:12px">Porcentaje de evaluados que alcanzan el mínimo del cargo en cada prueba de aptitud</div>'
     + _dashResultadosHtml(completadas) + '</div>';
-  h += '</div>';
 
   // ── Distribución por cargo (solo con "Todos") ──
   if (perfil === 'all') h += proc.cargos;
@@ -10620,10 +10630,10 @@ async function renderDashboard() {
 
 // Canales de llegada: cuántos postulantes por medio y cuántos resultan recomendados;
 // al lado, quiénes de la empresa recomiendan postulantes
-function _dashCanalesHtml(cands, ir) {
+function _dashCanalesPartes(cands, ir) {
   var con = cands.filter(function(c){ return c.scores && c.scores._canal && c.scores._canal.canal; });
   var card = function(t, inner){ return '<div class="dash-card"><div class="dash-lbl" style="margin-bottom:4px">' + t + '</div>' + inner + '</div>'; };
-  if (!con.length) return '<div class="dash-grid2">' + card('¿Por dónde llegan?', '<div style="font-size:12.5px;color:var(--ink3);line-height:1.55">Aún no hay respuestas en el período. La pregunta "¿Cómo supiste de esta oferta?" se agregó al registro el 23-10-2026: los postulantes anteriores no tienen este dato.</div>') + '</div>';
+  if (!con.length) return { refs:'', canales: card('¿Por dónde llegan?', '<div style="font-size:12.5px;color:var(--ink3);line-height:1.55">Aún no hay respuestas en el período. La pregunta "¿Cómo supiste de esta oferta?" se agregó al registro el 23-10-2026: los postulantes anteriores no tienen este dato.</div>') };
   var grupos = {};
   con.forEach(function(c){ var k = c.scores._canal.canal; (grupos[k] = grupos[k] || []).push(c); });
   var orden = Object.keys(grupos).sort(function(a, b){ return grupos[b].length - grupos[a].length; });
@@ -10649,7 +10659,9 @@ function _dashCanalesHtml(cands, ir) {
             + '<span style="color:var(--ink3);text-align:right">' + l.map(function(c){ return htmlEsc(((c.nombre || '') + ' ' + (c.apellido || '')).trim()); }).join(', ') + '</span></div>';
         }).join('')
     : '<div style="font-size:12.5px;color:var(--ink3)">Nadie llegó recomendado por un colega en el período.</div>');
-  return '<div class="dash-grid2">' + canales + refs + '</div>';
+  return { canales: canales, refs: refs };
+}
+function _dashCanalesHtml(cands, ir) { var p = _dashCanalesPartes(cands, ir); return '<div class="dash-grid2">' + p.canales + p.refs + '</div>';
 }
 
 // Barras: porcentaje de evaluados sobre el mínimo, por prueba de aptitud
@@ -10691,7 +10703,7 @@ function _initDashCharts(cands, dias) {
   if (!ctx) return;
   window._chartWeekly = new Chart(ctx, {
     type: 'bar',
-    data: { labels: labels, datasets: [{ label: 'Completadas', data: data, backgroundColor: 'rgba(99,102,241,.75)', borderRadius: 6, borderSkipped: false }] },
+    data: { labels: labels, datasets: [{ label: 'Completadas', data: data, backgroundColor: 'rgba(39,71,216,.78)', borderRadius: 6, borderSkipped: false }] },
     options: { responsive: true, plugins: { legend: { display: false } },
       scales: { x: { grid: { display: false }, ticks: { font: { size: 11 }, maxRotation: 0, autoSkip: true } },
                 y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0, font: { size: 11 } }, grid: { color: '#f1f5f9' } } } }
