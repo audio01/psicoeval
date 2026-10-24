@@ -6,7 +6,7 @@
 <title>PsicoEval — Plataforma Psicolaboral</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..650;1,9..144,400..600&family=Manrope:wght@400..800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400..800&display=swap" rel="stylesheet">
 <style>
 /* ── Reset ── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -1099,7 +1099,7 @@ body.exam-away #exam-shield{display:flex}
    VISTAS DEL POSTULANTE — vidrio esmerilado (liquid glass)
    Solo con body.pub (landing, registro, inicio, pruebas, fin). El panel no cambia.
    Dirección: editorial sereno. Papel cálido + aura (arena, durazno, cobalto),
-   paneles de vidrio, Fraunces (títulos) + Manrope (texto). Una sola curva de movimiento.
+   paneles de vidrio, Plus Jakarta Sans. Una sola curva de movimiento.
 ═══════════════════════════════════════════════════════════ */
 body.pub{
   /* tres colores de marca: tinta, acento y cálido */
@@ -1110,7 +1110,7 @@ body.pub{
   --border:rgba(20,33,61,.10); --border2:rgba(20,33,61,.16);
   --ink:rgb(var(--pub-ink)); --ink2:#2b3654; --ink3:#5b6478; --ink4:#9aa1b2;
   --accent:rgb(var(--pub-acc)); --accent-l:rgba(39,71,216,.08); --accent-m:rgba(39,71,216,.32);
-  font-family:'Manrope',-apple-system,'Segoe UI',system-ui,sans-serif;
+  font-family:'Plus Jakarta Sans',-apple-system,'Segoe UI',system-ui,sans-serif;
   background:#f3eee6; color:var(--ink);
 }
 /* Atmósfera: manchas de color que el vidrio refracta (sin filter: livianas en celulares) */
@@ -1142,10 +1142,10 @@ body.pub .app-header,body.pub #view-test .app-header{
 body.pub .test-bottom-bar{background:rgba(255,255,255,.55);-webkit-backdrop-filter:blur(22px) saturate(190%);backdrop-filter:blur(22px) saturate(190%);border-top:1px solid rgba(255,255,255,.7)}
 
 /* Tipografía */
-body.pub h1,body.pub h2,body.pub .logo{font-family:'Fraunces',Georgia,serif;font-optical-sizing:auto;letter-spacing:-.02em}
-body.pub #view-register h2,body.pub #view-testselect h2,body.pub #view-results h2{font-weight:560!important;font-size:clamp(24px,5.2vw,30px)!important;line-height:1.08}
-body.pub .logo{font-weight:600;font-size:19px!important}
-body.pub .logo span{font-style:italic;color:var(--accent)}
+body.pub h1,body.pub h2,body.pub .logo{font-family:'Plus Jakarta Sans',-apple-system,'Segoe UI',sans-serif;letter-spacing:-.025em}
+body.pub #view-register h2,body.pub #view-testselect h2,body.pub #view-results h2{font-weight:800!important;font-size:clamp(24px,5.2vw,30px)!important;line-height:1.08}
+body.pub .logo{font-weight:800;font-size:18px!important}
+body.pub .logo span{color:var(--accent)}
 body.pub .field>label{font-size:11px;letter-spacing:.09em;color:var(--ink3);font-weight:700}
 
 /* Campos y opciones (inset: sin backdrop-filter propio) */
@@ -1185,21 +1185,21 @@ body.pub #inv-banner+.pub-adm+.pub-land,body.pub #inv-banner~.pub-land{min-heigh
 .pub-land-grid{width:100%;max-width:1080px;display:grid;grid-template-columns:1.08fr .92fr;gap:56px;align-items:end}
 .pub-kicker{font-size:11px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--ink3);display:flex;align-items:center;gap:12px;margin-bottom:22px}
 .pub-kicker::before{content:"";width:34px;height:1px;background:rgb(var(--pub-ink)/.45)}
-.pub-title{font-family:'Fraunces',Georgia,serif;font-weight:480;font-size:clamp(46px,8.4vw,104px);line-height:.92;letter-spacing:-.035em;color:var(--ink);margin:0 0 26px}
-.pub-title em{font-style:italic;font-weight:420;color:rgb(var(--pub-acc));font-variation-settings:'SOFT' 100,'WONK' 1}
+.pub-title{font-family:'Plus Jakarta Sans',-apple-system,'Segoe UI',sans-serif;font-weight:800;font-size:clamp(42px,7.6vw,92px);line-height:.95;letter-spacing:-.045em;color:var(--ink);margin:0 0 26px}
+.pub-title em{font-style:normal;font-weight:800;color:rgb(var(--pub-acc))}
 .pub-line{display:block;overflow:hidden;padding-bottom:.08em}
 .pub-line>span{display:block;transform:translateY(105%);animation:pubRise 1.05s var(--pub-ease) forwards}
 .pub-line:nth-child(2)>span{animation-delay:.12s}
 @keyframes pubRise{to{transform:none}}
 .pub-lead{font-size:16.5px;line-height:1.65;color:var(--ink2);max-width:440px;opacity:0;animation:pubIn .9s var(--pub-ease) .45s forwards}
 .pub-meta{display:flex;gap:28px;margin-top:30px;opacity:0;animation:pubIn .9s var(--pub-ease) .6s forwards}
-.pub-meta b{display:block;font-family:'Fraunces',Georgia,serif;font-weight:500;font-size:34px;letter-spacing:-.03em;color:var(--ink);line-height:1}
+.pub-meta b{display:block;font-family:'Plus Jakarta Sans',-apple-system,'Segoe UI',sans-serif;font-weight:800;font-size:34px;letter-spacing:-.03em;color:var(--ink);line-height:1}
 .pub-meta span{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3);font-weight:700}
 .pub-panel{padding:30px 30px 26px;opacity:0;animation:pubIn 1s var(--pub-ease) .3s forwards}
 .pub-index{list-style:none;margin:0 0 24px;padding:0}
 .pub-index li{display:grid;grid-template-columns:44px 1fr;gap:4px 10px;padding:16px 0;border-top:1px solid rgba(20,33,61,.09)}
 .pub-index li:first-child{border-top:none;padding-top:2px}
-.pub-index .n{font-family:'Fraunces',Georgia,serif;font-style:italic;font-size:22px;color:rgb(var(--pub-acc));line-height:1.1}
+.pub-index .n{font-family:'Plus Jakarta Sans',-apple-system,'Segoe UI',sans-serif;font-weight:800;font-size:18px;letter-spacing:-.02em;color:rgb(var(--pub-acc));line-height:1.1}
 .pub-index b{font-size:14px;font-weight:750;color:var(--ink);display:block;margin-bottom:3px}
 .pub-index p{font-size:13.5px;line-height:1.6;color:var(--ink3);margin:0}
 .pub-index li.pub-consent p{color:var(--ink2)}
