@@ -870,11 +870,19 @@ input,select,textarea{font-family:inherit;outline:none}
 #cand-drawer-overlay.open{display:flex}
 #cand-drawer{width:min(1520px,100%);height:100%;max-height:calc(100vh - 24px);background:var(--bg);border-radius:16px;box-shadow:0 24px 70px rgba(0,0,0,.28);display:flex;flex-direction:column;overflow:hidden;transform:translateY(14px) scale(.985);opacity:0;transition:transform .22s cubic-bezier(.4,0,.2,1),opacity .22s ease}
 #cand-drawer-overlay.open #cand-drawer{transform:none;opacity:1}
-.dh-row{display:flex;align-items:center;gap:12px;padding:10px 24px;border-bottom:1px solid var(--border)}
-.dh-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#7c3aed);color:#fff;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.dh-txt{flex:1;min-width:0;display:flex;align-items:baseline;gap:10px;overflow:hidden;white-space:nowrap}
-.dh-name{font-size:16px;font-weight:800;color:var(--ink)}
-.dh-meta{font-size:12.5px;color:var(--ink3);overflow:hidden;text-overflow:ellipsis}
+.dh-row{display:flex;align-items:center;gap:14px;padding:14px 24px;border-bottom:1px solid var(--border)}
+.dh-av{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#2747D8,#5E5CE6);color:#fff;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.dh-txt{flex:1;min-width:0;display:block;overflow:hidden}
+.dh-name{font-size:19px;font-weight:800;color:var(--ink);letter-spacing:-.02em;line-height:1.2}
+.dh-chips{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:5px}
+.dh-chips .bd-pill,.dh-chips .pipe-badge{font-size:11px}
+.dh-cargo{font-size:12.5px;font-weight:700;color:var(--ink2);margin-left:2px}
+.dh-pdf{display:inline-flex;align-items:center;gap:6px}
+.dh-pdf .ico{width:15px;height:15px}
+.dt-n{display:inline-block;margin-left:6px;min-width:18px;padding:0 6px;border-radius:999px;background:var(--surface2);color:var(--ink3);font-size:10.5px;font-weight:700;line-height:17px;text-align:center}
+.drawer-tab-btn.active .dt-n{background:var(--accent-l);color:var(--accent)}
+.dt-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#f59e0b;margin-left:6px;vertical-align:1px}
+.dh-meta{font-size:12px;color:var(--ink3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:4px}
 .dh-badges{display:flex;gap:6px;align-items:center;flex-shrink:0}
 .reg-ops{display:flex;flex-direction:column;gap:7px;margin-top:4px}
 .reg-op{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;font-size:13.5px;font-weight:600;color:var(--ink);transition:all .15s}
@@ -909,6 +917,10 @@ textarea.rh-in{resize:vertical}
 .rs-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:13px;align-items:start}
 .rs-col{display:flex;flex-direction:column;gap:13px;min-width:0}
 .rs-card{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:13px 15px}
+.rs-motivo{padding:10px 14px!important}
+.rs-motivo .rs-lbl{margin-bottom:4px}
+.rs-motivo-t{font-size:12.5px!important;line-height:1.55!important;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}
+.rs-motivo-t.abierto{-webkit-line-clamp:unset;display:block}
 .rs-lbl{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:10.5px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:9px}
 .rs-link{font-size:12px;font-weight:700;color:var(--accent);cursor:pointer;text-transform:none;letter-spacing:0}
 .rs-vacio{font-size:12.5px;color:var(--ink3)}
@@ -933,10 +945,10 @@ textarea.rh-in{resize:vertical}
 .rs-btn:hover{border-color:var(--accent);color:var(--accent)}
 .rs-btn.prim{background:var(--accent);border-color:var(--accent);color:#fff}
 .rs-btn.prim:hover{filter:brightness(1.08);color:#fff}
-.rs-paso{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:13px 16px;border-radius:11px;border:1.5px solid #bfdbfe;background:#eff6ff}
+.rs-paso{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:9px 14px;border-radius:11px;border:1.5px solid #bfdbfe;background:#eff6ff}
 .rs-paso-txt{flex:1;min-width:220px}
-.rs-paso-t{font-size:14px;font-weight:800;color:#1e3a8a}
-.rs-paso-d{font-size:12.5px;color:#1e40af;margin-top:2px;line-height:1.5}
+.rs-paso-t{font-size:13px;font-weight:800;color:#1e3a8a}
+.rs-paso-d{font-size:12px;color:#1e40af;margin-top:1px;line-height:1.5}
 .rs-paso-acc{display:flex;gap:6px;flex-wrap:wrap}
 .rs-warn{background:#fffbeb;border-color:#fde68a}.rs-warn .rs-paso-t{color:#92400e}.rs-warn .rs-paso-d{color:#92400e}
 .rs-alerta{background:#fff1f2;border-color:#fecdd3}.rs-alerta .rs-paso-t{color:#9f1239}.rs-alerta .rs-paso-d{color:#9f1239}
@@ -12801,15 +12813,20 @@ function _renderDrawerHeader(c) {
   var em = getPipelineMeta(etapa);
   var initials = ((c.nombre||'?')[0] + (c.apellido||'?')[0]).toUpperCase();
   var datos = [_postulaDe(c).cargo || c.cargo || pm.label || c.perfil || '', c.edad ? c.edad + ' años' : '', c.comuna || '', c.educacion_label || c.educacion || '', _canalTxt(c) ? 'Llegó por: ' + _canalTxt(c) : '', _rhEstado(c) === 'enviado' ? '📤 Enviado a RRHH ' + _rhFechaCorta(c.scores._informe_rh.enviado) : ''].filter(Boolean).map(function(x){ return htmlEsc(String(x)); }).join(' · ');
-  // Una sola franja compacta: deja el máximo de alto para el contenido
+  // Jerarquía: nombre grande; debajo, etapa y categoría como chips y los datos; a la derecha, las acciones
+  var pz = _postulaDe(c), cat = _categoriaDe(c);
+  var linea = [pz.instalacion ? '📍\u00a0' + htmlEsc(pz.instalacion) : '', c.edad ? c.edad + ' años' : '', htmlEsc(c.comuna || ''),
+               _canalTxt(c) ? 'Llegó por: ' + htmlEsc(_canalTxt(c)) : '', _rhEstado(c) === 'enviado' ? '📤 Enviado a RRHH ' + _rhFechaCorta(c.scores._informe_rh.enviado) : ''].filter(Boolean).join(' · ');
   document.getElementById('drawer-header').innerHTML =
     '<div class="dh-row">'
     + '<div class="dh-av">' + initials + '</div>'
-    + '<div class="dh-txt"><span class="dh-name">' + htmlEsc(c.nombre + ' ' + c.apellido) + '</span><span class="dh-meta">' + (pm.icon || '') + ' ' + datos + '</span></div>'
-    + '<div class="dh-badges">' + _estadoFichaHtml(c)
-    + (c.estado === 'completed' && S.role === 'admin' ? '<button class="dh-pdf" onclick="abrirInformeRH(\'' + c.id + '\')" title="Informe en formato RH (R-GP-054)">📄 Informe RH</button>' : '')
-    + (c.estado === 'completed' ? '<button class="dh-pdf" onclick="downloadPdfReport(\'' + c.id + '\')" title="Descargar el informe en PDF">⬇ PDF</button>' : '') + '</div>'
-    + '<button onclick="closeCandDrawer()" class="dh-close" title="Cerrar (Esc)">✕</button>'
+    + '<div class="dh-txt"><div class="dh-name">' + htmlEsc(c.nombre + ' ' + c.apellido) + '</div>'
+    + '<div class="dh-chips">' + _estadoFichaHtml(c) + (cat ? _bdDictamenCorto(c) : '') + '<span class="dh-cargo">' + htmlEsc(pz.cargo || c.cargo || pm.label || '') + '</span></div>'
+    + (linea ? '<div class="dh-meta">' + linea + '</div>' : '') + '</div>'
+    + '<div class="dh-badges">'
+    + (c.estado === 'completed' && S.role === 'admin' ? '<button class="dh-pdf" onclick="abrirInformeRH(\'' + c.id + '\')" title="Informe en formato RH (R-GP-054)"><svg class="ico"><use href="#i-doc"/></svg>Informe RH</button>' : '')
+    + (c.estado === 'completed' ? '<button class="dh-pdf" onclick="downloadPdfReport(\'' + c.id + '\')" title="Descargar el informe en PDF"><svg class="ico"><use href="#i-down"/></svg>PDF</button>' : '') + '</div>'
+    + '<button onclick="closeCandDrawer()" class="dh-close" title="Cerrar (Esc)" aria-label="Cerrar">✕</button>'
     + '</div>';
 }
 
@@ -12820,15 +12837,16 @@ function _switchDrawerTab(tab, c) {
   if (tab === 'entrevistas' && !_verEntrevistas()) tab = 'resumen';
   _drawerActiveTab = tab;
   var tabs = [
-    { id:'resumen',      icon:'📋', label:'Resumen' },
-    { id:'evaluaciones', icon:'📊', label:'Evaluaciones' },
-    { id:'entrevistas',  icon:'🗓', label:'Entrevistas' },
-    { id:'seguimiento',  icon:'⏱', label:'Seguimiento' },
+    { id:'resumen',      label:'Resumen' },
+    { id:'evaluaciones', label:'Evaluaciones', n:(c.tests || []).filter(function(t){ return c.scores && c.scores[t]; }).length },
+    { id:'entrevistas',  label:'Entrevistas', n:((c.scores && c.scores._entrevistas) || []).length },
+    { id:'seguimiento',  label:'Seguimiento', alerta:_miradaDe(c).segPend.length > 0 },
   ].filter(function(t){ return t.id !== 'entrevistas' || _verEntrevistas(); });
   var tabsEl = document.getElementById('drawer-tabs');
   if (tabsEl) {
     tabsEl.innerHTML = tabs.map(function(t) {
-      return '<button class="drawer-tab-btn' + (t.id === tab ? ' active' : '') + '" onclick="switchDrawerTabById(\'' + t.id + '\')">' + t.icon + ' ' + t.label + '</button>';
+      return '<button class="drawer-tab-btn' + (t.id === tab ? ' active' : '') + '" onclick="switchDrawerTabById(\'' + t.id + '\')">' + t.label
+        + (t.n ? '<span class="dt-n">' + t.n + '</span>' : '') + (t.alerta ? '<span class="dt-dot" title="Seguimiento pendiente"></span>' : '') + '</button>';
     }).join('');
   }
   var bodyEl = document.getElementById('drawer-body');
@@ -12961,10 +12979,10 @@ function _rsMotivoHtml(c) {
   if (!ev || !String(ev.motivo || '').trim()) return '';
   var no = ev.dictamen === 'no_recomendable';
   var f = ev.fecha ? ev.fecha.split('-').reverse().join('-') : '';
-  return '<div class="rs-card" style="border:1.5px solid ' + (no ? '#fca5a5' : '#fde68a') + ';background:' + (no ? '#fef2f2' : '#fffbeb') + '">'
+  return '<div class="rs-card rs-motivo" style="border:1.5px solid ' + (no ? '#fca5a5' : '#fde68a') + ';background:' + (no ? '#fef2f2' : '#fffbeb') + '">'
     + '<div class="rs-lbl" style="color:' + (no ? '#991b1b' : '#92400e') + '">' + (no ? '❌ Motivo del descarte' : '⚠️ Observaciones del dictamen') + '</div>'
-    + '<div style="font-size:13px;line-height:1.6;color:var(--ink);white-space:pre-line">' + htmlEsc(ev.motivo.trim()) + '</div>'
-    + '<div style="font-size:11.5px;color:var(--ink4);margin-top:6px">Entrevista' + (f ? ' del ' + f : '') + (ev.entrevistador ? ' · ' + htmlEsc(ev.entrevistador) : '') + '</div></div>';
+    + '<div class="rs-motivo-t" title="Clic para ver completo" onclick="this.classList.toggle(\'abierto\')" style="color:var(--ink);white-space:pre-line">' + htmlEsc(ev.motivo.trim()) + '</div>'
+    + '<div style="font-size:11px;color:var(--ink4);margin-top:4px">Entrevista' + (f ? ' del ' + f : '') + (ev.entrevistador ? ' · ' + htmlEsc(ev.entrevistador) : '') + '</div></div>';
 }
 
 // Resumen: a qué postula (cargo, instalación, turno), editable por el administrador
