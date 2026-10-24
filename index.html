@@ -826,9 +826,11 @@ input,select,textarea{font-family:inherit;outline:none}
 .bd-mi:hover{background:var(--surface2)}
 .bd-mi-ck{width:14px;color:var(--accent);font-weight:800}
 .bd-card{overflow:auto}
-.bd-tbl td{padding:9px 12px;vertical-align:middle}
-.bd-tbl td:nth-child(3){min-width:150px}
-.bd-tbl th{padding:9px 12px;white-space:nowrap}
+.bd-tbl td{padding:8px 9px;vertical-align:middle}
+.bd-tbl td:nth-child(3){white-space:nowrap;max-width:210px;overflow:hidden;text-overflow:ellipsis}
+.bd-tbl th{padding:9px 9px;white-space:nowrap}
+.bd-tbl{width:100%}
+.card.bd-card{overflow-x:auto}
 .bd-th-ord{cursor:pointer;user-select:none}
 .bd-th-ord:hover{color:var(--ink)}
 .bd-tr{cursor:pointer}
@@ -836,8 +838,14 @@ input,select,textarea{font-family:inherit;outline:none}
 .bd-sub{font-size:11px;color:var(--ink3);margin-top:1px}
 .bd-pill{display:inline-block;padding:2px 9px;border-radius:100px;font-size:11px;font-weight:700;white-space:nowrap;border:1px solid transparent}
 .bd-acc{white-space:nowrap;text-align:right}
-.bd-acc a{margin-left:9px;cursor:pointer;font-size:14px;opacity:.65}
-.bd-acc a:hover{opacity:1}
+.bd-acc a{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;margin-left:0;border-radius:8px;cursor:pointer;color:var(--ink3);transition:background .15s,color .15s}
+.bd-acc a .ico{width:16px;height:16px}
+.bd-acc a:hover{background:var(--accent-l);color:var(--accent)}
+.bd-acc a.bd-acc-del:hover{background:#fff1f2;color:#e11d48}
+.bd-td-nom{min-width:200px}
+.bd-td-nom .bd-nom{white-space:nowrap}
+.bd-btn .ico,.bd-seg .ico{width:15px;height:15px;margin-right:5px;vertical-align:-3px}
+#bulk-planilla .ico{width:15px;height:15px;margin-right:4px}
 .bd-grp td{background:var(--surface2);cursor:pointer;padding:7px 12px;font-size:12px}
 .bd-grp-ch{display:inline-block;width:14px;color:var(--ink3)}
 .bd-grp-n{font-size:12px;color:var(--ink4);font-weight:700;margin-left:4px}
@@ -847,6 +855,7 @@ input,select,textarea{font-family:inherit;outline:none}
 .bd-board .bd-col-lado .kanban-col.bd-col-desc{flex:0 0 auto;min-width:0;width:auto;background:#fffafa;border-style:dashed}
 .bd-board .bd-col-lado .kanban-col.bd-col-cont{background:#f7feff}
 .bd-board .kanban-card span{white-space:normal!important}
+.bd-board .kanban-card{padding:10px 11px;border-radius:12px}
 .bd-descartar-barra{position:fixed;left:50%;bottom:28px;transform:translate(-50%,24px);opacity:0;pointer-events:none;z-index:900;display:flex;align-items:center;gap:12px;width:min(520px,calc(100vw - 40px));padding:16px 22px;border-radius:14px;border:2px dashed #fca5a5;background:#fff;color:#b91c1c;font-size:13.5px;box-shadow:0 12px 36px rgba(15,23,42,.18);transition:opacity .15s,transform .15s,background .15s,border-color .15s}
 .bd-descartar-barra small{display:block;font-size:11.5px;color:#64748b;font-weight:500;margin-top:1px}
 .bd-descartar-barra.visible{opacity:1;transform:translate(-50%,0);pointer-events:auto}
@@ -1245,6 +1254,16 @@ body.pub #inv-banner>div{border-radius:16px!important;box-shadow:0 10px 30px -20
   <symbol id="i-book" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></symbol>
   <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></symbol>
   <symbol id="i-out" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></symbol>
+  <symbol id="i-doc" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></symbol>
+  <symbol id="i-redo" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+  <symbol id="i-sort" viewBox="0 0 24 24"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/></symbol>
+  <symbol id="i-group" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="6" rx="1.5"/><rect x="3" y="13" width="18" height="8" rx="1.5"/></symbol>
+  <symbol id="i-cols" viewBox="0 0 24 24"><rect x="3" y="3" width="5" height="18" rx="1.5"/><rect x="10" y="3" width="5" height="12" rx="1.5"/><rect x="17" y="3" width="4" height="15" rx="1.5"/></symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></symbol>
+  <symbol id="i-table" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></symbol>
+  <symbol id="i-sheet" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></symbol>
   <symbol id="i-send" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></symbol>
 </svg>
 <div class="pub-aura" aria-hidden="true"><i class="a1"></i><i class="a2"></i><i class="a3"></i></div>
@@ -1987,7 +2006,7 @@ body.pub #inv-banner>div{border-radius:16px!important;box-shadow:0 10px 30px -20
             <option value="contratado">🤝 Contratado</option>
             <option value="descartado">❌ Descartado</option>
           </select>
-          <button id="bulk-planilla" class="btn btn-sm" onclick="abrirPlanillaEnvio()" style="display:none;background:var(--surface);border:1.5px solid var(--accent-m);color:var(--accent)" title="Tabla con los datos básicos para enviar a RRHH por correo">📋 Planilla de envío</button>
+          <button id="bulk-planilla" class="btn btn-sm" onclick="abrirPlanillaEnvio()" style="display:none;background:var(--surface);border:1.5px solid var(--accent-m);color:var(--accent)" title="Tabla con los datos básicos para enviar a RRHH por correo"><svg class="ico"><use href="#i-sheet"/></svg>Planilla de envío</button>
           <button id="bulk-del" class="btn btn-outline btn-sm" onclick="deleteSelected()" style="border-color:#fecdd3;color:#be123c;background:var(--surface)">🗑 Eliminar</button>
           <button class="btn btn-outline btn-sm" onclick="clearSelection()" title="Quitar la selección">✕</button>
         </div>
@@ -10464,6 +10483,11 @@ function _momentoCand(c) {
   return _fechaCand(c);
 }
 
+// "23-10-2026 15:08" → "23-10-26" (tablas y tarjetas; la hora completa queda en el tooltip)
+function _fechaCorta(c) {
+  var m = String(_momentoTxt(c) || '').match(/^(\d{2})-(\d{2})-(\d{4})/);
+  return m ? m[1] + '-' + m[2] + '-' + m[3].slice(2) : String(_momentoTxt(c) || '').slice(0, 10);
+}
 function _momentoTxt(c) {
   var d = _momentoCand(c);
   if (!d || (!(c.respuestas && c.respuestas.guardado) && !c.created_at)) {
@@ -10879,7 +10903,13 @@ function _bdInit() {
   _BD = (g && g.bd) ? Object.assign(_bdCfgDe(_bdVistaId), g.bd) : _bdCfgDe(_bdVistaId);
 }
 function _bdGuardarLocal() { try { localStorage.setItem(_BD_KEY, JSON.stringify({ vistaId: _bdVistaId, bd: _BD })); } catch(e) {} }
-function _bdSucio() { return JSON.stringify(_BD) !== JSON.stringify(_bdCfgDe(_bdVistaId)); }
+// En las vistas fijas, cambiar entre Tabla y Tablero no cuenta como "cambio sin guardar"
+function _bdSucio() {
+  var base = _bdCfgDe(_bdVistaId), fija = _BD_FIJAS.some(function(v){ return v.id === _bdVistaId; });
+  var a = Object.assign({}, _BD), b = Object.assign({}, base);
+  if (fija) { delete a.vista; delete b.vista; }
+  return JSON.stringify(a) !== JSON.stringify(b);
+}
 function _bdCambio() { _bdLimite = 60; _bdGuardarLocal(); _bdRender(); }
 
 function _bdAbrirVista(id, sinRender) {
@@ -10993,8 +11023,8 @@ function _bdVistasPintar() {
   var el = document.getElementById('bd-vistas'); if (!el) return;
   var admin = S.role === 'admin', sucio = _bdSucio();
   var esPropia = _VISTAS.some(function(v){ return v.id === _bdVistaId; });
-  var h = _BD_FIJAS.concat(_VISTAS).map(function(v){
-    return '<button class="bd-vt' + (v.id === _bdVistaId ? ' on' : '') + '" onclick="_bdAbrirVista(\'' + v.id + '\')">' + (v.icon || '📄') + ' ' + htmlEsc(v.nombre) + '</button>';
+  var h = _BD_FIJAS.filter(function(v){ return v.id !== 'tablero' || _bdVistaId === 'tablero'; }).concat(_VISTAS).map(function(v){
+    return '<button class="bd-vt' + (v.id === _bdVistaId ? ' on' : '') + '" onclick="_bdAbrirVista(\'' + v.id + '\')">' + htmlEsc(v.nombre) + '</button>';
   }).join('');
   if (admin) h += '<button class="bd-vt bd-vt-new" onclick="_bdNuevaVista()">＋ Nueva vista</button>';
   var der = '';
@@ -11023,11 +11053,11 @@ function _bdBarPintar() {
     + chips + '<button class="bd-add" onclick="_bdMenuCampos(this)">＋ Filtro</button>'
     + '<span class="bd-count" id="bd-count"></span></div>'
     + '<div class="bd-bar-r">'
-    + '<div class="bd-seg"><button class="' + (tab ? '' : 'on') + '" onclick="_bdSetVista(\'tabla\')">▦ Tabla</button><button class="' + (tab ? 'on' : '') + '" onclick="_bdSetVista(\'tablero\')">▥ Tablero</button></div>'
-    + '<button class="bd-btn" onclick="_bdMenuOrden(this)">↕ Ordenar</button>'
-    + '<button class="bd-btn" onclick="_bdMenuAgrupar(this)">' + (tab ? '▥ Columnas' : '☰ Agrupar') + (tab ? ': ' + (_BD.columnas === 'dictamen' ? 'Dictamen' : 'Etapa') : (_BD.agrupar ? ': ' + _BD_AGRUPAR.filter(function(a){ return a[0] === _BD.agrupar; })[0][1] : '')) + '</button>'
-    + '<button class="bd-btn" onclick="_bdMenuProps(this)">⚙ Propiedades</button>'
-    + (S.role === 'admin' ? '<button class="bd-btn" onclick="abrirPlanillaEnvio()" title="Tabla con los datos básicos para enviar a RRHH por correo">📋 Planilla de envío</button>' : '')
+    + '<div class="bd-seg"><button class="' + (tab ? '' : 'on') + '" onclick="_bdSetVista(\'tabla\')"><svg class="ico"><use href="#i-table"/></svg>Tabla</button><button class="' + (tab ? 'on' : '') + '" onclick="_bdSetVista(\'tablero\')"><svg class="ico"><use href="#i-cols"/></svg>Tablero</button></div>'
+    + '<button class="bd-btn" onclick="_bdMenuOrden(this)"><svg class="ico"><use href="#i-sort"/></svg>Ordenar</button>'
+    + '<button class="bd-btn" onclick="_bdMenuAgrupar(this)">' + (tab ? '<svg class="ico"><use href="#i-cols"/></svg>Columnas' : '<svg class="ico"><use href="#i-group"/></svg>Agrupar') + (tab ? ': ' + (_BD.columnas === 'dictamen' ? 'Dictamen' : 'Etapa') : (_BD.agrupar ? ': ' + _BD_AGRUPAR.filter(function(a){ return a[0] === _BD.agrupar; })[0][1] : '')) + '</button>'
+    + '<button class="bd-btn" onclick="_bdMenuProps(this)"><svg class="ico"><use href="#i-sliders"/></svg>Propiedades</button>'
+    + (S.role === 'admin' ? '<button class="bd-btn" onclick="abrirPlanillaEnvio()" title="Tabla con los datos básicos para enviar a RRHH por correo"><svg class="ico"><use href="#i-sheet"/></svg>Planilla de envío</button>' : '')
     + '</div>';
 }
 
@@ -11038,7 +11068,7 @@ function _bdCelda(c, p) {
   if (p === 'etapa') { var em = getPipelineMeta(getPipelineEtapa(c)); return '<span class="bd-pill" style="color:' + em.color + ';background:' + em.bg + ';border-color:' + em.border + '">' + em.icon + ' ' + em.label + '</span>'; }
   if (p === 'dictamen') return _bdDictamenCorto(c);
   if (p === 'estado') return statusBadge(c.estado);
-  if (p === 'fecha') return '<span style="color:var(--ink3);white-space:nowrap">' + htmlEsc(_momentoTxt(c)) + '</span>';
+  if (p === 'fecha') return '<span title="' + htmlEsc(_momentoTxt(c)) + '" style="color:var(--ink3);white-space:nowrap">' + htmlEsc(_fechaCorta(c)) + '</span>';
   if (p === 'duracion') { var du = _duracionDe(c); return du ? '<span title="' + htmlEsc(_duracionTip(du)) + '" style="white-space:nowrap;' + (du.rapidas.length ? 'color:#b45309;font-weight:700' : 'color:var(--ink2)') + '">' + _fmtDur(du.total) + (du.rapidas.length ? ' ⚡' : '') + '</span>' : '<span style="color:var(--ink4)">—</span>'; }
   if (p === 'comuna') return htmlEsc(c.comuna || '—');
   if (p === 'informe') { if (S.role !== 'admin') return '<span style="color:var(--ink4)">—</span>'; var ie = _rhEstado(c), g = c.scores._informe_rh || {}, im = _RH_ESTADOS[ie];
@@ -11092,12 +11122,12 @@ function _bdTabla(lista) {
     if (n > _bdLimite) return '';
     var id = htmlEsc(c.id), nombre = htmlEsc(((c.nombre || '') + ' ' + (c.apellido || '')).trim());
     return '<tr data-id="' + id + '" class="bd-tr" onclick="openCandDrawer(\'' + id + '\')"><td>' + _bdChk(c) + '</td>'
-      + '<td><div class="bd-nom">' + nombre + _alertBadgesHtml(c.scores) + _rutRepBadge(c) + _porArchivarBadge(c) + _enArchivoBadge(c) + '</div><div class="bd-sub">' + htmlEsc(c.email || '') + '</div></td>'
+      + '<td class="bd-td-nom"><div class="bd-nom">' + nombre + _alertBadgesHtml(c.scores) + _rutRepBadge(c) + _porArchivarBadge(c) + _enArchivoBadge(c) + '</div><div class="bd-sub">' + htmlEsc([c.rut, c.email].filter(Boolean).join(' · ')) + '</div></td>'
       + props.map(function(p){ return '<td>' + _bdCelda(c, p[0]) + '</td>'; }).join('')
       + '<td class="bd-acc" onclick="event.stopPropagation()">'
-      + (c.estado === 'completed' ? '<a onclick="viewCandReport(\'' + id + '\')" title="Ver informe">📋</a><a onclick="downloadPdfReport(\'' + id + '\')" title="Descargar PDF">⬇</a>' : '')
-      + '<a onclick="openReevalModal(\'' + id + '\',\'' + nombre + '\')" title="Permitir que repita la evaluación">🔄</a>'
-      + '<a onclick="openDelModal(\'' + id + '\',\'' + nombre + '\')" title="Eliminar" style="color:#e11d48">🗑</a></td></tr>';
+      + (c.estado === 'completed' ? '<a onclick="viewCandReport(\'' + id + '\')" title="Ver informe" aria-label="Ver informe"><svg class="ico"><use href="#i-doc"/></svg></a><a onclick="downloadPdfReport(\'' + id + '\')" title="Descargar PDF" aria-label="Descargar PDF"><svg class="ico"><use href="#i-down"/></svg></a>' : '')
+      + '<a onclick="openReevalModal(\'' + id + '\',\'' + nombre + '\')" title="Permitir que repita la evaluación" aria-label="Permitir que repita la evaluación"><svg class="ico"><use href="#i-redo"/></svg></a>'
+      + '<a class="bd-acc-del" onclick="openDelModal(\'' + id + '\',\'' + nombre + '\')" title="Eliminar" aria-label="Eliminar"><svg class="ico"><use href="#i-trash"/></svg></a></td></tr>';
   };
   if (_BD.agrupar) {
     _bdGrupos(_BD.agrupar).forEach(function(g) {
@@ -11153,7 +11183,7 @@ function _bdTablero(lista) {
         + (ent ? '<span>🗓 ' + ent + '</span>' : '')
         + (_BD.props.comuna && c.comuna ? '<span>' + htmlEsc(c.comuna) + '</span>' : '')
         + (_BD.props.canal && _canalTxt(c) ? '<span>' + htmlEsc(_canalTxt(c)) + '</span>' : '')
-        + (_BD.props.fecha ? '<span style="margin-left:auto">' + htmlEsc(_momentoTxt(c).slice(0, 10)) + '</span>' : '')
+        + (_BD.props.fecha ? '<span style="margin-left:auto" title="' + htmlEsc(_momentoTxt(c)) + '">' + htmlEsc(_fechaCorta(c)) + '</span>' : '')
         + '</div></div>';
     });
     if (del.length > _bdLimite) h += '<button class="btn btn-ghost btn-sm" onclick="_bdLimite+=60;_bdRenderCuerpo()">Mostrar más (' + (del.length - _bdLimite) + ')</button>';
