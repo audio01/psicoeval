@@ -867,7 +867,8 @@ input,select,textarea{font-family:inherit;outline:none}
 .bd-board .bd-kc:hover{border-color:var(--border2);box-shadow:0 4px 14px -6px rgba(15,23,42,.18)}
 .bd-kc-top{display:flex;gap:8px;align-items:flex-start;justify-content:space-between}
 .bd-kc .bd-nom{font-size:13px;line-height:1.3}
-.bd-kc-sub{margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bd-kc-sub{margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bd-kc-inst{margin-top:4px;font-size:12px;font-weight:700;color:var(--accent);line-height:1.3}
 .bd-kc-est{margin-top:8px}
 .bd-est{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;color:var(--ink2)}
 .bd-est i{width:7px;height:7px;border-radius:50%;flex-shrink:0}
@@ -11238,13 +11239,14 @@ function _bdTablero(lista) {
       var ent = ((c.scores && c.scores._entrevistas) || []).length;
       // Tarjeta mínima: nombre, a qué postula y un solo estado (categoría o, si no hay, aptitud)
       var pz = _postulaDe(c), m = _miradaDe(c), cat = campo !== 'dictamen' ? _categoriaDe(c) : '';
-      var sub = [pz.cargo || c.cargo || pm.label || '', pz.instalacion].filter(Boolean).join(' · ');
+      var sub = pz.cargo || c.cargo || pm.label || '';
       var est = '';
       if (cat) { var cm = { apto:['Apto', '#16a34a'], obs:['Apto con observaciones', '#d97706'], no_apto:['No apto', '#dc2626'] }[cat]; est = '<span class="bd-est"><i style="background:' + cm[1] + '"></i>' + cm[0] + '</span>'; }
       else if (c.estado !== 'completed') est = '<span class="bd-est"><i style="background:#cbd5e1"></i>Evaluación sin terminar</span>';
       else if (m.apt.length) { var ok = m.aptOk === m.apt.length, nada = m.aptOk === 0; est = '<span class="bd-est" title="Pruebas de aptitud sobre el mínimo"><i style="background:' + (ok ? '#16a34a' : nada ? '#dc2626' : '#d97706') + '"></i>Aptitud ' + m.aptOk + ' de ' + m.apt.length + '</span>'; }
       h += '<div class="kanban-card bd-kc" id="kcard-' + id + '" title="' + htmlEsc(_momentoTxt(c)) + '"' + (arrastra ? ' draggable="true" ondragstart="kDragStart(event,\'' + id + '\')" ondragend="kDragEnd(event)"' : '') + ' onclick="openCandDrawer(\'' + id + '\')">'
         + '<div class="bd-kc-top"><div class="bd-nom">' + htmlEsc(((c.nombre || '') + ' ' + (c.apellido || '')).trim()) + _rutRepBadge(c) + _porArchivarBadge(c) + _enArchivoBadge(c) + '</div>' + _bdChk(c) + '</div>'
+        + (pz.instalacion ? '<div class="bd-kc-inst">' + htmlEsc(pz.instalacion) + '</div>' : '')
         + (sub ? '<div class="bd-sub bd-kc-sub">' + htmlEsc(sub) + '</div>' : '')
         + (est ? '<div class="bd-kc-est">' + est + '</div>' : '')
         + '</div>';
