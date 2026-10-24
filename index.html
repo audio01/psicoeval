@@ -936,10 +936,40 @@ textarea.rh-in{resize:vertical}
 .rh-tbl th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--ink3);padding:6px;border-bottom:1px solid var(--border)}
 .rh-tbl td{padding:5px 6px;border-bottom:1px solid var(--border)}
 @media(max-width:700px){.rh-grid2{grid-template-columns:1fr}.rh-tbl td:nth-child(4),.rh-tbl th:nth-child(4){display:none}}
-.rs-wrap{display:flex;flex-direction:column;gap:13px;max-width:1180px;margin:0 auto}
-.rs-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:13px;align-items:start}
-.rs-col{display:flex;flex-direction:column;gap:13px;min-width:0}
-.rs-card{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:13px 15px}
+.rs-wrap{display:flex;flex-direction:column;gap:10px;max-width:1640px;margin:0 auto;container-type:inline-size}
+.rs-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:10px;align-items:start}
+.rs-grid3{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) minmax(0,.9fr)}
+.rs-col{display:flex;flex-direction:column;gap:10px;min-width:0}
+.rs-card{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:11px 14px}
+.rs-lbl-sub{font-style:normal;font-weight:500;text-transform:none;letter-spacing:0;color:var(--ink4);margin-right:auto;margin-left:6px}
+.rs-est-t{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;font-size:12.5px;font-weight:700;color:var(--ink);margin-bottom:8px;cursor:pointer}
+.rs-est-t span{font-size:11.5px;font-weight:500;color:var(--ink3)}
+.rs-disc{display:flex;gap:12px;height:96px;align-items:flex-end;border-bottom:1px solid var(--border);padding:0 6px}
+.rs-disc-c{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;position:relative}
+.rs-disc-c i{display:block;width:100%;border-radius:4px 4px 0 0;background:var(--border)}
+.rs-disc-c small{font-size:10.5px;color:var(--ink4);margin-bottom:2px}
+.rs-disc-c b{position:absolute;bottom:-17px;font-size:11px;color:var(--ink3)}
+.rs-disc-c.alto i{background:#2563eb}.rs-disc-c.alto small,.rs-disc-c.alto b{color:#2563eb;font-weight:800}
+.rs-disc-c.bajo i{background:#fbbf24}.rs-disc-c.bajo small,.rs-disc-c.bajo b{color:#b45309;font-weight:800}
+.rs-disc{margin-bottom:20px}
+.rs-pf{margin-bottom:9px}
+.rs-pf-l{display:flex;justify-content:space-between;gap:6px;font-size:10.5px;color:var(--ink4);line-height:1.3}
+.rs-pf-l b{font-weight:600;color:var(--ink3);text-align:center}
+.rs-pf-l span{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rs-pf-l span:last-child{text-align:right}
+.rs-pf-b{position:relative;height:7px;border-radius:4px;background:var(--bg);border:1px solid var(--border);margin-top:3px}
+.rs-pf-b em{position:absolute;left:40%;width:30%;top:0;bottom:0;background:var(--border)}
+.rs-pf-b i{position:absolute;top:-4px;width:13px;height:13px;margin-left:-7px;border-radius:50%;background:var(--surface);border:2px solid var(--ink4)}
+.rs-pf.alto .rs-pf-b i{background:#2563eb;border-color:#1d4ed8}.rs-pf.alto .rs-pf-l span:last-child{color:#2563eb;font-weight:700}
+.rs-pf.bajo .rs-pf-b i{background:#f59e0b;border-color:#b45309}.rs-pf.bajo .rs-pf-l span:first-child{color:#b45309;font-weight:700}
+.rs-pf-ley{font-size:10.5px;color:var(--ink4);margin-top:2px}
+.rs-exp-est{margin-top:10px;padding-top:9px;border-top:1px solid var(--border)}
+.rs-exp-est-t{font-size:10.5px;font-weight:700;color:var(--ink4);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}
+.rs-exp-q{display:flex;gap:8px;align-items:flex-start;margin-bottom:6px}
+.rs-exp-q span{flex-shrink:0;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:100px;border:1px solid;white-space:nowrap}
+.rs-exp-q p{margin:0;font-size:12.5px;color:var(--ink2);line-height:1.5}
+.rs-grid3 .rs-nom{flex-basis:185px}
+@container (max-width:1100px){.rs-grid3{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr)}.rs-grid3 .rs-c1{grid-column:1;grid-row:1}.rs-grid3 .rs-c2{grid-column:1;grid-row:2}.rs-grid3 .rs-c3{grid-column:2;grid-row:1 / span 2}}
 .rs-motivo{padding:10px 14px!important}
 /* Modo oscuro: los avisos de color usan tintes translúcidos (no fondos claros con texto claro) */
 [data-theme="dark"] .rs-motivo{background:rgba(245,158,11,.10)!important;border-color:rgba(245,158,11,.38)!important}
@@ -979,9 +1009,9 @@ textarea.rh-in{resize:vertical}
 .rs-btn.prim{background:var(--accent);border-color:var(--accent);color:#fff}
 .rs-btn.prim:hover{filter:brightness(1.08);color:#fff}
 .rs-paso{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:9px 14px;border-radius:11px;border:1.5px solid #bfdbfe;background:#eff6ff}
-.rs-paso-txt{flex:1;min-width:220px}
+.rs-paso-txt{flex:1;min-width:220px;display:flex;align-items:baseline;gap:4px 10px;flex-wrap:wrap}
 .rs-paso-t{font-size:13px;font-weight:800;color:#1e3a8a}
-.rs-paso-d{font-size:12px;color:#1e40af;margin-top:1px;line-height:1.5}
+.rs-paso-d{font-size:12px;color:#1e40af;line-height:1.5}
 .rs-paso-acc{display:flex;gap:6px;flex-wrap:wrap}
 .rs-warn{background:#fffbeb;border-color:#fde68a}.rs-warn .rs-paso-t{color:#92400e}.rs-warn .rs-paso-d{color:#92400e}
 .rs-alerta{background:#fff1f2;border-color:#fecdd3}.rs-alerta .rs-paso-t{color:#9f1239}.rs-alerta .rs-paso-d{color:#9f1239}
@@ -989,6 +1019,7 @@ textarea.rh-in{resize:vertical}
 .rs-ok{background:#f0fdf4;border-color:#bbf7d0}.rs-ok .rs-paso-t{color:#166534}.rs-ok .rs-paso-d{color:#166534}
 .rs-neutro{background:var(--surface);border-color:var(--border)}.rs-neutro .rs-paso-t{color:var(--ink)}.rs-neutro .rs-paso-d{color:var(--ink3)}
 @media(max-width:900px){.rs-grid{grid-template-columns:1fr}}
+@container (max-width:700px){.rs-grid3{grid-template-columns:1fr}.rs-grid3 .rs-c1,.rs-grid3 .rs-c2,.rs-grid3 .rs-c3{grid-column:auto;grid-row:auto}}
 @media(max-width:700px){.rs-fila{flex-wrap:wrap;row-gap:4px}.rs-nom{flex-basis:100%;white-space:normal}.rs-min{flex-basis:auto}}
 .dh-pdf{padding:5px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:12px;font-weight:700;color:var(--ink2);cursor:pointer;font-family:inherit}
 .dh-pdf:hover{border-color:var(--accent);color:var(--accent)}
@@ -1012,6 +1043,8 @@ textarea.rh-in{resize:vertical}
 .drawer-tab-btn.active{color:var(--ink);border-bottom-color:var(--ink)}
 /* Pestañas de lectura: columna centrada de ancho cómodo, todo un poco más grande */
 .drawer-body{flex:1;overflow-y:auto;padding:24px max(28px, calc((100% - 1000px) / 2)) 40px}
+/* El Resumen usa más ancho (tres columnas); las demás pestañas mantienen 1000px */
+.drawer-body:has(> .rs-wrap){padding-left:max(24px, calc((100% - 1640px) / 2));padding-right:max(24px, calc((100% - 1640px) / 2))}
 .drawer-body:not(.ev-body) > *{zoom:1.04}
 /* Entrevistas: pauta a la izquierda (ancha) y panel de datos a la derecha */
 .drawer-body.ev-body{padding:0;overflow:hidden;display:flex;flex-direction:row-reverse}
@@ -13058,6 +13091,64 @@ function _rsResultados(c, m) {
   return h + '</div>';
 }
 
+// Estilo personal (DISC y Personalidad laboral): descriptivo, sin mínimo ni perfil esperado.
+// Solo se destaca lo que sale del rango medio; un perfil equilibrado no destaca nada.
+function _rsDiscOrden(d) { return ['D','I','S','C'].slice().sort(function(a, b){ return (d[b] || 0) - (d[a] || 0); }); }
+function _rsPfDims(c, s) {
+  var pf = s.pf16, out = [];
+  if (!pf) return out;
+  PF16_RPT.orden.forEach(function(k) {
+    if (pf[k] == null) return;
+    var antiguo = k === 'EX' && pf._v !== 2, v = Math.round(pf[k]), z = antiguo ? 'indet' : pf16ZoneOf(v);
+    out.push({ k:k, v:v, z:z, d:PF16_RPT.dim[k] });
+  });
+  return out;
+}
+function _rsEstilo(c, m) {
+  var s = c.scores || {};
+  if (!m.completada || (!s.disc && !s.pf16)) return '';
+  var h = '<div class="rs-card"><div class="rs-lbl">Estilo personal <em class="rs-lbl-sub">descriptivo, sin mínimo</em></div>';
+  var dc = s.disc;
+  if (dc) {
+    var o = _rsDiscOrden(dc), marcado = (dc[o[0]] || 0) - (dc[o[3]] || 0) >= 20;
+    h += '<div class="rs-est-t" onclick="_fichaVerPrueba(\'disc\')">Estilo DISC <span>' + (marcado ? 'Predomina ' + DISC_DIM_LABELS[o[0]] + ' · ' + DISC_DIM_LABELS[o[3]] + ' bajo' : 'Perfil equilibrado: ningún factor destaca') + '</span></div>'
+      + '<div class="rs-disc">' + ['D','I','S','C'].map(function(k){
+          var v = Math.max(0, Math.min(100, Math.round(dc[k] || 0))), alto = marcado && k === o[0], bajo = marcado && k === o[3];
+          return '<div class="rs-disc-c' + (alto ? ' alto' : bajo ? ' bajo' : '') + '" title="' + DISC_DIM_LABELS[k] + ': ' + v + '"><small>' + v + '</small><i style="height:' + Math.max(4, v) + '%"></i><b>' + k + '</b></div>';
+        }).join('') + '</div>';
+  }
+  if (s.pf16) {
+    var dudosa = _pf16ValidezNivel(_pf16Validez(c, s)).label === 'Dudosa', dims = _rsPfDims(c, s);
+    var marc = dims.filter(function(x){ return x.z === 'alto' || x.z === 'bajo'; }).length;
+    h += '<div class="rs-est-t" onclick="_fichaVerPrueba(\'pf16\')"' + (dc ? ' style="margin-top:14px"' : '') + '>Personalidad laboral <span>'
+      + (dudosa ? 'Validez dudosa: no interprete el perfil' : marc ? marc + (marc > 1 ? ' dimensiones marcadas' : ' dimensión marcada') : 'Todas las dimensiones en nivel medio') + '</span></div>';
+    h += dims.map(function(x) {
+      var cls = dudosa || x.z === 'indet' ? '' : x.z === 'bajo' ? ' bajo' : x.z === 'alto' ? ' alto' : '';
+      return '<div class="rs-pf' + cls + '"><div class="rs-pf-l"><span>' + htmlEsc(x.d.polos[0]) + '</span><b>' + htmlEsc(x.d.nombre) + '</b><span>' + htmlEsc(x.d.polos[1]) + '</span></div>'
+        + '<div class="rs-pf-b"><em></em>' + (x.z === 'indet' ? '' : '<i style="left:' + Math.max(0, Math.min(100, x.v)) + '%" title="' + x.v + '"></i>') + '</div></div>';
+    }).join('');
+    h += '<div class="rs-pf-ley">Franja gris = rango medio' + (dims.some(function(x){ return x.z === 'indet'; }) ? ' · Extraversión sin dato exacto (evaluación antigua)' : '') + '</div>';
+  }
+  return h + '</div>';
+}
+// Preguntas que salen del estilo (DISC marcado y dimensiones fuera del rango medio, hasta 2)
+function _rsPreguntasEstilo(c) {
+  var s = c.scores || {}, out = [];
+  if (s.disc) {
+    var o = _rsDiscOrden(s.disc);
+    if ((s.disc[o[0]] || 0) - (s.disc[o[3]] || 0) >= 20) {
+      out.push({ tag:DISC_DIM_LABELS[o[0]] + ' alto', col:'#2563eb', q:DISC_RPT.preguntas[o[0]].sobre[0] });
+      out.push({ tag:DISC_DIM_LABELS[o[3]] + ' bajo', col:'#2563eb', q:DISC_RPT.preguntas[o[3]].bajo[0] });
+    }
+  }
+  if (s.pf16 && _pf16ValidezNivel(_pf16Validez(c, s)).label !== 'Dudosa') {
+    _rsPfDims(c, s).filter(function(x){ return (x.z === 'alto' || x.z === 'bajo') && x.d.preguntas && x.d.preguntas[x.z]; }).slice(0, 2).forEach(function(x) {
+      out.push({ tag:x.d.polos[x.z === 'alto' ? 1 : 0], col:'#d97706', q:x.d.preguntas[x.z] });
+    });
+  }
+  return out;
+}
+
 // Puntos concretos para profundizar en la entrevista
 function _rsExplorar(c, m) {
   if (!m.completada) return '';
@@ -13074,8 +13165,12 @@ function _rsExplorar(c, m) {
   var bt = s._bateria;
   if (bt && bt.faltantes && bt.faltantes.length) items.push('<strong>No rindió</strong> ' + htmlEsc(_testNames(bt.faltantes)) + ': evalúe esos aspectos en la entrevista.');
   var h = '<div class="rs-card"><div class="rs-lbl">Para explorar en la entrevista</div>';
-  if (!items.length) return h + '<div class="rs-vacio">Sin alertas: los resultados no señalan aspectos críticos. Use la pauta habitual del cargo.</div></div>';
-  return h + '<ul class="rs-lista">' + items.map(function(x){ return '<li>' + x + '</li>'; }).join('') + '</ul></div>';
+  var est = _rsPreguntasEstilo(c);
+  h += items.length ? '<ul class="rs-lista">' + items.map(function(x){ return '<li>' + x + '</li>'; }).join('') + '</ul>'
+                    : '<div class="rs-vacio">Sin alertas: los resultados no señalan aspectos críticos.</div>';
+  if (est.length) h += '<div class="rs-exp-est"><div class="rs-exp-est-t">Desde el estilo personal</div>'
+    + est.map(function(x){ return '<div class="rs-exp-q"><span style="color:' + x.col + ';border-color:' + x.col + '33;background:' + x.col + '12">' + htmlEsc(x.tag) + '</span><p>' + htmlEsc(String(x.q).replace(/<[^>]+>/g, '')) + '</p></div>'; }).join('') + '</div>';
+  return h + '</div>';
 }
 
 // Resumen: motivo del dictamen de la entrevista (no recomendable u observaciones), arriba de todo
@@ -13132,10 +13227,12 @@ function _tabResumen(c) {
   var h = '<div class="rs-wrap">';
   h += _rsMotivoHtml(c);
   h += _rsProximoPaso(c, m);
-  h += '<div class="rs-grid"><div class="rs-col">';
+  var estilo = _rsEstilo(c, m);
+  h += '<div class="rs-grid' + (estilo ? ' rs-grid3' : '') + '"><div class="rs-col rs-c1">';
   h += _rsResultados(c, m);
   h += _rsExplorar(c, m);
-  h += '</div><div class="rs-col">';
+  if (estilo) h += '</div><div class="rs-col rs-c2">' + estilo;
+  h += '</div><div class="rs-col rs-c3">';
 
   // Contacto con acciones directas
   var wa = _rsWhatsapp(c);
