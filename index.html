@@ -1732,6 +1732,100 @@ body.adm .pub-aura i{animation:none}   /* estático: el vidrio no recompone en c
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
   .dash-card{background:rgba(255,255,255,.94)}[data-theme="dark"] .dash-card{background:#1b1e28}
 }
+
+/* Ficha del postulante (sistema de diseño del panel): la ventana es una lámina de vidrio
+   sobre el panel; dentro, todo plano (tarjetas translúcidas sin filtro propio) */
+body.adm #cand-drawer{
+  --bg:transparent;
+  --surface:rgba(255,255,255,.58); --surface2:rgba(255,255,255,.44); --surface3:rgba(20,33,61,.07);
+  --border:rgba(20,33,61,.09); --border2:rgba(20,33,61,.15);
+  --ink:rgb(20 33 61); --ink2:#2b3654; --ink3:#5b6478; --ink4:#9aa1b2;
+  --accent:rgb(39 71 216); --accent-l:rgba(39,71,216,.08); --accent-m:rgba(39,71,216,.30);
+  --r-s:8px; --r:14px; --rl:20px;
+  --glass-edge:inset 0 1px 0 rgba(255,255,255,.85);
+  background:rgba(246,242,235,.8);-webkit-backdrop-filter:blur(40px) saturate(180%);backdrop-filter:blur(40px) saturate(180%);
+  border:1px solid rgba(255,255,255,.7);border-radius:var(--rl);box-shadow:var(--glass-edge),0 40px 90px -30px rgba(20,33,61,.5)}
+body.adm #cand-drawer-overlay{background:rgba(20,33,61,.3);-webkit-backdrop-filter:none;backdrop-filter:none}
+body.adm .dh-row{border-bottom-color:rgba(20,33,61,.07)}
+body.adm .dh-pdf,body.adm .dh-close{background:rgba(255,255,255,.55);border:1px solid rgba(20,33,61,.08);box-shadow:var(--glass-edge);border-radius:var(--r-s)}
+body.adm .dh-close{display:inline-flex;align-items:center;justify-content:center}
+body.adm .dh-close .ico{width:15px;height:15px}
+body.adm .dh-pdf:hover,body.adm .dh-close:hover{background:rgba(255,255,255,.9);color:var(--ink)}
+body.adm .drawer-tab-btn{border-radius:0;border-bottom-width:2px}
+body.adm .drawer-tab-btn:hover{background:transparent}
+.pb-dot{display:inline-block;width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-right:1px}
+body.adm .pipe-badge,body.adm .dh-chips .bd-pill{border-width:1px;gap:6px}
+/* Resumen */
+body.adm .rs-wrap,body.adm .rs-col,body.adm .rs-grid{gap:14px}
+body.adm .rs-card{background:rgba(255,255,255,.58);border:1px solid rgba(255,255,255,.75);border-radius:var(--r);box-shadow:var(--glass-edge),0 8px 24px -20px rgba(20,33,61,.35);padding:16px 18px}
+body.adm .rs-lbl{font-size:11px;letter-spacing:.08em;color:var(--ink4);margin-bottom:12px}
+body.adm .rs-fila:hover{background:rgba(255,255,255,.6)}
+body.adm .rs-barra{height:6px;background:rgba(20,33,61,.08);border-radius:99px}
+body.adm .rs-barra span{border-radius:99px}
+body.adm .rs-barra i{top:-3px;bottom:-3px;width:2px;border-radius:2px;opacity:.4}
+body.adm .rs-kv{border-bottom-color:rgba(20,33,61,.06);padding:7px 0}
+body.adm .rs-btn{border-radius:var(--r-s);background:rgba(255,255,255,.6);border-color:rgba(20,33,61,.08);box-shadow:var(--glass-edge)}
+body.adm .rs-btn.prim{background:linear-gradient(180deg,#3557e6,#2342c8);border-color:transparent;box-shadow:inset 0 1px 0 rgba(255,255,255,.25)}
+.rs-btn .ico{width:14px;height:14px}
+body.adm .rs-disc-c i{border-radius:6px 6px 0 0;background:rgba(20,33,61,.1)}
+body.adm .rs-disc-c.alto i{background:#3557e6}
+body.adm .rs-disc-c.bajo i{background:#f2b84b}
+body.adm .rs-disc{border-bottom-color:rgba(20,33,61,.08)}
+body.adm .rs-pf-b{background:rgba(20,33,61,.06);border:none;height:6px}
+body.adm .rs-pf-b em{background:rgba(20,33,61,.08)}
+body.adm .rs-pf-b i{top:-4px;width:14px;height:14px;background:#fff;border:2px solid var(--ink4);box-shadow:0 1px 3px rgba(20,33,61,.2)}
+.rs-etapas{display:flex;flex-wrap:wrap;gap:4px;padding:3px;border-radius:10px;background:rgba(20,33,61,.04)}
+.rs-etapa{display:inline-flex;align-items:center;gap:6px;border:none;background:transparent;font:600 11.5px/1 inherit;font-family:inherit;color:var(--ink3);padding:7px 10px;border-radius:7px;cursor:pointer;white-space:nowrap}
+.rs-etapa:hover{color:var(--ink);background:rgba(255,255,255,.5)}
+.rs-etapa.on{background:rgba(255,255,255,.92);font-weight:700;box-shadow:var(--glass-edge),0 1px 3px rgba(20,33,61,.1)}
+body.adm .rs-paso{border-width:1px;border-radius:var(--r)}
+/* Evaluaciones: el índice de pruebas va en una columna a la izquierda (no una segunda barra de pestañas) */
+body.adm .rpt-embed .rpt-tabs{background:transparent;border-bottom-color:rgba(20,33,61,.07)}
+body.adm .rpt-embed .rpt-tab-btn{color:var(--ink3);border-radius:var(--r-s)}
+body.adm .rpt-embed .rpt-tab-btn:hover{background:rgba(255,255,255,.55);color:var(--ink)}
+body.adm .rpt-embed .rpt-tab-btn.on{background:rgba(255,255,255,.92);color:var(--ink);box-shadow:var(--glass-edge),0 1px 3px rgba(20,33,61,.1)}
+body.adm .rpt-embed .rpt-tab-btn.on .rpt-dot{box-shadow:none}
+body.adm .rpt-embed .rpt-tg+.rpt-tg{border-left-color:rgba(20,33,61,.08)}
+body.adm .rpt-embed .rpt-ico{display:none}
+:root:not([data-theme="dark"]) body.adm .rpt-embed .rpt-tab-panel div[style*="background:#fff"][style*="border-radius"]{background:rgba(255,255,255,.6)!important;border-color:rgba(255,255,255,.8)!important;box-shadow:var(--glass-edge),0 8px 24px -20px rgba(20,33,61,.35)}
+@container (min-width:1000px){
+  body.adm .rpt-embed .rpt-modal{display:grid!important;grid-template-columns:232px minmax(0,1fr);grid-template-rows:auto minmax(0,1fr)}
+  body.adm .rpt-embed .rpt-tabs{grid-column:1;grid-row:1 / span 2;flex-direction:column;flex-wrap:nowrap;align-items:stretch;justify-content:flex-start;gap:18px;padding:22px 14px 22px 20px;border-bottom:none;border-right:1px solid rgba(20,33,61,.07);overflow-y:auto}
+  body.adm .rpt-embed .rpt-tg{flex-direction:column;flex-wrap:nowrap;align-items:stretch;gap:2px}
+  body.adm .rpt-embed .rpt-tg+.rpt-tg{border-left:none;padding-left:0;margin-left:0}
+  body.adm .rpt-embed .rpt-tg-lbl{margin:0 0 6px 10px}
+  body.adm .rpt-embed .rpt-tab-btn{justify-content:flex-start;padding:8px 10px;font-size:13px}
+  body.adm .rpt-embed .rpt-modal>div:not(.rpt-tabs):not(.rpt-hdr):not(:last-child){grid-column:2;grid-row:1}
+  body.adm .rpt-embed .rpt-modal>div:not(.rpt-tabs):not(.rpt-hdr):not(:last-child)>div{justify-content:flex-start!important}
+  body.adm .rpt-embed .rpt-modal>:last-child{grid-column:2;grid-row:2;min-height:0;padding:22px 28px!important}
+}
+/* Oscuro */
+[data-theme="dark"] body.adm #cand-drawer{
+  --surface:rgba(30,33,44,.55); --surface2:rgba(255,255,255,.05); --surface3:rgba(255,255,255,.08);
+  --border:rgba(255,255,255,.08); --border2:rgba(255,255,255,.14);
+  --ink:#f2f3f7; --ink2:rgba(235,236,245,.72); --ink3:rgba(235,236,245,.5); --ink4:rgba(235,236,245,.32);
+  --accent:#6f8bff; --accent-l:rgba(111,139,255,.14); --accent-m:rgba(111,139,255,.36);
+  --glass-edge:inset 0 1px 0 rgba(255,255,255,.07);
+  background:rgba(20,22,30,.82);border-color:rgba(255,255,255,.08)}
+[data-theme="dark"] body.adm #cand-drawer-overlay{background:rgba(0,0,0,.5)}
+[data-theme="dark"] body.adm .dh-row,[data-theme="dark"] body.adm .rs-kv{border-color:rgba(255,255,255,.07)}
+[data-theme="dark"] body.adm .dh-pdf,[data-theme="dark"] body.adm .dh-close,[data-theme="dark"] body.adm .rs-btn{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.08)}
+[data-theme="dark"] body.adm .rs-btn.prim{background:linear-gradient(180deg,#3557e6,#2342c8)}
+[data-theme="dark"] body.adm .rs-card{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.07);box-shadow:var(--glass-edge)}
+[data-theme="dark"] body.adm .rs-fila:hover{background:rgba(255,255,255,.04)}
+[data-theme="dark"] body.adm .rs-barra,[data-theme="dark"] body.adm .rs-pf-b{background:rgba(255,255,255,.08)}
+[data-theme="dark"] body.adm .rs-pf-b em,[data-theme="dark"] body.adm .rs-disc-c i{background:rgba(255,255,255,.1)}
+[data-theme="dark"] body.adm .rs-disc-c.alto i{background:#6f8bff}[data-theme="dark"] body.adm .rs-disc-c.bajo i{background:#f2b84b}
+[data-theme="dark"] body.adm .rs-pf-b i{background:#1b1e28}
+[data-theme="dark"] .rs-etapas{background:rgba(255,255,255,.04)}
+[data-theme="dark"] .rs-etapa:hover{background:rgba(255,255,255,.05)}
+[data-theme="dark"] .rs-etapa.on{background:rgba(255,255,255,.1);filter:brightness(1.4)}
+[data-theme="dark"] body.adm .rpt-embed .rpt-tabs{border-color:rgba(255,255,255,.07)}
+[data-theme="dark"] body.adm .rpt-embed .rpt-tab-btn:hover{background:rgba(255,255,255,.05)}
+[data-theme="dark"] body.adm .rpt-embed .rpt-tab-btn.on{background:rgba(255,255,255,.1);color:var(--ink)}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  body.adm #cand-drawer{background:#f6f2eb}[data-theme="dark"] body.adm #cand-drawer{background:#14161e}
+}
 </style>
 </head>
 <body>
@@ -1752,6 +1846,10 @@ body.adm .pub-aura i{animation:none}   /* estático: el vidrio no recompone en c
   <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></symbol>
   <symbol id="i-table" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></symbol>
   <symbol id="i-sheet" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-12.2 7.5L3 21l2-5.6A8.4 8.4 0 1 1 21 11.5z"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
   <symbol id="i-send" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></symbol>
 </svg>
 <div class="pub-aura" aria-hidden="true"><i class="a1"></i><i class="a2"></i><i class="a3"></i></div>
@@ -9038,7 +9136,7 @@ function buildReportHtml(c, withClose) {
         if (row.dimNote) det.push(row.dimNote);
         _aptRows += '<div style="padding:11px 0;border-top:1px solid #f1f5f9">'
           + '<div style="display:flex;align-items:flex-start;gap:10px">'
-          + '<span style="font-size:17px;flex-shrink:0;line-height:1.2">' + row.icon + '</span>'
+          + '<span class="rpt-ico" style="font-size:17px;flex-shrink:0;line-height:1.2">' + row.icon + '</span>'
           + '<div style="flex:1;min-width:0">'
           + '<div style="font-size:13px;font-weight:700;color:#0f172a">' + htmlEsc(row.label) + '</div>'
           + (_rsMide[row.tid] ? '<div style="font-size:11.5px;color:#64748b;margin-top:1px">' + _rsMide[row.tid] + '</div>' : '')
@@ -9087,7 +9185,7 @@ function buildReportHtml(c, withClose) {
       html += _rsCard(_rsH3('Juegos de una versión anterior', 'Solo como dato: no se comparan con el mínimo del cargo')
         + _jAnt.map(function(jt){ var tm = TESTS_META[jt] || {};
             return '<div style="display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-top:1px solid #f1f5f9;font-size:12.5px">'
-              + '<span style="color:#334155">' + (tm.icon || '') + ' ' + htmlEsc(tm.name || jt) + (s[jt].summary ? '<span style="display:block;font-size:11px;color:#94a3b8">' + htmlEsc(s[jt].summary) + '</span>' : '') + '</span>'
+              + '<span style="color:#334155">' + (tm.icon ? '<span class="rpt-ico">' + tm.icon + ' </span>' : '') + htmlEsc(tm.name || jt) + (s[jt].summary ? '<span style="display:block;font-size:11px;color:#94a3b8">' + htmlEsc(s[jt].summary) + '</span>' : '') + '</span>'
               + '<strong style="color:#475569;white-space:nowrap">' + Math.round(s[jt].score) + ' / 100</strong></div>'; }).join('')
         + '<div style="font-size:11px;color:#94a3b8;margin-top:6px;line-height:1.5">Estos juegos se retiraron: su puntaje se calculaba en el navegador y no está validado. Control de impulsos y Control del riesgo los reemplazan.</div>');
     }
@@ -9183,7 +9281,7 @@ function buildReportHtml(c, withClose) {
               + '<span style="flex:0 0 210px;color:#0f172a;font-weight:600">' + htmlEsc(f.nombre) + '</span>'
               + (f.prev ? '<span style="flex:1;height:5px;border-radius:3px;background:#e2e8f0;position:relative"><span style="position:absolute;left:0;top:0;bottom:0;border-radius:3px;width:' + p + '%;background:' + (f.rapida ? '#f59e0b' : '#94a3b8') + '"></span></span>' : '<span style="flex:1;font-size:11px;color:#94a3b8">duración fija</span>')
               + '<span style="flex:0 0 60px;text-align:right;font-weight:700;color:' + (f.rapida ? '#b45309' : '#334155') + '">' + _fmtDur(f.seg) + '</span>'
-              + '<span style="flex:0 0 96px;font-size:11px;color:' + (f.rapida ? '#b45309' : '#94a3b8') + '">' + (f.rapida ? '⚡ muy rápida' : f.prev ? 'previsto ' + _fmtDur(f.prev) : '') + '</span></div>';
+              + '<span style="flex:0 0 96px;font-size:11px;color:' + (f.rapida ? '#b45309' : '#94a3b8') + '">' + (f.rapida ? 'muy rápida' : f.prev ? 'previsto ' + _fmtDur(f.prev) : '') + '</span></div>';
           }).join(''));
     }
 
@@ -9213,7 +9311,7 @@ function buildReportHtml(c, withClose) {
     var _flx = firstTab === 'dc0' ? 'flex' : 'none';
     html += '<div class="rpt-tab-panel" id="rpt-panel-dc0" style="display:' + _flx + ';flex-direction:column;gap:16px">';
     html += '<div style="background:#fff;border-radius:14px;border:1px solid #e2e8f0;padding:20px 24px">';
-    html += '<div style="font-size:17px;font-weight:800;color:#0f172a;margin-bottom:6px">⚡ Aptitud Cognitiva — DC-0</div>';
+    html += '<div style="font-size:17px;font-weight:800;color:#0f172a;margin-bottom:6px"><span class="rpt-ico">⚡ </span>Aptitud Cognitiva — DC-0</div>';
     html += '<div style="font-size:13px;color:#64748b;line-height:1.6;margin-bottom:16px">Evalúa tres dimensiones del razonamiento. El puntaje es el <strong>porcentaje de respuestas correctas</strong> por área.</div>';
     // Summary row
     html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">';
@@ -9221,7 +9319,7 @@ function buildReportHtml(c, withClose) {
       var pct = dc0[d[0]] || 0;
       var bd = rawBandPct(pct);
       html += '<div style="background:' + bd.bg + ';border:1.5px solid ' + bd.border + ';border-radius:12px;padding:14px;text-align:center">';
-      html += '<div style="font-size:20px;margin-bottom:4px">' + d[2] + '</div>';
+      html += '<div class="rpt-ico" style="font-size:20px;margin-bottom:4px">' + d[2] + '</div>';
       html += '<div style="font-size:11px;color:#64748b;font-weight:600;margin-bottom:6px">' + d[1] + '</div>';
       html += '<div style="font-size:28px;font-weight:900;color:' + bd.color + ';line-height:1">' + Math.round(pct) + '</div>';
       html += '<div style="font-size:10px;font-weight:700;color:' + bd.color + ';margin-top:2px">%</div>';
@@ -9257,7 +9355,7 @@ function buildReportHtml(c, withClose) {
     var _flxp = firstTab === 'pai' ? 'flex' : 'none';
     html += '<div class="rpt-tab-panel" id="rpt-panel-pai" style="display:' + _flxp + ';flex-direction:column;gap:16px">';
     html += '<div style="background:#fff;border-radius:14px;border:1px solid #e2e8f0;padding:20px 24px">';
-    html += '<div style="font-size:17px;font-weight:800;color:#0f172a;margin-bottom:6px">🔎 Ajuste laboral</div>';
+    html += '<div style="font-size:17px;font-weight:800;color:#0f172a;margin-bottom:6px"><span class="rpt-ico">🔎 </span>Ajuste laboral</div>';
     html += '<div style="font-size:13px;color:#64748b;line-height:1.6;margin-bottom:16px">Evalúa 6 dimensiones del ajuste al trabajo: estabilidad emocional, adaptación social, orientación a normas, manejo del estrés, integridad y motivación.</div>';
     // Con la prueba de integridad en la batería, la dimensión de integridad de esta escala es secundaria
     if (s.integridad) {
@@ -9267,14 +9365,14 @@ function buildReportHtml(c, withClose) {
     }
     if (pai._ds_flag) {
       html += '<div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:flex-start;gap:10px">';
-      html += '<span style="font-size:18px;flex-shrink:0">⚠️</span>';
+      html += '<span class="rpt-ico" style="font-size:18px;flex-shrink:0">⚠️</span>';
       html += '<div><div style="font-size:13px;font-weight:700;color:#92400e;margin-bottom:2px">Posible sesgo de deseabilidad social</div>';
       html += '<div style="font-size:12px;color:#92400e;line-height:1.5">El candidato muestra un patrón de respuesta consistentemente alto en ítems de validación. Puede indicar que las respuestas reflejan cómo desea ser percibido más que su perfil real. Se recomienda explorar en entrevista.</div></div>';
       html += '</div>';
     }
     if (pai._aquiesc_flag) {
       html += '<div style="background:#fff1f2;border:1.5px solid #fecdd3;border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:flex-start;gap:10px">';
-      html += '<span style="font-size:18px;flex-shrink:0">⚠️</span>';
+      html += '<span class="rpt-ico" style="font-size:18px;flex-shrink:0">⚠️</span>';
       html += '<div style="font-size:12px;color:#e11d48;line-height:1.5"><strong>Posible aquiescencia</strong> en respuestas. Considere re-evaluación con entrevista de contraste.</div></div>';
     }
     // Radar
@@ -9355,7 +9453,7 @@ function buildReportHtml(c, withClose) {
     html += '<div class="rpt-tab-panel" id="rpt-panel-' + tid + '" style="display:' + _flxt + ';flex-direction:column;gap:16px">';
     html += '<div style="background:#fff;border-radius:14px;border:1px solid #e2e8f0;padding:20px 24px">';
     html += '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px">';
-    html += '<div><div style="font-size:17px;font-weight:800;color:#0f172a">' + pair[1] + ' ' + htmlEsc(tm.name) + '</div>';
+    html += '<div><div style="font-size:17px;font-weight:800;color:#0f172a"><span class="rpt-ico">' + pair[1] + ' </span>' + htmlEsc(tm.name) + '</div>';
     if (total) html += '<div style="font-size:12px;color:#64748b;margin-top:2px">' + correct + ' de ' + total + ' correctas</div>';
     html += '</div>';
     html += '<div style="text-align:center;background:' + bd.bg + ';border-radius:10px;padding:8px 18px;border:1.5px solid ' + bd.border + '">';
@@ -11574,7 +11672,7 @@ function _bdDictamenCorto(c) {
   var cat = _categoriaDe(c), m = _CAT_META[cat];
   if (!m) return '<span style="font-size:11px;color:var(--ink4);white-space:nowrap">Sin dictamen</span>';
   var d = _EV_DICTAMEN.filter(function(x){ return x.val === m[1]; })[0];
-  return '<span class="bd-pill" title="Categoría: ' + htmlEsc(m[0]) + '" style="color:' + d.color + ';background:' + d.bg + ';border-color:' + d.border + '">' + d.icon + ' ' + m[0] + '</span>';
+  return '<span class="bd-pill" title="Categoría: ' + htmlEsc(m[0]) + '" style="color:' + d.color + ';background:' + d.bg + ';border-color:' + d.border + '"><i class="pb-dot" style="background:' + d.color + '"></i>' + m[0] + '</span>';
 }
 // Resultado sin el dictamen cuando el dictamen ya se muestra aparte
 function _bdMirada(c) { var m = _miradaDe(c); return _BD.props.dictamen ? Object.assign({}, m, { dictamen:'' }) : m; }
@@ -13236,8 +13334,8 @@ function _renderDrawerHeader(c) {
   var datos = [_postulaDe(c).cargo || c.cargo || pm.label || c.perfil || '', c.edad ? c.edad + ' años' : '', c.comuna || '', c.educacion_label || c.educacion || '', _canalTxt(c) ? 'Llegó por: ' + _canalTxt(c) : '', _rhEstado(c) === 'enviado' ? '📤 Enviado a RRHH ' + _rhFechaCorta(c.scores._informe_rh.enviado) : ''].filter(Boolean).map(function(x){ return htmlEsc(String(x)); }).join(' · ');
   // Jerarquía: nombre grande; debajo, etapa y categoría como chips y los datos; a la derecha, las acciones
   var pz = _postulaDe(c), cat = _categoriaDe(c);
-  var linea = [pz.instalacion ? '📍\u00a0' + htmlEsc(pz.instalacion) : '', c.edad ? c.edad + ' años' : '', htmlEsc(c.comuna || ''),
-               _canalTxt(c) ? 'Llegó por: ' + htmlEsc(_canalTxt(c)) : '', _rhEstado(c) === 'enviado' ? '📤 Enviado a RRHH ' + _rhFechaCorta(c.scores._informe_rh.enviado) : ''].filter(Boolean).join(' · ');
+  var linea = [htmlEsc(pz.instalacion || ''), c.edad ? c.edad + ' años' : '', htmlEsc(c.comuna || ''),
+               _canalTxt(c) ? 'Llegó por: ' + htmlEsc(_canalTxt(c)) : '', _rhEstado(c) === 'enviado' ? 'Enviado a RRHH ' + _rhFechaCorta(c.scores._informe_rh.enviado) : ''].filter(Boolean).join(' · ');
   // Las pestañas viven dentro del encabezado: se sacan antes de redibujarlo y se vuelven a poner
   var hdr = document.getElementById('drawer-header'), tabsEl = document.getElementById('drawer-tabs');
   if (!tabsEl) { tabsEl = document.createElement('div'); tabsEl.className = 'drawer-tabs'; tabsEl.id = 'drawer-tabs'; }
@@ -13255,7 +13353,7 @@ function _renderDrawerHeader(c) {
     + '<div class="dh-badges">'
     + (c.estado === 'completed' && S.role === 'admin' ? '<button class="dh-pdf" onclick="abrirInformeRH(\'' + c.id + '\')" title="Informe RH (formato R-GP-054)"><svg class="ico"><use href="#i-doc"/></svg>RH<span class="dh-pdf-t"> · Informe</span></button>' : '')
     + (c.estado === 'completed' ? '<button class="dh-pdf" onclick="downloadPdfReport(\'' + c.id + '\')" title="Descargar el informe en PDF"><svg class="ico"><use href="#i-down"/></svg>PDF</button>' : '') + '</div>'
-    + '<button onclick="closeCandDrawer()" class="dh-close" title="Cerrar (Esc)" aria-label="Cerrar">✕</button>'
+    + '<button onclick="closeCandDrawer()" class="dh-close" title="Cerrar (Esc)" aria-label="Cerrar"><svg class="ico"><use href="#i-x"/></svg></button>'
     + '</div>';
   if (tabsEl) hdr.querySelector('.dh-tabs-slot').appendChild(tabsEl);
   // Al bajar en la ficha, el encabezado se reduce a una línea
@@ -13330,15 +13428,15 @@ function _rsProximoPaso(c, m, modo) {
   if (!m.completada) {
     t = 'Evaluación sin terminar';
     d = 'Comenzó la evaluación' + (_momentoTxt(c) ? ' el ' + htmlEsc(_momentoTxt(c)) : '') + ' y no la terminó.';
-    if (wa) acc = '<a class="rs-btn prim" href="' + wa + '" target="_blank" rel="noopener">💬 Escribirle por WhatsApp</a>';
+    if (wa) acc = '<a class="rs-btn prim" href="' + wa + '" target="_blank" rel="noopener"><svg class="ico"><use href="#i-chat"/></svg>Escribirle por WhatsApp</a>';
     tono = 'warn';
   } else if (etapa === 'descartado') {
     t = 'Proceso cerrado'; d = 'El candidato fue descartado.'; tono = 'neutro';
     if (m.segPend.length) { t = 'Seguimiento pendiente'; d = m.segPend.map(function(p){ return p.hito.toLowerCase(); }).join(' y ') + '.'; acc = btn('⏱ Registrar seguimiento', "switchDrawerTabById('seguimiento')", true); tono = 'warn'; }
   } else if (etapa === 'seleccionado') {
     if (m.segPend.length) { t = 'Registrar seguimiento'; d = 'Corresponde el seguimiento ' + m.segPend.map(function(p){ return p.hito.toLowerCase(); }).join(' y ') + '.'; acc = btn('⏱ Registrar seguimiento', "switchDrawerTabById('seguimiento')", true); tono = 'warn'; }
-    else if (!m.dictamen) { t = 'Seleccionado sin entrevista registrada'; d = 'Para respaldar la decisión, registre la entrevista y su dictamen.'; acc = btn('🗓 Registrar entrevista', "switchDrawerTabById('entrevistas')", true); tono = 'warn'; }
-    else { t = '¿Se concretó la contratación?'; d = 'Cuando ingrese a trabajar, muévalo a Contratado y registre la fecha de ingreso para programar el seguimiento a los 3 y 6 meses.'; acc = btn('🤝 Marcar como contratado', "drawerSetEtapa('" + c.id + "','contratado')", true); tono = 'ok'; }
+    else if (!m.dictamen) { t = 'Seleccionado sin entrevista registrada'; d = 'Para respaldar la decisión, registre la entrevista y su dictamen.'; acc = btn('Registrar entrevista', "switchDrawerTabById('entrevistas')", true); tono = 'warn'; }
+    else { t = '¿Se concretó la contratación?'; d = 'Cuando ingrese a trabajar, muévalo a Contratado y registre la fecha de ingreso para programar el seguimiento a los 3 y 6 meses.'; acc = btn('Marcar como contratado', "drawerSetEtapa('" + c.id + "','contratado')", true); tono = 'ok'; }
   } else if (etapa === 'contratado') {
     var segC = (c.scores || {})._seguimiento;
     if (m.segPend.length) { t = 'Registrar seguimiento'; d = 'Corresponde el seguimiento ' + m.segPend.map(function(p){ return p.hito.toLowerCase(); }).join(' y ') + '.'; acc = btn('⏱ Registrar seguimiento', "switchDrawerTabById('seguimiento')", true); tono = 'warn'; }
@@ -13348,11 +13446,11 @@ function _rsProximoPaso(c, m, modo) {
     t = 'Siguiente paso: entrevista';
     d = 'Revise los puntos a explorar y registre la entrevista con su dictamen.';
     if (m.integ === 'riesgo_alto') { d = 'La prueba de integridad indica riesgo alto. Solo continúe si la entrevista y las referencias descartan los motivos de forma fundada.'; tono = 'alerta'; }
-    acc = btn('🗓 Abrir pauta de entrevista', "switchDrawerTabById('entrevistas')", true);
+    acc = btn('Abrir pauta de entrevista', "switchDrawerTabById('entrevistas')", true);
   } else {
     var dd = _EV_DICTAMEN.filter(function(x){ return x.val === m.dictamen; })[0] || {};
     t = 'Decidir'; d = 'La entrevista ya tiene dictamen: <strong>' + htmlEsc(dd.label || m.dictamen) + '</strong>.';
-    acc = btn('✅ Seleccionar', "drawerSetEtapa('" + c.id + "','seleccionado')", true) + btn('❌ Descartar', "drawerSetEtapa('" + c.id + "','descartado')");
+    acc = btn('Seleccionar', "drawerSetEtapa('" + c.id + "','seleccionado')", true) + btn('Descartar', "drawerSetEtapa('" + c.id + "','descartado')");
   }
   if (modo === 'header') return '<div class="rs-paso dh-paso rs-' + tono + '" title="' + htmlEsc(String(d).replace(/<[^>]+>/g, '')) + '"><span class="rs-paso-t">' + t.replace(/^Siguiente paso: /, 'Siguiente: ') + '</span>'
     + (acc ? '<span class="rs-paso-acc">' + acc + '</span>' : '') + '</div>';
@@ -13378,16 +13476,16 @@ function _rsResultados(c, m) {
     var u = r.u === undefined ? '%' : r.u, col = r.cumple ? '#16a34a' : '#dc2626';
     var p = Math.max(0, Math.min(100, r.score)), pm = Math.max(0, Math.min(100, r.min));
     h += '<div class="rs-fila" onclick="_fichaVerPrueba(\'' + r.tid + '\')" title="' + htmlEsc(r.dimsBajo && r.dimsBajo.length ? 'Bajo el mínimo: ' + r.dimsBajo.join(', ') : r.dimNote || r.detTxt || '') + '">'
-      + '<span class="rs-nom">' + r.icon + ' ' + htmlEsc(r.label) + '</span>'
+      + '<span class="rs-nom">' + htmlEsc(r.label) + '</span>'
       + '<span class="rs-barra"><span style="width:' + p + '%;background:' + col + '"></span><i style="left:' + pm + '%"></i></span>'
       + '<span class="rs-val" style="color:' + col + '">' + r.score + u + '</span>'
       + '<span class="rs-min">mín. ' + r.min + u + '</span></div>';
   });
-  if (s.gonogo && s.gonogo.valido === false) h += '<div class="rs-fila" onclick="_fichaVerPrueba(\'gonogo\')"><span class="rs-nom">🎯 Control de impulsos</span><span class="rs-desc">No interpretable</span></div>';
-  if (s.bart && s.bart.valido === false) h += '<div class="rs-fila" onclick="_fichaVerPrueba(\'bart\')"><span class="rs-nom">🎈 Control del riesgo</span><span class="rs-desc">No interpretable</span></div>';
-  if (m.integ) h += '<div class="rs-fila" onclick="_fichaVerPrueba(\'integridad\')"><span class="rs-nom">🧭 Integridad laboral</span><span class="rs-desc">' + _integNivelBadge(s.integridad) + '</span></div>';
-  if (m.disc) h += '<div class="rs-fila" onclick="_fichaVerPrueba(\'disc\')"><span class="rs-nom">🎭 Estilo DISC</span><span class="rs-desc">' + htmlEsc(m.disc === 'Perfil equilibrado' ? m.disc : 'Predomina ' + m.disc) + ' <em>· descriptivo</em></span></div>';
-  if (s.pf16) h += '<div class="rs-fila" onclick="_fichaVerPrueba(\'pf16\')"><span class="rs-nom">🧬 Personalidad laboral</span><span class="rs-desc">Ver perfil <em>· descriptivo</em></span></div>';
+  if (s.gonogo && s.gonogo.valido === false) h += '<div class="rs-fila" onclick="_fichaVerPrueba(\'gonogo\')"><span class="rs-nom">Control de impulsos</span><span class="rs-desc">No interpretable</span></div>';
+  if (s.bart && s.bart.valido === false) h += '<div class="rs-fila" onclick="_fichaVerPrueba(\'bart\')"><span class="rs-nom">Control del riesgo</span><span class="rs-desc">No interpretable</span></div>';
+  if (m.integ) h += '<div class="rs-fila" onclick="_fichaVerPrueba(\'integridad\')"><span class="rs-nom">Integridad laboral</span><span class="rs-desc">' + _integNivelBadge(s.integridad) + '</span></div>';
+  if (m.disc) h += '<div class="rs-fila" onclick="_fichaVerPrueba(\'disc\')"><span class="rs-nom">Estilo DISC</span><span class="rs-desc">' + htmlEsc(m.disc === 'Perfil equilibrado' ? m.disc : 'Predomina ' + m.disc) + ' <em>· descriptivo</em></span></div>';
+  if (s.pf16) h += '<div class="rs-fila" onclick="_fichaVerPrueba(\'pf16\')"><span class="rs-nom">Personalidad laboral</span><span class="rs-desc">Ver perfil <em>· descriptivo</em></span></div>';
   if (!m.apt.length && !m.integ && !m.disc && !s.pf16) h += '<div class="rs-vacio">Sin pruebas con resultado.</div>';
   var extra = _avisosCompactosHtml(s, true);   // la integridad ya tiene su fila
   if (extra) h += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">' + extra + '</div>';
@@ -13483,7 +13581,7 @@ function _rsMotivoHtml(c) {
   var no = ev.dictamen === 'no_recomendable';
   var f = ev.fecha ? ev.fecha.split('-').reverse().join('-') : '';
   return '<div class="rs-card rs-motivo' + (no ? ' rs-motivo-no' : '') + '" style="border:1.5px solid ' + (no ? '#fca5a5' : '#fde68a') + ';background:' + (no ? '#fef2f2' : '#fffbeb') + '">'
-    + '<div class="rs-lbl" style="color:' + (no ? '#991b1b' : '#92400e') + '">' + (no ? '❌ Motivo del descarte' : '⚠️ Observaciones del dictamen') + '</div>'
+    + '<div class="rs-lbl" style="color:' + (no ? '#991b1b' : '#92400e') + '">' + (no ? 'Motivo del descarte' : 'Observaciones del dictamen') + '</div>'
     + '<div class="rs-motivo-t" title="Clic para ver completo" onclick="this.classList.toggle(\'abierto\')" style="color:var(--ink);white-space:pre-line">' + htmlEsc(ev.motivo.trim()) + '</div>'
     + '<div style="font-size:11px;color:var(--ink4);margin-top:4px">Entrevista' + (f ? ' del ' + f : '') + (ev.entrevistador ? ' · ' + htmlEsc(ev.entrevistador) : '') + '</div></div>';
 }
@@ -13492,7 +13590,7 @@ function _rsMotivoHtml(c) {
 function _rsPostulaHtml(c) {
   var p = _postulaDe(c), turno = p.turno ? _rhTurnoTxt({ jornada: p.turno, jornada_otra: p.turno_otra }) : '';
   var txt = [p.cargo || _rhCargoBase(c), p.instalacion, turno ? 'turno ' + turno : ''].filter(Boolean).join(' · ');
-  var edit = S.role === 'admin' ? ' <a class="rs-link" onclick="_rsPostulaEditar(\'' + htmlEsc(c.id) + '\')" style="font-weight:600">✏️ Editar</a>' : '';
+  var edit = S.role === 'admin' ? ' <a class="rs-link" onclick="_rsPostulaEditar(\'' + htmlEsc(c.id) + '\')" style="font-weight:600;margin-left:6px">Editar</a>' : '';
   return '<div id="rs-postula"><div class="rs-kv"><span>Postula a</span><b>' + htmlEsc(txt) + edit + '</b></div></div>';
 }
 async function _rsPostulaEditar(id) {
@@ -13543,9 +13641,9 @@ function _tabResumen(c) {
   if (c.telefono) h += '<div class="rs-kv"><span>Teléfono</span><b>+56 ' + htmlEsc(c.telefono) + '</b></div>';
   if (c.email) h += '<div class="rs-kv"><span>Email</span><b style="word-break:break-all">' + htmlEsc(c.email) + '</b></div>';
   h += '<div class="rs-acciones">'
-    + (wa ? '<a class="rs-btn prim" href="' + wa + '" target="_blank" rel="noopener">💬 WhatsApp</a>' : '')
-    + (c.telefono ? '<a class="rs-btn" href="tel:+56' + String(c.telefono).replace(/\D/g, '') + '">📞 Llamar</a>' : '')
-    + (c.email ? '<a class="rs-btn" href="mailto:' + encodeURI(c.email) + '">✉️ Correo</a>' : '')
+    + (wa ? '<a class="rs-btn prim" href="' + wa + '" target="_blank" rel="noopener"><svg class="ico"><use href="#i-chat"/></svg>WhatsApp</a>' : '')
+    + (c.telefono ? '<a class="rs-btn" href="tel:+56' + String(c.telefono).replace(/\D/g, '') + '"><svg class="ico"><use href="#i-phone"/></svg>Llamar</a>' : '')
+    + (c.email ? '<a class="rs-btn" href="mailto:' + encodeURI(c.email) + '"><svg class="ico"><use href="#i-mail"/></svg>Correo</a>' : '')
     + '</div></div>';
 
   // Antecedentes (lo que no está en el encabezado)
@@ -13557,30 +13655,30 @@ function _tabResumen(c) {
   kv.forEach(function(x){ if (x[1]) h += '<div class="rs-kv"><span>' + x[0] + '</span><b>' + htmlEsc(String(x[1])) + '</b></div>'; });
   var du = _duracionDe(c);
   if (du) h += '<div class="rs-kv"><span>Duración</span><b title="' + htmlEsc(_duracionTip(du)) + '" style="cursor:help">' + _fmtDur(du.total) + ' respondiendo'
-    + (du.rapidas.length ? ' <span style="color:#b45309;font-weight:700">· ⚡ ' + du.rapidas.length + (du.rapidas.length > 1 ? ' pruebas muy rápidas' : ' prueba muy rápida') + '</span>' : '')
-    + ' <span style="color:var(--ink4);font-weight:500">ⓘ</span></b></div>';
+    + (du.rapidas.length ? ' <span style="color:#b45309;font-weight:700">· ' + du.rapidas.length + (du.rapidas.length > 1 ? ' pruebas muy rápidas' : ' prueba muy rápida') + '</span>' : '')
+    + '</b></div>';
   var otras = _mismoRut(c);
   if (otras.length) h += '<div class="rs-kv"><span>Mismo RUT</span><b>' + otras.map(function(o){
       return '<a class="rs-link" onclick="openCandDrawer(\'' + htmlEsc(o.id) + '\')">' + htmlEsc(((PERFIL_META[o.perfil] || {}).label || o.cargo || 'Evaluación') + ' · ' + (_momentoTxt(o) || '').slice(0, 10)) + '</a>';
     }).join('<br>') + '</b></div>';
   var _dpa = _diasParaArchivo(c);
-  if (_dpa !== null) h += '<div class="rs-kv"><span>Archivo</span><b style="color:#c2410c">⏳ Se archiva ' + (_dpa === 1 ? 'mañana' : 'en ' + _dpa + ' días') + ' si no cambia de etapa.</b></div>';
-  if (getPipelineEtapa(c) === 'descartado') h += '<div class="rs-kv"><span>Archivo</span><b style="color:var(--ink3);font-weight:500">🗄 En el archivo por estar descartado. Vuelve a Candidatos al cambiarlo de etapa.</b></div>';
-  if (_bdArchivado(c)) h += '<div class="rs-kv"><span>Archivo</span><b style="color:var(--ink3);font-weight:500">🗄 Archivado: sin movimiento hace más de ' + _BD_ARCH_DIAS + ' días. Vuelve a Candidatos al cambiarlo de etapa.</b></div>';
+  if (_dpa !== null) h += '<div class="rs-kv"><span>Archivo</span><b style="color:#c2410c">Se archiva ' + (_dpa === 1 ? 'mañana' : 'en ' + _dpa + ' días') + ' si no cambia de etapa.</b></div>';
+  if (getPipelineEtapa(c) === 'descartado') h += '<div class="rs-kv"><span>Archivo</span><b style="color:var(--ink3);font-weight:500">En el archivo por estar descartado. Vuelve a Candidatos al cambiarlo de etapa.</b></div>';
+  if (_bdArchivado(c)) h += '<div class="rs-kv"><span>Archivo</span><b style="color:var(--ink3);font-weight:500">Archivado: sin movimiento hace más de ' + _BD_ARCH_DIAS + ' días. Vuelve a Candidatos al cambiarlo de etapa.</b></div>';
   h += '</div>';
 
   // Etapa del proceso
   var curEtapa = getPipelineEtapa(c);
-  h += '<div class="rs-card"><div class="rs-lbl">Etapa del proceso</div><div style="display:flex;gap:5px;flex-wrap:wrap">';
+  h += '<div class="rs-card"><div class="rs-lbl">Etapa del proceso</div><div class="rs-etapas">';
   PIPELINE_STAGES.forEach(function(st) {
-    var isCur = st.id === curEtapa;
-    h += '<button onclick="drawerSetEtapa(\'' + c.id + '\',\'' + st.id + '\')" style="padding:5px 10px;border-radius:100px;border:1.5px solid ' + (isCur ? st.color : 'var(--border)') + ';background:' + (isCur ? st.bg : 'transparent') + ';color:' + (isCur ? st.color : 'var(--ink3)') + ';font-size:11px;font-weight:' + (isCur ? '700' : '500') + ';cursor:pointer;font-family:inherit">' + st.icon + ' ' + st.label + '</button>';
+    var on = st.id === curEtapa;
+    h += '<button class="rs-etapa' + (on ? ' on' : '') + '" onclick="drawerSetEtapa(\'' + c.id + '\',\'' + st.id + '\')"' + (on ? ' style="color:' + st.color + '"' : '') + '><i class="pb-dot" style="background:' + st.color + '"></i>' + st.label + '</button>';
   });
   h += '</div></div>';
 
   // Notas confidenciales
   h += '<div class="rs-card"><div class="rs-lbl">Notas confidenciales</div>';
-  h += '<textarea id="drawer-notas" rows="4" placeholder="Solo las ve el equipo de selección" style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:8px;font-size:12.5px;font-family:inherit;color:var(--ink);background:var(--bg);resize:vertical;box-sizing:border-box;line-height:1.5">' + htmlEsc(sc._ref_notas || '') + '</textarea>';
+  h += '<textarea id="drawer-notas" rows="4" placeholder="Solo las ve el equipo de selección" style="width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:var(--r-s,8px);font-size:12.5px;font-family:inherit;color:var(--ink);background:var(--surface2);resize:vertical;box-sizing:border-box;line-height:1.5">' + htmlEsc(sc._ref_notas || '') + '</textarea>';
   h += '<button class="rs-btn prim" style="margin-top:7px" onclick="saveDrawerNotas(\'' + c.id + '\')">Guardar notas</button>';
   h += '</div>';
 
@@ -15194,7 +15292,7 @@ function _estadoFichaHtml(c) {
   var etapa = getPipelineEtapa(c), em = getPipelineMeta(etapa);
   var d = _EV_DICTAMEN.filter(function(x){ return x.val === _dictamenDe(c.scores); })[0];
   var pill = function(icon, txt, col, bg, bd, tip) {
-    return '<span class="pipe-badge" title="' + htmlEsc(tip) + '" style="background:' + bg + ';color:' + col + ';border-color:' + bd + '">' + icon + ' ' + txt + '</span>';
+    return '<span class="pipe-badge" title="' + htmlEsc(tip) + '" style="background:' + bg + ';color:' + col + ';border-color:' + bd + '"><i class="pb-dot" style="background:' + col + '"></i>' + txt + '</span>';
   };
   var final = etapa === 'seleccionado' || etapa === 'enviado' || etapa === 'contratado' || etapa === 'descartado';
   if (final || !d) return pill(em.icon, em.label, em.color, em.bg, em.border, 'Etapa: ' + em.label + ' · Dictamen de entrevista: ' + (d ? d.label : 'sin dictamen'));
