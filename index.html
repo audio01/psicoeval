@@ -11688,7 +11688,8 @@ function _bdOrdenar(lista) {
 
 // ── Grupos (agrupar en tabla, columnas en tablero) ──
 function _bdGrupos(campo) {
-  if (campo === 'etapa') return PIPELINE_STAGES.map(function(s){ return { id:s.id, label:s.label, color:s.color, bg:s.bg, border:s.border }; });
+  // En el tablero, Postulante y Antecedentes son una sola columna (todos pasan por la verificación de Chapi)
+  if (campo === 'etapa') return PIPELINE_STAGES.filter(function(s){ return s.id !== 'postulante'; }).map(function(s){ return { id:s.id, label:s.label, color:s.color, bg:s.bg, border:s.border }; });
   if (campo === 'dictamen') return _EV_DICTAMEN.map(function(d){ return { id:d.val, label:d.icon + ' ' + d.label, color:d.color, bg:d.bg, border:d.border }; })
     .concat([{ id:'sin', label:'Sin dictamen', color:'#64748b', bg:'#f8fafc', border:'#e2e8f0' }]);
   if (campo === 'estado') return [['completed', 'Completada', '#15803d', '#f0fdf4', '#bbf7d0'], ['in_progress', 'En curso', '#b45309', '#fffbeb', '#fde68a'], ['pending', 'Pendiente', '#64748b', '#f8fafc', '#e2e8f0']]
@@ -11697,7 +11698,7 @@ function _bdGrupos(campo) {
   return [];
 }
 function _bdValorGrupo(c, campo) {
-  if (campo === 'etapa') return getPipelineEtapa(c);
+  if (campo === 'etapa') { var et = getPipelineEtapa(c); return et === 'postulante' ? 'antecedentes' : et; }
   if (campo === 'dictamen') return _bdDictamen(c) || 'sin';
   if (campo === 'estado') return c.estado;
   if (campo === 'cargo') return c.perfil;
@@ -11917,6 +11918,9 @@ function _bdTablero(lista) {
       else if (chE.tipo === 'error_final') chH = '<span class="bd-est ch-kc"><i style="background:#dc2626"></i>Chapi: ' + htmlEsc(chE.error || 'no se pudo verificar') + '</span>';
       else if (chE.tipo === 'aviso') chH = '<span class="bd-est ch-kc" title="' + htmlEsc(chE.cl.avisos.join(' · ')) + '"><i style="background:#d97706"></i>Chapi: ' + htmlEsc(chE.cl.avisos[0]) + (chE.cl.avisos.length > 1 ? ' +' + (chE.cl.avisos.length - 1) : '') + '</span>';
       else if (chE.tipo === 'procesando') chH = '<span class="bd-est ch-kc"><i style="background:#94a3b8"></i>Verificando en Chapi…</span>';
+      else if (chE.tipo === 'error') chH = '<span class="bd-est ch-kc"><i style="background:#d97706"></i>Chapi: reintentando (' + htmlEsc(chE.error) + ')</span>';
+      else if (!chE.tipo && _verEntrevistas() && getPipelineEtapa(c) === 'postulante' && c.estado === 'completed')
+        chH = '<span class="bd-est ch-kc"><i style="background:#94a3b8"></i>' + (c.perfil === 'guardia' ? 'En cola para Chapi' : 'Sin verificar en Chapi') + '</span>';
       h += '<div class="kanban-card bd-kc" id="kcard-' + id + '" title="' + htmlEsc(_momentoTxt(c)) + '"' + (arrastra ? ' draggable="true" ondragstart="kDragStart(event,\'' + id + '\')" ondragend="kDragEnd(event)"' : '') + ' onclick="openCandDrawer(\'' + id + '\')">'
         + '<div class="bd-kc-top"><div class="bd-nom">' + htmlEsc(((c.nombre || '') + ' ' + (c.apellido || '')).trim()) + _rutRepBadge(c) + _porArchivarBadge(c) + _enArchivoBadge(c) + '</div>' + _bdChk(c) + '</div>'
         + (pz.instalacion ? '<div class="bd-kc-inst">' + htmlEsc(pz.instalacion) + '</div>' : '')
@@ -13814,7 +13818,10 @@ function _rsChapiHtml(c) {
   }
   if (a.estado === 'procesando' && !ch.id) return h + '<div class="rs-vacio">Verificando en Chapi…</div></div>';
   if (!ch.id) {
-    return h + '<div class="rs-vacio" style="margin-bottom:10px">Verifica por RUT causas penales, civiles y laborales, cobranzas, sanciones y otras fuentes.'
+    var enCola = c.perfil === 'guardia' && c.estado === 'completed' && etapa === 'postulante';
+    return h + '<div class="rs-vacio" style="margin-bottom:10px">' + (enCola ? 'En cola: se verificará automáticamente en los próximos minutos. ' : '')
+      + (a.estado === 'error' ? 'Último intento: ' + htmlEsc(a.error || 'error') + ' Se reintentará. ' : '')
+      + 'Verifica por RUT causas penales, civiles y laborales, cobranzas, sanciones y otras fuentes.'
       + (c.rut ? '' : ' Falta el RUT en la ficha.') + '</div>'
       + (c.rut ? '<button class="rs-btn" onclick="_chapiVerificar(\'' + htmlEsc(c.id) + '\')"><svg class="ico"><use href="#i-shield"/></svg>Verificar en Chapi</button>' : '') + '</div>';
   }
