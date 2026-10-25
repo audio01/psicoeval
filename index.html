@@ -1470,8 +1470,8 @@ body.pub #view-landing.active{flex-direction:column}
 .pub-inv-ic{font-size:18px;line-height:1.2}
 .pub-inv-no{background:rgba(254,242,242,.82);border:1px solid #fecaca;color:#991b1b}
 .pub-inv-ok{background:rgba(239,246,255,.82);border:1px solid #bfdbfe;color:#1e3a8a}
-body.pub-bloq .pub-cta{opacity:.5;filter:grayscale(.4)}
-body.pub-bloq .pub-fine::before{content:'Para comenzar necesitas el link de invitación que te enviaron. ';font-weight:600;color:#991b1b}
+body.pub-bloq #view-landing .pub-cta{opacity:.5;filter:grayscale(.4)}
+body.pub-bloq #view-landing .pub-fine::before{content:'Para comenzar necesitas el link de invitación que te enviaron. ';font-weight:600;color:#991b1b}
 .pub-land{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:72px 22px 48px}
 .pub-land-grid{width:100%;max-width:1080px;display:grid;grid-template-columns:1.08fr .92fr;gap:28px 56px;align-items:center}
 .pub-kicker{font-size:11px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--ink3);display:flex;align-items:center;gap:12px;margin-bottom:22px}
@@ -1522,6 +1522,13 @@ body:has(#view-test.active) #exam-watermark{bottom:calc(var(--tbb-h,64px) + 8px)
 .pub-cta{width:100%;justify-content:center;font-size:15.5px!important;padding:17px 22px!important}
 .pub-fine{text-align:center;margin-top:13px;font-size:12px;color:var(--ink3)}
 .pub-adm{position:absolute;top:16px;right:20px;z-index:10;display:flex;gap:6px}
+.pub-login{position:relative;z-index:1;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:48px 18px}
+.pub-login-card{width:100%;max-width:420px}
+.pub-login-card .pub-brand{margin-bottom:18px}
+.pub-login-card .pub-kicker{margin-bottom:14px}
+.pub-login-t{font-family:'Plus Jakarta Sans',-apple-system,'Segoe UI',sans-serif;font-size:30px;font-weight:800;letter-spacing:-.035em;color:var(--ink);margin:0 0 4px}
+.pub-login-s{font-size:14px;color:var(--ink3);margin:0 0 22px}
+.pub-login-card .pub-cta{width:100%;justify-content:center}
 .pub-adm button{background:none;border:none;font-size:12px;color:var(--ink4);cursor:pointer;padding:6px 10px;border-radius:8px;font-family:inherit;transition:color .2s}
 .pub-adm button:hover{color:var(--ink2)}
 body.pub #inv-banner>div{box-shadow:0 10px 30px -20px rgba(20,33,61,.4)}
@@ -2157,56 +2164,27 @@ body.pub #inv-banner>div{box-shadow:0 10px 30px -20px rgba(20,33,61,.4)}
      ADMIN LOGIN
 ════════════════════════════════════════ -->
 <div id="view-adminlogin" class="view">
-  <div style="display:grid;grid-template-columns:1fr 1fr;min-height:100vh">
-    <!-- Left: Branded panel -->
-    <div style="background:#0f172a;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:60px 48px;position:relative;overflow:hidden">
-      <!-- Geometric pattern -->
-      <div style="position:absolute;inset:0;opacity:.04">
-        <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="#fff" stroke-width="1"/></pattern></defs><rect width="100%" height="100%" fill="url(#grid)"/></svg>
-      </div>
-      <!-- Accent glow -->
-      <div style="position:absolute;top:20%;left:-10%;width:300px;height:300px;background:radial-gradient(circle,rgba(99,102,241,.15),transparent 70%);pointer-events:none"></div>
-      <div style="position:absolute;bottom:10%;right:-5%;width:250px;height:250px;background:radial-gradient(circle,rgba(5,150,105,.1),transparent 70%);pointer-events:none"></div>
-      
-      <div style="position:relative;z-index:1;max-width:380px">
-        <div style="font-size:28px;font-weight:800;color:#fff;letter-spacing:-.04em;margin-bottom:6px">Psico<span style="color:#818cf8">Eval</span></div>
-        <div style="font-size:13px;color:#475569;font-weight:500;letter-spacing:.5px;text-transform:uppercase;margin-bottom:48px">Plataforma Psicolaboral</div>
-        
-        <div style="font-size:36px;font-weight:800;color:#fff;letter-spacing:-.04em;line-height:1.1;margin-bottom:20px">Evaluaciones de<br>clase mundial.</div>
-        <div style="font-size:14px;color:#94a3b8;line-height:1.8;margin-bottom:40px">Tests psicométricos validados, juegos gamificados con dificultad adaptativa e informes profesionales en tiempo real.</div>
-        
-        <!-- Stats row -->
-        <div style="display:flex;gap:32px">
-          <div><div style="font-size:24px;font-weight:800;color:#818cf8">15</div><div style="font-size:11px;color:#64748b;font-weight:500">evaluaciones</div></div>
-          <div><div style="font-size:24px;font-weight:800;color:#34d399">5</div><div style="font-size:11px;color:#64748b;font-weight:500">juegos</div></div>
-          <div><div style="font-size:24px;font-weight:800;color:#fbbf24">45</div><div style="font-size:11px;color:#64748b;font-weight:500">min aprox.</div></div>
+  <!-- Ingreso del equipo: mismo estilo de vidrio que la portada (body.pub) -->
+  <div class="pub-login">
+    <div class="pub-panel pub-login-card">
+      <div class="pub-brand">RH <span>Seguridad</span></div>
+      <div class="pub-kicker">Panel de selección</div>
+      <h2 class="pub-login-t">Ingreso del equipo</h2>
+      <p class="pub-login-s">Ingresa con tu correo y contraseña.</p>
+      <div id="al-error" style="display:none;background:var(--rose-l);border:1px solid #fecdd3;border-radius:10px;padding:10px 13px;font-size:13px;color:var(--rose);margin-bottom:14px"></div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="field">
+          <label>Correo electrónico</label>
+          <input id="al-email" type="email" autocomplete="username" placeholder="nombre@empresa.cl" onkeydown="if(event.key==='Enter')adminLogin()">
         </div>
-      </div>
-    </div>
-    
-    <!-- Right: Login form -->
-    <div style="display:flex;flex-direction:column;justify-content:center;align-items:center;padding:48px;background:var(--bg)">
-      <div style="width:100%;max-width:360px">
-        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--ink4);margin-bottom:12px">Panel de administración</div>
-        <h2 style="font-size:28px;font-weight:800;color:var(--ink);margin-bottom:6px;letter-spacing:-.03em">Bienvenido</h2>
-        <p style="font-size:14px;color:var(--ink3);margin-bottom:32px">Ingresa tus credenciales para continuar</p>
-        <div id="al-error" style="display:none;background:var(--rose-l);border:1px solid #fecdd3;border-radius:8px;padding:10px 13px;font-size:13px;color:var(--rose);margin-bottom:14px"></div>
-        <div style="display:flex;flex-direction:column;gap:16px">
-          <div class="field">
-            <label>Correo electrónico</label>
-            <input id="al-email" type="email" placeholder="admin@psicoeval.cl" onkeydown="if(event.key==='Enter')adminLogin()">
-          </div>
-          <div class="field">
-            <label>Contraseña</label>
-            <input id="al-pass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')adminLogin()">
-          </div>
-          <button class="btn btn-primary btn-lg" onclick="adminLogin()" style="margin-top:4px;width:100%;justify-content:center;background:var(--accent);font-size:15px;padding:14px">Ingresar →</button>
-          <button class="btn btn-ghost btn-sm" onclick="gotoLanding()" style="color:var(--ink3);justify-content:center">← Volver al inicio</button>
+        <div class="field">
+          <label>Contraseña</label>
+          <input id="al-pass" type="password" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')adminLogin()">
         </div>
-        <div style="margin-top:40px;padding-top:20px;border-top:1px solid var(--border)">
-          <div style="font-size:11px;color:var(--ink4);text-align:center;line-height:1.6">Sistema de evaluación psicolaboral · Uso interno RRHH<br>Datos cifrados · Cumplimiento normativo vigente</div>
-        </div>
+        <button class="btn btn-primary btn-lg pub-cta" onclick="adminLogin()" style="margin-top:4px">Ingresar →</button>
+        <button class="btn btn-ghost btn-sm" onclick="gotoLanding()" style="color:var(--ink3);justify-content:center">← Volver al inicio</button>
       </div>
+      <div class="pub-fine" style="margin-top:22px">PsicoEval · uso interno del equipo de selección</div>
     </div>
   </div>
 </div>
@@ -4202,9 +4180,9 @@ function showView(id) {
   const el = document.getElementById('view-'+id);
   el.classList.add('active');
   // Vistas del postulante: diseño de vidrio (body.pub); el panel conserva su estilo
-  var pub = ['landing','register','testselect','test','results'].indexOf(id) !== -1;
+  var pub = ['landing','register','testselect','test','results','adminlogin'].indexOf(id) !== -1;
   document.body.classList.toggle('pub', pub);
-  document.title = pub ? 'RH Seguridad — Evaluación de postulantes' : 'PsicoEval — Plataforma Psicolaboral';
+  document.title = id === 'adminlogin' ? 'RH Seguridad — Ingreso del equipo' : pub ? 'RH Seguridad — Evaluación de postulantes' : 'PsicoEval — Plataforma Psicolaboral';
   el.style.display = FLEX_VIEWS.includes(id) ? 'flex' : 'block';
   window.scrollTo(0,0);
 }
@@ -12464,7 +12442,8 @@ function _invBanner() {
     var pm = PERFIL_META[_INV.perfil] || {};
     h = '<div class="pub-inv pub-inv-ok"><span class="pub-inv-ic">✉️</span><div><strong>Invitación personal' + (pm.label ? ' · ' + htmlEsc(pm.label) : '') + '</strong>'
       + (_INV.vence ? '<span>Vigente hasta el ' + _invFecha(_INV.vence) + '. Una vez que comiences, podrás terminarla aunque pase esa hora.</span>' : '') + '</div></div>';
-  } else if (bloq) {
+  } else if (bloq && key !== 'requerida') {
+    // Sin link de invitación no se muestra el aviso rojo: basta la nota bajo el botón
     h = '<div class="pub-inv pub-inv-no"><span class="pub-inv-ic">⛔</span><div><strong>' + _INV_MSG[key][0] + '</strong><span>' + _INV_MSG[key][1] + '</span></div></div>';
   }
   // Sin invitación válida, el botón no abre el registro: queda atenuado y el aviso explica por qué
