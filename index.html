@@ -13524,6 +13524,13 @@ var _COMP_CONFIG_V2 = [
   { key:'resultados', name:'Orientación a resultados', icon:'🎯' },
   { key:'adaptabilidad', name:'Adaptabilidad', icon:'🔄' }
 ];
+// Por qué una competencia no trae puntaje: la prueba que no rindió o la trayectoria que no declaró
+function _evSinFuente(key, c) {
+  if (key === 'integridad') return 'No rindió la prueba de integridad: puntúela en la entrevista';
+  if (key === 'identificacion') return 'Sin trayectoria declarada al postular: puntúela en la entrevista';
+  var t = (_EV_SUG_PRUEBA[key] || [])[0], nom = t && (TESTS_META[t] || {}).name;
+  return (nom ? 'No rindió ' + nom : 'Sin resultado de prueba') + ': puntúela en la entrevista';
+}
 function _evCfg(key) { return _COMP_CONFIG.filter(function(x){ return x.key === key; })[0] || {}; }
 
 // Puntaje sugerido (1 a 5) para las competencias que no se exploran con STAR.
@@ -14047,7 +14054,7 @@ function _tabEntrevistasDrawer(c) {
     }
     p4 += '<div class="ev-comp ev-fila"' + attrs.replace('data-nivel="0"', 'data-nivel="' + (sg ? sg.n : 0) + '"') + '>'
       + '<div class="ev-fila-h" onclick="_evFilaToggle(this, event)"><span class="ev-fila-ic">' + comp.icon + '</span>'
-      + '<div class="ev-fila-nm"><b>' + comp.name + '</b><small>' + (sg ? htmlEsc(sg.fuente) : 'Sin resultado para sugerir un puntaje') + '</small></div>'
+      + '<div class="ev-fila-nm"><b>' + comp.name + '</b><small>' + (sg ? htmlEsc(sg.fuente) : _evSinFuente(comp.key, c)) + '</small></div>'
       + (modo === 'profundizar' ? '<span class="ev-fila-tag">Profundizar</span>' : modo === 'explorar' ? '<span class="ev-fila-tag">Explorar</span>' : '')
       + '<span class="ev-fila-lv"></span>'
       + '<span class="ev-fila-tg">▸</span></div>'
@@ -14098,7 +14105,8 @@ function _tabEntrevistasDrawer(c) {
   p5 += '</div>';
   p5 += '<div class="ev-field" id="ev-motivo-wrap" style="margin-top:12px;display:none"><label id="ev-motivo-lbl">Motivo (obligatorio)</label>'
     + '<textarea id="ef-motivo" rows="2" placeholder="Fundamente el dictamen con lo observado en la entrevista y las pruebas…"></textarea></div>';
-  p5 += '<div class="ev-field" style="margin-top:12px"><label>Notas adicionales</label><textarea id="ef-notas" rows="2" placeholder="Recomendaciones para la siguiente etapa…"></textarea></div>';
+  // Va a "Observación para el envío" del Informe RH y a la planilla/correo para RRHH
+  p5 += '<div class="ev-field" style="margin-top:12px"><label>Observaciones para el envío a RRHH <span style="text-transform:none;font-weight:500;color:var(--ink4)">· pasan a la planilla y al correo</span></label><textarea id="ef-notas" rows="2" placeholder="Lo que necesita saber quien recibe la planilla: disponibilidad (inicio, turnos, traslado), presentación personal, estado físico, licencias o cursos pendientes…"></textarea></div>';
   // Opcionales, sin puntaje
   p5 += '<details class="ev-mas" style="margin-top:14px"><summary>Opcional: verificaciones operativas</summary><div style="padding-top:10px">';
   _EV_CHECKS_OP.forEach(function(chk, i) {
@@ -14474,7 +14482,8 @@ function _evAplicar(d) {
   if (hr && !hr.value) { var ah = new Date(); hr.value = String(ah.getHours()).padStart(2, '0') + ':' + String(ah.getMinutes()).padStart(2, '0'); }
   document.querySelectorAll('#ev-main [data-ev-comp]').forEach(function(r){
     var x = (d.niveles || {})[r.dataset.evComp]; if (!x) return;
-    r.dataset.nivel = x.n || 0;
+    // Una competencia sin puntaje guardado toma el de la evaluación (entrevistas guardadas antes de precargarlo)
+    r.dataset.nivel = x.n || (r.dataset.star ? 0 : +r.dataset.sug || 0);
     if (r.dataset.star) { r.dataset.sm = x.sm || ''; _evPintarStar(r); }
     var cb = r.querySelector('.ev-sin-ej'); if (cb) cb.checked = !!x.sin;
     _evPintarComp(r);
@@ -14642,11 +14651,12 @@ async function saveEntrevistaDrawer(candId) {
     ts: new Date().toISOString()
   };
   try {
-    var edita = +(((document.getElementById('ev-main') || {}).dataset || {}).edita || 0), dictAntes = null;
+    var edita = +(((document.getElementById('ev-main') || {}).dataset || {}).edita || 0), dictAntes = null, notasAntes = '';
     var sc = await _patchPrivado(candId, 'entrevistas', function(prev) {
       prev = prev || [];
       var ant = edita && prev.filter(function(e){ return e.id === edita; })[0];
       dictAntes = ant ? (ant.dictamen || '') : null;
+      notasAntes = ant ? (ant.notas || '') : '';
       if (ant && ant.apuntes_psico && !document.getElementById('ef-apuntes-psico')) entry.apuntes_psico = ant.apuntes_psico;
       if (ant && ant.screening) entry.screening = Object.assign({}, ant.screening, entry.screening);
       // Una entrevista de la pauta anterior que se edita conserva sus 5 competencias como registro
@@ -14663,6 +14673,15 @@ async function saveEntrevistaDrawer(candId) {
     _evBorradorBorrar(candId);
     // Cargo, instalación y turno quedan iguales en Resumen y en el Informe RH
     try { var cP = await _guardarPostula(candId, entry, 'entrevista'); if (cP) sc = cP.scores; } catch(e) {}
+    try {
+      if (sc && sc._informe_rh && Object.keys(sc._informe_rh).length && String(notas).trim() !== String(notasAntes || '').trim()) {
+        sc = await _patchPrivado(candId, 'informe_rh', function(prev) {
+          var n = Object.assign({}, prev || {});
+          if (!String(n.obs_envio || '').trim() || String(n.obs_envio).trim() === String(notasAntes || '').trim()) n.obs_envio = String(notas).trim();
+          return n;
+        });
+      }
+    } catch(e) {}
     try { localStorage.setItem(_EV_PREF_KEY, JSON.stringify({ tipo: tipo, modalidad: modal, entrevistador: entrev })); } catch(e) {}
     var all = await getDB();
     var c = all.find(function(x){ return x.id === candId; });
@@ -15229,7 +15248,7 @@ function _rhSugerencias(c) {
   return {
     cargo:evPost.cargo || _rhCargoBase(c), ideales:ideales,
     lista:'', zonal:'', instalacion:evPost.instalacion || '', recomendacion:'', detalle:'', categoria:cat, publico:'',
-    jornada:evPost.turno || '4x4_rotativo', jornada_otra:evPost.turno === 'otra' ? (evPost.turno_otra || '') : '', referencia:_canalTxt(c), obs_envio:'',
+    jornada:evPost.turno || '4x4_rotativo', jornada_otra:evPost.turno === 'otra' ? (evPost.turno_otra || '') : '', referencia:_canalTxt(c), obs_envio:_evObsEnvioDe(c),
     fecha:_rhFechaEntrevista(s) || (_momentoTxt(c) || '').slice(0, 10).replace(/-/g, '/'),
     niveles:nv, fuentes:niveles, sinDato:sinDato,
     fortalezas:fd.fortalezas, debilidades:fd.debilidades,
@@ -15308,7 +15327,7 @@ async function abrirInformeRH(id) {
     + '<div class="field"><label>Turno <span style="text-transform:none;font-weight:500">(va en el informe y en la planilla)</span></label>' + chips('jornada', _RH_JORNADAS, d.jornada).replace('<div class="reg-chips">', '<div class="reg-chips" onchange="var o=document.getElementById(\'rh-jornada-otra-c\');if(o)o.style.display=(document.querySelector(\'input[name=rh-jornada]:checked\')||{}).value===\'otra\'?\'\':\'none\'">')
     + '<div id="rh-jornada-otra-c" style="margin-top:6px;display:' + (d.jornada === 'otra' ? '' : 'none') + '">' + input('jornada_otra', d.jornada_otra, 'Ej: 5x2 día') + '</div></div>'
     + '<div class="rh-grid2"><div class="field"><label>Referencia (cómo llegó)</label>' + input('referencia', d.referencia, 'Ej: WhatsApp, Referido: Juan Pérez') + '</div>'
-    + '<div class="field"><label>Observación para el envío</label>' + input('obs_envio', d.obs_envio, 'Ej: Comprobar estado físico en terreno') + '</div></div>'
+    + '<div class="field"><label>Observación para el envío</label>' + area('obs_envio', d.obs_envio, 2, 'Ej: Disponible desde el lunes; comprobar estado físico en terreno') + '</div></div>'
     + sec('Cierre')
     + '<div class="field" data-rh="recomendacion"><label>Recomendación de contratación <span class="rh-req">*</span></label>' + chips('recomendacion', [['plazo_fijo','Plazo fijo'],['indefinido','Indefinido'],['no_contratar','No contratar']], d.recomendacion) + '</div>'
     + '<div class="field"><label>Detalle de la recomendación <span style="text-transform:none;font-weight:500">(opcional)</span></label>' + input('detalle', d.detalle, 'Ej: con inducción clara y seguimiento cercano en terreno de la jefatura directa') + '</div>'
@@ -15430,6 +15449,11 @@ function _rhUnir(oraciones, inicio) {
     if (i % 2 === 1) return con[k++ % con.length] + _rhMinus(o);
     return o;
   }).join(' ');
+}
+// Observaciones para el envío escritas en la última entrevista (campo "notas")
+function _evObsEnvioDe(c) {
+  var ev = (((c && c.scores) || {})._entrevistas || []).filter(function(e){ return e && String(e.notas || '').trim(); }).pop();
+  return ev ? String(ev.notas).trim() : '';
 }
 function _rhConducta(c) {
   var ev = (((c && c.scores) || {})._entrevistas || []).filter(function(e){ return e && e.screening; }).pop();
@@ -15828,7 +15852,7 @@ function _plFila(c, d) {
   return [_plFecha(''), (d.zonal || '').replace(/^./, function(x){ return x.toUpperCase(); }), est, c.rut || '',
     ((c.apellido || '') + ' ' + (c.nombre || '')).trim().toUpperCase(), _edadHoy(c) ? _edadHoy(c) + ' años' : '', d.instalacion || '',
     _rhTurnoTxt(d) || (d.jornada === 'otra' ? 'Otra' : ''), d.cargo || _rhCargoBase(c),
-    d.referencia || _canalTxt(c), _plFono(c.telefono), d.obs_envio || ''];
+    d.referencia || _canalTxt(c), _plFono(c.telefono), String(d.obs_envio || _evObsEnvioDe(c)).trim().replace(/[.;]?\s*\n+\s*/g, '; ')];
 }
 
 // Con postulantes marcados en Candidatos, arma la planilla con ellos; si no hay ninguno
