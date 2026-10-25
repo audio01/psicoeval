@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PsicoEval — Plataforma Psicolaboral</title>
+<title>RH Seguridad — Evaluación de postulantes</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400..800&display=swap" rel="stylesheet">
@@ -1447,13 +1447,38 @@ body.pub #inv-banner+.pub-adm+.pub-land,body.pub #inv-banner~.pub-land{min-heigh
 .pub-land-grid{width:100%;max-width:1080px;display:grid;grid-template-columns:1.08fr .92fr;gap:56px;align-items:end}
 .pub-kicker{font-size:11px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--ink3);display:flex;align-items:center;gap:12px;margin-bottom:22px}
 .pub-kicker::before{content:"";width:34px;height:1px;background:rgb(var(--pub-ink)/.45)}
-.pub-title{font-family:'Plus Jakarta Sans',-apple-system,'Segoe UI',sans-serif;font-weight:800;font-size:clamp(42px,7.6vw,92px);line-height:.95;letter-spacing:-.045em;color:var(--ink);margin:0 0 26px}
+.pub-title{font-family:'Plus Jakarta Sans',-apple-system,'Segoe UI',sans-serif;font-weight:800;font-size:clamp(40px,5.2vw,70px);line-height:.95;letter-spacing:-.045em;color:var(--ink);margin:0 0 26px}
 .pub-title em{font-style:normal;font-weight:800;color:rgb(var(--pub-acc))}
 .pub-line{display:block;overflow:hidden;padding-bottom:.08em}
 .pub-line>span{display:block;transform:translateY(105%);animation:pubRise 1.05s var(--pub-ease) forwards}
 .pub-line:nth-child(2)>span{animation-delay:.12s}
 @keyframes pubRise{to{transform:none}}
 .pub-lead{font-size:16.5px;line-height:1.65;color:var(--ink2);max-width:440px;opacity:0;animation:pubIn .9s var(--pub-ease) .45s forwards}
+.pub-brand{font-family:'Plus Jakarta Sans',-apple-system,'Segoe UI',sans-serif;font-weight:800;font-size:22px;letter-spacing:-.03em;color:var(--ink);margin-bottom:34px}
+.pub-brand span,.logo.rh span{color:rgb(var(--pub-acc))}
+.done-next{text-align:left;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px 20px;margin-bottom:28px}
+.done-next-t{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:8px}
+.done-next ol{margin:0;padding-left:20px;font-size:14px;line-height:1.65;color:var(--ink2)}
+.done-next li+li{margin-top:6px}
+body:has(#view-test.active) #exam-watermark{bottom:calc(var(--tbb-h,64px) + 8px)}
+.pre-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px 20px 6px;margin-bottom:16px}
+.pre-head{display:flex;align-items:center;justify-content:space-between;gap:14px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.pre-t{font-size:16px;font-weight:800;color:var(--ink)}
+.pre-s{font-size:12.5px;color:var(--ink3);margin-top:2px}
+.pre-time{text-align:right;flex-shrink:0}
+.pre-time b{display:block;font-size:20px;font-weight:800;color:var(--accent);line-height:1.1}
+.pre-time span{font-size:10.5px;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em;font-weight:700}
+.pre-grp{padding:12px 0;border-top:1px solid var(--border)}
+.pre-head+.pre-grp{border-top:none}
+.pre-gt{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+.pre-grp ul{margin:0;padding-left:18px;font-size:13px;line-height:1.65;color:var(--ink2)}
+.pre-grp li+li{margin-top:3px}
+.pre-grp strong{color:var(--ink)}
+.pub-steps{list-style:none;padding:0;margin:30px 0 0;display:flex;gap:10px;max-width:520px;opacity:0;animation:pubIn .9s var(--pub-ease) .6s forwards}
+.pub-steps li{flex:1;display:flex;align-items:flex-start;gap:10px;padding:12px 12px 12px 10px;border-radius:14px;background:rgba(255,255,255,.5);border:1px solid rgba(20,33,61,.08)}
+.pub-steps b{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:rgb(var(--pub-acc));color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center}
+.pub-steps strong{display:block;font-size:13.5px;color:var(--ink);line-height:1.3}
+.pub-steps span{display:block;font-size:12px;color:var(--ink3);line-height:1.4;margin-top:2px}
 .pub-meta{display:flex;gap:28px;margin-top:30px;opacity:0;animation:pubIn .9s var(--pub-ease) .6s forwards}
 .pub-meta b{display:block;font-family:'Plus Jakarta Sans',-apple-system,'Segoe UI',sans-serif;font-weight:800;font-size:34px;letter-spacing:-.03em;color:var(--ink);line-height:1}
 .pub-meta span{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3);font-weight:700}
@@ -1476,13 +1501,15 @@ body.pub #inv-banner>div{border-radius:16px!important;box-shadow:0 10px 30px -20
   .pub-land-grid{grid-template-columns:1fr;gap:30px}
   .pub-lead{font-size:15.5px}
   .pub-meta{gap:22px;margin-top:22px}
+  .pub-brand{margin-bottom:22px}
+  .pub-steps{flex-direction:column;gap:8px;margin-top:22px}
   .pub-meta b{font-size:28px}
   .pub-panel{padding:22px 20px 20px}
   body.pub .cp{padding:20px}
 }
 @media (prefers-reduced-motion:reduce){
   .pub-aura i{animation:none!important}
-  .pub-line>span,.pub-lead,.pub-meta,.pub-panel,body.pub #view-register .card{animation:none!important;opacity:1!important;transform:none!important}
+  .pub-line>span,.pub-lead,.pub-meta,.pub-steps,.pub-panel,body.pub #view-register .card{animation:none!important;opacity:1!important;transform:none!important}
 }
 /* Navegadores sin vidrio: panel blanco sólido */
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
@@ -1532,20 +1559,21 @@ body.pub #inv-banner>div{border-radius:16px!important;box-shadow:0 10px 30px -20
   <div class="pub-land">
     <div class="pub-land-grid">
       <section>
+        <div class="pub-brand">RH <span>Seguridad</span></div>
         <div class="pub-kicker">Proceso de selección</div>
-        <h1 class="pub-title"><span class="pub-line"><span>Evaluación</span></span><span class="pub-line"><span><em>psicolaboral</em></span></span></h1>
-        <p class="pub-lead">Esta plataforma aplica una batería de evaluaciones psicológicas para procesos de selección de personal. Respóndela con calma, en un solo momento.</p>
-        <div class="pub-meta">
-          <div><b>1</b><span>Sola sesión</span></div>
-          <div><b>2 h</b><span>Plazo para terminar</span></div>
-          <div><b>100%</b><span>Confidencial</span></div>
-        </div>
+        <h1 class="pub-title"><span class="pub-line"><span>Tu postulación,</span></span><span class="pub-line"><span><em>paso a paso</em></span></span></h1>
+        <p class="pub-lead">Queremos conocer cómo trabajas y cómo resuelves situaciones reales del cargo al que postulas. No necesitas preparar nada: responde con calma, con sinceridad y de una sola vez.</p>
+        <ol class="pub-steps">
+          <li><b>1</b><div><strong>Tus datos</strong><span>Cargo, contacto y experiencia</span></div></li>
+          <li><b>2</b><div><strong>Las pruebas</strong><span>Las que corresponden a tu cargo</span></div></li>
+          <li><b>3</b><div><strong>Listo</strong><span>Revisamos y te contactamos</span></div></li>
+        </ol>
       </section>
 
       <aside class="pub-panel">
         <ol class="pub-index">
-          <li><span class="n">01</span><div><b>Duración estimada</b><p>La duración depende de las pruebas asignadas a tu cargo. Algunas miden conocimientos y razonamiento; en otras no hay respuestas correctas o incorrectas. Responde con tranquilidad y de forma honesta.</p></div></li>
-          <li><span class="n">02</span><div><b>Confidencialidad</b><p>Tus respuestas son privadas. Solo el equipo de RRHH tiene acceso a tus resultados, los cuales se usan exclusivamente para el proceso de selección en curso.</p></div></li>
+          <li><span class="n">01</span><div><b>Qué vas a responder</b><p>Las pruebas dependen de tu cargo. Algunas miden conocimientos y razonamiento; en otras no hay respuestas correctas o incorrectas. Tienes 2 horas desde que comienzas.</p></div></li>
+          <li><span class="n">02</span><div><b>Confidencialidad</b><p>Tus respuestas las ve solo el equipo de selección de RH Seguridad y se usan únicamente para este proceso.</p></div></li>
           <li class="pub-consent"><span class="n">03</span><div><b>Autorización de uso de datos</b><p>Al continuar con esta evaluación, autorizas el almacenamiento y uso de tus datos personales y resultados con fines exclusivos de selección laboral. La información no será compartida con terceros ni utilizada para otros fines.</p></div></li>
         </ol>
         <button class="btn btn-primary btn-lg pub-cta" onclick="gotoRegister()">Entiendo y acepto — Comenzar →</button>
@@ -1569,7 +1597,7 @@ body.pub #inv-banner>div{border-radius:16px!important;box-shadow:0 10px 30px -20
     <!-- Progress bar -->
     <div style="margin-bottom:28px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <div class="logo" style="font-size:17px;font-weight:700">Psico<span>Eval</span></div>
+        <div class="logo rh" style="font-size:17px;font-weight:700">RH <span>Seguridad</span></div>
         <span id="reg-step-label" style="font-size:12px;color:var(--ink3);font-weight:600" aria-live="polite">Paso 1 de 4</span>
       </div>
       <div style="height:4px;background:var(--border);border-radius:100px;overflow:hidden" aria-hidden="true">
@@ -1998,7 +2026,7 @@ body.pub #inv-banner>div{border-radius:16px!important;box-shadow:0 10px 30px -20
 ════════════════════════════════════════ -->
 <div id="view-testselect" class="view">
   <header class="app-header">
-    <div class="logo" style="font-size:17px;font-weight:700;letter-spacing:-.02em">PsicoEval</div>
+    <div class="logo rh" style="font-size:17px;font-weight:700;letter-spacing:-.02em">RH <span>Seguridad</span></div>
     <div style="display:flex;align-items:center;gap:9px;font-size:13px;color:var(--ink3)">
       <div class="avatar" id="sel-avatar">MG</div>
       <span id="sel-name">Candidato</span>
@@ -2007,32 +2035,31 @@ body.pub #inv-banner>div{border-radius:16px!important;box-shadow:0 10px 30px -20
   <div class="testselect-body">
     <button class="btn btn-ghost btn-sm" onclick="gotoRegister()" style="margin-bottom:24px;color:var(--ink3)">← Volver</button>
     <h2 style="font-size:26px;font-weight:800;margin-bottom:14px" id="sel-title">Tu evaluación</h2>
-    <div id="sel-profile-banner" style="border-radius:12px;padding:16px 18px;margin-bottom:20px;border:1.5px solid"></div>
+    <div id="sel-profile-banner" style="border-radius:14px;padding:14px 18px;margin-bottom:16px;border:1px solid"></div>
 
-    <!-- Aviso de tiempo — banner prominente -->
-    <div style="background:#fff1f2;border:2px solid #f43f5e;border-radius:14px;overflow:hidden;margin-bottom:16px;box-shadow:0 4px 16px rgba(244,63,94,.15)">
-      <!-- Cabecera roja -->
-      <div style="background:linear-gradient(135deg,#e11d48,#f43f5e);padding:14px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <div style="font-size:28px;line-height:1;flex-shrink:0">⏱</div>
-        <div style="flex:1;min-width:160px">
-          <div style="font-size:14px;font-weight:900;color:#fff;letter-spacing:-.01em">Hazla de una sola vez</div>
-          <div style="font-size:11px;color:#fecdd3;margin-top:2px">Algunas pruebas tienen tiempo propio</div>
+    <!-- Antes de empezar: condiciones en tono informativo -->
+    <div class="pre-card">
+      <div class="pre-head">
+        <div>
+          <div class="pre-t">Antes de empezar</div>
+          <div class="pre-s">Hazla de una sola vez, en un lugar tranquilo</div>
         </div>
-        <div style="text-align:center;background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.3);border-radius:10px;padding:7px 14px;flex-shrink:0">
-          <div style="font-size:20px;font-weight:900;color:#fff;line-height:1" id="disclaimer-time-value">40 min</div>
-          <div style="font-size:9px;color:#fecdd3;margin-top:2px;text-transform:uppercase;letter-spacing:.5px">Duración aprox.</div>
-        </div>
+        <div class="pre-time"><b id="disclaimer-time-value">40 min</b><span>duración aprox.</span></div>
       </div>
-      <!-- Reglas -->
-      <div style="padding:12px 16px">
-        <ul style="font-size:12.5px;color:#9f1239;line-height:1.8;padding-left:16px;margin:0">
-          <li><strong id="disclaimer-reloj">Algunas pruebas tienen tiempo propio; al terminarse, la evaluación pasa a la siguiente. En las demás, responde a tu ritmo.</strong></li>
-          <li>En las pruebas con tiempo, si cambias de pestaña o app <strong>el tiempo cuenta el doble</strong> hasta que regreses.</li>
-          <li>Si sales de esta ventana, <strong>las preguntas se ocultan y la salida queda registrada</strong> en tu evaluación.</li>
-          <li>No se permite copiar, imprimir ni capturar las preguntas. Cada intento queda registrado.</li>
-          <li>Las preguntas llevan una marca con tu nombre y RUT.</li>
+      <div class="pre-grp">
+        <div class="pre-gt">El tiempo</div>
+        <ul>
+          <li id="disclaimer-reloj">Algunas pruebas tienen tiempo propio; al terminarse, la evaluación pasa a la siguiente. En las demás, responde a tu ritmo.</li>
           <li>Desde que comienzas tienes <strong>2 horas</strong> para terminar. Si se te corta la conexión, continúas donde quedaste.</li>
-          <li>Responde con honestidad y de forma autónoma.</li>
+          <li>En las pruebas con tiempo, si cambias de pestaña o de app, <strong>el tiempo cuenta el doble</strong> hasta que regreses.</li>
+        </ul>
+      </div>
+      <div class="pre-grp">
+        <div class="pre-gt">Para que la evaluación sea justa para todos</div>
+        <ul>
+          <li>Responde con honestidad y por tu cuenta, sin ayuda de otras personas.</li>
+          <li>Si sales de esta ventana, las preguntas se ocultan y la salida queda registrada.</li>
+          <li>No se permite copiar, imprimir ni capturar las preguntas; cada intento queda registrado. Las preguntas llevan una marca con tu nombre.</li>
         </ul>
       </div>
     </div>
@@ -2055,7 +2082,7 @@ body.pub #inv-banner>div{border-radius:16px!important;box-shadow:0 10px 30px -20
 ════════════════════════════════════════ -->
 <div id="view-test" class="view">
   <header class="app-header" style="position:sticky;top:0;z-index:100;background:var(--surface);border-bottom:1px solid var(--border)">
-    <div class="logo" style="font-size:17px;font-weight:700;letter-spacing:-.02em">PsicoEval</div>
+    <div class="logo rh" style="font-size:17px;font-weight:700;letter-spacing:-.02em">RH <span>Seguridad</span></div>
     <div class="test-header-progress" style="flex:1;padding:0 12px;min-width:0">
       <div id="test-pills-bar" style="display:flex;align-items:center;gap:5px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;padding:2px 0"></div>
     </div>
@@ -2079,16 +2106,21 @@ body.pub #inv-banner>div{border-radius:16px!important;box-shadow:0 10px 30px -20
 <div id="view-results" class="view" style="background:var(--bg);display:none;align-items:center;justify-content:center;padding:40px 20px;min-height:100vh">
   <div style="width:100%;max-width:520px;text-align:center">
     <div style="width:80px;height:80px;border-radius:50%;background:var(--green-l);border:3px solid var(--green);display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 28px">✓</div>
-    <h2 style="font-size:30px;font-weight:800;letter-spacing:-.02em;margin-bottom:12px">¡Evaluación completada!</h2>
-    <p style="font-size:15px;color:var(--ink3);line-height:1.7;margin-bottom:10px">
-      Gracias, <strong id="done-name"></strong>. Tus respuestas han sido registradas correctamente.
+    <h2 style="font-size:30px;font-weight:800;letter-spacing:-.02em;margin-bottom:12px">¡Listo, <span id="done-name"></span>!</h2>
+    <p style="font-size:15px;color:var(--ink3);line-height:1.7;margin-bottom:26px">
+      Terminaste tu evaluación y tus respuestas quedaron registradas. Gracias por tu tiempo.
     </p>
-    <p style="font-size:14px;color:var(--ink3);line-height:1.7;margin-bottom:36px">
-      El equipo de selección revisará tus resultados junto con los demás antecedentes del proceso. Si avanzas a la siguiente etapa, te contactaremos por teléfono o correo.
-    </p>
+    <div class="done-next">
+      <div class="done-next-t">Qué sigue</div>
+      <ol>
+        <li>El equipo de selección de RH Seguridad revisa tus resultados junto con tus antecedentes.</li>
+        <li>Si avanzas a la siguiente etapa, te contactamos por teléfono o correo para coordinar una entrevista.</li>
+      </ol>
+    </div>
     <div id="done-whatsapp" style="display:none;margin:-16px 0 28px"></div>
     <div id="done-tests" style="display:none"></div>
     <p style="font-size:13px;color:var(--ink4);margin-top:4px">Ya puedes cerrar esta ventana.</p>
+    <div class="logo rh" style="font-size:15px;font-weight:800;margin-top:28px;opacity:.75">RH <span>Seguridad</span></div>
   </div>
 </div>
 
@@ -4136,7 +4168,9 @@ function showView(id) {
   const el = document.getElementById('view-'+id);
   el.classList.add('active');
   // Vistas del postulante: diseño de vidrio (body.pub); el panel conserva su estilo
-  document.body.classList.toggle('pub', ['landing','register','testselect','test','results'].indexOf(id) !== -1);
+  var pub = ['landing','register','testselect','test','results'].indexOf(id) !== -1;
+  document.body.classList.toggle('pub', pub);
+  document.title = pub ? 'RH Seguridad — Evaluación de postulantes' : 'PsicoEval — Plataforma Psicolaboral';
   el.style.display = FLEX_VIEWS.includes(id) ? 'flex' : 'block';
   window.scrollTo(0,0);
 }
@@ -5546,11 +5580,13 @@ function submitRegister() {
   document.getElementById('sel-avatar').textContent = init.toUpperCase();
   document.getElementById('sel-name').textContent = nombre + ' ' + apellido;
   const pm = PERFIL_META[perfil];
-  document.getElementById('sel-title').textContent = 'Evaluación: ' + pm.label;
-  const banner = document.getElementById('sel-profile-banner');
-  banner.style.background = pm.color + '10'; banner.style.borderColor = pm.color + '40';
-  banner.innerHTML = '<span style="font-size:24px">' + pm.icon + '</span><div style="margin-top:8px"><strong style="font-size:15px">' + pm.label + '</strong><div style="font-size:13px;color:var(--ink3);margin-top:3px">' + pm.desc + '</div></div>';
+  document.getElementById('sel-title').textContent = 'Hola, ' + nombre;
   const tests = PERFIL_TESTS[perfil];
+  // Postulación en una línea: el cargo y cuántas pruebas vienen
+  const banner = document.getElementById('sel-profile-banner');
+  banner.style.background = 'var(--surface)'; banner.style.borderColor = 'var(--border)';
+  banner.innerHTML = '<div style="display:flex;align-items:center;gap:12px"><span style="font-size:24px">' + pm.icon + '</span><div><div style="font-size:12px;color:var(--ink3)">Postulas a</div><strong style="font-size:16px">' + pm.label + '</strong></div>'
+    + '<div style="margin-left:auto;text-align:right;font-size:12.5px;color:var(--ink3)">' + tests.length + (tests.length === 1 ? ' prueba' : ' pruebas') + '</div></div>';
   var totalMin = tests.reduce(function(a,t){ return a + (TM_MINS_CONFIG[t]||0); }, 0) + 2;
   S._testTotalMinutes = totalMin;
   var disclaimerTimeEl = document.getElementById('disclaimer-time-value');
