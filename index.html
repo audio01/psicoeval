@@ -1779,6 +1779,9 @@ body.adm .rs-pf-b i{top:-4px;width:14px;height:14px;background:#fff;border:2px s
 .ch-alto b{display:block;color:#991b1b;font-size:13px}
 .ch-alto span{color:var(--ink2)}
 .ch-alto .rs-acciones{margin-top:8px}
+.ch-nom{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:12.5px;color:var(--ink2);background:rgba(39,71,216,.06);border-radius:8px;padding:8px 10px;margin-bottom:10px}
+.ch-nom b{color:var(--ink)}
+[data-theme="dark"] .ch-nom{background:rgba(111,139,255,.1)}
 .ch-ok{font-size:12px;color:#166534;background:rgba(22,163,74,.08);border-radius:8px;padding:7px 10px;margin-bottom:8px}
 .ch-kc{white-space:normal;line-height:1.35}
 [data-theme="dark"] .ch-alto{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3)}[data-theme="dark"] .ch-alto b{color:#fca5a5}
@@ -1948,6 +1951,18 @@ body.adm .pdf-ic{display:inline-flex;color:var(--ink4)}
 #view-admin .arc-tabla .rs-btn .ico{width:14px;height:14px}
 #view-admin .arc-tabla .rs-btn{padding:6px 8px}
 /* Cargos */
+.vac-fila{display:flex;align-items:center;gap:14px;padding:16px 18px;flex-wrap:wrap}
+.vac-txt{flex:1;min-width:200px;display:flex;flex-direction:column;gap:2px}
+.vac-txt b{font-size:15px;color:var(--ink)}
+.vac-txt span{font-size:12.5px;color:var(--ink3)}
+.vac-txt small{font-size:12px;color:var(--ink4);line-height:1.45}
+.vac-n{font-size:12px;font-weight:600;color:var(--ink3);white-space:nowrap;cursor:default}
+.vac-acc{display:flex;align-items:center;gap:8px}
+.vac-acc .rs-btn .ico{width:14px;height:14px}
+.vac-acc .rs-btn[disabled]{opacity:.4;cursor:not-allowed}
+.vac-sw{width:40px;height:22px;border-radius:11px;background:#d1d5db;position:relative;cursor:pointer;flex-shrink:0;transition:background .2s}
+.vac-sw i{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.18);transition:left .2s}
+.vac-sw.on{background:#16a34a}.vac-sw.on i{left:20px}
 .cg-nota{font-size:12.5px;color:var(--ink3);line-height:1.6;margin:0 0 16px;padding:0 2px}
 .cg-nota strong{color:var(--ink)}
 .cg-card{margin-bottom:12px;overflow:hidden}
@@ -2007,6 +2022,8 @@ body.adm .pdf-ic{display:inline-flex;color:var(--ink4)}
   <symbol id="i-edit" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></symbol>
   <symbol id="i-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 9.8-9.8M17 6l3 3M15 8l2 2"/></symbol>
   <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
   <symbol id="i-send" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></symbol>
 </svg>
@@ -2165,6 +2182,11 @@ body.adm .pdf-ic{display:inline-flex;color:var(--ink4)}
             aria-autocomplete="list" aria-controls="comuna-suggestions">
           <div id="comuna-suggestions" style="display:none" role="listbox" aria-label="Sugerencias de comunas"></div>
           <span class="err" id="e-comuna" role="alert" aria-live="polite"></span>
+        </div>
+        <div class="field" id="vac-campo" style="display:none">
+          <label>¿A qué vacante postulas? *</label>
+          <div class="reg-ops" id="vac-ops"></div>
+          <span class="err" id="e-vac" role="alert" aria-live="polite"></span>
         </div>
         <div class="field" id="canal-campo">
           <label>¿Cómo supiste de esta oferta? *</label>
@@ -2617,6 +2639,7 @@ body.adm .pdf-ic{display:inline-flex;color:var(--ink4)}
       <button class="nav-btn" id="nav-params" onclick="adminTab('params',this)" style="display:none"></button>
       <div class="sb-sep"></div>
       <button class="nav-btn" id="nav-cargos" onclick="adminTab('cargos',this)"><svg class="ico"><use href="#i-brief"/></svg><span>Cargos</span></button>
+      <button class="nav-btn" id="nav-vacantes" onclick="adminTab('vacantes',this)"><svg class="ico"><use href="#i-pin"/></svg><span>Vacantes</span></button>
       <button class="nav-btn" id="nav-archivo" onclick="adminTab('archivo',this)"><svg class="ico"><use href="#i-doc"/></svg><span>Archivo</span></button>
       <button class="nav-btn" id="nav-wiki" onclick="adminTab('wiki',this)"><svg class="ico"><use href="#i-book"/></svg><span>Wiki de pruebas</span></button>
       <button class="nav-btn" id="nav-users" onclick="adminTab('users',this)"><svg class="ico"><use href="#i-user"/></svg><span>Usuarios</span></button>
@@ -2658,6 +2681,7 @@ body.adm .pdf-ic{display:inline-flex;color:var(--ink4)}
             <button class="nav-btn" onclick="mobileNav('candidates')"><svg class="ico"><use href="#i-users"/></svg><span>Candidatos</span></button>
             <div class="sb-sep"></div>
             <button class="nav-btn" onclick="mobileNav('cargos')"><svg class="ico"><use href="#i-brief"/></svg><span>Cargos</span></button>
+            <button class="nav-btn" onclick="mobileNav('vacantes')"><svg class="ico"><use href="#i-pin"/></svg><span>Vacantes</span></button>
             <button class="nav-btn" id="mnav-archivo" onclick="mobileNav('archivo')"><svg class="ico"><use href="#i-doc"/></svg><span>Archivo</span></button>
             <button class="nav-btn" onclick="mobileNav('wiki')"><svg class="ico"><use href="#i-book"/></svg><span>Wiki de pruebas</span></button>
             <button class="nav-btn" onclick="mobileNav('users')"><svg class="ico"><use href="#i-user"/></svg><span>Usuarios</span></button>
@@ -2750,6 +2774,18 @@ body.adm .pdf-ic{display:inline-flex;color:var(--ink4)}
 
       <!-- Archivo de informes RH (solo administrador) -->
       <div id="tab-archivo" style="display:none;padding-bottom:40px"><div style="max-width:1100px;margin:0 auto"><div style="margin-bottom:20px"><h2 class="adm-t" style="margin-bottom:4px">Archivo</h2><div style="font-size:13px;color:var(--ink3)">Informes RH generados y respaldo de los datos</div></div><div id="archivo-backup"></div><div id="archivo-content"></div></div></div>
+
+      <!-- Vacantes (25_vacantes.sql) -->
+      <div id="tab-vacantes" style="display:none;padding-bottom:40px"><div style="max-width:900px;margin:0 auto">
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:20px">
+          <div>
+            <h2 class="adm-t" style="margin-bottom:4px">Vacantes</h2>
+            <div style="font-size:13px;color:var(--ink3)">El postulante elige una vacante activa de su cargo al registrarse. En el formulario se ven la comuna, el turno y la descripción; la instalación solo aquí.</div>
+          </div>
+          <button class="adm-prim" id="vac-nueva" onclick="_vacEditar()">+ Nueva vacante</button>
+        </div>
+        <div id="vacantes-content"></div>
+      </div></div>
 
       <!-- Wiki de Tests -->
       <div id="tab-wiki" style="display:none;padding-bottom:40px"><div style="max-width:860px;margin:0 auto">
@@ -5174,6 +5210,7 @@ async function addToDB(c) {
   var scoresRow = Object.assign({}, c.scores || {});
   if (c.referencia)  scoresRow._referencia  = c.referencia;
   if (c.canal)       scoresRow._canal       = c.canal;
+  if (c.vacante)     scoresRow._vacante     = c.vacante;
   if (c.ref_notas)   scoresRow._ref_notas   = c.ref_notas;
   if (c.ref_estado)  scoresRow._ref_estado  = c.ref_estado;
 
@@ -5478,6 +5515,139 @@ function styleOs10() {
 }
 
 // ── Registro: preguntas que se muestran según la respuesta anterior ──
+// ── Vacantes (25_vacantes.sql) ──
+// Formulario público: lista de vacantes activas del cargo (sin la instalación). El enlace de una
+// vacante (?v=<id>) llega con el cargo y la vacante elegidos.
+var _VAC_LINK = (function(){ try { var v = new URLSearchParams(location.search).get('v'); return /^[0-9a-f-]{36}$/i.test(v || '') ? v : null; } catch(e) { return null; } })();
+var _vacLinkInfo = null, _vacPub = {};
+function _vacTxt(v) {
+  var t = v.turno ? _rhTurnoTxt({ jornada: v.turno, jornada_otra: v.turno_otra }) : '';
+  return [v.comuna, t ? 'turno ' + t : ''].filter(Boolean).join(' · ') || 'Vacante';
+}
+async function _vacLinkCargar() {
+  if (!_VAC_LINK || _vacLinkInfo) return _vacLinkInfo;
+  try { var r = await _candidateRpc('vacantes_publicas', { p_id: _VAC_LINK }); _vacLinkInfo = (Array.isArray(r) && r[0]) || false; } catch(e) { _vacLinkInfo = false; }
+  return _vacLinkInfo;
+}
+// Paso 0: con el enlace de una vacante, el cargo queda elegido
+async function _regVacCargo() {
+  var v = await _vacLinkCargar(); if (!v) return;
+  var radio = document.querySelector('input[name="cargo-opcion"][value="' + v.perfil + '"]');
+  if (radio && !document.querySelector('input[name="cargo-opcion"]:checked')) { radio.checked = true; try { onCargoSelect(radio); } catch(e) {} }
+}
+async function _regVacCargar(perfil) {
+  var campo = document.getElementById('vac-campo'), ops = document.getElementById('vac-ops'); if (!campo || !ops) return;
+  var lista = _vacPub[perfil];
+  if (!lista) { try { lista = await _candidateRpc('vacantes_publicas', { p_perfil: perfil }); } catch(e) { lista = []; } _vacPub[perfil] = lista = Array.isArray(lista) ? lista : []; }
+  if (!lista.length) { campo.style.display = 'none'; ops.innerHTML = ''; return; }
+  var previo = _regVal('vacante') || (_vacLinkInfo && _vacLinkInfo.perfil === perfil ? _vacLinkInfo.id : ''),
+      cualquiera = !!document.querySelector('input[name="vacante"][value=""]:checked');
+  ops.innerHTML = lista.map(function(v) {
+    return '<label class="reg-op"><input type="radio" name="vacante" value="' + htmlEsc(v.id) + '"' + (v.id === previo ? ' checked' : '') + ' onchange="_regCambio(this);document.getElementById(\'e-vac\').textContent=\'\'">'
+      + '<span>' + htmlEsc(_vacTxt(v)) + (v.detalle ? '<small style="display:block;font-weight:500;color:var(--ink3);margin-top:2px">' + htmlEsc(v.detalle) + '</small>' : '') + '</span></label>';
+  }).join('') + '<label class="reg-op"><input type="radio" name="vacante" value=""' + (cualquiera ? ' checked' : '') + ' onchange="_regCambio(this);document.getElementById(\'e-vac\').textContent=\'\'"><span>Cualquier vacante / aún no sé</span></label>';
+  campo.style.display = '';
+}
+
+// Panel: página Vacantes (solo el administrador crea, edita, activa o elimina)
+var _vacLista = null;
+async function _vacCargar() {
+  var r = await fetch(SUPA_URL + '/rest/v1/psicoeval_vacantes?select=*&order=creada.desc', { headers: getDBHeaders() });
+  if (r.status === 404) throw new Error('falta aplicar 25_vacantes.sql en Supabase');
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return (_vacLista = await r.json());
+}
+function _vacEnlace(id) { return location.origin + location.pathname + '?v=' + id; }
+async function renderVacantesTab() {
+  var box = document.getElementById('vacantes-content'); if (!box) return;
+  var bN = document.getElementById('vac-nueva'); if (bN) bN.style.display = S.role === 'admin' ? '' : 'none';
+  box.innerHTML = '<div class="pdf-vacio">Cargando…</div>';
+  var lista, all = [];
+  try { lista = await _vacCargar(); all = await getDB(); } catch(e) { box.innerHTML = '<div class="pdf-vacio">No se pudieron cargar las vacantes: ' + htmlEsc(e.message) + '</div>'; return; }
+  if (!lista.length) { box.innerHTML = '<div class="cg-card" style="padding:28px;text-align:center;color:var(--ink3);font-size:13px">Aún no hay vacantes. Cree la primera con <b>+ Nueva vacante</b>.</div>'; return; }
+  var cuenta = {}; all.forEach(function(c){ var v = c.scores && c.scores._postula && c.scores._postula.vacante; if (v) cuenta[v] = (cuenta[v] || 0) + 1; });
+  var porCargo = {}; lista.forEach(function(v){ (porCargo[v.perfil] = porCargo[v.perfil] || []).push(v); });
+  var admin = S.role === 'admin', h = '';
+  Object.keys(porCargo).forEach(function(k) {
+    var pm = PERFIL_META[k] || {};
+    h += '<div class="wk-g" style="display:flex;align-items:center;gap:10px;margin:18px 0 10px">' + htmlEsc(pm.label || k) + '<span class="wk-gl"></span></div>';
+    porCargo[k].sort(function(a, b){ return (b.activa - a.activa) || String(a.instalacion).localeCompare(b.instalacion); }).forEach(function(v) {
+      var id = htmlEsc(v.id), n = cuenta[v.id] || 0;
+      h += '<div class="cg-card vac-card' + (v.activa ? '' : ' off') + '"><div class="vac-fila">'
+        + '<span class="cg-ic"><svg class="ico"><use href="#i-pin"/></svg></span>'
+        + '<div class="vac-txt"><b>' + htmlEsc(v.instalacion) + '</b><span>' + htmlEsc(_vacTxt(v)) + '</span>' + (v.detalle ? '<small>' + htmlEsc(v.detalle) + '</small>' : '') + '</div>'
+        + '<a class="vac-n" onclick="_bdIrConFiltros({})" title="Postulantes que eligieron esta vacante">' + n + (n === 1 ? ' postulante' : ' postulantes') + '</a>'
+        + (admin ? '<div class="vac-acc">'
+          + '<button class="rs-btn" onclick="_vacCopiar(\'' + id + '\')" title="Copiar el enlace de esta vacante"' + (v.activa ? '' : ' disabled') + '><svg class="ico"><use href="#i-link"/></svg>Enlace</button>'
+          + '<button class="bd-icobtn" onclick="_vacEditar(\'' + id + '\')" title="Editar"><svg class="ico"><use href="#i-edit"/></svg></button>'
+          + '<button class="bd-icobtn" onclick="_vacEliminar(\'' + id + '\')" title="Eliminar"><svg class="ico"><use href="#i-trash"/></svg></button>'
+          + '<span style="font-size:11px;font-weight:700;color:' + (v.activa ? '#16a34a' : '#94a3b8') + '">' + (v.activa ? 'Activa' : 'Inactiva') + '</span>'
+          + '<div class="vac-sw' + (v.activa ? ' on' : '') + '" role="switch" aria-checked="' + v.activa + '" onclick="_vacActivar(\'' + id + '\',' + !v.activa + ')"><i></i></div></div>'
+          : '<span style="font-size:11px;font-weight:700;color:' + (v.activa ? '#16a34a' : '#94a3b8') + '">' + (v.activa ? 'Activa' : 'Inactiva') + '</span>')
+        + '</div></div>';
+    });
+  });
+  box.innerHTML = h;
+}
+async function _vacGuardar(id, datos) {
+  var r = await fetch(SUPA_URL + '/rest/v1/psicoeval_vacantes' + (id ? '?id=eq.' + encodeURIComponent(id) : ''), {
+    method: id ? 'PATCH' : 'POST',
+    headers: Object.assign({}, getDBHeaders(), { 'Content-Type': 'application/json', 'Prefer': 'return=representation' }),
+    body: JSON.stringify(Object.assign({}, datos, { actualizada: new Date().toISOString() }))
+  });
+  if (!r.ok) { var t = await r.text(); throw new Error(r.status + ' ' + t.slice(0, 120)); }
+  var j = await r.json().catch(function(){ return []; });
+  if (!Array.isArray(j) || !j.length) throw new Error('sin permisos');
+}
+async function _vacActivar(id, activa) {
+  try { await _vacGuardar(id, { activa: activa }); toast(activa ? 'Vacante activada' : 'Vacante desactivada: ya no aparece en el formulario', 'ok'); renderVacantesTab(); }
+  catch(e) { toast('No se pudo cambiar: ' + e.message, 'er'); }
+}
+async function _vacEliminar(id) {
+  var v = (_vacLista || []).find(function(x){ return x.id === id; }); if (!v) return;
+  if (!(await appConfirm('¿Eliminar la vacante "' + v.instalacion + '"? Los postulantes que la eligieron conservan su instalación y turno. Si solo quiere ocultarla del formulario, desactívela.'))) return;
+  try {
+    var r = await fetch(SUPA_URL + '/rest/v1/psicoeval_vacantes?id=eq.' + encodeURIComponent(id), { method: 'DELETE', headers: getDBHeaders() });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    toast('Vacante eliminada', 'ok'); renderVacantesTab();
+  } catch(e) { toast('No se pudo eliminar: ' + e.message, 'er'); }
+}
+async function _vacCopiar(id) {
+  var url = _vacEnlace(id);
+  try { await navigator.clipboard.writeText(url); toast('Enlace copiado: péguelo en el aviso de esta vacante', 'ok'); }
+  catch(e) { await appConfirm('Copie este enlace:\n\n' + url); }
+}
+function _vacEditar(id) {
+  var v = id ? (_vacLista || []).find(function(x){ return x.id === id; }) : null;
+  v = v || { perfil: 'guardia', instalacion: '', comuna: '', turno: '4x4_rotativo', turno_otra: '', detalle: '', activa: true };
+  var e = htmlEsc, cargos = getActiveCargos();
+  if (cargos.indexOf(v.perfil) === -1) cargos = cargos.concat([v.perfil]);
+  var ov = document.createElement('div'); ov.id = 'vac-overlay'; ov.className = 'rh-ov';
+  ov.innerHTML = '<div class="rh-box" style="width:min(560px,100%)">'
+    + '<div class="rh-top"><div><div style="font-size:17px;font-weight:800;letter-spacing:-.02em">' + (id ? 'Editar vacante' : 'Nueva vacante') + '</div>'
+    + '<div style="font-size:12px;color:var(--ink3)">La instalación se ve solo en el panel. Comuna, turno y descripción se muestran en el formulario.</div></div>'
+    + '<button class="dh-close" title="Cerrar" aria-label="Cerrar" onclick="document.getElementById(\'vac-overlay\').remove()"><svg class="ico"><use href="#i-x"/></svg></button></div>'
+    + '<div class="rh-body">'
+    + '<div class="field"><label>Cargo</label><select id="vac-perfil" class="rh-in">' + cargos.map(function(k){ return '<option value="' + e(k) + '"' + (k === v.perfil ? ' selected' : '') + '>' + e((PERFIL_META[k] || {}).label || k) + '</option>'; }).join('') + '</select></div>'
+    + '<div class="rh-grid2"><div class="field"><label>Instalación <span class="rh-req">*</span></label><input id="vac-inst" class="rh-in" maxlength="120" value="' + e(v.instalacion) + '" placeholder="Ej: Bayer Graneros"></div>'
+    + '<div class="field"><label>Comuna</label><input id="vac-comuna" class="rh-in" maxlength="80" value="' + e(v.comuna) + '" placeholder="Ej: Graneros"></div></div>'
+    + '<div class="field"><label>Turno</label><select id="vac-turno" class="rh-in" onchange="document.getElementById(\'vac-otra\').style.display=this.value===\'otra\'?\'\':\'none\'">'
+    + '<option value="">Sin indicar</option>' + _RH_JORNADAS.map(function(j){ return '<option value="' + j[0] + '"' + (j[0] === v.turno ? ' selected' : '') + '>' + j[1] + '</option>'; }).join('') + '</select>'
+    + '<input id="vac-otra" class="rh-in" maxlength="60" value="' + e(v.turno_otra) + '" placeholder="Ej: 5x2 día" style="margin-top:6px;display:' + (v.turno === 'otra' ? '' : 'none') + '"></div>'
+    + '<div class="field"><label>Descripción para el postulante <span style="text-transform:none;font-weight:500">(opcional)</span></label><textarea id="vac-det" class="rh-in" rows="2" maxlength="300" placeholder="Ej: Control de acceso en planta, turno de noche">' + e(v.detalle) + '</textarea></div>'
+    + '</div><div class="rh-pie"><span style="margin-right:auto"></span><button class="rs-btn" onclick="document.getElementById(\'vac-overlay\').remove()">Cancelar</button>'
+    + '<button class="rs-btn prim" onclick="_vacGuardarForm(' + (id ? '\'' + e(id) + '\'' : '') + ')">Guardar</button></div></div>';
+  document.body.appendChild(ov);
+  setTimeout(function(){ var i = document.getElementById('vac-inst'); if (i) i.focus(); }, 30);
+}
+async function _vacGuardarForm(id) {
+  var val = function(k){ return ((document.getElementById(k) || {}).value || '').trim(); };
+  var d = { perfil: val('vac-perfil'), instalacion: val('vac-inst'), comuna: val('vac-comuna'), turno: val('vac-turno'), turno_otra: val('vac-turno') === 'otra' ? val('vac-otra') : '', detalle: val('vac-det') };
+  if (!d.instalacion) { toast('Escriba la instalación', 'er'); return; }
+  try { await _vacGuardar(id, d); var o = document.getElementById('vac-overlay'); if (o) o.remove(); toast(id ? 'Vacante actualizada' : 'Vacante creada', 'ok'); renderVacantesTab(); }
+  catch(e) { toast('No se pudo guardar: ' + e.message, 'er'); }
+}
+
 // Por dónde llegó el postulante: se guarda en scores._canal (21_canal.sql)
 var CANAL_LABELS = { whatsapp:'WhatsApp', facebook:'Facebook', trabajando:'Trabajando.cl', omil:'OMIL', bne:'BNE', referido:'Referido', otro:'Otro' };
 function _regCanal() {
@@ -5585,9 +5755,10 @@ function regSetStep(step) {
   });
   // Show correct panel
   var perfil = document.getElementById('r-perfil') ? document.getElementById('r-perfil').value : '';
-  if      (step === 0) document.getElementById('reg-step-0').style.display = 'block';
+  if      (step === 0) { document.getElementById('reg-step-0').style.display = 'block'; _regVacCargo(); }
   else if (step === 1) {
     document.getElementById('reg-step-1').style.display = 'block';
+    _regVacCargar(perfil);
     // Block future dates at input level
     var fn = document.getElementById('r-fechanac');
     if (fn) fn.max = new Date().toISOString().split('T')[0];
@@ -5731,6 +5902,10 @@ function regNext(fromStep) {
     } else {
       document.getElementById('e-comuna').textContent = '';
     }
+    // Vacante (25_vacantes.sql): obligatoria solo si el cargo tiene vacantes abiertas
+    var vacCampo = document.getElementById('vac-campo'), eVac = document.getElementById('e-vac');
+    if (vacCampo && vacCampo.style.display !== 'none' && !document.querySelector('input[name="vacante"]:checked')) { eVac.textContent = 'Elige una vacante'; ok = false; }
+    else if (eVac) eVac.textContent = '';
     // Por dónde llegó (21_canal.sql)
     var canalV = _regVal('canal'), eCan = document.getElementById('e-canal');
     eCan.textContent = canalV ? '' : 'Elige una opción';
@@ -5991,6 +6166,7 @@ function submitRegister() {
     historial: historial.length ? historial : (_regVal('exp-tiene') === 'no' ? [] : null),   // [] = declaró no tener experiencia
     referencia: referencia,
     canal: _regCanal(),
+    vacante: _regVal('vacante') || null,
     _invitacion: (_INV && _INV.estado === 'valida') ? _INV.codigo : null,
   };
 
@@ -11153,7 +11329,7 @@ function adminTab(id, btn) {
   _backupLabel();
   saveSession();
   if (id === 'archivo' && S.role !== 'admin') id = 'dashboard';
-  ['dashboard','candidates','params','users','cargos','wiki','archivo','pipeline','analisis'].forEach(t => {
+  ['dashboard','candidates','params','users','cargos','vacantes','wiki','archivo','pipeline','analisis'].forEach(t => {
     const el = document.getElementById('tab-' + t); if(el) el.style.display = t === id ? 'block' : 'none';
     const nb = document.getElementById('nav-' + t); if(nb) nb.classList.toggle('active', t === id);
   });
@@ -11164,6 +11340,7 @@ function adminTab(id, btn) {
   else if (id === 'cargos') renderCargosTab();
   else if (id === 'wiki') renderWikiTab();
   else if (id === 'archivo') renderArchivoTab();
+  else if (id === 'vacantes') renderVacantesTab();
 }
 
 function renderAdmin() { renderDashboard(); }
@@ -13803,6 +13980,64 @@ function _chapiMotivoCorto(c) {
   if (e.tipo === 'error_final' || e.tipo === 'error') return 'no se pudo verificar: ' + e.error;
   return 'revisar antecedentes';
 }
+// Nombre completo según Chapi: se ofrece cuando coincide con la ficha y tiene más palabras
+function _chapiTok(t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').split(/\s+/).filter(Boolean); }
+function _chapiNombreMas(c, ch) {
+  if (!ch || !ch.nombre || !_chapiNombreCoincide(c, ch)) return false;
+  return _chapiTok(ch.nombre).length > _chapiTok((c.nombre || '') + ' ' + (c.apellido || '')).length;
+}
+// Separa el nombre de Chapi en nombres y apellidos usando los apellidos que escribió el postulante
+function _chapiPartirNombre(c, completo) {
+  var orig = String(completo || '').trim().split(/\s+/).filter(Boolean), t = _chapiTok(completo), ap = _chapiTok(c.apellido);
+  var i = ap.length ? t.indexOf(ap[0]) : -1;
+  var res;
+  if (i === 0 && orig.length >= 3) res = { paterno: orig[0], materno: orig[1], nombres: orig.slice(2).join(' ') };   // apellidos primero
+  else if (i > 0) res = { nombres: orig.slice(0, i).join(' '), paterno: orig[i], materno: orig.slice(i + 1).join(' ') };
+  else if (orig.length >= 3) res = { nombres: orig.slice(0, -2).join(' '), paterno: orig[orig.length - 2], materno: orig[orig.length - 1] };
+  else res = { nombres: orig[0] || '', paterno: orig.slice(1).join(' '), materno: '' };
+  ['nombres', 'paterno', 'materno'].forEach(function(k){ res[k] = _nombrePropio(res[k]); });
+  return res;
+}
+async function _chapiNombreEditar(id) {
+  var c = (await getDB()).find(function(x){ return x.id === id; }); if (!c) return;
+  var ch = (c.scores && c.scores._chapi) || {}, p = _chapiPartirNombre(c, ch.nombre), e = htmlEsc;
+  var ov = document.createElement('div'); ov.id = 'nom-overlay'; ov.className = 'rh-ov';
+  ov.innerHTML = '<div class="rh-box" style="width:min(520px,100%)">'
+    + '<div class="rh-top"><div><div style="font-size:17px;font-weight:800;letter-spacing:-.02em">Usar el nombre de Chapi</div>'
+    + '<div style="font-size:12px;color:var(--ink3)">Registrado por el postulante: ' + e(((c.nombre || '') + ' ' + (c.apellido || '')).trim()) + '. Revise el orden antes de guardar.</div></div>'
+    + '<button class="dh-close" title="Cerrar" aria-label="Cerrar" onclick="document.getElementById(\'nom-overlay\').remove()"><svg class="ico"><use href="#i-x"/></svg></button></div>'
+    + '<div class="rh-body"><div class="ch-nom" style="margin:0"><span>Según Chapi: <b>' + e(_nombrePropio(ch.nombre)) + '</b></span></div>'
+    + '<div class="field"><label>Nombres</label><input id="nom-n" class="rh-in" maxlength="80" value="' + e(p.nombres) + '"></div>'
+    + '<div class="rh-grid2"><div class="field"><label>Apellido paterno</label><input id="nom-p" class="rh-in" maxlength="60" value="' + e(p.paterno) + '"></div>'
+    + '<div class="field"><label>Apellido materno</label><input id="nom-m" class="rh-in" maxlength="60" value="' + e(p.materno) + '"></div></div>'
+    + '</div><div class="rh-pie"><span style="margin-right:auto;font-size:11.5px;color:var(--ink4)">Cambia el nombre en la ficha, el Informe RH y la planilla.</span>'
+    + '<button class="rs-btn" onclick="document.getElementById(\'nom-overlay\').remove()">Cancelar</button>'
+    + '<button class="rs-btn prim" onclick="_chapiNombreGuardar(\'' + e(id) + '\')">Guardar</button></div></div>';
+  document.body.appendChild(ov);
+}
+async function _chapiNombreGuardar(id) {
+  var v = function(k){ return _nombrePropio(((document.getElementById(k) || {}).value || '').trim()); };
+  var nombre = v('nom-n'), apellido = [v('nom-p'), v('nom-m')].filter(Boolean).join(' ');
+  if (!nombre || !apellido) { toast('Escriba los nombres y al menos el apellido paterno', 'er'); return; }
+  try {
+    var c = (await getDB()).find(function(x){ return x.id === id; });
+    // Se conserva una sola vez el nombre que escribió el postulante, para poder revisarlo después
+    if (c && !(c.scores && c.scores._nombre_registrado)) await _patchScoresField(id, '_nombre_registrado', ((c.nombre || '') + ' ' + (c.apellido || '')).trim());
+    var r = await fetch(SUPA_URL + '/rest/v1/candidates?id=eq.' + encodeURIComponent(id), {
+      method: 'PATCH', headers: Object.assign({}, getDBHeaders(), { 'Content-Type': 'application/json', 'Prefer': 'return=representation' }),
+      body: JSON.stringify({ nombre: nombre, apellido: apellido })
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    var j = await r.json().catch(function(){ return []; });
+    if (!Array.isArray(j) || !j.length) throw new Error('sin permisos');
+    var o = document.getElementById('nom-overlay'); if (o) o.remove();
+    _invalidateCache();
+    toast('Nombre actualizado', 'ok');
+    var c2 = (await getDB()).find(function(x){ return x.id === id; });
+    if (c2 && _drawerCandId === id) { _renderDrawerHeader(c2); _switchDrawerTab(_drawerActiveTab, c2); }
+    try { _bdRenderCuerpo(); } catch(e) {}
+  } catch(e) { toast('No se pudo guardar el nombre: ' + e.message, 'er'); }
+}
 function _rsChapiHtml(c) {
   if (!_verEntrevistas()) return '';
   var ch = (c.scores && c.scores._chapi) || {}, a = ch.auto || {}, etapa = getPipelineEtapa(c), cid = htmlEsc(c.id);
@@ -13831,6 +14066,8 @@ function _rsChapiHtml(c) {
   if (ch.visado) h += '<div class="ch-ok">Visado por ' + htmlEsc(ch.visado.por || 'el administrador') + (ch.visado.ts ? ' el ' + new Date(ch.visado.ts).toLocaleDateString('es-CL') : '') + '</div>';
   var clA = _chapiClasificar(ch);
   if (clA.avisos.length && etapa !== 'antecedentes') h += '<div class="ch-aviso"><b>Para conversar en la entrevista:</b> ' + htmlEsc(clA.avisos.join(' · ')) + '</div>';
+  if (_chapiNombreMas(c, ch)) h += '<div class="ch-nom"><span>Nombre completo según Chapi: <b>' + htmlEsc(_nombrePropio(ch.nombre)) + '</b></span>'
+    + (S.role === 'admin' ? '<button class="rs-btn" onclick="_chapiNombreEditar(\'' + cid + '\')">Usar este nombre</button>' : '') + '</div>';
   if (!_chapiNombreCoincide(c, ch)) h += '<div class="ch-aviso">Chapi asocia este RUT a <b>' + htmlEsc(ch.nombre) + '</b>, que no coincide con el nombre de la ficha. Revise el RUT.</div>';
   var k = ch.causas || {}, cnt = [['Penales', k.penales], ['Civiles', k.civiles], ['Laborales', k.laborales], ['Sindicales', k.sindicales], ['Sanciones internacionales', k.sanciones]];
   h += '<div class="ch-causas">' + cnt.map(function(x){ return '<span' + (x[1] ? ' class="on"' : '') + '><b>' + (x[1] || 0) + '</b>' + x[0] + '</span>'; }).join('') + '</div>';
