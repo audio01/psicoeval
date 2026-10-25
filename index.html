@@ -1577,7 +1577,7 @@ body.pub #inv-banner>div{box-shadow:0 10px 30px -20px rgba(20,33,61,.4)}
    Escala: texto 11 · 12 · 13 · 14 · 16 · 22 · 28 px · radios 8 · 14 · 20 px.
 ═══════════════════════════════════════════════════════════ */
 body.adm{background:#f3eee6}
-body.adm .pub-aura{display:block;opacity:.6}
+body.adm .pub-aura{display:block;position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;opacity:.6}
 body.adm .pub-aura i{animation:none}   /* estático: el vidrio no recompone en cada cuadro */
 #view-admin{
   --t-ink:20 33 61; --t-acc:39 71 216;
@@ -1638,7 +1638,7 @@ body.adm .pub-aura i{animation:none}   /* estático: el vidrio no recompone en c
 }
 
 /* Candidatos y títulos de página (sistema de diseño del panel) */
-#view-admin .adm-t,#view-admin #tab-dashboard h2,#view-admin #tab-archivo .arc-t{font-size:28px;font-weight:800;letter-spacing:-.045em;line-height:1.1;color:var(--ink)}
+#view-admin .adm-t,#view-admin #tab-dashboard h2{font-size:28px;font-weight:800;letter-spacing:-.045em;line-height:1.1;color:var(--ink)}
 #view-admin .bd-seg{background:rgba(255,255,255,.42);box-shadow:inset 0 1px 2px rgba(20,33,61,.06)}
 #view-admin .bd-seg button.on{background:rgba(255,255,255,.92);box-shadow:var(--glass-edge),0 1px 3px rgba(20,33,61,.1)}
 #view-admin .bd-btn{background:rgba(255,255,255,.5);border-color:rgba(20,33,61,.08);box-shadow:var(--glass-edge)}
@@ -1909,6 +1909,59 @@ body.adm .pdf-ic{display:inline-flex;color:var(--ink4)}
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
   body.adm .rh-box{background:#f8f5f0}[data-theme="dark"] body.adm .rh-box{background:#14161e}
 }
+
+/* Archivo, Cargos, Usuarios y Wiki (sistema de diseño del panel): paneles de vidrio,
+   ícono de línea en lugar de emoji y botones con el mismo acento */
+#view-admin .adm-prim{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border:none;border-radius:var(--r-s);background:linear-gradient(180deg,#3557e6,#2342c8);color:#fff;font:600 13px/1 inherit;font-family:inherit;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 8px 20px -12px rgba(39,71,216,.7)}
+#view-admin .adm-prim:hover{filter:brightness(1.06)}
+#view-admin .bk-card,#view-admin .arc-tabla,#view-admin .cg-card,#view-admin .adm-panel,#view-admin .wiki-card{
+  background:rgba(255,255,255,.52)!important;-webkit-backdrop-filter:blur(26px) saturate(200%);backdrop-filter:blur(26px) saturate(200%);
+  border:1px solid rgba(255,255,255,.7)!important;border-radius:var(--r)!important;box-shadow:var(--glass-edge),var(--glass-drop)!important}
+#view-admin .bk-t{display:flex;align-items:center;gap:8px}
+#view-admin .bk-t .ico{width:16px;height:16px;color:var(--accent)}
+#view-admin .arc-t{font-size:16px;font-weight:800;letter-spacing:-.02em;color:var(--ink)}
+#view-admin #archivo-content .arc-head{margin-top:8px}
+#view-admin .arc-cab{background:transparent;color:var(--ink4);letter-spacing:.06em}
+#view-admin .arc-fila{border-top-color:rgba(20,33,61,.06)}
+#view-admin .arc-fila:not(.arc-cab):hover{background:rgba(255,255,255,.5)}
+#view-admin .arc-uso span{background:rgba(20,33,61,.07);height:6px;border-radius:99px}
+#view-admin .arc-filtros input,#view-admin .arc-filtros select,#view-admin #wiki-search{background:rgba(255,255,255,.6)!important;border:1px solid rgba(20,33,61,.1)!important;border-radius:var(--r-s)!important}
+#view-admin .arc-tabla .rs-btn .ico{width:14px;height:14px}
+#view-admin .arc-tabla .rs-btn{padding:6px 8px}
+/* Cargos */
+.cg-nota{font-size:12.5px;color:var(--ink3);line-height:1.6;margin:0 0 16px;padding:0 2px}
+.cg-nota strong{color:var(--ink)}
+.cg-card{margin-bottom:12px;overflow:hidden}
+.cg-card.off{opacity:.6}
+.cg-card>div:first-child{padding:18px 20px!important}
+.cg-ic{width:40px;height:40px;flex-shrink:0;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;background:rgba(39,71,216,.08);color:var(--accent)}
+.cg-ic .ico{width:19px;height:19px}
+.cg-card.off .cg-ic{background:rgba(20,33,61,.06);color:var(--ink4)}
+.cg-pie{border-top:1px solid rgba(20,33,61,.06);padding:12px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.cg-chip{font-size:11px;font-weight:600;padding:3px 9px;border-radius:100px;background:rgba(20,33,61,.05);color:var(--ink3);white-space:nowrap}
+#view-admin .cg-inv{background:rgba(39,71,216,.08)!important;border:none!important;color:var(--accent)!important;border-radius:var(--r-s)!important}
+#view-admin .cg-inv:hover{background:rgba(39,71,216,.14)!important}
+#view-admin .cg-inv .ico{width:14px;height:14px}
+/* Wiki */
+.wk-g{font-size:13px;font-weight:800;letter-spacing:-.01em;color:var(--ink)}
+.wk-gl{flex:1;height:1px;background:rgba(20,33,61,.08)}
+#view-admin .wiki-card [style*="color:#0f172a"]{color:var(--ink)!important}
+#view-admin .wiki-card [style*="color:#334155"]{color:var(--ink2)!important}
+#view-admin .wiki-card [style*="background:#f1f5f9"]{background:rgba(20,33,61,.05)!important}
+#view-admin .wiki-card [style*="background:#f8fafc"]{background:rgba(255,255,255,.55)!important;border-color:rgba(20,33,61,.06)!important}
+#view-admin .wiki-body{border-top-color:rgba(20,33,61,.06)!important}
+/* Oscuro */
+[data-theme="dark"] #view-admin .bk-card,[data-theme="dark"] #view-admin .arc-tabla,[data-theme="dark"] #view-admin .cg-card,[data-theme="dark"] #view-admin .adm-panel,[data-theme="dark"] #view-admin .wiki-card{background:rgba(28,31,42,.5)!important;border-color:rgba(255,255,255,.08)!important}
+[data-theme="dark"] #view-admin .arc-fila,[data-theme="dark"] .cg-pie,[data-theme="dark"] #view-admin .wiki-body{border-color:rgba(255,255,255,.06)!important}
+[data-theme="dark"] #view-admin .arc-fila:not(.arc-cab):hover{background:rgba(255,255,255,.04)}
+[data-theme="dark"] #view-admin .arc-filtros input,[data-theme="dark"] #view-admin .arc-filtros select,[data-theme="dark"] #view-admin #wiki-search{background:rgba(255,255,255,.05)!important;border-color:rgba(255,255,255,.1)!important}
+[data-theme="dark"] .cg-chip,[data-theme="dark"] #view-admin .wiki-card [style*="background:#f1f5f9"]{background:rgba(255,255,255,.07)!important}
+[data-theme="dark"] #view-admin .wiki-card [style*="background:#f8fafc"]{background:rgba(255,255,255,.04)!important;border-color:rgba(255,255,255,.06)!important}
+[data-theme="dark"] .wk-gl{background:rgba(255,255,255,.08)}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  #view-admin .bk-card,#view-admin .arc-tabla,#view-admin .cg-card,#view-admin .adm-panel,#view-admin .wiki-card{background:rgba(255,255,255,.94)!important}
+  [data-theme="dark"] #view-admin .bk-card,[data-theme="dark"] #view-admin .arc-tabla,[data-theme="dark"] #view-admin .cg-card,[data-theme="dark"] #view-admin .adm-panel,[data-theme="dark"] #view-admin .wiki-card{background:#1b1e28!important}
+}
 </style>
 </head>
 <body>
@@ -1932,6 +1985,8 @@ body.adm .pdf-ic{display:inline-flex;color:var(--ink4)}
   <symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-12.2 7.5L3 21l2-5.6A8.4 8.4 0 1 1 21 11.5z"/></symbol>
   <symbol id="i-phone" viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></symbol>
   <symbol id="i-mail" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></symbol>
+  <symbol id="i-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 9.8-9.8M17 6l3 3M15 8l2 2"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
   <symbol id="i-send" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></symbol>
 </svg>
@@ -2543,7 +2598,7 @@ body.adm .pdf-ic{display:inline-flex;color:var(--ink4)}
       <div class="sb-sep"></div>
       <button class="nav-btn" id="nav-cargos" onclick="adminTab('cargos',this)"><svg class="ico"><use href="#i-brief"/></svg><span>Cargos</span></button>
       <button class="nav-btn" id="nav-archivo" onclick="adminTab('archivo',this)"><svg class="ico"><use href="#i-doc"/></svg><span>Archivo</span></button>
-      <button class="nav-btn" id="nav-wiki" onclick="adminTab('wiki',this)"><svg class="ico"><use href="#i-book"/></svg><span>Wiki de Tests</span></button>
+      <button class="nav-btn" id="nav-wiki" onclick="adminTab('wiki',this)"><svg class="ico"><use href="#i-book"/></svg><span>Wiki de pruebas</span></button>
       <button class="nav-btn" id="nav-users" onclick="adminTab('users',this)"><svg class="ico"><use href="#i-user"/></svg><span>Usuarios</span></button>
       <div style="flex:1"></div>
       <div class="sb-foot">
@@ -2584,7 +2639,7 @@ body.adm .pdf-ic{display:inline-flex;color:var(--ink4)}
             <div class="sb-sep"></div>
             <button class="nav-btn" onclick="mobileNav('cargos')"><svg class="ico"><use href="#i-brief"/></svg><span>Cargos</span></button>
             <button class="nav-btn" id="mnav-archivo" onclick="mobileNav('archivo')"><svg class="ico"><use href="#i-doc"/></svg><span>Archivo</span></button>
-            <button class="nav-btn" onclick="mobileNav('wiki')"><svg class="ico"><use href="#i-book"/></svg><span>Wiki de Tests</span></button>
+            <button class="nav-btn" onclick="mobileNav('wiki')"><svg class="ico"><use href="#i-book"/></svg><span>Wiki de pruebas</span></button>
             <button class="nav-btn" onclick="mobileNav('users')"><svg class="ico"><use href="#i-user"/></svg><span>Usuarios</span></button>
           </div>
           <div style="flex:1"></div>
@@ -2645,10 +2700,10 @@ body.adm .pdf-ic{display:inline-flex;color:var(--ink4)}
       <div id="tab-users" style="display:none;padding-bottom:40px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px">
           <div>
-            <div style="font-size:20px;font-weight:700;margin-bottom:2px">Usuarios</div>
+            <h2 class="adm-t" style="margin-bottom:4px">Usuarios</h2>
             <div style="font-size:13px;color:var(--ink3)">Acceso al panel de administración</div>
           </div>
-          <button onclick="openAddUserModal()" style="padding:8px 18px;border-radius:10px;background:var(--accent);color:#fff;font-size:13px;font-weight:600;border:none;cursor:pointer">+ Añadir usuario</button>
+          <button onclick="openAddUserModal()" class="adm-prim">+ Añadir usuario</button>
         </div>
         <div id="users-list"></div>
         <!-- Mensaje final del candidato -->
@@ -2667,19 +2722,19 @@ body.adm .pdf-ic{display:inline-flex;color:var(--ink4)}
       <div id="tab-params" style="display:none;padding-bottom:40px"><div style="max-width:860px;margin:0 auto">
         <div style="margin-bottom:20px">
           <button onclick="adminTab('cargos',document.getElementById('nav-cargos'))" class="btn btn-ghost btn-sm" style="margin-bottom:8px;color:var(--ink3);padding:4px 0;font-size:12px">← Volver a Cargos</button>
-          <div style="font-size:20px;font-weight:700;margin-bottom:2px" id="bateria-cargo-title">Baterías</div>
+          <h2 class="adm-t" style="margin-bottom:4px" id="bateria-cargo-title">Baterías</h2>
           <div style="font-size:13px;color:var(--ink3)" id="bateria-cargo-desc">Configura los tests activos</div>
         </div>
         <div id="bateria-content"></div>
       </div></div>
 
       <!-- Archivo de informes RH (solo administrador) -->
-      <div id="tab-archivo" style="display:none;padding-bottom:40px"><div style="max-width:1100px;margin:0 auto"><div id="archivo-backup"></div><div id="archivo-content"></div></div></div>
+      <div id="tab-archivo" style="display:none;padding-bottom:40px"><div style="max-width:1100px;margin:0 auto"><div style="margin-bottom:20px"><h2 class="adm-t" style="margin-bottom:4px">Archivo</h2><div style="font-size:13px;color:var(--ink3)">Informes RH generados y respaldo de los datos</div></div><div id="archivo-backup"></div><div id="archivo-content"></div></div></div>
 
       <!-- Wiki de Tests -->
       <div id="tab-wiki" style="display:none;padding-bottom:40px"><div style="max-width:860px;margin:0 auto">
         <div style="margin-bottom:20px">
-          <div style="font-size:20px;font-weight:700;margin-bottom:2px">📖 Wiki de Tests</div>
+          <h2 class="adm-t" style="margin-bottom:4px">Wiki de pruebas</h2>
           <div style="font-size:13px;color:var(--ink3)">Documentación de todos los instrumentos de evaluación disponibles</div>
         </div>
         <div id="wiki-content"></div>
@@ -2689,7 +2744,7 @@ body.adm .pdf-ic{display:inline-flex;color:var(--ink4)}
       <div id="tab-cargos" style="display:none;padding-bottom:40px"><div style="max-width:820px;margin:0 auto">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
           <div>
-            <div style="font-size:20px;font-weight:700;margin-bottom:2px">Cargos</div>
+            <h2 class="adm-t" style="margin-bottom:4px">Cargos</h2>
             <div style="font-size:13px;color:var(--ink3)">Activa o desactiva los cargos disponibles en la plataforma</div>
           </div>
         </div>
@@ -3428,6 +3483,8 @@ function toggleCargo(key) {
   toast((CARGOS_ACTIVE[key] ? '✓ ' : '✗ ') + PERFIL_META[key].label + (CARGOS_ACTIVE[key] ? ' activado' : ' desactivado'), 'ok');
 }
 
+// Nombres cortos de las pruebas para las etiquetas de Cargos
+var _CG_CORTO = { dc0:'Cognitiva', situacional:'Juicio', vigilancia:'Vigilancia', comprension:'Comprensión', normativa_ohs:'Normativa', gonogo:'Impulsos', bart:'Riesgo', disc:'DISC', pf16:'Personalidad', pai:'Ajuste', integridad:'Integridad' };
 function renderCargosTab() {
   var el = document.getElementById('cargos-content');
   if (!el) return;
@@ -3435,9 +3492,8 @@ function renderCargosTab() {
   var activeCount = getActiveCargos().length;
 
   var h = '';
-  h += '<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 16px;margin-bottom:20px;display:flex;align-items:flex-start;gap:10px">';
-  h += '<span style="font-size:18px">💡</span>';
-  h += '<div style="font-size:12px;color:#1e40af;line-height:1.6">';
+  h += '<div class="cg-nota">';
+  h += '<div>';
   h += '<strong>' + activeCount + ' de ' + ALL.length + ' cargos activos.</strong> Haz clic en un cargo para configurar su batería de tests. Los cargos desactivados no aparecerán en el formulario de evaluación.';
   h += '</div></div>';
 
@@ -3448,11 +3504,11 @@ function renderCargosTab() {
     var tests = PERFIL_TESTS[key] || [];
     var isCustom = !isBuiltinCargo(key);
 
-    h += '<div style="background:#fff;border-radius:14px;border:1px solid ' + (isOn ? '#e2e8f0' : '#f1f5f9') + ';margin-bottom:12px;overflow:hidden;transition:all .2s;' + (isOn ? '' : 'opacity:.55') + '">';
+    h += '<div class="cg-card' + (isOn ? '' : ' off') + '">';
 
     // Header row - clickable to open battery
     h += '<div style="display:flex;align-items:center;gap:16px;padding:20px 22px;cursor:' + (isOn ? 'pointer' : 'default') + '" ' + (isOn ? 'onclick="openCargoBattery(\'' + key + '\')"' : '') + '>';
-    h += '<div style="font-size:32px;line-height:1">' + pm.icon + '</div>';
+    h += '<span class="cg-ic"><svg class="ico"><use href="#i-brief"/></svg></span>';
     h += '<div style="flex:1;min-width:0">';
     h += '<div style="display:flex;align-items:center;gap:8px">';
     h += '<span style="font-size:16px;font-weight:700;color:var(--ink)">' + pm.label + '</span>';
@@ -3464,8 +3520,8 @@ function renderCargosTab() {
     // Actions: edit, delete, toggle (stop propagation for these)
     h += '<div style="flex-shrink:0;display:flex;align-items:center;gap:8px" onclick="event.stopPropagation()">';
     if (isCustom) {
-      h += '<button onclick="editCargo(\'' + key + '\')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:14px;padding:4px 6px;border-radius:6px;opacity:.6;transition:opacity .15s" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.6" title="Editar cargo">✏️</button>';
-      h += '<button onclick="deleteCargo(\'' + key + '\')" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:14px;padding:4px 6px;border-radius:6px;opacity:.4;transition:opacity .15s" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.4" title="Eliminar cargo">🗑</button>';
+      h += '<button onclick="editCargo(\'' + key + '\')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:14px;padding:4px 6px;border-radius:6px;opacity:.6;transition:opacity .15s" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.6" title="Editar cargo"><svg class="ico" style="width:15px;height:15px"><use href="#i-edit"/></svg></button>';
+      h += '<button onclick="deleteCargo(\'' + key + '\')" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:14px;padding:4px 6px;border-radius:6px;opacity:.4;transition:opacity .15s" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.4" title="Eliminar cargo"><svg class="ico" style="width:15px;height:15px"><use href="#i-trash"/></svg></button>';
     }
     h += '<span style="font-size:11px;font-weight:700;color:' + (isOn ? '#16a34a' : '#94a3b8') + '">' + (isOn ? 'Activo' : 'Inactivo') + '</span>';
     h += '<div onclick="toggleCargo(\'' + key + '\')" style="width:44px;height:24px;border-radius:12px;background:' + (isOn ? '#16a34a' : '#d1d5db') + ';cursor:pointer;position:relative;transition:background .2s;flex-shrink:0">';
@@ -3476,26 +3532,26 @@ function renderCargosTab() {
     // Info row with test chips + "Configurar batería" hint
     if (isOn) {
       var totalMin = tests.reduce(function(a,t){ return a + (TM_MINS_CONFIG[t]||0); }, 0) + 2;
-      h += '<div style="border-top:1px solid #f1f5f9;padding:14px 22px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">';
+      h += '<div class="cg-pie">';
       h += '<div onclick="openCargoBattery(\'' + key + '\')" style="flex:1;display:flex;align-items:center;gap:16px;flex-wrap:wrap;cursor:pointer;transition:background .15s">';
       h += '<div style="font-size:11px;color:var(--ink3)"><strong style="color:var(--ink2)">' + tests.length + '</strong> tests asignados</div>';
-      h += '<div style="font-size:11px;color:var(--ink3)">⏱ <strong style="color:var(--ink2)">' + totalMin + ' min</strong> estimados</div>';
+      h += '<div style="font-size:11px;color:var(--ink3)"><strong style="color:var(--ink2)">' + totalMin + ' min</strong> estimados</div>';
       h += '<div style="flex:1"></div>';
       if (tests.length === 0) {
-        h += '<span style="font-size:11px;font-weight:600;color:var(--accent)">⚙ Configurar batería →</span>';
+        h += '<span style="font-size:11px;font-weight:600;color:var(--accent)">Configurar batería →</span>';
       } else {
         h += '<div style="display:flex;gap:4px;flex-wrap:wrap">';
         tests.slice(0, 6).forEach(function(t) {
           var m = TESTS_META[t];
-          if (m) h += '<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:100px;background:var(--surface3);color:var(--ink3)">' + m.icon + '</span>';
+          if (m) h += '<span class="cg-chip" title="' + htmlEsc(m.name || t) + '">' + htmlEsc(_CG_CORTO[t] || m.name || t) + '</span>';
         });
-        if (tests.length > 6) h += '<span style="font-size:10px;color:var(--ink4)">+' + (tests.length - 6) + '</span>';
+        if (tests.length > 6) h += '<span class="cg-chip">+' + (tests.length - 6) + '</span>';
         h += '</div>';
         h += '<span style="font-size:11px;color:var(--accent);font-weight:600;margin-left:8px">→</span>';
       }
       h += '</div>';
       // Per-cargo share button
-      h += '<button onclick="event.stopPropagation();_invAbrirCargo(\'' + key + '\')" style="flex-shrink:0;display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;font-family:inherit" onmouseover="this.style.background=\'#dbeafe\'" onmouseout="this.style.background=\'#eff6ff\'">✉️ Invitar</button>';
+      h += '<button onclick="event.stopPropagation();_invAbrirCargo(\'' + key + '\')" style="flex-shrink:0;display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;font-family:inherit" onmouseover="this.style.background=\'#dbeafe\'" onmouseout="this.style.background=\'#eff6ff\'" class="cg-inv"><svg class="ico"><use href="#i-send"/></svg>Invitar</button>';
       h += '</div>';
     }
 
@@ -3521,7 +3577,7 @@ function openCargoBattery(key) {
   // Update header with cargo context
   var titleEl = document.getElementById('bateria-cargo-title');
   var descEl = document.getElementById('bateria-cargo-desc');
-  if (titleEl) titleEl.innerHTML = pm.icon + ' ' + pm.label + ' <span style="font-size:14px;font-weight:400;color:var(--ink3)">— Batería de Tests</span>';
+  if (titleEl) titleEl.innerHTML = htmlEsc(pm.label) + ' <span style="font-size:15px;font-weight:500;letter-spacing:0;color:var(--ink3)">· Batería de pruebas</span>';
   if (descEl) descEl.textContent = pm.desc;
   // Switch to params tab
   adminTab('params', document.getElementById('nav-params'));
@@ -9902,8 +9958,8 @@ function renderWikiTab() {
     // Group header
     out += '<div class="wiki-group" style="margin-bottom:24px">';
     out += '<div style="display:flex;align-items:center;gap:10px;margin-top:8px">';
-    out += '<div style="font-size:12px;font-weight:700;letter-spacing:.04em;color:' + gc.text + '">' + groupName + '</div>';
-    out += '<div style="flex:1;height:1px;background:' + gc.border + '"></div>';
+    out += '<div class="wk-g">' + groupName.replace(/^\S+\s/, '') + '</div>';
+    out += '<div class="wk-gl"></div>';
     out += '</div>';
     out += '<div style="font-size:11px;color:#94a3b8;margin-bottom:14px;margin-top:6px;line-height:1.5">' + gdesc + '</div>';
 
@@ -9915,13 +9971,12 @@ function renderWikiTab() {
 
       // Header
       out += '<div style="padding:18px 20px;display:flex;align-items:flex-start;gap:14px;cursor:pointer" onclick="toggleWikiCard(this)">';
-      out += '<div style="font-size:28px;line-height:1">' + t.icon + '</div>';
       out += '<div style="flex:1;min-width:0">';
       out += '<div style="font-size:15px;font-weight:700;color:#0f172a;margin-bottom:3px">' + t.name + '</div>';
       out += '<div style="display:flex;gap:6px;flex-wrap:wrap">';
       out += '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px;background:' + gc.bg + ';color:' + gc.text + '">' + t.category + '</span>';
       out += '<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:100px;background:#f1f5f9;color:#64748b">' + t.items + ' ítems</span>';
-      out += '<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:100px;background:#f1f5f9;color:#64748b">⏱ ' + t.time + '</span>';
+      out += '<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:100px;background:#f1f5f9;color:#64748b">' + t.time + '</span>';
       out += '<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:100px;background:#f1f5f9;color:#64748b">' + t.format + '</span>';
       out += '</div></div>';
       out += '<div style="color:#94a3b8;font-size:18px;transition:transform .2s" class="wiki-chevron">▾</div>';
@@ -12032,7 +12087,7 @@ function _renderUsersList(el, users, meId) {
 
   if (users && users.length > 0) {
     // Lista completa desde Supabase
-    html += '<div style="background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(15,45,82,.06);overflow:hidden;margin-bottom:16px">';
+    html += '<div class="adm-panel" style="background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(15,45,82,.06);overflow:hidden;margin-bottom:16px">';
     users.forEach(function(u, i) {
       const uEmail   = u.email || '';
       const uRole    = u.role || 'sin rol';
@@ -12058,7 +12113,7 @@ function _renderUsersList(el, users, meId) {
             + '<option value=""'       + (!u.role             ? ' selected' : '') + '>Sin acceso</option>'
             + '</select>')
         + (isSelf
-          ? '<button onclick="openChangePasswordModal()" style="background:none;border:1.5px solid #e2e8f0;color:#64748b;cursor:pointer;font-size:11px;font-weight:600;padding:5px 10px;border-radius:7px;flex-shrink:0;font-family:inherit">🔑 Contraseña</button>'
+          ? '<button onclick="openChangePasswordModal()" style="background:none;border:1.5px solid #e2e8f0;color:#64748b;cursor:pointer;font-size:11px;font-weight:600;padding:5px 10px;border-radius:7px;flex-shrink:0;font-family:inherit"><svg class="ico" style="width:13px;height:13px;vertical-align:-2px;margin-right:4px"><use href="#i-key"/></svg>Contraseña</button>'
           : '<button data-uid="' + htmlEsc(u.id) + '" data-em="' + htmlEsc(uEmail) + '" onclick="deleteUser(this.dataset.uid, this.dataset.em)" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:18px;padding:4px 8px;border-radius:6px;flex-shrink:0" title="Eliminar usuario">×</button>')
         + '</div>';
     });
@@ -12076,10 +12131,10 @@ function _renderUsersList(el, users, meId) {
       + '<div style="font-size:11px;color:#94a3b8">Sesión activa</div>'
       + '</div>'
       + '<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:100px;background:' + rColor + '20;color:' + rColor + '">' + htmlEsc(rLabel) + '</span>'
-      + '<button onclick="openChangePasswordModal()" style="background:none;border:1.5px solid #e2e8f0;color:#64748b;cursor:pointer;font-size:11px;font-weight:600;padding:5px 10px;border-radius:7px;flex-shrink:0;font-family:inherit">🔑 Contraseña</button>'
+      + '<button onclick="openChangePasswordModal()" style="background:none;border:1.5px solid #e2e8f0;color:#64748b;cursor:pointer;font-size:11px;font-weight:600;padding:5px 10px;border-radius:7px;flex-shrink:0;font-family:inherit"><svg class="ico" style="width:13px;height:13px;vertical-align:-2px;margin-right:4px"><use href="#i-key"/></svg>Contraseña</button>'
       + '</div></div>'
       + '<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:16px 20px;font-size:12px;color:#92400e;line-height:1.6">'
-      + '⚙️ Para crear usuarios y cambiar roles desde aquí falta instalar la función <strong>psicoeval-usuarios</strong> en Supabase '
+      + 'Para crear usuarios y cambiar roles desde aquí falta instalar la función <strong>psicoeval-usuarios</strong> en Supabase '
       + '(Edge Functions → Deploy a new function). Los pasos están en <em>supabase/COMO_APLICAR.md</em>.</div>';
   }
 
@@ -16046,7 +16101,7 @@ var _arcFiltro = { q: '', mes: '' };
 async function renderArchivoTab() {
   // Respaldo de los datos: siempre visible arriba, aunque el archivo de PDF no cargue
   var bk = document.getElementById('archivo-backup');
-  if (bk) { bk.innerHTML = '<div class="bk-card"><div><div class="bk-t">💾 Respaldo de los datos</div>'
+  if (bk) { bk.innerHTML = '<div class="bk-card"><div><div class="bk-t"><svg class="ico"><use href="#i-down"/></svg>Respaldo de los datos</div>'
     + '<div class="bk-s">Descarga en un archivo todas las evaluaciones con sus respuestas, entrevistas, informes RH, invitaciones, registro de PDF y configuración. Contiene datos personales y psicológicos: guárdelo en un lugar seguro y no lo comparta.</div>'
     + '<div class="bk-s" style="margin-top:4px">Último respaldo en este equipo: <span id="backup-last" style="font-weight:600"></span></div></div>'
     + '<button class="btn btn-primary btn-sm" id="backup-btn" onclick="downloadFullBackup()">Descargar respaldo</button></div>'; _backupLabel(); }
@@ -16068,7 +16123,7 @@ async function renderArchivoTab() {
     return !q || [(c.nombre || '') + ' ' + (c.apellido || ''), c.rut, p.instalacion, p.cargo].join(' ').toLowerCase().indexOf(q) !== -1;
   });
   var pct = Math.min(100, total / _PDF_CUOTA * 100);
-  box.innerHTML = '<div class="arc-head"><div><div class="arc-t">🗂 Archivo de informes RH</div><div class="arc-s">' + rows.length + (rows.length === 1 ? ' PDF' : ' PDF') + ' · ' + Object.keys(cands).length + (Object.keys(cands).length === 1 ? ' postulante' : ' postulantes') + ' · cada versión queda tal como se generó</div></div>'
+  box.innerHTML = '<div class="arc-head"><div><div class="arc-t">Informes RH</div><div class="arc-s">' + rows.length + (rows.length === 1 ? ' PDF' : ' PDF') + ' · ' + Object.keys(cands).length + (Object.keys(cands).length === 1 ? ' postulante' : ' postulantes') + ' · cada versión queda tal como se generó</div></div>'
     + '<div class="arc-uso"><div>' + _pdfKb(total) + ' de 1 GB</div><span><i style="width:' + Math.max(pct, total ? 0.5 : 0) + '%"></i></span></div></div>'
     + '<div class="arc-filtros"><input type="search" id="arc-q" placeholder="Buscar postulante, RUT, instalación o cargo" value="' + htmlEsc(_arcFiltro.q) + '" oninput="_arcFiltro.q=this.value;clearTimeout(window._arcT);window._arcT=setTimeout(renderArchivoTab,250)">'
     + '<select onchange="_arcFiltro.mes=this.value;renderArchivoTab()"><option value="">Todos los meses</option>' + Object.keys(meses).sort().reverse().map(function(m){ return '<option value="' + m + '"' + (m === _arcFiltro.mes ? ' selected' : '') + '>' + nomMes(m) + '</option>'; }).join('') + '</select></div>'
@@ -16079,7 +16134,7 @@ async function renderArchivoTab() {
             + '<span>' + (c.id ? '<a class="rs-link" onclick="openCandDrawer(\'' + htmlEsc(c.id) + '\')">' + htmlEsc(nom) + '</a>' : htmlEsc(nom)) + '</span>'
             + '<span>' + htmlEsc(p.cargo || c.cargo || '') + '</span><span>' + htmlEsc(p.instalacion || '–') + '</span>'
             + '<span>' + x.version + (env[x.id] ? ' <em class="pdf-env">enviado</em>' : '') + ' <small>' + _pdfKb(x.bytes) + '</small></span>'
-            + '<span><button type="button" class="rs-btn" onclick="_pdfDescargar(\'' + x.ruta + '\',\'' + htmlEsc(nom).replace(/'/g, '') + ' IPS v' + x.version + '.pdf\')">⬇</button></span></div>';
+            + '<span><button type="button" class="rs-btn" onclick="_pdfDescargar(\'' + x.ruta + '\',\'' + htmlEsc(nom).replace(/'/g, '') + ' IPS v' + x.version + '.pdf\')" title="Descargar"><svg class="ico"><use href="#i-down"/></svg></button></span></div>';
         }).join('') + '</div>'
       : '<div class="pdf-vacio" style="padding:20px 0">' + (rows.length ? 'Ningún PDF coincide con la búsqueda.' : 'Aún no hay PDF archivados. Se guardan al generar el PDF del Informe RH.') + '</div>');
   _backupLabel();
