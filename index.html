@@ -1823,6 +1823,41 @@ body.adm .rpt-embed .rpt-ico{display:none}
 [data-theme="dark"] body.adm .rpt-embed .rpt-tabs{border-color:rgba(255,255,255,.07)}
 [data-theme="dark"] body.adm .rpt-embed .rpt-tab-btn:hover{background:rgba(255,255,255,.05)}
 [data-theme="dark"] body.adm .rpt-embed .rpt-tab-btn.on{background:rgba(255,255,255,.1);color:var(--ink)}
+/* Pauta de entrevista: tarjetas translúcidas dentro de la ficha (sin filtro propio: la ficha ya es el vidrio) */
+body.adm .ev-step,body.adm .ev-reloj,body.adm .ev-prev{background:rgba(255,255,255,.58);border:1px solid rgba(255,255,255,.75);border-radius:var(--r);box-shadow:var(--glass-edge),0 8px 24px -20px rgba(20,33,61,.35)}
+body.adm .ev-reloj{background:rgba(250,248,244,.96)}   /* fija arriba: casi opaca para que no se lea el texto que pasa debajo */
+body.adm .ev-step.done{border-color:rgba(22,163,74,.28)}
+body.adm .ev-aside{background:rgba(255,255,255,.3);border-left:1px solid rgba(20,33,61,.07)}
+body.adm .ev-sec,body.adm .ev-comp,body.adm .ev-exp,body.adm .ev-cc:not(.ok){background:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.75);box-shadow:var(--glass-edge)}
+body.adm .ev-sec,body.adm .ev-comp{border-radius:var(--r)}
+body.adm .ev-exp,body.adm .ev-cc{border-radius:var(--r-s)}
+body.adm .ev-cc.ev-cc.on{border:2px solid var(--accent)}
+body.adm .ev-cc.ok{background:rgba(22,163,74,.08);border-color:rgba(22,163,74,.25)}
+body.adm .ev-guion,body.adm .ev-q-main,body.adm .ev-encuadre{background:rgba(39,71,216,.06);border-left-width:2px}
+body.adm .ev-aviso{background:rgba(39,71,216,.06);border-color:rgba(39,71,216,.16);border-radius:var(--r-s)}
+body.adm .ev-hint,body.adm .ev-q-prueba{background:rgba(20,33,61,.04)}
+body.adm .ev-field input,body.adm .ev-field select,body.adm .ev-field textarea,body.adm .ev-reloj-dur{background:rgba(255,255,255,.6);border:1px solid rgba(20,33,61,.1);border-radius:var(--r-s)}
+body.adm .ev-field input:focus,body.adm .ev-field select:focus,body.adm .ev-field textarea:focus{outline:none;border-color:var(--accent-m);box-shadow:0 0 0 3px var(--accent-l)}
+body.adm .ev-pill{border-width:1px}
+body.adm .ev-pill:not([class*="sel-"]){background:rgba(255,255,255,.55)}
+body.adm .ev-pill:not([class*="sel-"]):hover{background:rgba(255,255,255,.9);color:var(--ink)}
+body.adm .ev-dot{border-width:1px}
+body.adm .ev-dot:not(.on){background:rgba(255,255,255,.6)}
+body.adm .ev-paso-bar{border:none;background:rgba(20,33,61,.07);border-radius:99px}
+body.adm .ev-paso-bar i{border-radius:99px}
+body.adm .ev-ini-ses,body.adm .ev-ini-notas,body.adm .ev-star-row{border-color:rgba(20,33,61,.07)}
+[data-theme="dark"] body.adm .ev-step,[data-theme="dark"] body.adm .ev-prev{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.07);box-shadow:var(--glass-edge)}
+[data-theme="dark"] body.adm .ev-reloj{background:rgba(28,30,40,.97);border-color:rgba(255,255,255,.08)}
+[data-theme="dark"] body.adm .ev-aside{background:rgba(255,255,255,.02);border-left-color:rgba(255,255,255,.06)}
+[data-theme="dark"] body.adm .ev-sec,[data-theme="dark"] body.adm .ev-comp,[data-theme="dark"] body.adm .ev-exp,[data-theme="dark"] body.adm .ev-cc:not(.ok){background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.07)}
+[data-theme="dark"] body.adm .ev-cc.ok{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.3)}
+[data-theme="dark"] body.adm .ev-guion,[data-theme="dark"] body.adm .ev-q-main,[data-theme="dark"] body.adm .ev-encuadre,[data-theme="dark"] body.adm .ev-aviso{background:rgba(111,139,255,.1);color:var(--ink);border-color:rgba(111,139,255,.25)}
+[data-theme="dark"] body.adm .ev-hint,[data-theme="dark"] body.adm .ev-q-prueba{background:rgba(255,255,255,.04)}
+[data-theme="dark"] body.adm .ev-field input,[data-theme="dark"] body.adm .ev-field select,[data-theme="dark"] body.adm .ev-field textarea,[data-theme="dark"] body.adm .ev-reloj-dur{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1)}
+[data-theme="dark"] body.adm .ev-pill:not([class*="sel-"]),[data-theme="dark"] body.adm .ev-dot:not(.on){background:rgba(255,255,255,.05)}
+[data-theme="dark"] body.adm .ev-pill:not([class*="sel-"]):hover{background:rgba(255,255,255,.1)}
+[data-theme="dark"] body.adm .ev-paso-bar{background:rgba(255,255,255,.08)}
+[data-theme="dark"] body.adm .ev-ini-ses,[data-theme="dark"] body.adm .ev-ini-notas,[data-theme="dark"] body.adm .ev-star-row{border-color:rgba(255,255,255,.07)}
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
   body.adm #cand-drawer{background:#f6f2eb}[data-theme="dark"] body.adm #cand-drawer{background:#14161e}
 }
@@ -14002,7 +14037,7 @@ function _evResultadoHtml(comps) {
     + '<span style="font-size:11px;font-weight:800;padding:3px 10px;border-radius:100px;background:' + b.bg + ';color:' + b.color + '">' + b.label + '</span>'
     + '<span style="font-size:11px;color:var(--ink3)">' + hechas + ' de ' + comps.length + ' competencias puntuadas</span></div>'
     + (bajas.length ? '<div style="font-size:12px;color:var(--ink2);margin-top:6px"><strong>En 1–2:</strong> ' + bajas.map(function(x){ return htmlEsc(x.name) + ' (' + x.nivel + ')'; }).join(', ') + '</div>' : '')
-    + (unos.length ? '<div style="font-size:12px;color:#b91c1c;margin-top:4px">⚠ ' + (unos.length === 1 ? 'Una competencia quedó' : unos.length + ' competencias quedaron') + ' en 1: si recomienda igual, escriba por qué en el motivo.</div>' : '')
+    + (unos.length ? '<div style="font-size:12px;color:#b91c1c;margin-top:4px">' + (unos.length === 1 ? 'Una competencia quedó' : unos.length + ' competencias quedaron') + ' en 1: si recomienda igual, escriba por qué en el motivo.</div>' : '')
     + '<div style="font-size:10.5px;color:var(--ink4);margin-top:6px">Orientación: 4 o más, sólido · 3 a 3,9, adecuado · menos de 3, débil.</div>';
 }
 // El motivo es obligatorio con observaciones, no recomendable, o recomendando con una competencia en 1
@@ -14053,7 +14088,7 @@ function _evInformeHtml(ev, compacto) {
       + ev.comp_previo.map(function(x){ return '<div style="font-size:12px;line-height:1.55;margin-bottom:5px"><strong>' + htmlEsc(x.name) + ': ' + x.nivel + '</strong>' + (x.nota ? ' · <span style="color:#475569">' + htmlEsc(x.nota) + '</span>' : '') + '</div>'; }).join('');
   }
   if (comps.some(function(x){ return x.nivel === 1; })) {
-    h += '<div style="font-size:12px;color:#b91c1c;margin-top:8px">⚠ Hay competencias en 1.</div>';
+    h += '<div style="font-size:12px;color:#b91c1c;margin-top:8px">Hay competencias en 1.</div>';
   }
   var obsV = Object.keys(_EV_SCREEN_OPTS).map(function(k){ var o = _EV_SCREEN_OPTS[k], v = (ev.screening || {})[k], i = v ? o.opts.map(_evScrSlug).indexOf(v) : -1; return i >= 0 ? o.label + ': ' + o.opts[i].toLowerCase() : ''; }).filter(Boolean);
   if (!compacto && obsV.length) h += '<div style="font-size:12px;color:#334155;line-height:1.6;margin-top:10px"><strong>Observaciones:</strong> ' + htmlEsc(obsV.join(' · ')) + '</div>';
@@ -14191,8 +14226,7 @@ function _tabEntrevistasDrawer(c) {
   main += '<div id="ev-borrador-aviso"></div>';
   main += '<div class="ev-reloj" id="ev-reloj"></div>';
   if (entrevistas.length) {
-    var tipoIc = { rrhh:'🧑‍💼', tecnica:'🔧', psicolaboral:'🧠', panel:'👥' };
-    main += '<details class="ev-prev"><summary><span>🗓 Entrevistas guardadas (' + entrevistas.length + ')</span>'
+    main += '<details class="ev-prev"><summary><span>Entrevistas guardadas (' + entrevistas.length + ')</span>'
       + entrevistas.slice().reverse().slice(0, 3).map(function(ev){
           var dm = _EV_DICTAMEN.filter(function(d){ return d.val === ev.dictamen; })[0];
           var f = ev.fecha || '';
@@ -14205,7 +14239,7 @@ function _tabEntrevistasDrawer(c) {
       var f = ev.fecha || '';
       try { f = new Date(ev.fecha + 'T12:00').toLocaleDateString('es-CL', { day:'2-digit', month:'long', year:'numeric' }); } catch(e) {}
       main += '<div class="ev-prev-item"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'
-        + '<strong style="flex:1;font-size:13.5px">' + (tipoIc[ev.tipo] || '') + ' ' + htmlEsc(f) + (ev.entrevistador ? ' · ' + htmlEsc(ev.entrevistador) : '') + '</strong>'
+        + '<strong style="flex:1;font-size:13.5px">' + htmlEsc(f) + (ev.entrevistador ? ' · ' + htmlEsc(ev.entrevistador) : '') + '</strong>'
         + '<button type="button" class="btn btn-ghost btn-sm" style="color:#b91c1c" onclick="deleteEntrevistaEntry(\'' + c.id + '\',' + ev.id + ')">Eliminar</button></div>'
         + _evInformeHtml(ev, false) + '</div>';
     });
@@ -14217,7 +14251,7 @@ function _tabEntrevistasDrawer(c) {
     return '<section class="ev-step' + (n === 1 ? ' open' : '') + '" id="ev-step-' + n + '">'
       + '<button type="button" class="ev-step-h" onclick="_evToggle(' + n + ')">'
       + '<span class="ev-step-n">' + n + '</span>'
-      + '<span class="ev-step-t">' + p[1] + ' ' + p[0] + '<small>' + sub + '</small><span class="ev-step-sum" id="ev-sum-' + n + '"></span></span>'
+      + '<span class="ev-step-t">' + p[0] + '<small>' + sub + '</small><span class="ev-step-sum" id="ev-sum-' + n + '"></span></span>'
       + '<span class="ev-step-tm" id="ev-tm-' + n + '"></span><span class="ev-step-st" id="ev-st-' + n + '"></span><span class="ev-step-chev">▾</span></button>'
       + '<div class="ev-step-b"><div class="ev-step-in">' + cuerpo
 
@@ -14236,7 +14270,7 @@ function _tabEntrevistasDrawer(c) {
     var p1 = '<div class="ev-ini-ses"><div class="ev-ini-ses-t">Datos de la sesión</div><div class="ev-ini-g5">'
     + '<div class="ev-field"><label>Fecha</label><input type="date" id="ef-fecha" value="' + today + '"></div>'
     + '<input type="hidden" id="ef-hora" value="' + horaAhora + '"><input type="hidden" id="ef-tipo" value="' + htmlEsc(pref.tipo || 'psicolaboral') + '">'
-    + '<div class="ev-field"><label>Modalidad</label><select id="ef-modalidad">' + opcion('presencial', '🏢 Presencial', pref.modalidad) + opcion('online', '🖥 Online', pref.modalidad) + opcion('terreno', '🌍 En terreno', pref.modalidad) + '</select></div>'
+    + '<div class="ev-field"><label>Modalidad</label><select id="ef-modalidad">' + opcion('presencial', 'Presencial', pref.modalidad) + opcion('online', 'Online', pref.modalidad) + opcion('terreno', 'En terreno', pref.modalidad) + '</select></div>'
     + '<div class="ev-field"><label>Entrevistador/a</label><input type="text" id="ef-entrevistador" value="' + htmlEsc(pref.entrevistador) + '" placeholder="Nombre del evaluador/a" oninput="var g=document.getElementById(\'ev-guion-nom\');if(g)g.textContent=this.value.trim()||\'___\'"></div>'
     + '</div></div>'
     + '<div class="ev-ini"><span class="ev-ini-n">1</span><div class="ev-ini-c"><div class="ev-ini-t">Salude y presente la entrevista</div>'
@@ -14256,7 +14290,7 @@ function _tabEntrevistasDrawer(c) {
     + _RH_JORNADAS.map(function(j){ return opcion(j[0], j[1], evPost.turno || '4x4_rotativo'); }).join('') + '</select>'
     + '<input type="text" id="ef-turno-otra" value="' + htmlEsc(evPost.turno_otra || '') + '" placeholder="Ej: 5x2 día" style="margin-top:6px;display:' + (evPost.turno === 'otra' ? '' : 'none') + '"></div>'
     + '</div></div></div>'
-    + '<div class="ev-field ev-ini-notas"><label>📝 Anotaciones al inicio</label><textarea id="ef-notas-inicio" rows="2" placeholder="Primeras impresiones y lo que surja al comenzar: puntualidad, presentación, disposición, cómo llega a la entrevista, condiciones de la sesión (lugar, conexión), lo que la persona comenta espontáneamente…"></textarea></div>';
+    + '<div class="ev-field ev-ini-notas"><label>Anotaciones al inicio</label><textarea id="ef-notas-inicio" rows="2" placeholder="Primeras impresiones y lo que surja al comenzar: puntualidad, presentación, disposición, cómo llega a la entrevista, condiciones de la sesión (lugar, conexión), lo que la persona comenta espontáneamente…"></textarea></div>';
   main += paso(1, 'Presentación y a qué postula', p1);
 
   // 2. Trayectoria: lo que la persona declaró al postular, para verificar
@@ -14326,7 +14360,7 @@ function _tabEntrevistasDrawer(c) {
     var qs = comp.questions.map(_preg).join('');
     if (comp.star) {
       p3 += '<div class="ev-comp" data-star="1" data-sm="" data-sidx="' + nS + '"' + attrs + ' style="display:' + (nS ? 'none' : '') + '">'
-        + '<div class="ev-comp-h"><span style="font-size:20px">' + comp.icon + '</span><div><div class="ev-comp-name">' + comp.name + '</div><div class="ev-comp-def">' + comp.def + '</div></div></div>'
+        + '<div class="ev-comp-h"><div><div class="ev-comp-name">' + comp.name + '</div><div class="ev-comp-def">' + comp.def + '</div></div></div>'
         + _preg(comp.questions[0], 0)
         + '<details class="ev-mas" style="margin-top:6px"><summary>' + (comp.questions.length - 1) + ' preguntas más</summary><div style="padding-top:4px">' + comp.questions.slice(1).map(function(q){ return _preg(q, 1); }).join('') + '</div></details>'
         + '<div class="ev-star"><div class="ev-star-t">¿Qué cubrió el relato? Marque mientras escucha</div><div class="ev-star-b">'
@@ -14337,13 +14371,13 @@ function _tabEntrevistasDrawer(c) {
       return;
     }
     p4 += '<div class="ev-comp ev-fila"' + attrs.replace('data-nivel="0"', 'data-nivel="' + (sg ? sg.n : 0) + '"') + '>'
-      + '<div class="ev-fila-h" onclick="_evFilaToggle(this, event)"><span class="ev-fila-ic">' + comp.icon + '</span>'
+      + '<div class="ev-fila-h" onclick="_evFilaToggle(this, event)">'
       + '<div class="ev-fila-nm"><b>' + comp.name + '</b><small>' + (sg ? htmlEsc(sg.fuente) : _evSinFuente(comp.key, c)) + '</small></div>'
       + (modo === 'profundizar' ? '<span class="ev-fila-tag">Profundizar</span>' : modo === 'explorar' ? '<span class="ev-fila-tag">Explorar</span>' : '')
       + '<span class="ev-fila-lv"></span>'
       + '<span class="ev-fila-tg">▸</span></div>'
       + (contraste ? '<div class="ev-fila-con"><b>Contraste:</b> ' + comp.contraste[0] + ' <span>' + comp.contraste[1] + '</span></div>' : '')
-      + (comp.key === 'identificacion' ? '<div class="ev-sug-rev" id="ev-ident-rev" style="display:none">⚠ La trayectoria declarada se corrigió o no se pudo verificar en la entrevista: revise la sugerencia.</div>' : '')
+      + (comp.key === 'identificacion' ? '<div class="ev-sug-rev" id="ev-ident-rev" style="display:none">La trayectoria declarada se corrigió o no se pudo verificar en la entrevista: revise la sugerencia.</div>' : '')
       + '<div class="ev-fila-b"><div class="ev-fila-in"><div class="ev-comp-def" style="margin:0 0 8px">' + comp.def + '</div>'
       + (_AVISO[modo] ? '<div class="ev-sug-aviso ev-sug-aviso-' + modo + '">' + _AVISO[modo] + '</div>' : '')
       + (comp.key === 'integridad' && _dpInteg.length ? '<div class="ev-q-prueba"><span>Desde la prueba de integridad</span>' + _dpInteg.map(function(x){ return '<div>' + htmlEsc(x.q) + '</div>'; }).join('') + '</div>' : '')
@@ -14384,7 +14418,7 @@ function _tabEntrevistasDrawer(c) {
   _EV_DICTAMEN.forEach(function(d) {
     p5 += '<label class="ev-dictamen-opt" style="cursor:pointer" onclick="_evDictamenSel(\'' + d.val + '\')" id="ev-dict-opt-' + d.val + '">'
       + '<input type="radio" name="ev-dictamen" value="' + d.val + '" style="accent-color:' + d.color + '">'
-      + '<span style="font-size:14px">' + d.icon + '</span><div style="flex:1;font-size:13px;font-weight:700;color:' + d.color + '">' + d.label + '</div></label>';
+      + '<i class="pb-dot" style="width:8px;height:8px;background:' + d.color + '"></i><div style="flex:1;font-size:13px;font-weight:700;color:' + d.color + '">' + d.label + '</div></label>';
   });
   p5 += '</div>';
   p5 += '<div class="ev-field" id="ev-motivo-wrap" style="margin-top:12px;display:none"><label id="ev-motivo-lbl">Motivo (obligatorio)</label>'
@@ -14439,7 +14473,7 @@ function _evInit(c) {
     var ult = evs[evs.length - 1];
     _evAplicar(_evDesdeGuardada(ult));
     var av = document.getElementById('ev-borrador-aviso'), f = ult.fecha ? ult.fecha.split('-').reverse().join('-') : '';
-    if (av) av.innerHTML = '<div class="ev-aviso" style="background:#eff6ff;border-color:#bfdbfe;color:#1e40af">✏️ Editando la entrevista guardada' + (f ? ' del ' + f : '')
+    if (av) av.innerHTML = '<div class="ev-aviso" style="background:#eff6ff;border-color:#bfdbfe;color:#1e40af">Editando la entrevista guardada' + (f ? ' del ' + f : '')
       + '. Al guardar, los cambios quedan en esta misma entrevista. <a onclick="_evNuevaEntrevista(\'' + c.id + '\')">Iniciar otra entrevista distinta</a></div>';
   }
   _evCompIr(_evCompIdx);
@@ -14590,11 +14624,11 @@ function _evRelojPintar() {
       }).join('') + '</div></div><div class="ev-reloj-n"><b>' + _evMmss(_evT.total) + '</b><small>de <select class="ev-reloj-dur" onchange="this.blur();_evDuracionSet(this.value)" title="Duración sugerida de la entrevista">'
     + _EV_DURACIONES.concat(_EV_DURACIONES.indexOf(tot) < 0 ? [tot] : []).map(function(d){ return '<option value="' + d + '"' + (d === tot ? ' selected' : '') + '>' + d + '</option>'; }).join('')
     + '</select> min sugeridos</small></div>'
-    + '<button type="button" class="btn btn-ghost btn-sm" onclick="_evRelojToggle()">' + (_evTCorre ? '⏸ Pausar' : (_evT.total ? '▶ Seguir' : '▶ Iniciar')) + '</button>';
+    + '<button type="button" class="btn btn-ghost btn-sm" onclick="_evRelojToggle()">' + (_evTCorre ? 'Pausar' : (_evT.total ? 'Seguir' : 'Iniciar')) + '</button>';
   _EV_PESO.forEach(function(m, i) {
     var el = document.getElementById('ev-tm-' + (i + 1)); if (!el) return;
     var u = _evT.pasos[i + 1] || 0, s = _evSegPaso(i);
-    el.textContent = '⏱ ' + _evMinTxt(s) + (i === 2 ? ' (≈ ' + _evMinTxt(_evSegComp()) + ' c/u)' : '') + (u >= 30 ? ' · usó ' + Math.round(u / 60) : '');
+    el.textContent = _evMinTxt(s) + (i === 2 ? ' (≈ ' + _evMinTxt(_evSegComp()) + ' c/u)' : '') + (u >= 30 ? ' · usó ' + Math.round(u / 60) : '');
     el.classList.toggle('sobre', u > s + 60);
   });
   var du = document.getElementById('ev-dur-txt'); if (du) du.textContent = tot + ' minutos';
@@ -14647,7 +14681,7 @@ function _evProgreso() {
   est[6] = [!!dict && !!motivoOk, dict && motivoOk ? '✓' : ''];
   _evEstPasos = est;
   var oa = document.getElementById('ev-obs-aviso');
-  if (oa) { var cr = _evConductaDe(_evGetScreen()).rojas; oa.style.display = cr.length ? '' : 'none'; oa.innerHTML = cr.length ? '⚠ <strong>Observaciones en rojo:</strong> ' + htmlEsc(cr.join(' · ')) + '. Considérelas al fundamentar el dictamen.' : ''; }
+  if (oa) { var cr = _evConductaDe(_evGetScreen()).rojas; oa.style.display = cr.length ? '' : 'none'; oa.innerHTML = cr.length ? '<strong>Observaciones en rojo:</strong> ' + htmlEsc(cr.join(' · ')) + '. Considérelas al fundamentar el dictamen.' : ''; }
   _evResumenesPasos(m, comps, dict);
   _evDatosPintar();
   for (var n = 1; n <= _EV_PASOS.length; n++) {
@@ -14701,7 +14735,7 @@ function _evDatosPintar() {
   var v = function(id){ return ((document.getElementById(id) || {}).value || '').trim(); };
   if (!v('ef-fecha') || !v('ef-entrevistador')) d.hidden = false;
   var f = v('ef-fecha').split('-').reverse().join('-'), turno = v('ef-turno') === 'otra' ? v('ef-turno-otra') : _evTxtSel('ef-turno');
-  var partes = [f + (v('ef-hora') ? ' · ' + v('ef-hora') : ''), _evTxtSel('ef-tipo'), _evTxtSel('ef-modalidad'), v('ef-entrevistador'), v('ef-cargo'), v('ef-instalacion') ? '📍 ' + v('ef-instalacion') : '', turno].filter(Boolean);
+  var partes = [f + (v('ef-hora') ? ' · ' + v('ef-hora') : ''), _evTxtSel('ef-tipo'), _evTxtSel('ef-modalidad'), v('ef-entrevistador'), v('ef-cargo'), v('ef-instalacion') ? '' + v('ef-instalacion') : '', turno].filter(Boolean);
   box.innerHTML = '<span class="ev-datos-t">' + htmlEsc(partes.join(' · ')) + '</span>'
     + (v('ef-instalacion') ? '' : '<span class="ev-datos-falta">Falta la instalación</span>')
     + '<button type="button" class="btn btn-ghost btn-sm" onclick="_evDatosAbrir()">' + (d.hidden ? 'Cambiar datos' : 'Listo') + '</button>';
@@ -14748,7 +14782,7 @@ function _evBorradorRestaurar(candId) {
   _evAplicar(d);
   _evBorradorTs = d.ts;
   var av = document.getElementById('ev-borrador-aviso');
-  if (av) av.innerHTML = '<div class="ev-aviso">📝 Se recuperaron cambios sin guardar del ' + new Date(d.ts).toLocaleDateString('es-CL') + ' a las '
+  if (av) av.innerHTML = '<div class="ev-aviso">Se recuperaron cambios sin guardar del ' + new Date(d.ts).toLocaleDateString('es-CL') + ' a las '
     + new Date(d.ts).toLocaleTimeString('es-CL', { hour:'2-digit', minute:'2-digit', hour12:false })
     + (d.edita ? ' (sobre la entrevista guardada)' : '') + '. <a onclick="_evBorradorDescartar(\'' + candId + '\')">Descartar cambios</a></div>';
   return true;
@@ -14980,7 +15014,7 @@ async function saveEntrevistaDrawer(candId) {
         etapaMsg = ' · etapa: ' + getPipelineMeta(destino).label;
       } catch(e) { etapaMsg = ' · no se pudo cambiar la etapa'; }
     }
-    toast((edita ? '🗓 Entrevista actualizada ✓' : '🗓 Entrevista guardada ✓') + etapaMsg, 'ok');
+    toast((edita ? 'Entrevista actualizada ✓' : 'Entrevista guardada ✓') + etapaMsg, 'ok');
     var updated = Object.assign({}, c, { scores: sc });
     _renderDrawerHeader(updated);   // el encabezado muestra el dictamen nuevo
     _switchDrawerTab('entrevistas', updated);
