@@ -1861,6 +1861,54 @@ body.adm .ev-ini-ses,body.adm .ev-ini-notas,body.adm .ev-star-row{border-color:r
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
   body.adm #cand-drawer{background:#f6f2eb}[data-theme="dark"] body.adm #cand-drawer{background:#14161e}
 }
+
+/* Informe RH (sistema de diseño del panel): ventana de vidrio sobre la ficha; secciones
+   como títulos con línea fina (no franjas azules) y opciones en control segmentado */
+body.adm .rh-ov{background:rgba(20,33,61,.32)}
+body.adm .rh-box{
+  --surface:rgba(255,255,255,.58); --surface2:rgba(255,255,255,.44);
+  --border:rgba(20,33,61,.09); --ink:rgb(20 33 61); --ink2:#2b3654; --ink3:#5b6478; --ink4:#9aa1b2;
+  --accent:rgb(39 71 216); --accent-l:rgba(39,71,216,.08); --r-s:8px; --r:14px;
+  --glass-edge:inset 0 1px 0 rgba(255,255,255,.85);
+  background:rgba(248,245,240,.86);-webkit-backdrop-filter:blur(40px) saturate(180%);backdrop-filter:blur(40px) saturate(180%);
+  border:1px solid rgba(255,255,255,.75);border-radius:20px;box-shadow:var(--glass-edge),0 40px 90px -30px rgba(20,33,61,.55);width:min(900px,100%)}
+body.adm .rh-top{padding:18px 24px;border-bottom-color:rgba(20,33,61,.07)}
+body.adm .rh-body{padding:20px 24px 24px;gap:14px}
+body.adm .rh-pie{padding:14px 24px;border-top-color:rgba(20,33,61,.07);background:rgba(255,255,255,.35);border-radius:0 0 20px 20px}
+body.adm .rh-sec{background:none;color:var(--ink);font-size:13px;letter-spacing:-.01em;text-transform:none;font-weight:800;padding:18px 0 0;margin-top:8px;border-top:1px solid rgba(20,33,61,.08);border-radius:0}
+body.adm .rh-box .field label{font-size:11px;letter-spacing:.06em;color:var(--ink4)}
+body.adm .rh-in{border:1px solid rgba(20,33,61,.1);background:rgba(255,255,255,.65);border-radius:var(--r-s);box-shadow:inset 0 1px 2px rgba(20,33,61,.04)}
+body.adm .rh-in:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-l)}
+body.adm .rh-box .reg-chips{display:flex;width:fit-content;max-width:100%;flex-wrap:wrap;gap:2px;padding:3px;border-radius:10px;background:rgba(20,33,61,.05);margin-top:2px}
+body.adm .rh-box .reg-chip{padding:7px 13px;border:none;border-radius:8px;background:transparent;font-size:12.5px;color:var(--ink3)}
+body.adm .rh-box .reg-chip:hover{color:var(--ink)}
+body.adm .rh-box .reg-chip:has(input:checked){background:rgba(255,255,255,.95);color:var(--ink);box-shadow:var(--glass-edge),0 1px 3px rgba(20,33,61,.12)}
+body.adm .rh-box .rh-falta .reg-chips{outline:2px solid #dc2626;outline-offset:2px}
+body.adm .rh-tbl{background:rgba(255,255,255,.5);border-radius:var(--r);overflow:hidden;box-shadow:var(--glass-edge)}
+body.adm .rh-tbl th{padding:10px 10px;font-size:10.5px;letter-spacing:.06em;color:var(--ink4);border-bottom-color:rgba(20,33,61,.08)}
+body.adm .rh-tbl td{padding:6px 10px;border-bottom-color:rgba(20,33,61,.05)}
+body.adm .rh-tbl tr:last-child td{border-bottom:none}
+body.adm .rh-tbl select.rh-in{min-width:96px}
+body.adm .rh-box .rs-btn .ico,body.adm .pdf-fila .ico{width:14px;height:14px}
+body.adm .rh-box .dh-close{display:inline-flex;align-items:center;justify-content:center}
+body.adm .pdf-fila{background:rgba(255,255,255,.55);border-color:rgba(255,255,255,.75);box-shadow:var(--glass-edge);border-radius:var(--r-s)}
+body.adm .pdf-ic{display:inline-flex;color:var(--ink4)}
+[data-theme="dark"] body.adm .rh-ov{background:rgba(0,0,0,.55)}
+[data-theme="dark"] body.adm .rh-box{
+  --surface:rgba(30,33,44,.55); --surface2:rgba(255,255,255,.05); --border:rgba(255,255,255,.08);
+  --ink:#f2f3f7; --ink2:rgba(235,236,245,.72); --ink3:rgba(235,236,245,.5); --ink4:rgba(235,236,245,.32);
+  --accent:#6f8bff; --accent-l:rgba(111,139,255,.16); --glass-edge:inset 0 1px 0 rgba(255,255,255,.07);
+  background:rgba(20,22,30,.88);border-color:rgba(255,255,255,.08)}
+[data-theme="dark"] body.adm .rh-top,[data-theme="dark"] body.adm .rh-pie,[data-theme="dark"] body.adm .rh-sec{border-color:rgba(255,255,255,.07)}
+[data-theme="dark"] body.adm .rh-pie{background:rgba(255,255,255,.03)}
+[data-theme="dark"] body.adm .rh-in{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1)}
+[data-theme="dark"] body.adm .rh-box .reg-chips{background:rgba(255,255,255,.05)}
+[data-theme="dark"] body.adm .rh-box .reg-chip:has(input:checked){background:rgba(255,255,255,.14)}
+[data-theme="dark"] body.adm .rh-tbl,[data-theme="dark"] body.adm .pdf-fila{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.07)}
+[data-theme="dark"] body.adm .rh-tbl th,[data-theme="dark"] body.adm .rh-tbl td{border-color:rgba(255,255,255,.06)}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  body.adm .rh-box{background:#f8f5f0}[data-theme="dark"] body.adm .rh-box{background:#14161e}
+}
 </style>
 </head>
 <body>
@@ -15610,16 +15658,16 @@ async function abrirInformeRH(id) {
       + _RH_NIVELES.map(function(n){ return '<option' + (d.ideales[k.key] === n ? ' selected' : '') + '>' + n + '</option>'; }).join('') + '</select></td><td>'
       + '<select id="rh-n-' + k.key + '" class="rh-in" style="padding:5px 8px"><option value="">—</option>'
       + _RH_NIVELES.map(function(n){ return '<option' + (d.niveles[k.key] === n ? ' selected' : '') + '>' + n + '</option>'; }).join('') + '</select></td>'
-      + '<td style="font-size:11px;color:var(--ink4)">' + (f ? '💡 ' + htmlEsc(f.fuente) : 'Sin resultado: Medio por defecto') + '</td></tr>';
+      + '<td style="font-size:11px;color:var(--ink4)">' + (f ? htmlEsc(f.fuente) : 'Sin resultado: Medio por defecto') + '</td></tr>';
   }).join('');
   var sec = function(t){ return '<div class="rh-sec">' + t + '</div>'; };
   var ov = document.createElement('div');
   ov.id = 'rh-overlay';
   ov.className = 'rh-ov';
   ov.innerHTML = '<div class="rh-box">'
-    + '<div class="rh-top"><div><div style="font-size:17px;font-weight:800">📄 Informe RH · R-GP-054</div>'
+    + '<div class="rh-top"><div><div style="font-size:17px;font-weight:800;letter-spacing:-.02em">Informe RH · R-GP-054</div>'
     + '<div style="font-size:12px;color:var(--ink3)">' + htmlEsc(((c.nombre || '') + ' ' + (c.apellido || '')).trim()) + ' · ' + (guardado ? 'editando el informe guardado' : 'propuesta del panel a partir de las pruebas, la entrevista y la referencia') + '</div></div>'
-    + '<button class="dh-close" onclick="document.getElementById(\'rh-overlay\').remove()">✕</button></div>'
+    + '<button class="dh-close" title="Cerrar" aria-label="Cerrar" onclick="document.getElementById(\'rh-overlay\').remove()"><svg class="ico"><use href="#i-x"/></svg></button></div>'
     + '<div class="rh-body">'
     + '<div class="rh-grid2"><div class="field" data-rh="lista"><label>Lista <span class="rh-req">*</span></label>' + chips('lista', [['1','1'],['2','2'],['3','3']], d.lista) + '</div>'
     + '<div class="field" data-rh="zonal"><label>Zonal <span class="rh-req">*</span></label>' + chips('zonal', [['norte','Norte'],['centro','Centro'],['sur','Sur']], d.zonal) + '</div></div>'
@@ -15632,7 +15680,7 @@ async function abrirInformeRH(id) {
     + '<div class="field" data-rh="instalacion"><label>Instalación <span class="rh-req">*</span></label>' + input('instalacion', d.instalacion, 'Ej: Rehau') + '</div></div>'
     + '<div class="field" data-rh="publico"><label>Atención a público <span class="rh-req">*</span></label>' + chips('publico', [['si','Recomendable'],['no','No Recomendable']], d.publico) + '</div>'
     + '<table class="rh-tbl"><thead><tr><th>Competencia</th><th>Nivel ideal</th><th>Nivel obtenido</th><th>Sugerencia</th></tr></thead><tbody>' + filas + '</tbody></table>'
-    + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:4px 0 2px"><button class="rs-btn" onclick="_rhRecalcular()">↻ Recalcular desde los resultados</button>'
+    + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:4px 0 2px"><button class="rs-btn" onclick="_rhRecalcular()"><svg class="ico"><use href="#i-redo"/></svg>Recalcular desde los resultados</button>'
     + '<span style="font-size:11.5px;color:var(--ink4)">Vuelve a armar fortalezas y debilidades con los niveles e ideales de la tabla y los perfiles DISC y Personalidad laboral (sin IA). Úselo si cambió niveles o ideales.</span></div>'
     + '<div class="field"><label>Fortalezas <span style="text-transform:none;font-weight:500">(una por línea)</span></label>' + area('fortalezas', d.fortalezas, 5) + '</div>'
     + '<div class="field"><label>Debilidades <span style="text-transform:none;font-weight:500">(una por línea)</span></label>' + area('debilidades', d.debilidades, 3) + '</div>'
@@ -15649,8 +15697,8 @@ async function abrirInformeRH(id) {
     + sec('Cierre')
     + '<div class="field" data-rh="recomendacion"><label>Recomendación de contratación <span class="rh-req">*</span></label>' + chips('recomendacion', [['plazo_fijo','Plazo fijo'],['indefinido','Indefinido'],['no_contratar','No contratar']], d.recomendacion) + '</div>'
     + '<div class="field"><label>Detalle de la recomendación <span style="text-transform:none;font-weight:500">(opcional)</span></label>' + input('detalle', d.detalle, 'Ej: con inducción clara y seguimiento cercano en terreno de la jefatura directa') + '</div>'
-    + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><button class="rs-btn prim" onclick="_rhRedactarLocal()">📝 Redactar integración</button>'
-    + '<button class="rs-btn" id="rh-btn-ia" onclick="_rhRedactar()">✨ Redactar con IA</button></div>'
+    + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><button class="rs-btn prim" onclick="_rhRedactarLocal()">Redactar integración</button>'
+    + '<button class="rs-btn" id="rh-btn-ia" onclick="_rhRedactar()">Redactar con IA</button></div>'
     + '<div style="font-size:11.5px;color:var(--ink4);margin-top:6px">Ambas redactan las Observaciones finales y el Refuerzo de habilidades solo a partir de las fortalezas, debilidades, niveles y la recomendación que usted validó (no usan sus apuntes). '
     + '<strong>Redactar integración</strong> trabaja en este computador, al instante y sin costo. <strong>Con IA</strong> logra una prosa más elaborada; no envía nombre, RUT ni datos de contacto. Revise el texto antes de generar el PDF.</div>'
     + '<div class="field"><label>Observaciones finales</label>'
@@ -15662,7 +15710,7 @@ async function abrirInformeRH(id) {
     + '<div style="font-size:11.5px;color:var(--ink4)">Las secciones B (entrevista operacional) y C (verificación de domicilio) salen en blanco para que las complete el supervisor.</div>'
     + '</div>'
     + '<div class="rh-pie">' + (guardado ? '<a class="rs-link" onclick="_rhRestablecer()" style="margin-right:auto">Volver a la propuesta del panel</a>' : '<span style="margin-right:auto"></span>')
-    + '<button class="rs-btn" onclick="_rhGuardar()">Guardar</button><button class="rs-btn prim" onclick="_rhPdf()">⬇ Guardar y generar PDF</button></div>'
+    + '<button class="rs-btn" onclick="_rhGuardar()">Guardar</button><button class="rs-btn prim" onclick="_rhPdf()"><svg class="ico"><use href="#i-down"/></svg>Guardar y generar PDF</button></div>'
     + '</div>';
   document.body.appendChild(ov);
   _rhPdfListaPintar(c.id);
@@ -15688,7 +15736,7 @@ async function _rhRedactar() {
   var ta = document.getElementById('rh-observaciones'), tr = document.getElementById('rh-refuerzo');
   if (((ta && ta.value.trim()) || (tr && tr.value.trim())) && !(await appConfirm('¿Reemplazar las Observaciones finales y el Refuerzo de habilidades por la redacción de la IA?'))) return;
   var btn = document.getElementById('rh-btn-ia');
-  if (btn) { btn.disabled = true; btn.textContent = '✨ Redactando…'; }
+  if (btn) { btn.disabled = true; btn.textContent = 'Redactando…'; }
   try {
     var r = await fetch(SUPA_URL + '/functions/v1/psicoeval-redactar', {
       method: 'POST',
@@ -15707,9 +15755,9 @@ async function _rhRedactar() {
     var nom = ((c.nombre || '').trim().split(/\s+/)[0]) || ((c.nombre || '') + ' ' + (c.apellido || '')).trim();
     if (ta) ta.value = j.texto.replace(/\[NOMBRE\]/g, nom);
     if (tr && Array.isArray(j.refuerzo) && j.refuerzo.length) tr.value = _rhMayusTras2p(j.refuerzo.join('\n'));
-    toast('✨ Texto redactado: revíselo antes de generar el PDF', 'ok');
+    toast('Texto redactado: revíselo antes de generar el PDF', 'ok');
   } catch(e) { toast('No se pudo redactar: ' + e.message, 'er'); }
-  finally { if (btn) { btn.disabled = false; btn.textContent = '✨ Redactar con IA'; } }
+  finally { if (btn) { btn.disabled = false; btn.textContent = 'Redactar con IA'; } }
 }
 
 // ── Redacción sin IA (en el computador): plantillas a partir de lo que el psicólogo validó ──
@@ -15844,7 +15892,7 @@ async function _rhRedactarLocal() {
   var r = _rhRedaccionLocal(d, c);
   if (ta) ta.value = r.texto;
   if (tr) tr.value = _rhMayusTras2p(r.refuerzo.join('\n'));
-  toast('📝 Texto redactado: revíselo antes de generar el PDF', 'ok');
+  toast('Texto redactado: revíselo antes de generar el PDF', 'ok');
 }
 
 // Recalcula fortalezas y debilidades con lo que hay en la tabla (en el computador, sin IA)
@@ -15986,9 +16034,9 @@ async function _rhPdfListaPintar(candId) {
     var rows = await _pdfLista(candId), c = (await getDB()).find(function(x){ return x.id === candId; }) || {};
     var nom = ((c.nombre || '') + ' ' + (c.apellido || '')).trim(), env = _pdfEnviada(rows, c);
     box.innerHTML = rows.length ? rows.map(function(x){
-      return '<div class="pdf-fila"><span class="pdf-ic">📄</span><span class="pdf-t">' + _pdfFecha(x.generado) + ' <small>· versión ' + x.version + ' · ' + _pdfKb(x.bytes) + '</small></span>'
+      return '<div class="pdf-fila"><span class="pdf-ic"><svg class="ico"><use href="#i-doc"/></svg></span><span class="pdf-t">' + _pdfFecha(x.generado) + ' <small>· versión ' + x.version + ' · ' + _pdfKb(x.bytes) + '</small></span>'
         + (x.id === env ? '<span class="pdf-env">Enviado</span>' : '')
-        + '<button type="button" class="rs-btn" onclick="_pdfDescargar(\'' + x.ruta + '\',\'' + htmlEsc(nom).replace(/'/g, '') + ' IPS v' + x.version + '.pdf\')">⬇ Descargar</button></div>';
+        + '<button type="button" class="rs-btn" onclick="_pdfDescargar(\'' + x.ruta + '\',\'' + htmlEsc(nom).replace(/'/g, '') + ' IPS v' + x.version + '.pdf\')"><svg class="ico"><use href="#i-down"/></svg>Descargar</button></div>';
     }).join('') : '<span class="pdf-vacio">Aún no hay PDF archivados. Cada vez que genere el PDF se guarda una copia aquí.</span>';
   } catch(e) { box.innerHTML = '<span class="pdf-vacio">No se pudo cargar el archivo de PDF: ' + htmlEsc(e.message) + '</span>'; }
 }
