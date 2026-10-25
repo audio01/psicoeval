@@ -1976,6 +1976,7 @@ body.adm .pdf-ic{display:inline-flex;color:var(--ink4)}
 .ch-aviso b{display:block}
 [data-theme="dark"] .vx-res span{background:rgba(255,255,255,.05)}
 @media (max-width:700px){.vx-res{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.vac-fija{cursor:default;border-color:var(--accent-m,rgba(39,71,216,.3))!important;background:var(--accent-l,rgba(39,71,216,.06))!important}
 .vac-datos{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
 .vac-datos i{font-style:normal;font-size:11.5px;font-weight:600;color:var(--ink2);background:rgba(20,33,61,.05);border-radius:100px;padding:3px 9px}
 .reg-op .vac-datos i{font-weight:500}
@@ -5573,6 +5574,18 @@ async function _regVacCargo() {
 }
 async function _regVacCargar(perfil) {
   var campo = document.getElementById('vac-campo'), ops = document.getElementById('vac-ops'); if (!campo || !ops) return;
+  // Con invitación para una vacante: se muestra fija, sin lista (el servidor usa la de la invitación)
+  var vi = _INV && _INV.vacante && _INV.vacante.perfil === perfil ? _INV.vacante : null;
+  if (vi) {
+    campo.querySelector('label').textContent = 'Postulas a';
+    ops.innerHTML = '<input type="radio" name="vacante" value="' + htmlEsc(vi.id) + '" checked hidden><div class="reg-op vac-fija"><span>'
+      + (vi.cargo_nombre && vi.cargo_nombre !== (PERFIL_META[vi.perfil] || {}).label ? '<b style="display:block">' + htmlEsc(vi.cargo_nombre) + '</b>' : '') + htmlEsc(_vacTxt(vi))
+      + (vi.detalle ? '<small style="display:block;font-weight:500;color:var(--ink3);margin-top:2px">' + htmlEsc(vi.detalle) + '</small>' : '')
+      + (_vacDatos(vi).length ? '<span class="vac-datos">' + _vacDatos(vi).map(function(x){ return '<i>' + htmlEsc(x) + '</i>'; }).join('') + '</span>' : '') + '</span></div>';
+    campo.style.display = '';
+    return;
+  }
+  campo.querySelector('label').textContent = '¿A qué vacante postulas? *';
   var lista = _vacPub[perfil];
   if (!lista) { try { lista = await _candidateRpc('vacantes_publicas', { p_perfil: perfil }); } catch(e) { lista = []; } _vacPub[perfil] = lista = Array.isArray(lista) ? lista : []; }
   if (!lista.length) { campo.style.display = 'none'; ops.innerHTML = ''; return; }
@@ -5594,7 +5607,6 @@ async function _vacCargar() {
   if (!r.ok) throw new Error('HTTP ' + r.status);
   return (_vacLista = await r.json());
 }
-function _vacEnlace(id) { return location.origin + location.pathname + '?v=' + id; }
 async function renderVacantesTab() {
   var box = document.getElementById('vacantes-content'); if (!box) return;
   var bN = document.getElementById('vac-tools'); if (bN) bN.style.display = S.role === 'admin' ? '' : 'none';
@@ -5615,9 +5627,9 @@ async function renderVacantesTab() {
         + '<div class="vac-txt"><b>' + htmlEsc(v.instalacion) + (v.cargo_nombre && v.cargo_nombre !== (PERFIL_META[v.perfil] || {}).label ? ' <em class="vac-cargo">' + htmlEsc(v.cargo_nombre) + '</em>' : '') + '</b><span>' + htmlEsc(_vacTxt(v)) + '</span>'
         + (v.direccion ? '<small>' + htmlEsc(v.direccion) + (v.link_mapa ? ' · <a href="' + htmlEsc(v.link_mapa) + '" target="_blank" rel="noopener">Ver mapa</a>' : '') + '</small>' : '') + (v.detalle ? '<small>' + htmlEsc(v.detalle) + '</small>' : '')
         + (_vacDatos(v).length ? '<span class="vac-datos">' + _vacDatos(v).map(function(x){ return '<i>' + htmlEsc(x) + '</i>'; }).join('') + '</span>' : '') + '</div>'
-        + '<a class="vac-n" onclick="_bdIrConFiltros({})" title="Postulantes que eligieron esta vacante">' + n + (n === 1 ? ' postulante' : ' postulantes') + '</a>'
+        + '<span class="vac-n" title="Ocupados: seleccionados, enviados a contratación o contratados con esta vacante">' + htmlEsc(_vacCuposTxt(v)) + '</span>'
         + (admin ? '<div class="vac-acc">'
-          + '<button class="rs-btn" onclick="_vacCopiar(\'' + id + '\')" title="Copiar el enlace de esta vacante"' + (v.activa ? '' : ' disabled') + '><svg class="ico"><use href="#i-link"/></svg>Enlace</button>'
+          + '<button class="rs-btn" onclick="_invAbrirVacante(\'' + id + '\')" title="Invitar a evaluación para esta vacante"' + (v.activa ? '' : ' disabled') + '><svg class="ico"><use href="#i-send"/></svg>Invitar</button>'
           + '<button class="bd-icobtn" onclick="_vacEditar(\'' + id + '\')" title="Editar"><svg class="ico"><use href="#i-edit"/></svg></button>'
           + '<button class="bd-icobtn" onclick="_vacEliminar(\'' + id + '\')" title="Eliminar"><svg class="ico"><use href="#i-trash"/></svg></button>'
           + '<span style="font-size:11px;font-weight:700;color:' + (v.activa ? '#16a34a' : '#94a3b8') + '">' + (v.activa ? 'Activa' : 'Inactiva') + '</span>'
@@ -5651,11 +5663,6 @@ async function _vacEliminar(id) {
     toast('Vacante eliminada', 'ok'); renderVacantesTab();
   } catch(e) { toast('No se pudo eliminar: ' + e.message, 'er'); }
 }
-async function _vacCopiar(id) {
-  var url = _vacEnlace(id);
-  try { await navigator.clipboard.writeText(url); toast('Enlace copiado: péguelo en el aviso de esta vacante', 'ok'); }
-  catch(e) { await appConfirm('Copie este enlace:\n\n' + url); }
-}
 function _vacEditar(id) {
   var v = id ? (_vacLista || []).find(function(x){ return x.id === id; }) : null;
   v = v || { perfil: 'guardia', instalacion: '', comuna: '', turno: '4x4_rotativo', turno_otra: '', detalle: '', horario: '', sueldo_liquido: null, residencia: '', certificado: 'os10', beneficios: [], activa: true };
@@ -5677,6 +5684,7 @@ function _vacEditar(id) {
     + '<div class="field"><label>Turno</label><select id="vac-turno" class="rh-in" onchange="document.getElementById(\'vac-otra\').style.display=this.value===\'otra\'?\'\':\'none\'">'
     + '<option value="">Sin indicar</option>' + _RH_JORNADAS.map(function(j){ return '<option value="' + j[0] + '"' + (j[0] === v.turno ? ' selected' : '') + '>' + j[1] + '</option>'; }).join('') + '</select>'
     + '<input id="vac-otra" class="rh-in" maxlength="60" value="' + e(v.turno_otra) + '" placeholder="Ej: 5x2 día" style="margin-top:6px;display:' + (v.turno === 'otra' ? '' : 'none') + '"></div>'
+    + '<div class="field"><label>Cupos <span style="text-transform:none;font-weight:500">(cuántas personas necesita; solo se ve en el panel)</span></label><input id="vac-cupos" class="rh-in" type="number" min="1" max="500" value="' + (v.cupos || '') + '" placeholder="Ej: 2"></div>'
     + '<div class="rh-grid2"><div class="field"><label>Horario</label><input id="vac-horario" class="rh-in" maxlength="120" value="' + e(v.horario || '') + '" placeholder="Ej: 08:00 a 20:00"></div>'
     + '<div class="field"><label>Sueldo líquido</label><input id="vac-sueldo" class="rh-in" type="number" min="0" step="1000" value="' + (v.sueldo_liquido || '') + '" placeholder="Ej: 650000"></div></div>'
     + '<div class="rh-grid2"><div class="field"><label>Certificado exigido</label><select id="vac-cert" class="rh-in"><option value="">No exige</option>'
@@ -5697,7 +5705,7 @@ async function _vacGuardarForm(id) {
     .concat(val('vac-botros').split(',').map(function(x){ return x.trim().slice(0, 40); }).filter(Boolean)).slice(0, 12);
   var d = { perfil: val('vac-perfil'), instalacion: val('vac-inst'), comuna: val('vac-comuna'), turno: val('vac-turno'), turno_otra: val('vac-turno') === 'otra' ? val('vac-otra') : '', detalle: val('vac-det'),
             horario: val('vac-horario'), sueldo_liquido: isNaN(sueldo) ? null : Math.min(sueldo, 10000000), residencia: val('vac-resid'), certificado: val('vac-cert'), beneficios: benef,
-            cargo_nombre: val('vac-cnom'), direccion: val('vac-dir'), link_mapa: /^https:\/\//.test(val('vac-mapa')) ? val('vac-mapa') : '' };
+            cargo_nombre: val('vac-cnom'), direccion: val('vac-dir'), cupos: (function(n){ return isNaN(n) || n < 1 ? null : Math.min(n, 500); })(parseInt(val('vac-cupos'), 10)), link_mapa: /^https:\/\//.test(val('vac-mapa')) ? val('vac-mapa') : '' };
   if (val('vac-mapa') && !d.link_mapa) { toast('El link del mapa debe empezar con https://', 'er'); return; }
   if (!d.instalacion) { toast('Escriba la instalación', 'er'); return; }
   try { await _vacGuardar(id, d); var o = document.getElementById('vac-overlay'); if (o) o.remove(); toast(id ? 'Vacante actualizada' : 'Vacante creada', 'ok'); renderVacantesTab(); }
@@ -5708,7 +5716,7 @@ async function _vacGuardarForm(id) {
 // Mismas columnas que la planilla de RH Seguridad, más Certificado, Residencia, Otros beneficios e ID.
 // Al subir: se lee en este computador, se muestran los cambios y se guardan solo al confirmar.
 var _XLSX_LIB = ['https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js', 'sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw', 'XLSX'];
-var _VAC_COLS = ['Instalación', 'Activo', 'Comuna', 'Direccion', 'Link Mapa', 'Jornada', 'Turno', 'Cargo', 'Horario', 'Total Líquido', 'Colación', 'Comentario', 'Certificado', 'Residencia', 'Otros beneficios', 'ID'];
+var _VAC_COLS = ['Instalación', 'Activo', 'Comuna', 'Direccion', 'Link Mapa', 'Jornada', 'Turno', 'Cargo', 'Horario', 'Total Líquido', 'Colación', 'Comentario', 'Certificado', 'Residencia', 'Otros beneficios', 'Cupos', 'ID'];
 var _VAC_TURNO_XL = { '4x4_rotativo':['Rotativo', '4x4'], '4x4_dia':['Día', '4x4'], '4x4_noche':['Noche', '4x4'], '7x7_noche':['Noche', '7x7'] };
 function _vacNorm(t) { return String(t == null ? '' : t).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim(); }
 function _vacLimpio(t) { return String(t == null ? '' : t).replace(/\s+/g, ' ').trim(); }
@@ -5775,6 +5783,9 @@ function _vacDesdeFila(f) {
   d.certificado = !ce || ce === 'no' ? '' : /os10/.test(ce) && /spd/.test(ce) ? 'os10_o_spd' : /os10/.test(ce) ? 'os10' : /spd/.test(ce) ? 'spd' : null;
   if (d.certificado === null) { err.push('Certificado debe ser OS-10, SPD, OS-10 o SPD, o No'); d.certificado = ''; }
   d.residencia = _vacLimpio(g('Residencia')).slice(0, 120);
+  var cu = _vacLimpio(g('Cupos')), cun = parseInt(cu.replace(/\D/g, ''), 10);
+  d.cupos = cu ? (cun >= 1 ? Math.min(cun, 500) : null) : null;
+  if (cu && !(cun >= 1)) err.push('Cupos debe ser un número de 1 o más');
   d.id = _vacLimpio(g('ID'));
   return { datos: d, errores: err, avisos: av };
 }
@@ -5783,11 +5794,11 @@ function _vacAFila(v) {
   return { 'Instalación': v.instalacion, 'Activo': v.activa ? 'SI' : 'NO', 'Comuna': v.comuna, 'Direccion': v.direccion || '', 'Link Mapa': v.link_mapa || '',
            'Jornada': tu[0], 'Turno': tu[1], 'Cargo': v.cargo_nombre || (PERFIL_META[v.perfil] || {}).label || v.perfil, 'Horario': v.horario || '',
            'Total Líquido': v.sueldo_liquido || '', 'Colación': col.length ? (col[0] === 'Colación' ? 'SI' : col[0]) : 'NO', 'Comentario': v.detalle || '',
-           'Certificado': _VAC_CERT_XL[v.certificado || ''], 'Residencia': v.residencia || '', 'Otros beneficios': b.filter(function(x){ return col.indexOf(x) === -1; }).join(', '), 'ID': v.id };
+           'Certificado': _VAC_CERT_XL[v.certificado || ''], 'Residencia': v.residencia || '', 'Otros beneficios': b.filter(function(x){ return col.indexOf(x) === -1; }).join(', '), 'Cupos': v.cupos || '', 'ID': v.id };
 }
-var _VAC_CAMPOS = ['perfil', 'instalacion', 'comuna', 'turno', 'turno_otra', 'detalle', 'horario', 'sueldo_liquido', 'residencia', 'certificado', 'beneficios', 'activa', 'direccion', 'link_mapa', 'cargo_nombre'];
+var _VAC_CAMPOS = ['perfil', 'instalacion', 'comuna', 'turno', 'turno_otra', 'detalle', 'horario', 'sueldo_liquido', 'residencia', 'certificado', 'beneficios', 'activa', 'direccion', 'link_mapa', 'cargo_nombre', 'cupos'];
 var _VAC_CAMPO_TXT = { perfil:'cargo', instalacion:'instalación', comuna:'comuna', turno:'turno', turno_otra:'turno', detalle:'comentario', horario:'horario', sueldo_liquido:'sueldo',
-  residencia:'residencia', certificado:'certificado', beneficios:'beneficios', activa:'activa', direccion:'dirección', link_mapa:'mapa', cargo_nombre:'cargo' };
+  residencia:'residencia', certificado:'certificado', beneficios:'beneficios', activa:'activa', direccion:'dirección', link_mapa:'mapa', cargo_nombre:'cargo', cupos:'cupos' };
 function _vacClave(v) { return [_vacNorm(v.instalacion), _vacNorm(v.cargo_nombre || (PERFIL_META[v.perfil] || {}).label || v.perfil), v.turno, _vacNorm(v.turno_otra)].join('|'); }
 // Compara la planilla con las vacantes guardadas: nuevas, modificadas, sin cambios y filas con error
 function _vacPlanCambios(filas, existentes) {
@@ -5818,7 +5829,7 @@ async function _vacExcelBajar() {
     var lista = _vacLista || await _vacCargar();
     var filas = lista.slice().sort(function(a, b){ return String(a.instalacion).localeCompare(b.instalacion); }).map(_vacAFila);
     var hoja = XLSX.utils.json_to_sheet(filas, { header: _VAC_COLS });
-    hoja['!cols'] = _VAC_COLS.map(function(c){ return { wch: { 'Instalación':34, 'Direccion':40, 'Link Mapa':30, 'Horario':30, 'Comentario':40, 'Otros beneficios':26, 'ID':38 }[c] || 14 }; });
+    hoja['!cols'] = _VAC_COLS.map(function(c){ return { wch: { 'Instalación':34, 'Direccion':40, 'Link Mapa':30, 'Horario':30, 'Comentario':40, 'Otros beneficios':26, 'Cupos':8, 'ID':38 }[c] || 14 }; });
     var libro = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(libro, hoja, 'Vacantes');
     XLSX.writeFile(libro, 'Vacantes RH Seguridad ' + new Date().toISOString().slice(0, 10) + '.xlsx');
   } catch(e) { toast('No se pudo descargar el Excel: ' + e.message, 'er'); }
@@ -5860,7 +5871,7 @@ function _vacPlanMostrar(nombre) {
 async function _vacPlanAplicar() {
   var p = _vacPlan; if (!p) return;
   var ahora = new Date().toISOString();
-  var filas = p.nuevas.concat(p.cambios).map(function(x){ var o = { id: x.id, actualizada: ahora }; _VAC_CAMPOS.forEach(function(k){ o[k] = x.datos[k] == null ? (k === 'sueldo_liquido' ? null : '') : x.datos[k]; }); return o; });
+  var filas = p.nuevas.concat(p.cambios).map(function(x){ var o = { id: x.id, actualizada: ahora }; _VAC_CAMPOS.forEach(function(k){ o[k] = x.datos[k] == null ? (k === 'sueldo_liquido' || k === 'cupos' ? null : '') : x.datos[k]; }); return o; });
   try {
     var r = await fetch(SUPA_URL + '/rest/v1/psicoeval_vacantes?on_conflict=id', {
       method: 'POST', headers: Object.assign({}, getDBHeaders(), { 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates,return=minimal' }),
@@ -13270,7 +13281,7 @@ function _invBanner() {
   if (_INV && _INV.estado === 'valida') {
     var pm = PERFIL_META[_INV.perfil] || {};
     h = '<div class="pub-inv pub-inv-ok"><span class="pub-inv-ic">✉️</span><div><strong>Invitación personal' + (pm.label ? ' · ' + htmlEsc(pm.label) : '') + '</strong>'
-      + (_INV.vence ? '<span>Vigente hasta el ' + _invFecha(_INV.vence) + '. Una vez que comiences, podrás terminarla aunque pase esa hora.</span>' : '') + '</div></div>';
+      + (_INV.vence ? '<span>Tienes hasta el ' + _invFecha(_INV.vence) + ' para terminarla y enviarla. Pasado ese plazo la invitación vence y la postulación queda sin efecto.</span>' : '') + '</div></div>';
   } else if (bloq && key !== 'requerida') {
     // Sin link de invitación no se muestra el aviso rojo: basta la nota bajo el botón
     h = '<div class="pub-inv pub-inv-no"><span class="pub-inv-ic">⛔</span><div><strong>' + _INV_MSG[key][0] + '</strong><span>' + _INV_MSG[key][1] + '</span></div></div>';
@@ -13308,7 +13319,7 @@ function _invContinuar(rut) {
 }
 
 // ── Panel: invitaciones ───────────────────────────────────────────────────
-var _invTab = 'rut', _invHoras = 72, _invResultados = [], _invLista = null;
+var _invTab = 'rut', _invHoras = 24, _invResultados = [], _invLista = null, _invVacante = '';
 
 // tipo 'link' (link único): se avisa que es de un solo uso
 function _invMensaje(link, tipo) {
@@ -13316,6 +13327,7 @@ function _invMensaje(link, tipo) {
     + '🔗 Enlace de la evaluación:\n' + link + '\n'
     + (tipo === 'link' ? '🔒 *Este enlace es personal y de un solo uso: no lo compartas.*\n' : '') + '\n'
     + '⚠️ *Antes de comenzar, considera lo siguiente:*\n'
+    + '* *Plazo:* Tienes 24 horas desde que recibes este mensaje para completarla y enviarla. Pasado ese plazo el enlace vence y la postulación queda sin efecto.\n'
     + '* *Tiempo continuo:* La evaluación debe completarse de principio a fin una vez iniciada. Asegúrate de disponer de al menos 30 minutos sin interrupciones.\n'
     + '* *Entorno:* Realízala en un lugar tranquilo y silencioso para mantener tu concentración.\n'
     + '* *Conexión:* Verifica tener una señal estable de internet antes de ingresar.\n\n'
@@ -13358,6 +13370,30 @@ function showInviteModal() {
   _invRender();
   modal.style.display = 'flex';
   _invCargarLista();
+  // Vacantes para el selector (25_vacantes.sql); sin la tabla, el modal funciona igual que antes
+  if (S.role === 'admin' && !_vacLista) _vacCargar().then(function(){ _invRender(); }).catch(function(){});
+}
+// Abre la invitación con la vacante elegida (botón Invitar de la página Vacantes)
+function _invAbrirVacante(id) { _invVacante = id; showInviteModal(); }
+function _invSetVacante(id) {
+  _invVacante = id || '';
+  var v = (_vacLista || []).find(function(x){ return x.id === _invVacante; }), sel = document.getElementById('inv-perfil');
+  if (sel) { if (v) sel.value = v.perfil; sel.disabled = !!v; }
+  _invRender();
+}
+// Cupos (solo panel). Ocupados = seleccionados, enviados o contratados con esa vacante; en proceso = el resto, salvo descartados
+function _vacCupos(v) {
+  var oc = 0, pr = 0;
+  (_dbCache || []).forEach(function(c){
+    if (!(c.scores && c.scores._postula && c.scores._postula.vacante === v.id)) return;
+    var e = getPipelineEtapa(c);
+    if (e === 'seleccionado' || e === 'enviado' || e === 'contratado') oc++; else if (e !== 'descartado') pr++;
+  });
+  return { ocupados: oc, proceso: pr, total: v.cupos || null, libres: v.cupos ? Math.max(0, v.cupos - oc) : null };
+}
+function _vacCuposTxt(v) {
+  var k = _vacCupos(v);
+  return (k.total ? k.ocupados + ' de ' + k.total + ' cupos' + (k.libres === 0 ? ' (completos)' : '') : k.ocupados + ' seleccionados') + ' · ' + k.proceso + ' en proceso';
 }
 
 function _invRender() {
@@ -13383,12 +13419,23 @@ function _invRender() {
     h += '<div style="display:flex;gap:4px;background:var(--surface2);padding:4px;border-radius:11px;margin-bottom:14px">' + tabBtn('rut', '🪪 Por RUT') + tabBtn('link', '🔗 Link único') + '</div>';
 
     var act = getActiveCargos();
+    var vacs = (_vacLista || []).filter(function(v){ return v.activa; }).sort(function(a, b){ return String(a.instalacion).localeCompare(b.instalacion); });
+    var vSel = vacs.find(function(v){ return v.id === _invVacante; }) || null;
+    if (!vSel) _invVacante = '';
     var sel = function(id, opts){ return '<select id="' + id + '" style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:9px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--ink)">' + opts + '</select>'; };
+    if (vacs.length) {
+      h += '<div style="margin-bottom:10px"><div style="font-size:11.5px;font-weight:700;color:var(--ink3);margin-bottom:4px">Vacante</div>'
+        + '<select id="inv-vacante" onchange="_invSetVacante(this.value)" style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:9px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--ink)">'
+        + '<option value="">Sin vacante (elegir solo el cargo)</option>'
+        + vacs.map(function(v){ var k = _vacCupos(v); return '<option value="' + htmlEsc(v.id) + '"' + (v.id === _invVacante ? ' selected' : '') + '>' + htmlEsc(v.instalacion + ' · ' + _vacTxt(v) + ' · ' + (v.cargo_nombre || (PERFIL_META[v.perfil] || {}).label || v.perfil)
+            + (k.total ? ' · ' + (k.libres ? k.libres + (k.libres === 1 ? ' cupo libre' : ' cupos libres') : 'cupos completos') : '')) + '</option>'; }).join('') + '</select>'
+        + (vSel ? '<div style="font-size:11.5px;color:var(--ink4);margin-top:4px">El cargo y sus pruebas salen de la vacante. ' + htmlEsc(_vacCuposTxt(vSel)) + '.</div>' : '') + '</div>';
+    }
     h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">'
       + '<div><div style="font-size:11.5px;font-weight:700;color:var(--ink3);margin-bottom:4px">Cargo</div>'
-      + sel('inv-perfil', act.map(function(k){ var pm = PERFIL_META[k] || {}; return '<option value="' + htmlEsc(k) + '">' + htmlEsc(pm.label || k) + '</option>'; }).join('')) + '</div>'
+      + sel('inv-perfil', act.concat(vSel && act.indexOf(vSel.perfil) === -1 ? [vSel.perfil] : []).map(function(k){ var pm = PERFIL_META[k] || {}; return '<option value="' + htmlEsc(k) + '"' + (vSel && k === vSel.perfil ? ' selected' : '') + '>' + htmlEsc(pm.label || k) + '</option>'; }).join('')).replace('<select id="inv-perfil"', '<select id="inv-perfil"' + (vSel ? ' disabled' : '')) + '</div>'
       + '<div><div style="font-size:11.5px;font-weight:700;color:var(--ink3);margin-bottom:4px">Vigencia</div>'
-      + sel('inv-horas', [[24, '24 horas'], [72, '72 horas (recomendado)'], [168, '7 días']].map(function(o){ return '<option value="' + o[0] + '"' + (o[0] === _invHoras ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('')) + '</div></div>';
+      + '<div style="padding:9px 11px;border:1.5px solid var(--border);border-radius:9px;font-size:13px;color:var(--ink2);background:var(--surface2)" title="Si no envía la evaluación en 24 horas, la invitación vence y se entiende que abandonó">24 horas para terminar</div></div></div>';
     if (_invTab === 'rut') {
       h += '<div style="font-size:11.5px;font-weight:700;color:var(--ink3);margin-bottom:4px">RUT de las personas</div>'
         + '<textarea id="inv-ruts" rows="4" placeholder="12.345.678-9&#10;9.876.543-2" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:9px;font-size:13px;font-family:inherit;resize:vertical;background:var(--surface);color:var(--ink)"></textarea>'
@@ -13425,8 +13472,9 @@ function _invRender() {
 function _invEstado(v) {
   if (v.anulada) return ['Anulada', '#64748b', '#f1f5f9'];
   if (v.usada_en) return ['Usada', '#15803d', '#f0fdf4'];
+  // 24 horas para enviarla (28_invitacion_vacante.sql): si la comenzó y venció, abandonó
+  if (new Date(v.vence) < new Date()) return v.iniciada_en ? ['Abandonó', '#b45309', '#fffbeb'] : ['Vencida', '#b45309', '#fffbeb'];
   if (v.iniciada_en) return ['En curso', '#2563eb', '#eff6ff'];
-  if (new Date(v.vence) < new Date()) return ['Vencida', '#b45309', '#fffbeb'];
   return ['Pendiente', '#7c3aed', '#f5f3ff'];
 }
 
@@ -13441,12 +13489,12 @@ function _invListaHtml() {
     var acc = '';
     if (esAdmin && !v.usada_en && !v.anulada) {
       if (e[0] !== 'Vencida') acc += '<button onclick="_invCopiarMensaje(\'' + v.codigo + '\',\'' + v.tipo + '\')" title="Copiar mensaje de WhatsApp" class="btn btn-ghost btn-sm" style="padding:4px 8px">📋</button>';
-      acc += '<button onclick="_invRenovar(\'' + v.codigo + '\')" title="Renovar: vigente por 72 horas más desde ahora" class="btn btn-ghost btn-sm" style="padding:4px 8px">↻</button>'
+      acc += '<button onclick="_invRenovar(\'' + v.codigo + '\')" title="Renovar: 24 horas más desde ahora para terminarla" class="btn btn-ghost btn-sm" style="padding:4px 8px">↻</button>'
         + '<button onclick="_invAnular(\'' + v.codigo + '\')" title="Anular" class="btn btn-ghost btn-sm" style="padding:4px 8px;color:#b91c1c">✕</button>';
     }
     return '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--border);flex-wrap:wrap">'
       + '<div style="flex:1;min-width:170px"><div style="font-size:12.5px;font-weight:700;color:var(--ink)">' + htmlEsc(quien) + '</div>'
-      + '<div style="font-size:11px;color:var(--ink4)">' + htmlEsc(pm.label || v.perfil) + ' · ' + (v.usada_en ? 'usada el ' + _invFecha(v.usada_en) : 'vence el ' + _invFecha(v.vence)) + '</div></div>'
+      + '<div style="font-size:11px;color:var(--ink4)">' + htmlEsc(pm.label || v.perfil) + (function(){ var vv = v.vacante_id && (_vacLista || []).find(function(x){ return x.id === v.vacante_id; }); return vv ? ' · ' + htmlEsc(vv.instalacion) : ''; })() + ' · ' + (v.usada_en ? 'usada el ' + _invFecha(v.usada_en) : 'vence el ' + _invFecha(v.vence)) + '</div></div>'
       + '<span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:100px;color:' + e[1] + ';background:' + e[2] + '">' + e[0] + '</span>'
       + '<div style="display:flex;gap:2px">' + acc + '</div></div>';
   }).join('');
@@ -13466,7 +13514,7 @@ async function _invCargarLista() {
 
 async function _invGenerar() {
   var perfil = (document.getElementById('inv-perfil') || {}).value;
-  _invHoras = parseInt((document.getElementById('inv-horas') || {}).value, 10) || 72;
+  _invHoras = 24;   // fija (28_invitacion_vacante.sql)
   var ruts = null, cantidad = 0;
   if (_invTab === 'rut') {
     ruts = ((document.getElementById('inv-ruts') || {}).value || '').split(/[\n,;\t]+/).map(function(x){ return x.trim(); }).filter(Boolean);
@@ -13480,12 +13528,13 @@ async function _invGenerar() {
   var b = document.getElementById('inv-generar'); if (b) { b.disabled = true; b.textContent = 'Generando…'; }
   try {
     var r = await fetch(SUPA_URL + '/rest/v1/rpc/psicoeval_invitar', { method: 'POST', headers: _invHeaders(),
-      body: JSON.stringify({ p_perfil: perfil, p_ruts: ruts, p_cantidad: cantidad, p_horas: _invHoras }) });
+      body: JSON.stringify(Object.assign({ p_perfil: perfil, p_ruts: ruts, p_cantidad: cantidad, p_horas: _invHoras }, _invVacante ? { p_vacante: _invVacante } : {})) });
     var data = await r.json().catch(function(){ return null; });
     if (r.status === 404) throw new Error('Falta ejecutar 16_invitaciones.sql en Supabase.');
     if (!r.ok) throw new Error((data && data.message) || ('HTTP ' + r.status));
     _invResultados = data || [];
-    _logConfigChange('Invitaciones creadas', _invResultados.length + ' · ' + ((PERFIL_META[perfil] || {}).label || perfil) + ' · ' + (_invTab === 'rut' ? 'por RUT' : 'link único') + ' · ' + _invHoras + ' h');
+    var _vI = (_vacLista || []).find(function(x){ return x.id === _invVacante; });
+    _logConfigChange('Invitaciones creadas', _invResultados.length + ' · ' + ((PERFIL_META[perfil] || {}).label || perfil) + (_vI ? ' · ' + _vI.instalacion : '') + ' · ' + (_invTab === 'rut' ? 'por RUT' : 'link único') + ' · ' + _invHoras + ' h');
     _invRender();
     _invCargarLista();
   } catch(e) {
@@ -13505,7 +13554,7 @@ async function _invActualizar(codigo, cambios, ok) {
   } catch(e) { toast('No se pudo actualizar la invitación (' + e.message + ')', 'er'); }
 }
 function _invRenovar(codigo) {
-  _invActualizar(codigo, { vence: new Date(Date.now() + 72 * 3600 * 1000).toISOString() }, '✓ Renovada: vigente por 72 horas más');
+  _invActualizar(codigo, { vence: new Date(Date.now() + 24 * 3600 * 1000).toISOString() }, '✓ Renovada: 24 horas más para terminarla');
 }
 function _invAnular(codigo) {
   if (!confirm('¿Anular esta invitación? El link dejará de funcionar.')) return;
@@ -14354,7 +14403,9 @@ function _rsPostulaHtml(c) {
   var p = _postulaDe(c), turno = p.turno ? _rhTurnoTxt({ jornada: p.turno, jornada_otra: p.turno_otra }) : '';
   var txt = [p.cargo || _rhCargoBase(c), p.instalacion, turno ? 'turno ' + turno : ''].filter(Boolean).join(' · ');
   var edit = S.role === 'admin' ? ' <a class="rs-link" onclick="_rsPostulaEditar(\'' + htmlEsc(c.id) + '\')" style="font-weight:600;margin-left:6px">Editar</a>' : '';
-  return '<div id="rs-postula"><div class="rs-kv"><span>Postula a</span><b>' + htmlEsc(txt) + edit + '</b></div></div>';
+  var sc = (c && c.scores && c.scores._postula) || {}, vive = c && c.comuna, vcom = sc.comuna;
+  var cerca = vive && vcom ? (_vacNorm(vive) === _vacNorm(vcom) ? '<b style="color:#15803d">Vive en la misma comuna de la vacante (' + htmlEsc(vcom) + ')</b>' : '<b>Vive en ' + htmlEsc(vive) + ' · vacante en ' + htmlEsc(vcom) + '</b>') : '';
+  return '<div id="rs-postula"><div class="rs-kv"><span>Postula a</span><b>' + htmlEsc(txt) + edit + '</b></div>' + (cerca ? '<div class="rs-kv"><span>Cercanía</span>' + cerca + '</div>' : '') + '</div>';
 }
 async function _rsPostulaEditar(id) {
   var c = (await getDB()).find(function(x){ return x.id === id; }); if (!c) return;
