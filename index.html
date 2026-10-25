@@ -1188,10 +1188,13 @@ textarea.rh-in{resize:vertical}
 .ev-ini-g3{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:10px}
 .ev-ini-ses{border-top:1px solid var(--border);padding-top:12px;margin-top:4px}
 .ev-ini-ses-t{font-size:10.5px;font-weight:800;color:var(--ink4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
-.ev-ini-g5{display:grid;grid-template-columns:1fr .8fr 1fr 1fr 1.4fr;gap:8px}
+.ev-ini-g5{display:grid;grid-template-columns:1fr 1fr 1.6fr;gap:8px}
+.ev-ini-op{font-size:11px;font-weight:500;color:var(--ink4);margin-left:6px}
+.ev-scr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 16px}
+.ev-scr-l{font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:5px}
 .ev-ini-ses .ev-field input,.ev-ini-ses .ev-field select{font-size:12.5px}
 [data-theme="dark"] .ev-guion{background:rgba(85,116,255,.14)}
-@media(max-width:700px){.ev-ini-g3,.ev-ini-g5{grid-template-columns:1fr 1fr}}
+@media(max-width:700px){.ev-ini-g3,.ev-ini-g5{grid-template-columns:1fr 1fr}.ev-scr{grid-template-columns:1fr}}
 .ev-q-prueba{font-size:12.5px;color:var(--ink2);line-height:1.55;background:var(--surface2);border-radius:8px;padding:8px 11px;margin-bottom:8px}
 .ev-q-prueba span{display:block;font-size:10.5px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px}
 .ev-q-prueba div+div{margin-top:3px}
@@ -13908,8 +13911,11 @@ function _tabEntrevistasDrawer(c) {
     + '<div class="ev-guion">“Buenos días, mi nombre es <span id="ev-guion-nom">' + htmlEsc(pref.entrevistador || '___') + '</span> y le voy a hacer la entrevista. Dura unos <span id="ev-dur-txt">30 minutos</span>: primero revisaremos su experiencia y después le pediré que me cuente situaciones de su trabajo. Lo que conversemos se usa solo para este proceso de selección.”</div></div></div>'
     + '<div class="ev-ini"><span class="ev-ini-n">2</span><div class="ev-ini-c"><div class="ev-ini-t">Pídale que se presente</div>'
     + '<div class="ev-guion">“Para comenzar, cuénteme brevemente de usted: a qué se dedica hoy y por qué le interesa este trabajo.”</div>'
-    + '<div class="ev-field" style="margin-top:8px"><textarea id="ef-notas-inicio" rows="2" placeholder="Lo que cuenta al presentarse y primeras impresiones: puntualidad, presentación, disposición, condiciones de la sesión (lugar, conexión)…"></textarea></div></div></div>'
-    + '<div class="ev-ini"><span class="ev-ini-n">3</span><div class="ev-ini-c"><div class="ev-ini-t">Confirme a qué postula</div>'
+    + '<div class="ev-field" style="margin-top:10px"><label>📝 Anotaciones al inicio</label><textarea id="ef-notas-inicio" rows="2" placeholder="Primeras impresiones y lo que surja al comenzar: puntualidad, presentación, disposición, cómo llega a la entrevista, condiciones de la sesión (lugar, conexión), lo que la persona comenta espontáneamente…"></textarea></div></div></div>'
+    + '<div class="ev-ini"><span class="ev-ini-n">3</span><div class="ev-ini-c"><div class="ev-ini-t">Screening de conducta <span class="ev-ini-op">mientras conversan · opcional</span></div><div class="ev-scr">'
+    + Object.keys(_EV_SCREEN_OPTS).map(function(key){ var o = _EV_SCREEN_OPTS[key]; return '<div class="ev-scr-f"><div class="ev-scr-l">' + o.label + '</div>' + _evPillGroup(key, '', o.opts, o.colors) + '</div>'; }).join('')
+    + '</div></div></div>'
+    + '<div class="ev-ini"><span class="ev-ini-n">4</span><div class="ev-ini-c"><div class="ev-ini-t">Confirme a qué postula</div>'
     // Cargo, instalación y turno a los que postula: pasan solos al Informe RH
     + '<div class="ev-ini-g3">'
     + '<div class="ev-field"><label>Cargo</label><input type="text" id="ef-cargo" autocomplete="off" value="' + htmlEsc(evPost.cargo || _rhCargoBase(c)) + '" placeholder="Ej: Guardia de Seguridad - Encargado de Turno"></div>'
@@ -13920,8 +13926,7 @@ function _tabEntrevistasDrawer(c) {
     + '</div></div></div>'
     + '<div class="ev-ini-ses"><div class="ev-ini-ses-t">Datos de la sesión</div><div class="ev-ini-g5">'
     + '<div class="ev-field"><label>Fecha</label><input type="date" id="ef-fecha" value="' + today + '"></div>'
-    + '<div class="ev-field"><label>Hora</label><input type="time" id="ef-hora" value="' + horaAhora + '"></div>'
-    + '<div class="ev-field"><label>Tipo</label><select id="ef-tipo">' + opcion('rrhh', '🧑‍💼 RRHH', pref.tipo) + opcion('psicolaboral', '🧠 Psicolaboral', pref.tipo) + opcion('tecnica', '🔧 Técnica', pref.tipo) + opcion('panel', '👥 Panel', pref.tipo) + '</select></div>'
+    + '<input type="hidden" id="ef-hora" value="' + horaAhora + '"><input type="hidden" id="ef-tipo" value="' + htmlEsc(pref.tipo || 'psicolaboral') + '">'
     + '<div class="ev-field"><label>Modalidad</label><select id="ef-modalidad">' + opcion('presencial', '🏢 Presencial', pref.modalidad) + opcion('online', '🖥 Online', pref.modalidad) + opcion('terreno', '🌍 En terreno', pref.modalidad) + '</select></div>'
     + '<div class="ev-field"><label>Entrevistador/a</label><input type="text" id="ef-entrevistador" value="' + htmlEsc(pref.entrevistador) + '" placeholder="Nombre del evaluador/a" oninput="var g=document.getElementById(\'ev-guion-nom\');if(g)g.textContent=this.value.trim()||\'___\'"></div>'
     + '</div></div>';
@@ -14056,12 +14061,7 @@ function _tabEntrevistasDrawer(c) {
     + '<textarea id="ef-motivo" rows="2" placeholder="Fundamente el dictamen con lo observado en la entrevista y las pruebas…"></textarea></div>';
   p5 += '<div class="ev-field" style="margin-top:12px"><label>Notas adicionales</label><textarea id="ef-notas" rows="2" placeholder="Recomendaciones para la siguiente etapa…"></textarea></div>';
   // Opcionales, sin puntaje
-  p5 += '<details class="ev-mas" style="margin-top:14px"><summary>Opcional: screening rápido y verificaciones operativas</summary><div style="padding-top:10px">';
-  Object.keys(_EV_SCREEN_OPTS).forEach(function(key) {
-    var opt = _EV_SCREEN_OPTS[key];
-    p5 += '<div style="margin-bottom:10px"><div style="font-size:12px;font-weight:600;color:var(--ink);margin-bottom:5px">' + opt.label + '</div>' + _evPillGroup(key, '', opt.opts, opt.colors) + '</div>';
-  });
-  p5 += '<div class="ev-field" style="margin:4px 0 12px"><label>Apuntes</label><textarea id="ef-apuntes-psico" rows="2" placeholder="Conducta, discurso, lenguaje no verbal…"></textarea></div>';
+  p5 += '<details class="ev-mas" style="margin-top:14px"><summary>Opcional: verificaciones operativas</summary><div style="padding-top:10px">';
   _EV_CHECKS_OP.forEach(function(chk, i) {
     p5 += '<label class="ev-flag" id="ev-chk-lbl-' + i + '" style="margin-bottom:6px"><input type="checkbox" id="ev-chk-' + i + '" onchange="this.closest(\'.ev-flag\').classList.toggle(\'active\',this.checked)">'
       + '<span style="font-size:12.5px;color:var(--ink);line-height:1.45">' + chk + '</span></label>';
@@ -14604,6 +14604,7 @@ async function saveEntrevistaDrawer(candId) {
       prev = prev || [];
       var ant = edita && prev.filter(function(e){ return e.id === edita; })[0];
       dictAntes = ant ? (ant.dictamen || '') : null;
+      if (ant && ant.apuntes_psico && !document.getElementById('ef-apuntes-psico')) entry.apuntes_psico = ant.apuntes_psico;
       // Una entrevista de la pauta anterior que se edita conserva sus 5 competencias como registro
       if (ant && !(ant.v >= 3)) {
         var prev5 = ant.comp_previo || _evCompsDe(ant).filter(function(x){ return x.nivel > 0; }).map(function(x){ return { name:x.name, nivel:x.nivel, nota:x.nota }; });
