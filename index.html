@@ -1960,6 +1960,14 @@ body.adm .pdf-ic{display:inline-flex;color:var(--ink4)}
 .vac-acc{display:flex;align-items:center;gap:8px}
 .vac-acc .rs-btn .ico{width:14px;height:14px}
 .vac-acc .rs-btn[disabled]{opacity:.4;cursor:not-allowed}
+.vac-datos{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.vac-datos i{font-style:normal;font-size:11.5px;font-weight:600;color:var(--ink2);background:rgba(20,33,61,.05);border-radius:100px;padding:3px 9px}
+.reg-op .vac-datos i{font-weight:500}
+.vac-benef{display:flex;flex-wrap:wrap;gap:6px}
+body.adm .rh-box .vac-benef label,.vac-benef label{display:inline-flex;white-space:nowrap;margin:0;font-size:12.5px;letter-spacing:0;color:var(--ink2);align-items:center;gap:6px;font-size:12.5px;color:var(--ink2);background:rgba(255,255,255,.6);border:1px solid rgba(20,33,61,.08);border-radius:100px;padding:6px 11px;cursor:pointer;text-transform:none;letter-spacing:0;font-weight:600}
+.vac-benef input{margin:0;accent-color:var(--accent)}
+[data-theme="dark"] .vac-datos i{background:rgba(255,255,255,.07)}
+[data-theme="dark"] .vac-benef label{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1)}
 .vac-sw{width:40px;height:22px;border-radius:11px;background:#d1d5db;position:relative;cursor:pointer;flex-shrink:0;transition:background .2s}
 .vac-sw i{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.18);transition:left .2s}
 .vac-sw.on{background:#16a34a}.vac-sw.on i{left:20px}
@@ -2780,7 +2788,7 @@ body.adm .pdf-ic{display:inline-flex;color:var(--ink4)}
         <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:20px">
           <div>
             <h2 class="adm-t" style="margin-bottom:4px">Vacantes</h2>
-            <div style="font-size:13px;color:var(--ink3)">El postulante elige una vacante activa de su cargo al registrarse. En el formulario se ven la comuna, el turno y la descripción; la instalación solo aquí.</div>
+            <div style="font-size:13px;color:var(--ink3)">El postulante elige una vacante activa de su cargo al registrarse. En el formulario ve todos los datos de la vacante, menos la instalación, que se ve solo aquí.</div>
           </div>
           <button class="adm-prim" id="vac-nueva" onclick="_vacEditar()">+ Nueva vacante</button>
         </div>
@@ -5524,6 +5532,14 @@ function _vacTxt(v) {
   var t = v.turno ? _rhTurnoTxt({ jornada: v.turno, jornada_otra: v.turno_otra }) : '';
   return [v.comuna, t ? 'turno ' + t : ''].filter(Boolean).join(' · ') || 'Vacante';
 }
+var _VAC_CERT = { os10:'OS-10 vigente', spd:'SPD vigente', os10_o_spd:'OS-10 o SPD vigente' };
+var _VAC_BENEF = ['Colación', 'Movilización', 'Uniforme', 'Bono de asistencia', 'Bono turno noche', 'Seguro complementario'];
+function _vacSueldo(n) { return typeof n === 'number' && n > 0 ? '$' + n.toLocaleString('es-CL') + ' líquido' : ''; }
+// Datos del aviso: sueldo, horario, requisitos y beneficios (formulario y panel)
+function _vacDatos(v) {
+  return [_vacSueldo(v.sueldo_liquido), v.horario ? 'Horario ' + v.horario : '', _VAC_CERT[v.certificado] ? 'Requiere ' + _VAC_CERT[v.certificado] : '',
+          v.residencia || '', (v.beneficios || []).length ? 'Beneficios: ' + v.beneficios.join(', ') : ''].filter(Boolean);
+}
 async function _vacLinkCargar() {
   if (!_VAC_LINK || _vacLinkInfo) return _vacLinkInfo;
   try { var r = await _candidateRpc('vacantes_publicas', { p_id: _VAC_LINK }); _vacLinkInfo = (Array.isArray(r) && r[0]) || false; } catch(e) { _vacLinkInfo = false; }
@@ -5544,7 +5560,8 @@ async function _regVacCargar(perfil) {
       cualquiera = !!document.querySelector('input[name="vacante"][value=""]:checked');
   ops.innerHTML = lista.map(function(v) {
     return '<label class="reg-op"><input type="radio" name="vacante" value="' + htmlEsc(v.id) + '"' + (v.id === previo ? ' checked' : '') + ' onchange="_regCambio(this);document.getElementById(\'e-vac\').textContent=\'\'">'
-      + '<span>' + htmlEsc(_vacTxt(v)) + (v.detalle ? '<small style="display:block;font-weight:500;color:var(--ink3);margin-top:2px">' + htmlEsc(v.detalle) + '</small>' : '') + '</span></label>';
+      + '<span>' + htmlEsc(_vacTxt(v)) + (v.detalle ? '<small style="display:block;font-weight:500;color:var(--ink3);margin-top:2px">' + htmlEsc(v.detalle) + '</small>' : '')
+      + (_vacDatos(v).length ? '<span class="vac-datos">' + _vacDatos(v).map(function(x){ return '<i>' + htmlEsc(x) + '</i>'; }).join('') + '</span>' : '') + '</span></label>';
   }).join('') + '<label class="reg-op"><input type="radio" name="vacante" value=""' + (cualquiera ? ' checked' : '') + ' onchange="_regCambio(this);document.getElementById(\'e-vac\').textContent=\'\'"><span>Cualquier vacante / aún no sé</span></label>';
   campo.style.display = '';
 }
@@ -5575,7 +5592,8 @@ async function renderVacantesTab() {
       var id = htmlEsc(v.id), n = cuenta[v.id] || 0;
       h += '<div class="cg-card vac-card' + (v.activa ? '' : ' off') + '"><div class="vac-fila">'
         + '<span class="cg-ic"><svg class="ico"><use href="#i-pin"/></svg></span>'
-        + '<div class="vac-txt"><b>' + htmlEsc(v.instalacion) + '</b><span>' + htmlEsc(_vacTxt(v)) + '</span>' + (v.detalle ? '<small>' + htmlEsc(v.detalle) + '</small>' : '') + '</div>'
+        + '<div class="vac-txt"><b>' + htmlEsc(v.instalacion) + '</b><span>' + htmlEsc(_vacTxt(v)) + '</span>' + (v.detalle ? '<small>' + htmlEsc(v.detalle) + '</small>' : '')
+        + (_vacDatos(v).length ? '<span class="vac-datos">' + _vacDatos(v).map(function(x){ return '<i>' + htmlEsc(x) + '</i>'; }).join('') + '</span>' : '') + '</div>'
         + '<a class="vac-n" onclick="_bdIrConFiltros({})" title="Postulantes que eligieron esta vacante">' + n + (n === 1 ? ' postulante' : ' postulantes') + '</a>'
         + (admin ? '<div class="vac-acc">'
           + '<button class="rs-btn" onclick="_vacCopiar(\'' + id + '\')" title="Copiar el enlace de esta vacante"' + (v.activa ? '' : ' disabled') + '><svg class="ico"><use href="#i-link"/></svg>Enlace</button>'
@@ -5619,13 +5637,14 @@ async function _vacCopiar(id) {
 }
 function _vacEditar(id) {
   var v = id ? (_vacLista || []).find(function(x){ return x.id === id; }) : null;
-  v = v || { perfil: 'guardia', instalacion: '', comuna: '', turno: '4x4_rotativo', turno_otra: '', detalle: '', activa: true };
+  v = v || { perfil: 'guardia', instalacion: '', comuna: '', turno: '4x4_rotativo', turno_otra: '', detalle: '', horario: '', sueldo_liquido: null, residencia: '', certificado: 'os10', beneficios: [], activa: true };
+  var benef = v.beneficios || [], otros = benef.filter(function(b){ return _VAC_BENEF.indexOf(b) === -1; });
   var e = htmlEsc, cargos = getActiveCargos();
   if (cargos.indexOf(v.perfil) === -1) cargos = cargos.concat([v.perfil]);
   var ov = document.createElement('div'); ov.id = 'vac-overlay'; ov.className = 'rh-ov';
   ov.innerHTML = '<div class="rh-box" style="width:min(560px,100%)">'
     + '<div class="rh-top"><div><div style="font-size:17px;font-weight:800;letter-spacing:-.02em">' + (id ? 'Editar vacante' : 'Nueva vacante') + '</div>'
-    + '<div style="font-size:12px;color:var(--ink3)">La instalación se ve solo en el panel. Comuna, turno y descripción se muestran en el formulario.</div></div>'
+    + '<div style="font-size:12px;color:var(--ink3)">La instalación se ve solo en el panel. El resto de los datos se muestran al postulante.</div></div>'
     + '<button class="dh-close" title="Cerrar" aria-label="Cerrar" onclick="document.getElementById(\'vac-overlay\').remove()"><svg class="ico"><use href="#i-x"/></svg></button></div>'
     + '<div class="rh-body">'
     + '<div class="field"><label>Cargo</label><select id="vac-perfil" class="rh-in">' + cargos.map(function(k){ return '<option value="' + e(k) + '"' + (k === v.perfil ? ' selected' : '') + '>' + e((PERFIL_META[k] || {}).label || k) + '</option>'; }).join('') + '</select></div>'
@@ -5634,7 +5653,14 @@ function _vacEditar(id) {
     + '<div class="field"><label>Turno</label><select id="vac-turno" class="rh-in" onchange="document.getElementById(\'vac-otra\').style.display=this.value===\'otra\'?\'\':\'none\'">'
     + '<option value="">Sin indicar</option>' + _RH_JORNADAS.map(function(j){ return '<option value="' + j[0] + '"' + (j[0] === v.turno ? ' selected' : '') + '>' + j[1] + '</option>'; }).join('') + '</select>'
     + '<input id="vac-otra" class="rh-in" maxlength="60" value="' + e(v.turno_otra) + '" placeholder="Ej: 5x2 día" style="margin-top:6px;display:' + (v.turno === 'otra' ? '' : 'none') + '"></div>'
-    + '<div class="field"><label>Descripción para el postulante <span style="text-transform:none;font-weight:500">(opcional)</span></label><textarea id="vac-det" class="rh-in" rows="2" maxlength="300" placeholder="Ej: Control de acceso en planta, turno de noche">' + e(v.detalle) + '</textarea></div>'
+    + '<div class="rh-grid2"><div class="field"><label>Horario</label><input id="vac-horario" class="rh-in" maxlength="80" value="' + e(v.horario || '') + '" placeholder="Ej: 08:00 a 20:00"></div>'
+    + '<div class="field"><label>Sueldo líquido</label><input id="vac-sueldo" class="rh-in" type="number" min="0" step="1000" value="' + (v.sueldo_liquido || '') + '" placeholder="Ej: 650000"></div></div>'
+    + '<div class="rh-grid2"><div class="field"><label>Certificado exigido</label><select id="vac-cert" class="rh-in"><option value="">No exige</option>'
+    + Object.keys(_VAC_CERT).map(function(k){ return '<option value="' + k + '"' + (k === v.certificado ? ' selected' : '') + '>' + _VAC_CERT[k] + '</option>'; }).join('') + '</select></div>'
+    + '<div class="field"><label>Requisito de residencia</label><input id="vac-resid" class="rh-in" maxlength="120" value="' + e(v.residencia || '') + '" placeholder="Ej: Vivir en Graneros o comunas cercanas"></div></div>'
+    + '<div class="field"><label>Beneficios</label><div class="vac-benef">' + _VAC_BENEF.map(function(b){ return '<label><input type="checkbox" class="vac-b" value="' + e(b) + '"' + (benef.indexOf(b) !== -1 ? ' checked' : '') + '><span>' + e(b) + '</span></label>'; }).join('') + '</div>'
+    + '<input id="vac-botros" class="rh-in" maxlength="120" style="margin-top:8px" value="' + e(otros.join(', ')) + '" placeholder="Otros beneficios, separados por coma"></div>'
+    + '<div class="field"><label>Descripción para el postulante <span style="text-transform:none;font-weight:500">(opcional)</span></label><textarea id="vac-det" class="rh-in" rows="2" maxlength="300" placeholder="Ej: Control de acceso en planta">' + e(v.detalle) + '</textarea></div>'
     + '</div><div class="rh-pie"><span style="margin-right:auto"></span><button class="rs-btn" onclick="document.getElementById(\'vac-overlay\').remove()">Cancelar</button>'
     + '<button class="rs-btn prim" onclick="_vacGuardarForm(' + (id ? '\'' + e(id) + '\'' : '') + ')">Guardar</button></div></div>';
   document.body.appendChild(ov);
@@ -5642,7 +5668,11 @@ function _vacEditar(id) {
 }
 async function _vacGuardarForm(id) {
   var val = function(k){ return ((document.getElementById(k) || {}).value || '').trim(); };
-  var d = { perfil: val('vac-perfil'), instalacion: val('vac-inst'), comuna: val('vac-comuna'), turno: val('vac-turno'), turno_otra: val('vac-turno') === 'otra' ? val('vac-otra') : '', detalle: val('vac-det') };
+  var sueldo = parseInt(val('vac-sueldo').replace(/\D/g, ''), 10);
+  var benef = [].slice.call(document.querySelectorAll('.vac-b:checked')).map(function(x){ return x.value; })
+    .concat(val('vac-botros').split(',').map(function(x){ return x.trim().slice(0, 40); }).filter(Boolean)).slice(0, 12);
+  var d = { perfil: val('vac-perfil'), instalacion: val('vac-inst'), comuna: val('vac-comuna'), turno: val('vac-turno'), turno_otra: val('vac-turno') === 'otra' ? val('vac-otra') : '', detalle: val('vac-det'),
+            horario: val('vac-horario'), sueldo_liquido: isNaN(sueldo) ? null : Math.min(sueldo, 10000000), residencia: val('vac-resid'), certificado: val('vac-cert'), beneficios: benef };
   if (!d.instalacion) { toast('Escriba la instalación', 'er'); return; }
   try { await _vacGuardar(id, d); var o = document.getElementById('vac-overlay'); if (o) o.remove(); toast(id ? 'Vacante actualizada' : 'Vacante creada', 'ok'); renderVacantesTab(); }
   catch(e) { toast('No se pudo guardar: ' + e.message, 'er'); }
