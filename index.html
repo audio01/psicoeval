@@ -1145,15 +1145,35 @@ textarea.rh-in{resize:vertical}
 .ev-step.done .ev-step-st{color:#16a34a}
 .ev-step-chev{color:var(--ink4);transition:transform .2s}
 .ev-step:not(.open) .ev-step-chev{transform:rotate(-90deg)}
-.ev-step-b{display:grid;grid-template-rows:1fr;transition:grid-template-rows .2s ease}
+.ev-step-b{display:grid;grid-template-rows:1fr}
+/* Un paso por pantalla */
+#ev-main .ev-step:not(.open){display:none}
+#ev-main .ev-step-h{cursor:default;padding:14px 18px 10px}
+#ev-main .ev-step-chev{display:none}
+@keyframes evEntraDer{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:none}}
+@keyframes evEntraIzq{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:none}}
+.ev-entra-der{animation:evEntraDer .2s ease-out}
+.ev-entra-izq{animation:evEntraIzq .2s ease-out}
+.ev-pasos{display:flex;gap:4px}
+.ev-paso-b{min-width:0;display:flex;flex-direction:column;gap:5px;padding:2px 0;background:none;border:none;cursor:pointer;font-family:inherit;text-align:left}
+.ev-paso-bar{display:block;height:6px;border-radius:3px;background:var(--bg);border:1px solid var(--border);overflow:hidden}
+.ev-paso-bar i{display:block;height:100%;background:var(--accent)}
+.ev-paso-b.ok .ev-paso-bar i{background:#16a34a}
+.ev-paso-lb{font-size:11px;color:var(--ink4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ev-paso-b.on .ev-paso-lb{color:var(--accent);font-weight:700}
+.ev-paso-b.ok .ev-paso-lb{color:#16a34a;font-weight:600}
+.ev-paso-b:hover .ev-paso-lb{color:var(--ink)}
+.ev-nav-next{white-space:nowrap}
+#ev-step-3 .ev-comp-nav{display:none}
+@media(max-width:700px){.ev-barra{flex-wrap:wrap;gap:6px 8px}.ev-barra-info{order:-1;flex-basis:100%;text-align:center}.ev-nav-prev,.ev-nav-next,#ev-nav-fin{flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis}}
+.ev-nav-prev{white-space:nowrap}
 .ev-step-in{min-height:0;overflow:hidden;padding:0 18px 18px}
-.ev-step:not(.open) .ev-step-b{grid-template-rows:0fr}
-.ev-step:not(.open) .ev-step-in{visibility:hidden;transition:visibility 0s .2s}
+
 .ev-step-sum{display:none;font-size:12px;font-weight:600;color:var(--ink2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ev-step:not(.open) .ev-step-sum:not(:empty){display:block}
 .ev-step:not(.open):has(.ev-step-sum:not(:empty)) .ev-step-t small{display:none}
 .ev-step-t{min-width:0}
-.ev-step:not(.open) .ev-step-h:hover .ev-step-st::after{content:' · Abrir';color:var(--accent)}
+
 .ev-main>*{width:100%;max-width:900px;align-self:center}
 #ev-main textarea{min-height:52px;overflow:hidden;resize:none}
 .ev-datos-res{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:9px 12px;border:1px solid var(--border);border-radius:10px;background:var(--bg);margin-bottom:12px}
@@ -1164,7 +1184,7 @@ textarea.rh-in{resize:vertical}
 .ev-q-prueba span{display:block;font-size:10.5px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px}
 .ev-q-prueba div+div{margin-top:3px}
 [data-theme="dark"] .ev-datos-falta{background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.4);color:#fcd34d}
-@media (prefers-reduced-motion: reduce){.ev-step-b,.ev-fila-b,.ev-step-chev,.ev-fila-tg,.ev-step:not(.open) .ev-step-in,.ev-fila:not(.open) .ev-fila-in{transition:none}}
+@media (prefers-reduced-motion: reduce){.ev-entra-der,.ev-entra-izq{animation:none}.ev-step-b,.ev-fila-b,.ev-step-chev,.ev-fila-tg,.ev-step:not(.open) .ev-step-in,.ev-fila:not(.open) .ev-fila-in{transition:none}}
 .ev-hint{font-size:12.5px;color:var(--ink3);line-height:1.55;background:var(--surface2);border-radius:9px;padding:9px 12px;margin-bottom:14px}
 .ev-sub{font-size:11px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
 .ev-aviso{font-size:12.5px;color:#1e3a8a;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:9px 12px}
@@ -13860,7 +13880,7 @@ function _tabEntrevistasDrawer(c) {
       + '<span class="ev-step-t">' + p[1] + ' ' + p[0] + '<small>' + sub + '</small><span class="ev-step-sum" id="ev-sum-' + n + '"></span></span>'
       + '<span class="ev-step-tm" id="ev-tm-' + n + '"></span><span class="ev-step-st" id="ev-st-' + n + '"></span><span class="ev-step-chev">▾</span></button>'
       + '<div class="ev-step-b"><div class="ev-step-in">' + cuerpo
-      + (n < _EV_PASOS.length && n !== 3 ? '<div style="text-align:right;margin-top:16px"><button type="button" class="btn btn-outline btn-sm" onclick="_evIrPaso(' + (n + 1) + ')">Siguiente: ' + _EV_PASOS[n][0] + ' →</button></div>' : '')
+
       + '</div></div></section>';
   };
 
@@ -14033,8 +14053,10 @@ function _tabEntrevistasDrawer(c) {
   main += paso(6, 'Síntesis y decisión', p5);
 
   // Barra fija: resultado en vivo, borrador y finalizar
-  main += '<div class="ev-barra"><div class="ev-barra-info" id="ev-barra-info"></div>'
-    + '<button type="button" class="btn btn-primary btn-sm" onclick="_evFinalizar(\'' + c.id + '\')" style="white-space:nowrap;padding:8px 16px">Finalizar entrevista</button></div>';
+  main += '<div class="ev-barra"><button type="button" class="btn btn-ghost btn-sm ev-nav-prev" id="ev-nav-prev" onclick="_evPasoRel(-1)"></button>'
+    + '<div class="ev-barra-info" id="ev-barra-info"></div>'
+    + '<button type="button" class="btn btn-outline btn-sm ev-nav-next" id="ev-nav-next" onclick="_evPasoRel(1)"></button>'
+    + '<button type="button" class="btn btn-primary btn-sm" id="ev-nav-fin" onclick="_evFinalizar(\'' + c.id + '\')" style="white-space:nowrap;padding:8px 16px">Finalizar entrevista</button></div>';
   main += '</div>'; // /ev-main
 
   return main;
@@ -14073,27 +14095,57 @@ function _evInit(c) {
       + '. Al guardar, los cambios quedan en esta misma entrevista. <a onclick="_evNuevaEntrevista(\'' + c.id + '\')">Iniciar otra entrevista distinta</a></div>';
   }
   _evCompIr(_evCompIdx);
-  _evProgreso();
+  _evPasoVis = 1;
+  _evSoloPaso(1);
   _evAutoAltoTodo();
 }
 
 // Un paso abierto a la vez: los demás se cierran en una línea con lo registrado
 function _evMovReducido() { try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch(e) { return false; } }
+// Un paso por pantalla: se ve solo el paso actual; al cambiar, el nuevo entra desde el lado
+var _evPasoVis = 1, _evEstPasos = [];
 function _evSoloPaso(n) {
-  document.querySelectorAll('#ev-main .ev-step').forEach(function(s){ s.classList.toggle('open', s.id === 'ev-step-' + n); });
+  var dir = n >= _evPasoVis ? 'der' : 'izq';
+  document.querySelectorAll('#ev-main .ev-step').forEach(function(s){
+    var on = s.id === 'ev-step-' + n;
+    s.classList.toggle('open', on);
+    s.classList.remove('ev-entra-der', 'ev-entra-izq');
+    if (on && n !== _evPasoVis && !_evMovReducido()) { void s.offsetWidth; s.classList.add('ev-entra-' + dir); }
+  });
+  _evPasoVis = n;
   _evPasoActivo(n);
+  _evNavPintar();
   _evProgreso();
 }
-function _evToggle(n) {
-  var st = document.getElementById('ev-step-' + n); if (!st) return;
-  if (st.classList.contains('open')) { st.classList.remove('open'); _evProgreso(); return; }
-  _evIrPaso(n);
+// En el paso 3, Anterior y Siguiente recorren primero las competencias STAR
+function _evPasoRel(d) {
+  var nS = document.querySelectorAll('#ev-main .ev-comp[data-star]').length;
+  if (_evPasoVis === 3 && ((d > 0 && _evCompIdx < nS - 1) || (d < 0 && _evCompIdx > 0))) {
+    _evCompIr(_evCompIdx + d);
+    var m = document.getElementById('ev-main'); if (m) m.scrollTop = 0;
+    return;
+  }
+  _evIrPaso(Math.max(1, Math.min(_EV_PASOS.length, _evPasoVis + d)));
 }
+function _evNavPintar() {
+  var n = _evPasoVis, N = _EV_PASOS.length;
+  var pv = document.getElementById('ev-nav-prev'), nx = document.getElementById('ev-nav-next'), fin = document.getElementById('ev-nav-fin');
+  var rows = [].slice.call(document.querySelectorAll('#ev-main .ev-comp[data-star]')), k = _evCompIdx;
+  var compNom = function(i){ return rows[i] ? _evCfg(rows[i].dataset.evComp).name : ''; };
+  var enStar = n === 3 && rows.length;
+  if (pv) { pv.style.visibility = n > 1 || (enStar && k > 0) ? '' : 'hidden'; pv.textContent = '← ' + (enStar && k > 0 ? compNom(k - 1) : n > 1 ? _EV_PASOS[n - 2][0] : ''); }
+  if (nx) { nx.style.display = n < N ? '' : 'none'; nx.textContent = enStar && k < rows.length - 1 ? 'Siguiente: ' + compNom(k + 1) + ' →' : n < N ? 'Siguiente: ' + _EV_PASOS[n][0] + ' →' : ''; }
+  if (fin) fin.style.display = n === N ? '' : 'none';
+}
+function _evToggle(n) { _evIrPaso(n); }
 function _evIrPaso(n) {
   var st = document.getElementById('ev-step-' + n); if (!st) return;
   _evSoloPaso(n);
-  // Se desplaza cuando terminó de cerrarse el paso anterior (200 ms), para llegar al lugar exacto
-  setTimeout(function(){ st.scrollIntoView({ behavior: _evMovReducido() ? 'auto' : 'smooth', block: 'start' }); _evAutoAltoTodo(st); }, _evMovReducido() ? 0 : 210);
+  // Cada paso empieza arriba
+  var m = document.getElementById('ev-main'), b = document.getElementById('drawer-body');
+  if (m) m.scrollTop = 0;
+  if (b && b.scrollHeight > b.clientHeight) b.scrollTop = 0;
+  _evAutoAltoTodo(st);
 }
 
 // Competencias STAR: una a la vez, con tarjetas que muestran puntaje y tiempo
@@ -14119,6 +14171,7 @@ function _evCompIr(i) {
   var pv = document.getElementById('ev-comp-prev'), nx = document.getElementById('ev-comp-next');
   if (pv) { pv.style.visibility = i > 0 ? '' : 'hidden'; pv.textContent = '← ' + nombre(i - 1); }
   if (nx) nx.textContent = i < rows.length - 1 ? nombre(i + 1) + ' →' : 'Siguiente: Confirmar competencias →';
+  if (typeof _evNavPintar === 'function' && document.getElementById('ev-nav-next')) _evNavPintar();
 }
 
 // Guía STAR: qué partes cubrió el relato (orienta; no pone el puntaje)
@@ -14178,13 +14231,14 @@ function _evRelojPintar() {
   var tot = _evDuracion();
   // Mientras se elige la duración no se redibuja (cerraría la lista)
   var ae = document.activeElement;
-  if (!(ae && ae.classList && ae.classList.contains('ev-reloj-dur'))) box.innerHTML = '<div class="ev-reloj-barra"><div class="ev-reloj-t">Tiempo de entrevista</div><div class="ev-reloj-seg">'
+  if (!(ae && ae.classList && ae.classList.contains('ev-reloj-dur'))) box.innerHTML = '<div class="ev-reloj-barra"><div class="ev-pasos">'
     + _EV_PESO.map(function(m, i){
-        var u = (_evT.pasos[i + 1] || 0) / _evSegPaso(i);
-        return '<span style="flex:' + m + '" title="' + _EV_PASOS[i][0] + ': ' + _evMinTxt(_evSegPaso(i)) + ' sugeridos' + (u ? ', usó ' + _evMmss(_evT.pasos[i + 1]) : '') + '"><i style="width:' + Math.min(100, Math.round(u * 100)) + '%' + (u > 1 ? ';background:#ea580c' : '') + '"></i></span>';
-      }).join('') + '</div><div class="ev-reloj-lb">'
-    + _EV_PESO.map(function(m, i){ return '<span style="flex:' + m + '"' + (i + 1 === _evTPaso ? ' class="on"' : '') + '>' + (m >= 4 ? _EV_PASOS[i][0].replace(' competencias', '').replace('Competencias ', '') : '') + '</span>'; }).join('')
-    + '</div></div><div class="ev-reloj-n"><b>' + _evMmss(_evT.total) + '</b><small>de <select class="ev-reloj-dur" onchange="this.blur();_evDuracionSet(this.value)" title="Duración sugerida de la entrevista">'
+        var n = i + 1, u = (_evT.pasos[n] || 0) / _evSegPaso(i), listo = !!(_evEstPasos[n] && _evEstPasos[n][0]), act = n === _evPasoVis;
+        var nom = _EV_PASOS[i][0].replace(' competencias', '').replace('Competencias ', '').replace('Cierre y dictamen', 'Cierre').replace('Desde las pruebas', 'Pruebas');
+        return '<button type="button" class="ev-paso-b' + (act ? ' on' : listo ? ' ok' : '') + '" style="flex:' + m + '" onclick="_evIrPaso(' + n + ')" title="' + _EV_PASOS[i][0] + ': ' + _evMinTxt(_evSegPaso(i)) + ' sugeridos' + (u ? ', usó ' + _evMmss(_evT.pasos[n]) : '') + '">'
+          + '<span class="ev-paso-bar"><i style="width:' + (listo && !act ? 100 : Math.min(100, Math.round(u * 100))) + '%' + (u > 1 && !listo ? ';background:#ea580c' : '') + '"></i></span>'
+          + '<span class="ev-paso-lb">' + (listo ? '✓ ' : '') + n + ' ' + nom + (act && _evEstPasos[n] && _evEstPasos[n][1] && !listo ? ' · ' + _evEstPasos[n][1] : '') + '</span></button>';
+      }).join('') + '</div></div><div class="ev-reloj-n"><b>' + _evMmss(_evT.total) + '</b><small>de <select class="ev-reloj-dur" onchange="this.blur();_evDuracionSet(this.value)" title="Duración sugerida de la entrevista">'
     + _EV_DURACIONES.concat(_EV_DURACIONES.indexOf(tot) < 0 ? [tot] : []).map(function(d){ return '<option value="' + d + '"' + (d === tot ? ' selected' : '') + '>' + d + '</option>'; }).join('')
     + '</select> min sugeridos</small></div>'
     + '<button type="button" class="btn btn-ghost btn-sm" onclick="_evRelojToggle()">' + (_evTCorre ? '⏸ Pausar' : (_evT.total ? '▶ Seguir' : '▶ Iniciar')) + '</button>';
@@ -14242,6 +14296,7 @@ function _evProgreso() {
   var dict = (m.querySelector('input[name="ev-dictamen"]:checked') || {}).value || '';
   var motivoOk = !_evMotivoRequerido() || val('ef-motivo');
   est[6] = [!!dict && !!motivoOk, dict && motivoOk ? '✓' : ''];
+  _evEstPasos = est;
   _evResumenesPasos(m, comps, dict);
   _evDatosPintar();
   for (var n = 1; n <= _EV_PASOS.length; n++) {
@@ -14251,6 +14306,7 @@ function _evProgreso() {
     var b = m.querySelector('.ev-ix[data-paso="' + n + '"]'); if (b) b.classList.toggle('done', est[n][0]);
     var sec = document.getElementById('ev-step-' + n); if (sec) sec.classList.toggle('done', est[n][0]);
   }
+  _evRelojPintar();
   // Barra inferior
   var info = document.getElementById('ev-barra-info');
   if (info) {
