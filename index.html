@@ -1960,6 +1960,22 @@ body.adm .pdf-ic{display:inline-flex;color:var(--ink4)}
 .vac-acc{display:flex;align-items:center;gap:8px}
 .vac-acc .rs-btn .ico{width:14px;height:14px}
 .vac-acc .rs-btn[disabled]{opacity:.4;cursor:not-allowed}
+.vac-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.vac-tools .bd-btn{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.vac-tools .bd-btn .ico{width:15px;height:15px}
+.vac-cargo{font-style:normal;font-size:11.5px;font-weight:700;color:var(--accent);background:var(--accent-l);border-radius:100px;padding:2px 8px;margin-left:6px;vertical-align:2px}
+.vac-txt small a{color:var(--accent);font-weight:600}
+.vx-res{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.vx-res span{background:rgba(255,255,255,.55);box-shadow:var(--glass-edge);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--ink3)}
+.vx-res b{display:block;font-size:22px;color:var(--ink);letter-spacing:-.03em}
+.vx-res .vx-mal b{color:#dc2626}
+.vx-tbl td small{display:block;color:var(--ink4);font-size:11px}
+.vx-t{font-size:11px;font-weight:700;border-radius:100px;padding:2px 8px}
+.vx-n{background:rgba(22,163,74,.12);color:#15803d}.vx-c{background:rgba(39,71,216,.1);color:var(--accent)}
+.ch-alto span,.ch-aviso span{font-size:12px;line-height:1.5}
+.ch-aviso b{display:block}
+[data-theme="dark"] .vx-res span{background:rgba(255,255,255,.05)}
+@media (max-width:700px){.vx-res{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .vac-datos{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
 .vac-datos i{font-style:normal;font-size:11.5px;font-weight:600;color:var(--ink2);background:rgba(20,33,61,.05);border-radius:100px;padding:3px 9px}
 .reg-op .vac-datos i{font-weight:500}
@@ -2790,7 +2806,11 @@ body.adm .rh-box .vac-benef label,.vac-benef label{display:inline-flex;white-spa
             <h2 class="adm-t" style="margin-bottom:4px">Vacantes</h2>
             <div style="font-size:13px;color:var(--ink3)">El postulante elige una vacante activa de su cargo al registrarse. En el formulario ve todos los datos de la vacante, menos la instalación, que se ve solo aquí.</div>
           </div>
-          <button class="adm-prim" id="vac-nueva" onclick="_vacEditar()">+ Nueva vacante</button>
+          <div class="vac-tools" id="vac-tools">
+            <button class="bd-btn" onclick="_vacExcelBajar()" title="Descargar todas las vacantes en Excel"><svg class="ico"><use href="#i-down"/></svg>Descargar Excel</button>
+            <label class="bd-btn" title="Subir la planilla modificada: antes de guardar se muestran los cambios"><svg class="ico"><use href="#i-sheet"/></svg>Subir Excel<input type="file" accept=".xlsx,.xls,.csv" onchange="_vacExcelSubir(this)" hidden></label>
+            <button class="adm-prim" id="vac-nueva" onclick="_vacEditar()">+ Nueva vacante</button>
+          </div>
         </div>
         <div id="vacantes-content"></div>
       </div></div>
@@ -5560,7 +5580,7 @@ async function _regVacCargar(perfil) {
       cualquiera = !!document.querySelector('input[name="vacante"][value=""]:checked');
   ops.innerHTML = lista.map(function(v) {
     return '<label class="reg-op"><input type="radio" name="vacante" value="' + htmlEsc(v.id) + '"' + (v.id === previo ? ' checked' : '') + ' onchange="_regCambio(this);document.getElementById(\'e-vac\').textContent=\'\'">'
-      + '<span>' + htmlEsc(_vacTxt(v)) + (v.detalle ? '<small style="display:block;font-weight:500;color:var(--ink3);margin-top:2px">' + htmlEsc(v.detalle) + '</small>' : '')
+      + '<span>' + (v.cargo_nombre && v.cargo_nombre !== (PERFIL_META[v.perfil] || {}).label ? '<b style="display:block">' + htmlEsc(v.cargo_nombre) + '</b>' : '') + htmlEsc(_vacTxt(v)) + (v.detalle ? '<small style="display:block;font-weight:500;color:var(--ink3);margin-top:2px">' + htmlEsc(v.detalle) + '</small>' : '')
       + (_vacDatos(v).length ? '<span class="vac-datos">' + _vacDatos(v).map(function(x){ return '<i>' + htmlEsc(x) + '</i>'; }).join('') + '</span>' : '') + '</span></label>';
   }).join('') + '<label class="reg-op"><input type="radio" name="vacante" value=""' + (cualquiera ? ' checked' : '') + ' onchange="_regCambio(this);document.getElementById(\'e-vac\').textContent=\'\'"><span>Cualquier vacante / aún no sé</span></label>';
   campo.style.display = '';
@@ -5577,7 +5597,7 @@ async function _vacCargar() {
 function _vacEnlace(id) { return location.origin + location.pathname + '?v=' + id; }
 async function renderVacantesTab() {
   var box = document.getElementById('vacantes-content'); if (!box) return;
-  var bN = document.getElementById('vac-nueva'); if (bN) bN.style.display = S.role === 'admin' ? '' : 'none';
+  var bN = document.getElementById('vac-tools'); if (bN) bN.style.display = S.role === 'admin' ? '' : 'none';
   box.innerHTML = '<div class="pdf-vacio">Cargando…</div>';
   var lista, all = [];
   try { lista = await _vacCargar(); all = await getDB(); } catch(e) { box.innerHTML = '<div class="pdf-vacio">No se pudieron cargar las vacantes: ' + htmlEsc(e.message) + '</div>'; return; }
@@ -5592,7 +5612,8 @@ async function renderVacantesTab() {
       var id = htmlEsc(v.id), n = cuenta[v.id] || 0;
       h += '<div class="cg-card vac-card' + (v.activa ? '' : ' off') + '"><div class="vac-fila">'
         + '<span class="cg-ic"><svg class="ico"><use href="#i-pin"/></svg></span>'
-        + '<div class="vac-txt"><b>' + htmlEsc(v.instalacion) + '</b><span>' + htmlEsc(_vacTxt(v)) + '</span>' + (v.detalle ? '<small>' + htmlEsc(v.detalle) + '</small>' : '')
+        + '<div class="vac-txt"><b>' + htmlEsc(v.instalacion) + (v.cargo_nombre && v.cargo_nombre !== (PERFIL_META[v.perfil] || {}).label ? ' <em class="vac-cargo">' + htmlEsc(v.cargo_nombre) + '</em>' : '') + '</b><span>' + htmlEsc(_vacTxt(v)) + '</span>'
+        + (v.direccion ? '<small>' + htmlEsc(v.direccion) + (v.link_mapa ? ' · <a href="' + htmlEsc(v.link_mapa) + '" target="_blank" rel="noopener">Ver mapa</a>' : '') + '</small>' : '') + (v.detalle ? '<small>' + htmlEsc(v.detalle) + '</small>' : '')
         + (_vacDatos(v).length ? '<span class="vac-datos">' + _vacDatos(v).map(function(x){ return '<i>' + htmlEsc(x) + '</i>'; }).join('') + '</span>' : '') + '</div>'
         + '<a class="vac-n" onclick="_bdIrConFiltros({})" title="Postulantes que eligieron esta vacante">' + n + (n === 1 ? ' postulante' : ' postulantes') + '</a>'
         + (admin ? '<div class="vac-acc">'
@@ -5650,10 +5671,13 @@ function _vacEditar(id) {
     + '<div class="field"><label>Cargo</label><select id="vac-perfil" class="rh-in">' + cargos.map(function(k){ return '<option value="' + e(k) + '"' + (k === v.perfil ? ' selected' : '') + '>' + e((PERFIL_META[k] || {}).label || k) + '</option>'; }).join('') + '</select></div>'
     + '<div class="rh-grid2"><div class="field"><label>Instalación <span class="rh-req">*</span></label><input id="vac-inst" class="rh-in" maxlength="120" value="' + e(v.instalacion) + '" placeholder="Ej: Bayer Graneros"></div>'
     + '<div class="field"><label>Comuna</label><input id="vac-comuna" class="rh-in" maxlength="80" value="' + e(v.comuna) + '" placeholder="Ej: Graneros"></div></div>'
+    + '<div class="field"><label>Nombre del cargo en el aviso <span style="text-transform:none;font-weight:500">(opcional)</span></label><input id="vac-cnom" class="rh-in" maxlength="80" value="' + e(v.cargo_nombre || '') + '" placeholder="Ej: Guardia CCTV"></div>'
+    + '<div class="rh-grid2"><div class="field"><label>Dirección <span style="text-transform:none;font-weight:500">(solo panel)</span></label><input id="vac-dir" class="rh-in" maxlength="200" value="' + e(v.direccion || '') + '"></div>'
+    + '<div class="field"><label>Link del mapa <span style="text-transform:none;font-weight:500">(solo panel)</span></label><input id="vac-mapa" class="rh-in" maxlength="300" value="' + e(v.link_mapa || '') + '" placeholder="https://maps.app.goo.gl/…"></div></div>'
     + '<div class="field"><label>Turno</label><select id="vac-turno" class="rh-in" onchange="document.getElementById(\'vac-otra\').style.display=this.value===\'otra\'?\'\':\'none\'">'
     + '<option value="">Sin indicar</option>' + _RH_JORNADAS.map(function(j){ return '<option value="' + j[0] + '"' + (j[0] === v.turno ? ' selected' : '') + '>' + j[1] + '</option>'; }).join('') + '</select>'
     + '<input id="vac-otra" class="rh-in" maxlength="60" value="' + e(v.turno_otra) + '" placeholder="Ej: 5x2 día" style="margin-top:6px;display:' + (v.turno === 'otra' ? '' : 'none') + '"></div>'
-    + '<div class="rh-grid2"><div class="field"><label>Horario</label><input id="vac-horario" class="rh-in" maxlength="80" value="' + e(v.horario || '') + '" placeholder="Ej: 08:00 a 20:00"></div>'
+    + '<div class="rh-grid2"><div class="field"><label>Horario</label><input id="vac-horario" class="rh-in" maxlength="120" value="' + e(v.horario || '') + '" placeholder="Ej: 08:00 a 20:00"></div>'
     + '<div class="field"><label>Sueldo líquido</label><input id="vac-sueldo" class="rh-in" type="number" min="0" step="1000" value="' + (v.sueldo_liquido || '') + '" placeholder="Ej: 650000"></div></div>'
     + '<div class="rh-grid2"><div class="field"><label>Certificado exigido</label><select id="vac-cert" class="rh-in"><option value="">No exige</option>'
     + Object.keys(_VAC_CERT).map(function(k){ return '<option value="' + k + '"' + (k === v.certificado ? ' selected' : '') + '>' + _VAC_CERT[k] + '</option>'; }).join('') + '</select></div>'
@@ -5672,10 +5696,181 @@ async function _vacGuardarForm(id) {
   var benef = [].slice.call(document.querySelectorAll('.vac-b:checked')).map(function(x){ return x.value; })
     .concat(val('vac-botros').split(',').map(function(x){ return x.trim().slice(0, 40); }).filter(Boolean)).slice(0, 12);
   var d = { perfil: val('vac-perfil'), instalacion: val('vac-inst'), comuna: val('vac-comuna'), turno: val('vac-turno'), turno_otra: val('vac-turno') === 'otra' ? val('vac-otra') : '', detalle: val('vac-det'),
-            horario: val('vac-horario'), sueldo_liquido: isNaN(sueldo) ? null : Math.min(sueldo, 10000000), residencia: val('vac-resid'), certificado: val('vac-cert'), beneficios: benef };
+            horario: val('vac-horario'), sueldo_liquido: isNaN(sueldo) ? null : Math.min(sueldo, 10000000), residencia: val('vac-resid'), certificado: val('vac-cert'), beneficios: benef,
+            cargo_nombre: val('vac-cnom'), direccion: val('vac-dir'), link_mapa: /^https:\/\//.test(val('vac-mapa')) ? val('vac-mapa') : '' };
+  if (val('vac-mapa') && !d.link_mapa) { toast('El link del mapa debe empezar con https://', 'er'); return; }
   if (!d.instalacion) { toast('Escriba la instalación', 'er'); return; }
   try { await _vacGuardar(id, d); var o = document.getElementById('vac-overlay'); if (o) o.remove(); toast(id ? 'Vacante actualizada' : 'Vacante creada', 'ok'); renderVacantesTab(); }
   catch(e) { toast('No se pudo guardar: ' + e.message, 'er'); }
+}
+
+// ── Planilla Excel de vacantes (27_vacantes_excel.sql) ──
+// Mismas columnas que la planilla de RH Seguridad, más Certificado, Residencia, Otros beneficios e ID.
+// Al subir: se lee en este computador, se muestran los cambios y se guardan solo al confirmar.
+var _XLSX_LIB = ['https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js', 'sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw', 'XLSX'];
+var _VAC_COLS = ['Instalación', 'Activo', 'Comuna', 'Direccion', 'Link Mapa', 'Jornada', 'Turno', 'Cargo', 'Horario', 'Total Líquido', 'Colación', 'Comentario', 'Certificado', 'Residencia', 'Otros beneficios', 'ID'];
+var _VAC_TURNO_XL = { '4x4_rotativo':['Rotativo', '4x4'], '4x4_dia':['Día', '4x4'], '4x4_noche':['Noche', '4x4'], '7x7_noche':['Noche', '7x7'] };
+function _vacNorm(t) { return String(t == null ? '' : t).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim(); }
+function _vacLimpio(t) { return String(t == null ? '' : t).replace(/\s+/g, ' ').trim(); }
+// Jornada (Día / Noche / Rotativo) + sistema (4x4, 5x2…) → clave de turno del panel
+function _vacTurnoDe(jornada, sistema) {
+  var j = _vacNorm(jornada).replace(/\s/g, ''), t = _vacNorm(sistema).replace(/\s/g, '');
+  if (/^\d+x\d+$/.test(j) && !/^\d+x\d+$/.test(t)) { var x = j; j = t; t = x; }   // columnas invertidas
+  var jd = /^dia/.test(j) ? 'día' : /^noche/.test(j) ? 'noche' : /^rotativ/.test(j) ? 'rotativo' : j;
+  var k = { '4x4|rotativo':'4x4_rotativo', '4x4|día':'4x4_dia', '4x4|noche':'4x4_noche', '7x7|noche':'7x7_noche' }[t + '|' + jd];
+  if (k) return { turno: k, turno_otra: '' };
+  var otra = [t, jd].filter(Boolean).join(' ');
+  return otra ? { turno: 'otra', turno_otra: otra.slice(0, 60) } : { turno: '', turno_otra: '' };
+}
+function _vacTurnoA(v) {
+  if (_VAC_TURNO_XL[v.turno]) return _VAC_TURNO_XL[v.turno];
+  var m = String(v.turno_otra || '').match(/(\d+x\d+)/i), resto = String(v.turno_otra || '').replace(/(\d+x\d+)/i, '').trim();
+  return [resto ? resto.charAt(0).toUpperCase() + resto.slice(1) : '', m ? m[1] : ''];
+}
+function _vacPerfilDe(cargo) {
+  var c = _vacNorm(cargo);
+  if (/aseo/.test(c)) return 'auxiliar_aseo';
+  if (/conductor|chofer/.test(c)) return 'conductor';
+  if (/supervisor/.test(c)) return 'supervisor';
+  if (/prevenci/.test(c)) return 'prevencionista';
+  if (/administrativ/.test(c)) return 'administrativo';
+  if (/jef/.test(c)) return 'jefatura';
+  return 'guardia';
+}
+var _VAC_CERT_XL = { '':'No', os10:'OS-10', spd:'SPD', os10_o_spd:'OS-10 o SPD' };
+// Una fila de la planilla → datos de la vacante, con errores (no se carga) y avisos (se carga)
+function _vacDesdeFila(f) {
+  var g = function(k){ var n = _vacNorm(k); for (var key in f) if (_vacNorm(key) === n) return f[key]; return ''; };
+  var err = [], av = [], d = {};
+  d.instalacion = _vacLimpio(g('Instalación')).slice(0, 120);
+  if (!d.instalacion) err.push('falta la instalación');
+  var act = _vacNorm(g('Activo'));
+  d.activa = /^(si|s|1|true|activo|activa)$/.test(act);
+  if (!act) av.push('sin indicar en Activo: queda inactiva');
+  else if (!d.activa && !/^(no|n|0|false|inactivo|inactiva)$/.test(act)) err.push('Activo debe ser SI o NO');
+  d.comuna = _nombrePropio(_vacLimpio(g('Comuna')).replace(/\.$/, '')).slice(0, 80);
+  d.direccion = _vacLimpio(g('Direccion')).slice(0, 200);
+  var mapa = _vacLimpio(g('Link Mapa'));
+  d.link_mapa = /^https:\/\//.test(mapa) ? mapa.slice(0, 300) : '';
+  if (mapa && !d.link_mapa) av.push('el link del mapa no empieza con https:// y no se guarda');
+  var tu = _vacTurnoDe(g('Jornada'), g('Turno')); d.turno = tu.turno; d.turno_otra = tu.turno_otra;
+  var cargo = _vacLimpio(g('Cargo'));
+  d.perfil = _vacPerfilDe(cargo); d.cargo_nombre = cargo.slice(0, 80);
+  var hor = _vacLimpio(g('Horario')); d.horario = hor.slice(0, 120);
+  if (hor.length > 120) av.push('horario recortado a 120 caracteres');
+  var sl = _vacLimpio(g('Total Líquido')), dig = sl.replace(/\D/g, '');
+  d.sueldo_liquido = dig ? Math.min(parseInt(dig, 10), 10000000) : null;
+  if (sl && !dig) err.push('Total Líquido no es un número');
+  var com = _vacLimpio(g('Comentario')); if (com === '-') com = '';
+  var benef = [], col = _vacLimpio(g('Colación')), coln = _vacNorm(col);
+  if (/^(si|s)$/.test(coln)) benef.push('Colación');
+  else if (coln && !/^(no|n|-)$/.test(coln)) {
+    if (/colaci|almuerzo|cena|desayuno/.test(coln)) benef.push(col.slice(0, 40));
+    else { com = [col, com].filter(Boolean).join('. '); av.push('"' + col + '" en Colación pasó al comentario'); }
+  }
+  _vacLimpio(g('Otros beneficios')).split(',').forEach(function(b){ b = b.trim().slice(0, 40); if (b && benef.indexOf(b) === -1) benef.push(b); });
+  d.beneficios = benef.slice(0, 12);
+  d.detalle = com.slice(0, 300); if (com.length > 300) av.push('comentario recortado a 300 caracteres');
+  var ce = _vacNorm(g('Certificado')).replace(/[\s-]/g, '');
+  d.certificado = !ce || ce === 'no' ? '' : /os10/.test(ce) && /spd/.test(ce) ? 'os10_o_spd' : /os10/.test(ce) ? 'os10' : /spd/.test(ce) ? 'spd' : null;
+  if (d.certificado === null) { err.push('Certificado debe ser OS-10, SPD, OS-10 o SPD, o No'); d.certificado = ''; }
+  d.residencia = _vacLimpio(g('Residencia')).slice(0, 120);
+  d.id = _vacLimpio(g('ID'));
+  return { datos: d, errores: err, avisos: av };
+}
+function _vacAFila(v) {
+  var tu = _vacTurnoA(v), b = v.beneficios || [], col = b.filter(function(x){ return /colaci|almuerzo|cena|desayuno/i.test(x); });
+  return { 'Instalación': v.instalacion, 'Activo': v.activa ? 'SI' : 'NO', 'Comuna': v.comuna, 'Direccion': v.direccion || '', 'Link Mapa': v.link_mapa || '',
+           'Jornada': tu[0], 'Turno': tu[1], 'Cargo': v.cargo_nombre || (PERFIL_META[v.perfil] || {}).label || v.perfil, 'Horario': v.horario || '',
+           'Total Líquido': v.sueldo_liquido || '', 'Colación': col.length ? (col[0] === 'Colación' ? 'SI' : col[0]) : 'NO', 'Comentario': v.detalle || '',
+           'Certificado': _VAC_CERT_XL[v.certificado || ''], 'Residencia': v.residencia || '', 'Otros beneficios': b.filter(function(x){ return col.indexOf(x) === -1; }).join(', '), 'ID': v.id };
+}
+var _VAC_CAMPOS = ['perfil', 'instalacion', 'comuna', 'turno', 'turno_otra', 'detalle', 'horario', 'sueldo_liquido', 'residencia', 'certificado', 'beneficios', 'activa', 'direccion', 'link_mapa', 'cargo_nombre'];
+var _VAC_CAMPO_TXT = { perfil:'cargo', instalacion:'instalación', comuna:'comuna', turno:'turno', turno_otra:'turno', detalle:'comentario', horario:'horario', sueldo_liquido:'sueldo',
+  residencia:'residencia', certificado:'certificado', beneficios:'beneficios', activa:'activa', direccion:'dirección', link_mapa:'mapa', cargo_nombre:'cargo' };
+function _vacClave(v) { return [_vacNorm(v.instalacion), _vacNorm(v.cargo_nombre || (PERFIL_META[v.perfil] || {}).label || v.perfil), v.turno, _vacNorm(v.turno_otra)].join('|'); }
+// Compara la planilla con las vacantes guardadas: nuevas, modificadas, sin cambios y filas con error
+function _vacPlanCambios(filas, existentes) {
+  var porId = {}, porClave = {}, usadas = {}, plan = { nuevas: [], cambios: [], iguales: 0, errores: [], avisos: [] };
+  existentes.forEach(function(v){ porId[v.id] = v; (porClave[_vacClave(v)] = porClave[_vacClave(v)] || []).push(v); });
+  filas.forEach(function(f, i) {
+    var r = _vacDesdeFila(f), n = i + 2;
+    if (!Object.keys(f).some(function(k){ return _vacLimpio(f[k]); })) return;   // fila vacía
+    if (r.errores.length) { plan.errores.push({ fila: n, txt: r.datos.instalacion || '(sin instalación)', msg: r.errores.join('; ') }); return; }
+    r.avisos.forEach(function(a){ plan.avisos.push({ fila: n, txt: r.datos.instalacion, msg: a }); });
+    var d = r.datos, prev = d.id && porId[d.id] && !usadas[d.id] ? porId[d.id] : null;
+    if (!prev) prev = (porClave[_vacClave(d)] || []).filter(function(v){ return !usadas[v.id]; })[0] || null;
+    if (prev) {
+      usadas[prev.id] = 1;
+      var dif = _VAC_CAMPOS.filter(function(k){ return JSON.stringify(prev[k] == null ? '' : prev[k]) !== JSON.stringify(d[k] == null ? '' : d[k]); });
+      if (!dif.length) { plan.iguales++; return; }
+      var nombres = dif.map(function(k){ return _VAC_CAMPO_TXT[k]; }).filter(function(x, j, a){ return a.indexOf(x) === j; });
+      plan.cambios.push({ fila: n, id: prev.id, datos: d, txt: nombres.join(', ') });
+    } else {
+      plan.nuevas.push({ fila: n, id: (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : genUUID(), datos: d });
+    }
+  });
+  return plan;
+}
+async function _vacExcelBajar() {
+  try {
+    await _rhCargarLib(_XLSX_LIB);
+    var lista = _vacLista || await _vacCargar();
+    var filas = lista.slice().sort(function(a, b){ return String(a.instalacion).localeCompare(b.instalacion); }).map(_vacAFila);
+    var hoja = XLSX.utils.json_to_sheet(filas, { header: _VAC_COLS });
+    hoja['!cols'] = _VAC_COLS.map(function(c){ return { wch: { 'Instalación':34, 'Direccion':40, 'Link Mapa':30, 'Horario':30, 'Comentario':40, 'Otros beneficios':26, 'ID':38 }[c] || 14 }; });
+    var libro = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(libro, hoja, 'Vacantes');
+    XLSX.writeFile(libro, 'Vacantes RH Seguridad ' + new Date().toISOString().slice(0, 10) + '.xlsx');
+  } catch(e) { toast('No se pudo descargar el Excel: ' + e.message, 'er'); }
+}
+var _vacPlan = null;
+async function _vacExcelSubir(input) {
+  var f = input.files && input.files[0]; input.value = '';
+  if (!f) return;
+  try {
+    await _rhCargarLib(_XLSX_LIB);
+    var libro = XLSX.read(await f.arrayBuffer(), { type: 'array' });
+    var filas = XLSX.utils.sheet_to_json(libro.Sheets[libro.SheetNames[0]], { defval: '', raw: false });
+    if (!filas.length) throw new Error('la planilla está vacía');
+    var cab = Object.keys(filas[0]).map(_vacNorm);
+    if (cab.indexOf(_vacNorm('Instalación')) === -1) throw new Error('no encuentro la columna "Instalación" en la primera hoja');
+    _vacPlan = _vacPlanCambios(filas, _vacLista || await _vacCargar());
+    _vacPlanMostrar(f.name);
+  } catch(e) { toast('No se pudo leer el Excel: ' + e.message, 'er'); }
+}
+function _vacPlanMostrar(nombre) {
+  var p = _vacPlan, e = htmlEsc, turnoTxt = function(d){ return _vacTxt(d); };
+  var fila = function(tipo, x){ return '<tr><td><span class="vx-t vx-' + tipo + '">' + { n:'Nueva', c:'Cambia' }[tipo] + '</span></td><td>' + e(x.datos.instalacion) + '<small>' + e(x.datos.cargo_nombre || '') + '</small></td><td>' + e(turnoTxt(x.datos)) + '</td><td>' + (tipo === 'c' ? e(x.txt) : (x.datos.activa ? 'Activa' : 'Inactiva')) + '</td></tr>'; };
+  var ov = document.createElement('div'); ov.id = 'vx-overlay'; ov.className = 'rh-ov';
+  ov.innerHTML = '<div class="rh-box" style="width:min(820px,100%)">'
+    + '<div class="rh-top"><div><div style="font-size:17px;font-weight:800;letter-spacing:-.02em">Revisar cambios del Excel</div>'
+    + '<div style="font-size:12px;color:var(--ink3)">' + e(nombre) + ' · nada se guarda hasta que confirme. Las vacantes que no están en la planilla quedan igual.</div></div>'
+    + '<button class="dh-close" title="Cerrar" aria-label="Cerrar" onclick="document.getElementById(\'vx-overlay\').remove()"><svg class="ico"><use href="#i-x"/></svg></button></div>'
+    + '<div class="rh-body">'
+    + '<div class="vx-res"><span><b>' + p.nuevas.length + '</b>nuevas</span><span><b>' + p.cambios.length + '</b>con cambios</span><span><b>' + p.iguales + '</b>sin cambios</span><span' + (p.errores.length ? ' class="vx-mal"' : '') + '><b>' + p.errores.length + '</b>con errores</span></div>'
+    + (p.errores.length ? '<div class="ch-alto"><b>Filas que no se cargan</b>' + p.errores.map(function(x){ return '<span style="display:block">Fila ' + x.fila + ' · ' + e(x.txt) + ': ' + e(x.msg) + '</span>'; }).join('') + '</div>' : '')
+    + (p.avisos.length ? '<div class="ch-aviso"><b>Para revisar</b>' + p.avisos.map(function(x){ return '<span style="display:block">Fila ' + x.fila + ' · ' + e(x.txt) + ': ' + e(x.msg) + '</span>'; }).join('') + '</div>' : '')
+    + (p.nuevas.length + p.cambios.length ? '<table class="rh-tbl vx-tbl"><thead><tr><th></th><th>Instalación</th><th>Turno</th><th>Qué cambia</th></tr></thead><tbody>'
+        + p.nuevas.map(function(x){ return fila('n', x); }).join('') + p.cambios.map(function(x){ return fila('c', x); }).join('') + '</tbody></table>'
+      : '<div class="rs-vacio">La planilla no trae cambios respecto de lo guardado.</div>')
+    + '</div><div class="rh-pie"><span style="margin-right:auto"></span><button class="rs-btn" onclick="document.getElementById(\'vx-overlay\').remove()">Cancelar</button>'
+    + '<button class="rs-btn prim" onclick="_vacPlanAplicar()"' + (p.nuevas.length + p.cambios.length ? '' : ' disabled') + '>Aplicar ' + (p.nuevas.length + p.cambios.length) + ' cambios</button></div></div>';
+  document.body.appendChild(ov);
+}
+async function _vacPlanAplicar() {
+  var p = _vacPlan; if (!p) return;
+  var ahora = new Date().toISOString();
+  var filas = p.nuevas.concat(p.cambios).map(function(x){ var o = { id: x.id, actualizada: ahora }; _VAC_CAMPOS.forEach(function(k){ o[k] = x.datos[k] == null ? (k === 'sueldo_liquido' ? null : '') : x.datos[k]; }); return o; });
+  try {
+    var r = await fetch(SUPA_URL + '/rest/v1/psicoeval_vacantes?on_conflict=id', {
+      method: 'POST', headers: Object.assign({}, getDBHeaders(), { 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates,return=minimal' }),
+      body: JSON.stringify(filas)
+    });
+    if (!r.ok) { var t = await r.text(); throw new Error(r.status + ' ' + t.slice(0, 160)); }
+    var o = document.getElementById('vx-overlay'); if (o) o.remove();
+    toast('Excel aplicado: ' + p.nuevas.length + ' nuevas y ' + p.cambios.length + ' actualizadas', 'ok');
+    _vacPlan = null; renderVacantesTab();
+  } catch(e) { toast('No se pudo aplicar el Excel: ' + e.message, 'er'); }
 }
 
 // Por dónde llegó el postulante: se guarda en scores._canal (21_canal.sql)
