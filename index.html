@@ -997,7 +997,10 @@ textarea.rh-in{resize:vertical}
 .rh-tbl td{padding:5px 6px;border-bottom:1px solid var(--border)}
 @media(max-width:700px){.rh-grid2{grid-template-columns:1fr}.rh-tbl td:nth-child(4),.rh-tbl th:nth-child(4){display:none}}
 .rs-wrap{display:flex;flex-direction:column;gap:10px;max-width:1640px;margin:0 auto;container-type:inline-size}
-.rs-grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:10px;align-items:start}
+.rs-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;align-items:start}
+.rs-grid > .rs-c3{order:-1}   /* datos del postulante a la izquierda, pruebas a la derecha */
+.rs-grid .rs-nom{flex-basis:170px}
+.rs-grid .rs-min{flex-basis:56px}
 .rs-grid3{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) minmax(0,.9fr)}
 .rs-col{display:flex;flex-direction:column;gap:10px;min-width:0}
 .rs-card{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:11px 14px}
@@ -14410,19 +14413,35 @@ function _rsPostulaHtml(c) {
 async function _rsPostulaEditar(id) {
   var c = (await getDB()).find(function(x){ return x.id === id; }); if (!c) return;
   var p = _postulaDe(c), base = _rhCargoBase(c), el = document.getElementById('rs-postula'); if (!el) return;
+  // Instalaciones = vacantes del panel (25_vacantes.sql): elegir una completa instalación y turno
+  if (!_vacLista) { try { await _vacCargar(); } catch(e) {} }
+  var actual = ((c.scores || {})._postula || {}).vacante || '';
+  var vacs = (_vacLista || []).filter(function(v){ return v.perfil === c.perfil || v.id === actual; })
+    .sort(function(a, b){ return (b.activa - a.activa) || String(a.instalacion).localeCompare(b.instalacion); });
+  window._rsPostulaVacs = vacs;
   var e = htmlEsc, op = function(v, t){ return '<option value="' + v + '"' + (v === (p.turno || '4x4_rotativo') ? ' selected' : '') + '>' + t + '</option>'; };
   el.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px 0">'
     + '<div class="ev-field" style="grid-column:1/-1"><label>Cargo al que postula</label><input id="rs-p-cargo" class="rh-in" autocomplete="off" value="' + e(p.cargo || base) + '"></div>'
-    + '<div class="ev-field"><label>Instalación</label><input id="rs-p-inst" class="rh-in" value="' + e(p.instalacion) + '" placeholder="Ej: Rehau"></div>'
+    + (vacs.length ? '<div class="ev-field" style="grid-column:1/-1"><label>Vacante</label><select id="rs-p-vac" class="rh-in" onchange="_rsPostulaVac(this.value)"><option value="">Otra instalación (escribir abajo)</option>'
+        + vacs.map(function(v){ return '<option value="' + e(v.id) + '"' + (v.id === actual ? ' selected' : '') + '>' + e(v.instalacion + ' · ' + _vacTxt(v) + (v.activa ? '' : ' · inactiva')) + '</option>'; }).join('') + '</select></div>' : '')
+    + '<div class="ev-field"><label>Instalación</label><input id="rs-p-inst" class="rh-in" value="' + e(p.instalacion) + '" placeholder="Ej: Rehau" oninput="var s=document.getElementById(\'rs-p-vac\');if(s)s.value=\'\'"></div>'
     + '<div class="ev-field"><label>Turno</label><select id="rs-p-turno" class="rh-in" onchange="document.getElementById(\'rs-p-otra\').style.display=this.value===\'otra\'?\'\':\'none\'">' + _RH_JORNADAS.map(function(j){ return op(j[0], j[1]); }).join('') + '</select>'
     + '<input id="rs-p-otra" class="rh-in" value="' + e(p.turno_otra) + '" placeholder="Ej: 5x2 día" style="margin-top:6px;display:' + (p.turno === 'otra' ? '' : 'none') + '"></div>'
     + '<div style="grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end"><button class="rs-btn" onclick="_switchDrawerTab(\'resumen\', (_dbCache || []).find(function(x){ return x.id === \'' + e(id) + '\'; }))">Cancelar</button>'
     + '<button class="rs-btn prim" onclick="_rsPostulaGuardar(\'' + e(id) + '\')">Guardar</button></div></div>';
 }
+// Al elegir una vacante se completan instalación y turno
+function _rsPostulaVac(vid) {
+  var v = (window._rsPostulaVacs || []).find(function(x){ return x.id === vid; }); if (!v) return;
+  document.getElementById('rs-p-inst').value = v.instalacion;
+  var t = document.getElementById('rs-p-turno'), o = document.getElementById('rs-p-otra');
+  if (t && v.turno) { t.value = v.turno; if (o) { o.value = v.turno_otra || ''; o.style.display = v.turno === 'otra' ? '' : 'none'; } }
+}
 async function _rsPostulaGuardar(id) {
   var v = function(x){ return (document.getElementById(x) || {}).value || ''; };
+  var vac = (window._rsPostulaVacs || []).find(function(x){ return x.id === v('rs-p-vac') && x.instalacion === v('rs-p-inst').trim(); });
   try {
-    var c = await _guardarPostula(id, { cargo: v('rs-p-cargo'), instalacion: v('rs-p-inst'), turno: v('rs-p-turno'), turno_otra: v('rs-p-otra') }, 'resumen');
+    var c = await _guardarPostula(id, { cargo: v('rs-p-cargo'), instalacion: v('rs-p-inst'), turno: v('rs-p-turno'), turno_otra: v('rs-p-otra'), vacante: vac || null }, 'resumen');
     toast('Guardado ✓ (también en la entrevista y el Informe RH)', 'ok');
     if (c) _switchDrawerTab('resumen', c);
     try { _bdRenderCuerpo(); } catch(e) {}
@@ -16265,7 +16284,12 @@ function _postulaDe(c) {
 function _instalacionDe(c) { return _postulaDe(c).instalacion; }
 // Guarda a qué postula y lo copia a la última entrevista y al Informe RH (si existen)
 async function _guardarPostula(candId, p, desde) {
+  var prev = (((_dbCache || []).find(function(x){ return x.id === candId; }) || {}).scores || {})._postula || {};
+  var vac = p.vacante;
   p = { cargo: (p.cargo || '').trim(), instalacion: (p.instalacion || '').trim(), turno: p.turno || '', turno_otra: p.turno === 'otra' ? (p.turno_otra || '').trim() : '' };
+  // Vacante (25_vacantes.sql): la elegida en la ficha; si no se eligió, se conserva mientras la instalación sea la misma
+  if (vac && typeof vac === 'object') { p.vacante = vac.id; if (vac.comuna) p.comuna = vac.comuna; }
+  else if (!vac && prev.vacante && prev.instalacion === p.instalacion) { p.vacante = prev.vacante; if (prev.comuna) p.comuna = prev.comuna; }
   await _patchScoresField(candId, '_postula', p);
   var all = await getDB(), c = all.find(function(x){ return x.id === candId; }) || {}, s = c.scores || {};
   if (desde !== 'entrevista' && (s._entrevistas || []).length) {
