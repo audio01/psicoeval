@@ -966,6 +966,12 @@ input,select,textarea{font-family:inherit;outline:none}
 .pdf-t small{color:var(--ink3)}
 .pdf-env{font-style:normal;font-size:11px;font-weight:700;color:#15803d;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:100px;padding:2px 9px}
 .pdf-vacio{font-size:12.5px;color:var(--ink3)}
+.bk-card{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:22px}
+.bk-card>div{flex:1;min-width:260px}
+.bk-t{font-size:15px;font-weight:700;color:var(--ink)}
+.bk-s{font-size:12.5px;color:var(--ink3);line-height:1.5;margin-top:2px}
+.bk-aviso{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:12px;padding:10px 14px;margin-bottom:16px;font-size:13px;line-height:1.5}
+[data-theme="dark"] .bk-aviso{background:rgba(245,158,11,.10);border-color:rgba(245,158,11,.38);color:#fcd34d}
 .arc-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:14px}
 .arc-t{font-size:20px;font-weight:700}
 .arc-s{font-size:13px;color:var(--ink3);margin-top:2px}
@@ -2253,6 +2259,7 @@ body.pub #inv-banner>div{box-shadow:0 10px 30px -20px rgba(20,33,61,.4)}
             <button class="btn btn-ghost btn-sm" onclick="renderDashboard()" style="font-size:12px">↻</button>
           </div>
         </div>
+        <div id="dash-backup"></div>
         <!-- All content rendered dynamically -->
         <div id="dash-content"></div>
       </div>
@@ -2311,17 +2318,6 @@ body.pub #inv-banner>div{box-shadow:0 10px 30px -20px rgba(20,33,61,.4)}
             <div id="contacto-card"></div>
           </div>
         </div>
-        <!-- Respaldo completo -->
-        <div style="margin-top:36px;border-top:1px solid var(--border);padding-top:24px">
-          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
-            <div style="max-width:520px">
-              <div style="font-size:16px;font-weight:700">Respaldo completo</div>
-              <div style="font-size:12px;color:var(--ink3);margin-top:2px">Descarga en un archivo todas las evaluaciones, sus respuestas y la configuración. Contiene datos personales y psicológicos: guárdelo en un lugar seguro. El plan gratuito de Supabase no hace respaldos automáticos.</div>
-              <div style="font-size:12px;margin-top:6px">Último respaldo en este equipo: <span id="backup-last" style="font-weight:600"></span></div>
-            </div>
-            <button class="btn btn-outline" id="backup-btn" onclick="downloadFullBackup()">💾 Descargar respaldo</button>
-          </div>
-        </div>
       </div>
 
       <!-- Baterías -->
@@ -2335,7 +2331,7 @@ body.pub #inv-banner>div{box-shadow:0 10px 30px -20px rgba(20,33,61,.4)}
       </div></div>
 
       <!-- Archivo de informes RH (solo administrador) -->
-      <div id="tab-archivo" style="display:none;padding-bottom:40px"><div style="max-width:1100px;margin:0 auto"><div id="archivo-content"></div></div></div>
+      <div id="tab-archivo" style="display:none;padding-bottom:40px"><div style="max-width:1100px;margin:0 auto"><div id="archivo-backup"></div><div id="archivo-content"></div></div></div>
 
       <!-- Wiki de Tests -->
       <div id="tab-wiki" style="display:none;padding-bottom:40px"><div style="max-width:860px;margin:0 auto">
@@ -10620,7 +10616,7 @@ function refreshCandView() {
 //  todas las evaluaciones (con sus respuestas) y la configuración en un archivo JSON.
 // ═══════════════════════════════════════════════════════════
 var _BACKUP_KEY = 'psicoeval_ultimo_respaldo';
-var _BACKUP_DIAS_AVISO = 7;
+var _BACKUP_DIAS_AVISO = 15;
 
 function _backupDias() {
   var t = null;
@@ -10629,8 +10625,13 @@ function _backupDias() {
 }
 
 function _backupLabel() {
-  var el = document.getElementById('backup-last'); if (!el) return;
   var d = _backupDias();
+  // Aviso en el Dashboard (solo administrador) cuando el último respaldo tiene una semana o más
+  var av = document.getElementById('dash-backup');
+  if (av) av.innerHTML = S.role === 'admin' && (d === null || d >= _BACKUP_DIAS_AVISO)
+    ? '<div class="bk-aviso"><span>💾 ' + (d === null ? 'Aún no ha descargado un respaldo en este equipo.' : 'Su último respaldo fue hace ' + d + ' días.') + ' Se recomienda uno cada 15 días: el plan gratuito de Supabase no permite recuperar datos borrados.</span>'
+      + '<button class="btn btn-outline btn-sm" onclick="downloadFullBackup()">Descargar respaldo</button></div>' : '';
+  var el = document.getElementById('backup-last'); if (!el) return;
   var atrasado = d === null || d >= _BACKUP_DIAS_AVISO;
   el.textContent = d === null ? 'nunca' : d === 0 ? 'hoy' : 'hace ' + d + (d === 1 ? ' día' : ' días');
   var bb = document.getElementById('backup-btn');
@@ -10679,16 +10680,27 @@ async function downloadFullBackup() {
     var rp = await fetch(SUPA_URL + '/rest/v1/psicoeval_privado?select=*', { headers: getDBHeaders() });
     if (rp.ok) priv = await rp.json();
     else if (rp.status !== 404) throw new Error('entrevistas: HTTP ' + rp.status);
+    // Invitaciones y registro de los PDF archivados (los PDF mismos quedan en el archivo de Supabase)
+    var opcional = async function(tabla, que) {
+      var rr = await fetch(SUPA_URL + '/rest/v1/' + tabla + '?select=*', { headers: getDBHeaders() });
+      if (rr.ok) return rr.json();
+      if (rr.status === 404) return [];
+      throw new Error(que + ': HTTP ' + rr.status);
+    };
+    var invs = await opcional('psicoeval_invitaciones', 'invitaciones');
+    var pdfs = await opcional('psicoeval_pdfs', 'archivo de PDF');
 
     var ahora = new Date();
     var data = {
-      tipo: 'psicoeval_respaldo', version: 1,
+      tipo: 'psicoeval_respaldo', version: 2,
       generado: ahora.toISOString(),
       generado_por: (document.getElementById('sidebar-user-label') || {}).textContent || '',
       origen: SUPA_URL,
-      totales: { evaluaciones: cands.length, con_respuestas: cands.filter(function(c){ return c.respuestas; }).length, configuracion: cfg.length, entrevistas_y_notas: priv.length },
+      totales: { evaluaciones: cands.length, con_respuestas: cands.filter(function(c){ return c.respuestas; }).length, configuracion: cfg.length, entrevistas_y_notas: priv.length, invitaciones: invs.length, pdf_archivados: pdfs.length },
       configuracion: cfg,
       entrevistas_y_notas: priv,
+      invitaciones: invs,
+      pdf_archivados: pdfs,
       evaluaciones: cands
     };
     var pad = function(n){ return String(n).padStart(2, '0'); };
@@ -15739,6 +15751,12 @@ async function _rhPdfListaPintar(candId) {
 // Página Archivo: todos los PDF generados
 var _arcFiltro = { q: '', mes: '' };
 async function renderArchivoTab() {
+  // Respaldo de los datos: siempre visible arriba, aunque el archivo de PDF no cargue
+  var bk = document.getElementById('archivo-backup');
+  if (bk) { bk.innerHTML = '<div class="bk-card"><div><div class="bk-t">💾 Respaldo de los datos</div>'
+    + '<div class="bk-s">Descarga en un archivo todas las evaluaciones con sus respuestas, entrevistas, informes RH, invitaciones, registro de PDF y configuración. Contiene datos personales y psicológicos: guárdelo en un lugar seguro y no lo comparta.</div>'
+    + '<div class="bk-s" style="margin-top:4px">Último respaldo en este equipo: <span id="backup-last" style="font-weight:600"></span></div></div>'
+    + '<button class="btn btn-primary btn-sm" id="backup-btn" onclick="downloadFullBackup()">Descargar respaldo</button></div>'; _backupLabel(); }
   var box = document.getElementById('archivo-content'); if (!box) return;
   box.innerHTML = '<div class="pdf-vacio">Cargando…</div>';
   var rows, all;
@@ -15771,6 +15789,7 @@ async function renderArchivoTab() {
             + '<span><button type="button" class="rs-btn" onclick="_pdfDescargar(\'' + x.ruta + '\',\'' + htmlEsc(nom).replace(/'/g, '') + ' IPS v' + x.version + '.pdf\')">⬇</button></span></div>';
         }).join('') + '</div>'
       : '<div class="pdf-vacio" style="padding:20px 0">' + (rows.length ? 'Ningún PDF coincide con la búsqueda.' : 'Aún no hay PDF archivados. Se guardan al generar el PDF del Informe RH.') + '</div>');
+  _backupLabel();
   var qi = document.getElementById('arc-q'); if (qi && _arcFiltro.q) { qi.focus(); qi.setSelectionRange(qi.value.length, qi.value.length); }
 }
 
