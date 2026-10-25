@@ -1775,6 +1775,14 @@ body.adm .rs-pf-b{background:rgba(20,33,61,.06);border:none;height:6px}
 body.adm .rs-pf-b em{background:rgba(20,33,61,.08)}
 body.adm .rs-pf-b i{top:-4px;width:14px;height:14px;background:#fff;border:2px solid var(--ink4);box-shadow:0 1px 3px rgba(20,33,61,.2)}
 #rs-chapi .rs-kv span{flex-basis:170px}
+.ch-alto{background:rgba(220,38,38,.07);border:1px solid rgba(220,38,38,.22);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:12.5px;line-height:1.5}
+.ch-alto b{display:block;color:#991b1b;font-size:13px}
+.ch-alto span{color:var(--ink2)}
+.ch-alto .rs-acciones{margin-top:8px}
+.ch-ok{font-size:12px;color:#166534;background:rgba(22,163,74,.08);border-radius:8px;padding:7px 10px;margin-bottom:8px}
+.ch-kc{white-space:normal;line-height:1.35}
+[data-theme="dark"] .ch-alto{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3)}[data-theme="dark"] .ch-alto b{color:#fca5a5}
+[data-theme="dark"] .ch-ok{background:rgba(34,197,94,.1);color:#86efac}
 .ch-riesgo{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:14px;margin-bottom:10px}
 .ch-riesgo .pb-dot{width:9px;height:9px}
 .ch-riesgo span{font-size:11.5px;color:var(--ink4)}
@@ -8934,6 +8942,7 @@ function _miradaFichaHtml(c) {
 // "Por revisar" del Dashboard: lo que requiere una acción del evaluador
 function _porRevisarHtml(cands, desde) {
   var grupos = [
+    { titulo:'Antecedentes por visar (Chapi)', color:'#b45309', accion:['Visar', 'resumen'], lista:[] },
     { titulo:'Integridad con riesgo alto', color:'#be123c', accion:['Revisar', 'evaluaciones'], lista:[] },
     { titulo:'Incidentes durante la evaluación', color:'#b45309', accion:['Revisar', 'evaluaciones'], lista:[] },
     { titulo:'Completadas sin dictamen de entrevista', color:'var(--accent)', accion:['Entrevistar', 'entrevistas'], lista:[] },
@@ -8942,18 +8951,20 @@ function _porRevisarHtml(cands, desde) {
   ];
   cands.forEach(function(c) {
     var dpa = _diasParaArchivo(c);
-    if (dpa !== null) grupos[4].lista.push({ c:c, nota:dpa === 1 ? 'mañana' : 'en ' + dpa + ' días' });
+    if (dpa !== null) grupos[5].lista.push({ c:c, nota:dpa === 1 ? 'mañana' : 'en ' + dpa + ' días' });
     if (c.estado !== 'completed') return;
     var m = _miradaDe(c), et = getPipelineEtapa(c);
+    // Antecedentes por visar: siempre (no dependen del período)
+    if (et === 'antecedentes') { grupos[0].lista.push({ c:c, nota:_chapiMotivoCorto(c) }); return; }
     var f = _fechaCand(c), enPeriodo = !desde || (f && f >= desde);
-    if (!enPeriodo) { if (m.segPend.length) grupos[3].lista.push({ c:c, nota:m.segPend.map(function(p){ return p.hito.toLowerCase(); }).join(' y ') }); return; }
-    if (et === 'descartado') { if (m.segPend.length) grupos[3].lista.push({ c:c, nota:m.segPend.map(function(p){ return p.hito.toLowerCase(); }).join(' y ') }); return; }
-    if (m.integ === 'riesgo_alto' && !m.dictamen) grupos[0].lista.push({ c:c });
-    if (m.incid === 'grave' && !m.dictamen) grupos[1].lista.push({ c:c });
-    if (!m.dictamen && et !== 'seleccionado' && et !== 'enviado' && et !== 'contratado') grupos[2].lista.push({ c:c });
-    if (m.segPend.length) grupos[3].lista.push({ c:c, nota:m.segPend.map(function(p){ return p.hito.toLowerCase(); }).join(' y ') });
+    if (!enPeriodo) { if (m.segPend.length) grupos[4].lista.push({ c:c, nota:m.segPend.map(function(p){ return p.hito.toLowerCase(); }).join(' y ') }); return; }
+    if (et === 'descartado') { if (m.segPend.length) grupos[4].lista.push({ c:c, nota:m.segPend.map(function(p){ return p.hito.toLowerCase(); }).join(' y ') }); return; }
+    if (m.integ === 'riesgo_alto' && !m.dictamen) grupos[1].lista.push({ c:c });
+    if (m.incid === 'grave' && !m.dictamen) grupos[2].lista.push({ c:c });
+    if (!m.dictamen && et !== 'seleccionado' && et !== 'enviado' && et !== 'contratado') grupos[3].lista.push({ c:c });
+    if (m.segPend.length) grupos[4].lista.push({ c:c, nota:m.segPend.map(function(p){ return p.hito.toLowerCase(); }).join(' y ') });
   });
-  grupos[4].lista.sort(function(a, b){ return _diasParaArchivo(a.c) - _diasParaArchivo(b.c); });
+  grupos[5].lista.sort(function(a, b){ return _diasParaArchivo(a.c) - _diasParaArchivo(b.c); });
   var activos = grupos.filter(function(g){ return g.lista.length; });
   if (!activos.length) return '<div class="dash-card"><div class="dash-lbl">Por revisar</div>'
     + '<div class="dsh-aldia"><i class="dsh-dot" style="background:#16a34a"></i><span><b>Todo al día.</b> No hay evaluaciones pendientes de revisar en el período.</span></div></div>';
@@ -11900,11 +11911,18 @@ function _bdTablero(lista) {
       if (cat) { var cm = { apto:['Apto', '#16a34a'], obs:['Apto con observaciones', '#d97706'], no_apto:['No apto', '#dc2626'] }[cat]; est = '<span class="bd-est"><i style="background:' + cm[1] + '"></i>' + cm[0] + '</span>'; }
       else if (c.estado !== 'completed') est = '<span class="bd-est"><i style="background:#cbd5e1"></i>Evaluación sin terminar</span>';
       else if (m.apt.length) { var ok = m.aptOk === m.apt.length, nada = m.aptOk === 0; est = '<span class="bd-est" title="Pruebas de aptitud sobre el mínimo"><i style="background:' + (ok ? '#16a34a' : nada ? '#dc2626' : '#d97706') + '"></i>Aptitud ' + m.aptOk + ' de ' + m.apt.length + '</span>'; }
+      // Verificación de Chapi en la tarjeta (solo administrador)
+      var chE = _verEntrevistas() ? _chapiEstado(c) : { tipo:'' }, chH = '';
+      if (chE.tipo === 'grave') chH = '<span class="bd-est ch-kc"><i style="background:#dc2626"></i>Por visar: ' + htmlEsc(chE.cl.motivos.join(', ')) + '</span>';
+      else if (chE.tipo === 'error_final') chH = '<span class="bd-est ch-kc"><i style="background:#dc2626"></i>Chapi: ' + htmlEsc(chE.error || 'no se pudo verificar') + '</span>';
+      else if (chE.tipo === 'aviso') chH = '<span class="bd-est ch-kc" title="' + htmlEsc(chE.cl.avisos.join(' · ')) + '"><i style="background:#d97706"></i>Chapi: ' + htmlEsc(chE.cl.avisos[0]) + (chE.cl.avisos.length > 1 ? ' +' + (chE.cl.avisos.length - 1) : '') + '</span>';
+      else if (chE.tipo === 'procesando') chH = '<span class="bd-est ch-kc"><i style="background:#94a3b8"></i>Verificando en Chapi…</span>';
       h += '<div class="kanban-card bd-kc" id="kcard-' + id + '" title="' + htmlEsc(_momentoTxt(c)) + '"' + (arrastra ? ' draggable="true" ondragstart="kDragStart(event,\'' + id + '\')" ondragend="kDragEnd(event)"' : '') + ' onclick="openCandDrawer(\'' + id + '\')">'
         + '<div class="bd-kc-top"><div class="bd-nom">' + htmlEsc(((c.nombre || '') + ' ' + (c.apellido || '')).trim()) + _rutRepBadge(c) + _porArchivarBadge(c) + _enArchivoBadge(c) + '</div>' + _bdChk(c) + '</div>'
         + (pz.instalacion ? '<div class="bd-kc-inst">' + htmlEsc(pz.instalacion) + '</div>' : '')
         + (sub ? '<div class="bd-sub bd-kc-sub">' + htmlEsc(sub) + '</div>' : '')
         + (est ? '<div class="bd-kc-est">' + est + '</div>' : '')
+        + (chH ? '<div class="bd-kc-est">' + chH + '</div>' : '')
         + '</div>';
     });
     if (del.length > _bdLimite) h += '<button class="btn btn-ghost btn-sm" onclick="_bdLimite+=60;_bdRenderCuerpo()">Mostrar más (' + (del.length - _bdLimite) + ')</button>';
@@ -13210,6 +13228,8 @@ checkMobileBar();
 
 var PIPELINE_STAGES = [
   { id:'postulante',   label:'Postulante',          icon:'📋', color:'#475569', bg:'#f1f5f9', border:'#cbd5e1' },
+  // Antecedentes: verificación de Chapi con algo grave que el administrador debe visar (24_chapi_auto.sql)
+  { id:'antecedentes', label:'Antecedentes',         icon:'🔎', color:'#b45309', bg:'#fff7ed', border:'#fed7aa' },
   { id:'entrevista',   label:'Entrevista Laboral',   icon:'💬', color:'#d97706', bg:'#fffbeb', border:'#fde68a' },
   { id:'seleccionado', label:'Seleccionado',          icon:'✅', color:'#16a34a', bg:'#f0fdf4', border:'#bbf7d0' },
   { id:'enviado',      label:'Enviado a contratación', icon:'📨', color:'#7c3aed', bg:'#f5f3ff', border:'#ddd6fe' },
@@ -13380,7 +13400,7 @@ function _dashProceso(cands, all, filterCargo) {
 
   var out = {}, h = '';
   // ── Embudo: barras finas, sin íconos ──
-  var funnelStages = PIPELINE_STAGES.filter(function(s){ return s.id !== 'descartado'; });
+  var funnelStages = PIPELINE_STAGES.filter(function(s){ return s.id !== 'descartado' && s.id !== 'antecedentes'; });
   // Llegaron a una etapa: quienes están hoy en ella o en una posterior, o pasaron por ella
   // según el historial (los descartados cuentan en las etapas que alcanzaron)
   var _fIdx = {}; funnelStages.forEach(function(s, i){ _fIdx[s.id] = i; });
@@ -13749,11 +13769,50 @@ function _chapiNombreCoincide(c, ch) {
   if (!a.length || !b.length) return true;
   return a.filter(function(x){ return b.indexOf(x) !== -1; }).length >= Math.min(2, a.length);
 }
+// Mismo criterio que la verificación automática (psicoeval-chapi): grave = penales por RUT,
+// causas laborales o riesgo alto; lo demás, aviso para conversarlo en la entrevista
+function _chapiClasificar(r) {
+  var k = (r && r.causas) || {}, motivos = [], avisos = [];
+  if (k.penales_rut > 0) motivos.push('Causas penales por RUT (' + k.penales_rut + ')');
+  if (k.laborales > 0) motivos.push('Causas laborales (' + k.laborales + ')');
+  if (r && r.riesgo === 'high') motivos.push('Riesgo alto en Chapi');
+  if (k.civiles > 0) avisos.push('Causas civiles (' + k.civiles + ')');
+  if (k.sindicales > 0) avisos.push('Causas sindicales (' + k.sindicales + ')');
+  if (k.sanciones > 0) avisos.push('Sanciones internacionales (' + k.sanciones + ')');
+  if (k.penales_nombre > 0 && !(k.penales_rut > 0)) avisos.push('Causas penales que coinciden solo por nombre (' + k.penales_nombre + ')');
+  if (r && r.pep) avisos.push('Persona políticamente expuesta');
+  if (r && r.riesgo === 'medium') avisos.push('Riesgo medio en Chapi');
+  ((r && r.fuentes) || []).forEach(function(f){ if (f.alerta && ['penal', 'laboral', 'civil'].indexOf(f.tipo) === -1) avisos.push(f.etiqueta || f.tipo); });
+  return { grave: motivos.length > 0, motivos: motivos, avisos: avisos };
+}
+// Estado de la verificación para el tablero y Por revisar
+function _chapiEstado(c) {
+  var ch = (c.scores && c.scores._chapi) || {}, a = ch.auto || {};
+  if (ch.id) { var cl = _chapiClasificar(ch); return { tipo: ch.visado ? 'visado' : cl.grave ? 'grave' : cl.avisos.length ? 'aviso' : 'limpio', cl: cl }; }
+  if (a.estado === 'error' || a.estado === 'error_final') return { tipo: a.estado, error: a.error || '' };
+  if (a.estado === 'procesando') return { tipo: 'procesando' };
+  return { tipo: '' };
+}
+function _chapiMotivoCorto(c) {
+  var e = _chapiEstado(c);
+  if (e.tipo === 'grave') return e.cl.motivos.join(', ');
+  if (e.tipo === 'error_final' || e.tipo === 'error') return 'no se pudo verificar: ' + e.error;
+  return 'revisar antecedentes';
+}
 function _rsChapiHtml(c) {
   if (!_verEntrevistas()) return '';
-  var ch = (c.scores && c.scores._chapi) || {};
-  var h = '<div class="rs-card" id="rs-chapi"><div class="rs-lbl">Antecedentes (Chapi)'
-    + (ch.id ? '<a class="rs-link" onclick="_chapiVerificar(\'' + htmlEsc(c.id) + '\', true)">Actualizar</a>' : '') + '</div>';
+  var ch = (c.scores && c.scores._chapi) || {}, a = ch.auto || {}, etapa = getPipelineEtapa(c), cid = htmlEsc(c.id);
+  var h = '<div class="rs-card' + (etapa === 'antecedentes' ? ' ch-visar' : '') + '" id="rs-chapi"><div class="rs-lbl">Antecedentes (Chapi)'
+    + (ch.id ? '<a class="rs-link" onclick="_chapiVerificar(\'' + cid + '\', true)">Actualizar</a>' : '') + '</div>';
+  // Detenido en Antecedentes: el administrador visa (pasa a entrevista) o descarta
+  if (etapa === 'antecedentes' && S.role === 'admin') {
+    var cl0 = ch.id ? _chapiClasificar(ch) : null;
+    h += '<div class="ch-alto"><b>' + (cl0 && cl0.grave ? 'Antecedente grave por visar' : 'No se pudo verificar automáticamente') + '</b>'
+      + '<span>' + htmlEsc(cl0 && cl0.grave ? cl0.motivos.join(' · ') : (a.error || 'Revise los antecedentes antes de la entrevista.')) + '</span>'
+      + '<div class="rs-acciones"><button class="rs-btn prim" onclick="_chapiVisar(\'' + cid + '\')">Visar y pasar a entrevista</button>'
+      + '<button class="rs-btn" onclick="drawerSetEtapa(\'' + cid + '\',\'descartado\')">Descartar</button></div></div>';
+  }
+  if (a.estado === 'procesando' && !ch.id) return h + '<div class="rs-vacio">Verificando en Chapi…</div></div>';
   if (!ch.id) {
     return h + '<div class="rs-vacio" style="margin-bottom:10px">Verifica por RUT causas penales, civiles y laborales, cobranzas, sanciones y otras fuentes.'
       + (c.rut ? '' : ' Falta el RUT en la ficha.') + '</div>'
@@ -13762,6 +13821,9 @@ function _rsChapiHtml(c) {
   var rg = _CHAPI_RIESGO[ch.riesgo], f = ch.fecha ? new Date(ch.fecha) : null;
   h += '<div class="ch-riesgo"><i class="pb-dot" style="background:' + (rg ? rg[1] : '#94a3b8') + '"></i><b>' + (rg ? rg[0] : 'Sin puntaje') + '</b>'
     + '<span>' + (f && !isNaN(f) ? f.toLocaleDateString('es-CL') : '') + (ch.modelo ? ' · modelo ' + htmlEsc(ch.modelo) : '') + '</span></div>';
+  if (ch.visado) h += '<div class="ch-ok">Visado por ' + htmlEsc(ch.visado.por || 'el administrador') + (ch.visado.ts ? ' el ' + new Date(ch.visado.ts).toLocaleDateString('es-CL') : '') + '</div>';
+  var clA = _chapiClasificar(ch);
+  if (clA.avisos.length && etapa !== 'antecedentes') h += '<div class="ch-aviso"><b>Para conversar en la entrevista:</b> ' + htmlEsc(clA.avisos.join(' · ')) + '</div>';
   if (!_chapiNombreCoincide(c, ch)) h += '<div class="ch-aviso">Chapi asocia este RUT a <b>' + htmlEsc(ch.nombre) + '</b>, que no coincide con el nombre de la ficha. Revise el RUT.</div>';
   var k = ch.causas || {}, cnt = [['Penales', k.penales], ['Civiles', k.civiles], ['Laborales', k.laborales], ['Sindicales', k.sindicales], ['Sanciones internacionales', k.sanciones]];
   h += '<div class="ch-causas">' + cnt.map(function(x){ return '<span' + (x[1] ? ' class="on"' : '') + '><b>' + (x[1] || 0) + '</b>' + x[0] + '</span>'; }).join('') + '</div>';
@@ -13785,6 +13847,15 @@ async function _chapiLlamar(accion, rut) {
   if (!r.ok) throw new Error(j.error || (r.status === 404 ? 'La función de Chapi aún no está instalada en Supabase.' : 'Error ' + r.status));
   return j;
 }
+// Visar un antecedente grave: queda registrado quién y cuándo, y pasa a Entrevista Laboral
+async function _chapiVisar(id) {
+  if (!(await appConfirm('¿Visar los antecedentes y pasar a Entrevista Laboral? Quedará registrado con su usuario y la fecha.'))) return;
+  try {
+    var por = S.userEmail || (document.getElementById('sidebar-user-label') || {}).textContent || '';
+    await _patchPrivado(id, 'chapi', function(prev){ return Object.assign({}, prev || {}, { visado: { por: por, ts: new Date().toISOString() } }); });
+    await drawerSetEtapa(id, 'entrevista');
+  } catch(e) { toast('No se pudo visar: ' + e.message, 'er'); }
+}
 // Primero busca la verificación del mes (sin costo); si no hay, pide confirmar el uso de un crédito
 async function _chapiVerificar(id, actualizar) {
   var c = (await getDB()).find(function(x){ return x.id === id; });
@@ -13801,7 +13872,7 @@ async function _chapiVerificar(id, actualizar) {
       if (!(await appConfirm(msg))) return;
       j = await _chapiLlamar('verificar', c.rut);
     }
-    await _patchPrivado(id, 'chapi', j.chapi);
+    await _patchPrivado(id, 'chapi', function(prev){ var n = Object.assign({}, j.chapi); if (prev && prev.visado) n.visado = prev.visado; if (prev && prev.auto) n.auto = prev.auto; return n; });
     toast('Verificación de Chapi guardada', 'ok');
     var c2 = (await getDB()).find(function(x){ return x.id === id; });
     if (c2 && _drawerCandId === id && _drawerActiveTab === 'resumen') _switchDrawerTab('resumen', c2);
