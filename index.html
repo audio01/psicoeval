@@ -964,7 +964,7 @@ textarea.rh-in{resize:vertical}
 .rh-tbl td{padding:5px 6px;border-bottom:1px solid var(--border)}
 @media(max-width:700px){.rh-grid2{grid-template-columns:1fr}.rh-tbl td:nth-child(4),.rh-tbl th:nth-child(4){display:none}}
 .rs-wrap{display:flex;flex-direction:column;gap:10px;max-width:1640px;margin:0 auto;container-type:inline-size}
-.rs-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:10px;align-items:start}
+.rs-grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:10px;align-items:start}
 .rs-grid3{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) minmax(0,.9fr)}
 .rs-col{display:flex;flex-direction:column;gap:10px;min-width:0}
 .rs-card{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:11px 14px}
@@ -1186,7 +1186,8 @@ textarea.rh-in{resize:vertical}
 .ev-ini-t{font-size:13.5px;font-weight:800;color:var(--ink);margin-bottom:6px}
 .ev-guion{font-size:14px;color:var(--ink);line-height:1.6;background:#eff6ff;border-left:3px solid var(--accent);border-radius:0 9px 9px 0;padding:9px 12px}
 .ev-ini-g3{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:10px}
-.ev-ini-ses{border-top:1px solid var(--border);padding-top:12px;margin-top:4px}
+.ev-ini-ses{border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:16px}
+.ev-ini-notas{border-top:1px solid var(--border);padding-top:12px;margin-top:4px}
 .ev-ini-ses-t{font-size:10.5px;font-weight:800;color:var(--ink4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
 .ev-ini-g5{display:grid;grid-template-columns:1fr 1fr 1.6fr;gap:8px}
 .ev-ini-op{font-size:11px;font-weight:500;color:var(--ink4);margin-left:6px}
@@ -13346,11 +13347,11 @@ function _tabResumen(c) {
   var h = '<div class="rs-wrap">';
   h += _rsMotivoHtml(c);
   h += _rsProximoPaso(c, m, 'cuerpo');
-  var estilo = _rsEstilo(c, m);
-  h += '<div class="rs-grid' + (estilo ? ' rs-grid3' : '') + '"><div class="rs-col rs-c1">';
+  // Dos columnas: a la izquierda las pruebas (resultados, estilo y lo que explorar); a la derecha, los datos del postulante
+  h += '<div class="rs-grid"><div class="rs-col rs-c1">';
   h += _rsResultados(c, m);
+  h += _rsEstilo(c, m);
   h += _rsExplorar(c, m);
-  if (estilo) h += '</div><div class="rs-col rs-c2">' + estilo;
   h += '</div><div class="rs-col rs-c3">';
 
   // Contacto con acciones directas
@@ -13950,11 +13951,18 @@ function _tabEntrevistasDrawer(c) {
   var opcion = function(val, txt, sel){ return '<option value="' + val + '"' + (val === sel ? ' selected' : '') + '>' + txt + '</option>'; };
   // El inicio sigue el orden de la conversación: saludar y encuadrar, que la persona se presente
   // y confirmar a qué postula. Los datos de la sesión vienen precargados al final.
-  var p1 = '<div class="ev-ini"><span class="ev-ini-n">1</span><div class="ev-ini-c"><div class="ev-ini-t">Salude y presente la entrevista</div>'
+  // Orden: datos de la sesión, guion de inicio, observación y a qué postula; al final, las anotaciones
+    var p1 = '<div class="ev-ini-ses"><div class="ev-ini-ses-t">Datos de la sesión</div><div class="ev-ini-g5">'
+    + '<div class="ev-field"><label>Fecha</label><input type="date" id="ef-fecha" value="' + today + '"></div>'
+    + '<input type="hidden" id="ef-hora" value="' + horaAhora + '"><input type="hidden" id="ef-tipo" value="' + htmlEsc(pref.tipo || 'psicolaboral') + '">'
+    + '<div class="ev-field"><label>Modalidad</label><select id="ef-modalidad">' + opcion('presencial', '🏢 Presencial', pref.modalidad) + opcion('online', '🖥 Online', pref.modalidad) + opcion('terreno', '🌍 En terreno', pref.modalidad) + '</select></div>'
+    + '<div class="ev-field"><label>Entrevistador/a</label><input type="text" id="ef-entrevistador" value="' + htmlEsc(pref.entrevistador) + '" placeholder="Nombre del evaluador/a" oninput="var g=document.getElementById(\'ev-guion-nom\');if(g)g.textContent=this.value.trim()||\'___\'"></div>'
+    + '</div></div>'
+    + '<div class="ev-ini"><span class="ev-ini-n">1</span><div class="ev-ini-c"><div class="ev-ini-t">Salude y presente la entrevista</div>'
     + '<div class="ev-guion">“Buenos días, mi nombre es <span id="ev-guion-nom">' + htmlEsc(pref.entrevistador || '___') + '</span> y le voy a hacer la entrevista. Dura unos <span id="ev-dur-txt">30 minutos</span>: primero revisaremos su experiencia y después le pediré que me cuente situaciones de su trabajo. Lo que conversemos se usa solo para este proceso de selección.”</div></div></div>'
     + '<div class="ev-ini"><span class="ev-ini-n">2</span><div class="ev-ini-c"><div class="ev-ini-t">Pídale que se presente</div>'
     + '<div class="ev-guion">“Para comenzar, cuénteme brevemente de usted: a qué se dedica hoy y por qué le interesa este trabajo.”</div>'
-    + '<div class="ev-field" style="margin-top:10px"><label>📝 Anotaciones al inicio</label><textarea id="ef-notas-inicio" rows="2" placeholder="Primeras impresiones y lo que surja al comenzar: puntualidad, presentación, disposición, cómo llega a la entrevista, condiciones de la sesión (lugar, conexión), lo que la persona comenta espontáneamente…"></textarea></div></div></div>'
+    + '</div></div>'
     + '<div class="ev-ini"><span class="ev-ini-n">3</span><div class="ev-ini-c"><div class="ev-ini-t">Observe al comenzar <span class="ev-ini-op">solo lo que ve · no suma puntaje</span></div><div class="ev-scr ev-scr3">'
     + Object.keys(_EV_SCREEN_OPTS).filter(function(k){ return _EV_SCREEN_OPTS[k].momento === 'inicio'; }).map(function(key){ var o = _EV_SCREEN_OPTS[key]; return '<div class="ev-scr-f"><div class="ev-scr-l">' + o.label + '</div>' + _evPillGroup(key, '', o.opts, o.colors) + '</div>'; }).join('')
     + '</div></div></div>'
@@ -13967,12 +13975,7 @@ function _tabEntrevistasDrawer(c) {
     + _RH_JORNADAS.map(function(j){ return opcion(j[0], j[1], evPost.turno || '4x4_rotativo'); }).join('') + '</select>'
     + '<input type="text" id="ef-turno-otra" value="' + htmlEsc(evPost.turno_otra || '') + '" placeholder="Ej: 5x2 día" style="margin-top:6px;display:' + (evPost.turno === 'otra' ? '' : 'none') + '"></div>'
     + '</div></div></div>'
-    + '<div class="ev-ini-ses"><div class="ev-ini-ses-t">Datos de la sesión</div><div class="ev-ini-g5">'
-    + '<div class="ev-field"><label>Fecha</label><input type="date" id="ef-fecha" value="' + today + '"></div>'
-    + '<input type="hidden" id="ef-hora" value="' + horaAhora + '"><input type="hidden" id="ef-tipo" value="' + htmlEsc(pref.tipo || 'psicolaboral') + '">'
-    + '<div class="ev-field"><label>Modalidad</label><select id="ef-modalidad">' + opcion('presencial', '🏢 Presencial', pref.modalidad) + opcion('online', '🖥 Online', pref.modalidad) + opcion('terreno', '🌍 En terreno', pref.modalidad) + '</select></div>'
-    + '<div class="ev-field"><label>Entrevistador/a</label><input type="text" id="ef-entrevistador" value="' + htmlEsc(pref.entrevistador) + '" placeholder="Nombre del evaluador/a" oninput="var g=document.getElementById(\'ev-guion-nom\');if(g)g.textContent=this.value.trim()||\'___\'"></div>'
-    + '</div></div>';
+    + '<div class="ev-field ev-ini-notas"><label>📝 Anotaciones al inicio</label><textarea id="ef-notas-inicio" rows="2" placeholder="Primeras impresiones y lo que surja al comenzar: puntualidad, presentación, disposición, cómo llega a la entrevista, condiciones de la sesión (lugar, conexión), lo que la persona comenta espontáneamente…"></textarea></div>';
   main += paso(1, 'Presentación y a qué postula', p1);
 
   // 2. Trayectoria: lo que la persona declaró al postular, para verificar
