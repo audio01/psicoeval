@@ -1277,7 +1277,9 @@ textarea.rh-in{resize:vertical}
 .ev-fila-nm b{font-size:14px;color:var(--ink)}
 .ev-fila-nm small{font-size:12px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ev-fila-tag{font-size:11px;font-weight:800;color:#c2410c;background:#fff7ed;padding:3px 9px;border-radius:100px;white-space:nowrap}
-.ev-fila-lv{font-size:12px;font-weight:800;color:var(--ink2);white-space:nowrap}
+.ev-fila-lv{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--ink3);white-space:nowrap}
+.ev-fila-lv b{min-width:26px;height:26px;border-radius:7px;color:#fff;font-size:13.5px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.ev-fila-sin{color:#b45309;font-weight:600}
 .ev-fila-tg{color:var(--ink3);font-size:17px;transition:transform .2s;width:14px;text-align:center}
 .ev-fila.open .ev-fila-tg{transform:rotate(90deg)}
 .ev-fila-con{font-size:12.5px;color:var(--ink2);line-height:1.5;margin:0 14px 10px;padding:7px 10px;border-radius:8px;background:#fff7ed}
@@ -13665,7 +13667,14 @@ function _evPintarComp(row) {
   var lv = +row.dataset.nivel || 0, sug = +row.dataset.sug || 0;
   var cfg = _evCfg(row.dataset.evComp);
   var fl = row.querySelector('.ev-fila-lv');
-  if (fl) { fl.textContent = lv && lv !== sug ? 'Puntaje ' + lv : ''; fl.style.display = lv && lv !== sug ? '' : 'none'; }
+  // Sin abrir la fila: el nivel y de dónde viene (prueba frente al mínimo, integridad o trayectoria)
+  if (fl) {
+    var COLF = { 1:'#dc2626', 2:'#ea580c', 3:'#ca8a04', 4:'#16a34a', 5:'#15803d' };
+    var POS = ['', 'muy bajo el mínimo', 'bajo el mínimo', 'en el mínimo', 'sobre el mínimo', 'muy sobre el mínimo'];
+    var origen = _EV_SUG_PRUEBA[row.dataset.evComp] ? POS[sug] : row.dataset.evComp === 'identificacion' ? 'según la trayectoria' : 'según la prueba';
+    fl.innerHTML = lv ? '<b style="background:' + COLF[lv] + '">' + lv + '</b><span>' + (sug && lv === sug ? origen : sug ? 'ajustado · sugerido ' + sug : 'puntuado en la entrevista') + '</span>'
+                      : '<span class="ev-fila-sin">Sin puntaje · ábrala para puntuar</span>';
+  }
   var dif = row.querySelector('.ev-sug-dif');
   if (dif) dif.style.display = sug && lv && lv !== sug ? '' : 'none';
   var cb = row.querySelector('.ev-sug-ok');
@@ -14017,8 +14026,8 @@ function _tabEntrevistasDrawer(c) {
     + '<div class="ev-hint">Explore cada una con STAR: puntúe lo que la persona <strong>hizo</strong>, no lo que haría. Sin un ejemplo concreto, el máximo es 2. '
     + 'Si nunca vivió la situación, use otra pregunta: valen ejemplos de estudios, servicio militar o voluntariado.</div>'
     + '<div class="ev-comp-cards" id="ev-comp-dots"></div>';
-  var p4 = '<div class="ev-hint">Cada una trae un puntaje sugerido desde las pruebas o la estabilidad laboral. <strong>Confírmelo con un clic</strong> o ábrala (▸) para ver sus preguntas y ajustar el puntaje. '
-    + 'Las sugeridas en 1 o 2 se abren solas para profundizar.</div><div class="ev-filas">';
+  var p4 = '<div class="ev-hint">Cada una viene <strong>puntuada según la evaluación</strong> (pruebas o estabilidad laboral). Ábrala (▸) solo si quiere revisar sus preguntas o ajustar el puntaje. '
+    + 'Conviene revisar las marcadas <strong>Profundizar</strong> (1 o 2).</div><div class="ev-filas">';
   _COMP_CONFIG.forEach(function(comp, i) {
     var sg = _sug[comp.key] || null, modo = _evModo(comp, sg), abiertas = modo === 'star' || modo === 'explorar' || modo === 'profundizar';
     var contraste = comp.contraste && (modo === 'contraste' || comp.key === 'integridad');
@@ -14036,12 +14045,11 @@ function _tabEntrevistasDrawer(c) {
       nS++;
       return;
     }
-    p4 += '<div class="ev-comp ev-fila' + (abiertas ? ' open' : '') + '"' + attrs + '>'
+    p4 += '<div class="ev-comp ev-fila"' + attrs.replace('data-nivel="0"', 'data-nivel="' + (sg ? sg.n : 0) + '"') + '>'
       + '<div class="ev-fila-h" onclick="_evFilaToggle(this, event)"><span class="ev-fila-ic">' + comp.icon + '</span>'
       + '<div class="ev-fila-nm"><b>' + comp.name + '</b><small>' + (sg ? htmlEsc(sg.fuente) : 'Sin resultado para sugerir un puntaje') + '</small></div>'
       + (modo === 'profundizar' ? '<span class="ev-fila-tag">Profundizar</span>' : modo === 'explorar' ? '<span class="ev-fila-tag">Explorar</span>' : '')
       + '<span class="ev-fila-lv"></span>'
-      + (sg ? '<button type="button" class="btn btn-ghost btn-sm ev-sug-ok" onclick="event.stopPropagation();_evConfirmarSug(this)">Confirmar ' + sg.n + '</button>' : '')
       + '<span class="ev-fila-tg">▸</span></div>'
       + (contraste ? '<div class="ev-fila-con"><b>Contraste:</b> ' + comp.contraste[0] + ' <span>' + comp.contraste[1] + '</span></div>' : '')
       + (comp.key === 'identificacion' ? '<div class="ev-sug-rev" id="ev-ident-rev" style="display:none">⚠ La trayectoria declarada se corrigió o no se pudo verificar en la entrevista: revise la sugerencia.</div>' : '')
@@ -14143,6 +14151,7 @@ function _evInit(c) {
       + '. Al guardar, los cambios quedan en esta misma entrevista. <a onclick="_evNuevaEntrevista(\'' + c.id + '\')">Iniciar otra entrevista distinta</a></div>';
   }
   _evCompIr(_evCompIdx);
+  document.querySelectorAll('#ev-main .ev-fila').forEach(_evPintarComp);
   _evPasoVis = 1;
   _evSoloPaso(1);
   _evAutoAltoTodo();
@@ -14427,13 +14436,13 @@ function _evBorradorGuardar() {
     d.campos[el.id] = el.type === 'checkbox' ? el.checked : el.value;
   });
   m.querySelectorAll('[data-ev-comp]').forEach(function(r){
-    d.niveles[r.dataset.evComp] = { n: +r.dataset.nivel || 0, sin: !!(r.querySelector('.ev-sin-ej') || {}).checked, sm: r.dataset.sm || '' };
+    d.niveles[r.dataset.evComp] = { n: +r.dataset.nivel || 0, sin: !!(r.querySelector('.ev-sin-ej') || {}).checked, sm: r.dataset.sm || '', sug: +r.dataset.sug || 0 };
   });
   Object.keys(_EV_SCREEN_OPTS).forEach(function(k){ var g = document.getElementById('ev-pg-' + k); if (g && g.dataset.value) d.pills[k] = g.dataset.value; });
   d.dictamen = (m.querySelector('input[name="ev-dictamen"]:checked') || {}).value || '';
   // Un formulario sin nada escrito no se guarda como borrador
   var escrito = Object.keys(d.campos).some(function(id){ var v = d.campos[id]; return v === true || (typeof v === 'string' && v.trim() && !/^ef-(fecha|hora|tipo|modalidad|entrevistador|exp\d-(cargo|empresa|tiempo|motivo))$/.test(id)); })
-    || Object.keys(d.niveles).some(function(k){ return d.niveles[k].n > 0; }) || d.dictamen || Object.keys(d.pills).length;
+    || Object.keys(d.niveles).some(function(k){ return d.niveles[k].n > 0 && d.niveles[k].n !== d.niveles[k].sug; }) || d.dictamen || Object.keys(d.pills).length;
   if (!escrito) return;
   try { localStorage.setItem(_EV_BORRADOR + m.dataset.cand, JSON.stringify(d)); _evBorradorTs = d.ts; } catch(e) {}
   _evProgreso();
@@ -14579,7 +14588,8 @@ async function saveEntrevistaDrawer(candId) {
     var sinEj = !!(row.querySelector('.ev-sin-ej') || {}).checked, sug = +row.dataset.sug || 0;
     // La evidencia es obligatoria en las exploradas con preguntas o si cambió el puntaje sugerido;
     // al confirmar la sugerencia, la fuente (prueba o estabilidad) es la evidencia
-    var exige = !/^(confirmar|contraste)$/.test(row.dataset.modo || '') || nivel !== sug;
+    // Evidencia obligatoria en las STAR y cuando se cambia el puntaje de la evaluación
+    var exige = !!row.dataset.star || !sug || nivel !== sug;
     if (nivel && exige && !nota.trim()) faltaNota.push(row);
     comp[key] = { nivel:nivel, nota:nota.trim(), sinEjemplo:sinEj };
     if (sug) { comp[key].sugerido = sug; comp[key].fuente = row.dataset.fuente || ''; }
