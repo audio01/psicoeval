@@ -1191,10 +1191,13 @@ textarea.rh-in{resize:vertical}
 .ev-ini-g5{display:grid;grid-template-columns:1fr 1fr 1.6fr;gap:8px}
 .ev-ini-op{font-size:11px;font-weight:500;color:var(--ink4);margin-left:6px}
 .ev-scr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 16px}
+.ev-scr3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.ev-obs-aviso{font-size:12.5px;color:#9a3412;background:#fff7ed;border:1px solid #fed7aa;border-radius:9px;padding:8px 12px;margin-bottom:12px;line-height:1.5}
+[data-theme="dark"] .ev-obs-aviso{background:rgba(234,88,12,.12);border-color:rgba(234,88,12,.4);color:#fdba74}
 .ev-scr-l{font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:5px}
 .ev-ini-ses .ev-field input,.ev-ini-ses .ev-field select{font-size:12.5px}
 [data-theme="dark"] .ev-guion{background:rgba(85,116,255,.14)}
-@media(max-width:700px){.ev-ini-g3,.ev-ini-g5{grid-template-columns:1fr 1fr}.ev-scr{grid-template-columns:1fr}}
+@media(max-width:700px){.ev-ini-g3,.ev-ini-g5{grid-template-columns:1fr 1fr}.ev-scr,.ev-scr3{grid-template-columns:1fr}}
 .ev-q-prueba{font-size:12.5px;color:var(--ink2);line-height:1.55;background:var(--surface2);border-radius:8px;padding:8px 11px;margin-bottom:8px}
 .ev-q-prueba span{display:block;font-size:10.5px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px}
 .ev-q-prueba div+div{margin-top:3px}
@@ -13754,6 +13757,8 @@ function _evInformeHtml(ev, compacto) {
   if (comps.some(function(x){ return x.nivel === 1; })) {
     h += '<div style="font-size:12px;color:#b91c1c;margin-top:8px">⚠ Hay competencias en 1.</div>';
   }
+  var obsV = Object.keys(_EV_SCREEN_OPTS).map(function(k){ var o = _EV_SCREEN_OPTS[k], v = (ev.screening || {})[k], i = v ? o.opts.map(_evScrSlug).indexOf(v) : -1; return i >= 0 ? o.label + ': ' + o.opts[i].toLowerCase() : ''; }).filter(Boolean);
+  if (!compacto && obsV.length) h += '<div style="font-size:12px;color:#334155;line-height:1.6;margin-top:10px"><strong>Observaciones:</strong> ' + htmlEsc(obsV.join(' · ')) + '</div>';
   if (ev.motivo) h += '<div style="font-size:12px;color:#334155;line-height:1.6;margin-top:10px;padding:8px 12px;background:#f8fafc;border-radius:8px"><strong>' + (ev.dictamen === 'obs' ? 'Observaciones' : 'Motivo') + ':</strong> ' + htmlEsc(ev.motivo) + '</div>';
   if (!compacto) {
     if (ev.instalacion || ev.turno || ev.cargo) h += '<div style="font-size:12px;color:#334155;line-height:1.6;margin-top:10px"><strong>Postula a:</strong> ' + htmlEsc([ev.cargo, ev.instalacion, ev.turno ? 'turno ' + (_rhTurnoTxt({ jornada: ev.turno, jornada_otra: ev.turno_otra }) || 'otro') : ''].filter(Boolean).join(' · ')) + '</div>';
@@ -13769,12 +13774,34 @@ function _evInformeHtml(ev, compacto) {
   return h;
 }
 
+// Observación de conducta: solo lo que se ve, sin juzgar rasgos (el nerviosismo es de la
+// situación de entrevista, no de la persona). No suma al puntaje ni al dictamen.
+// frase: cómo entra en el Informe RH, por opción (la del medio del nerviosismo no se informa).
 var _EV_SCREEN_OPTS = {
-  nivel_estres:   { label:'Nivel de Estrés Percibido',       opts:['Bajo','Moderado','Alto'],            colors:['verde','amarillo','rojo'] },
-  impulsividad:   { label:'Manejo Impulsividad/Autocontrol', opts:['Adecuado','En Riesgo','No Adecuado'],colors:['verde','amarillo','rojo'] },
-  tolerancia:     { label:'Tolerancia Frustración/Presión',  opts:['Alta','Media','Baja'],                colors:['verde','amarillo','rojo'] },
-  estabilidad:    { label:'Estabilidad Emocional/Lenguaje No Verbal', opts:['Adecuado','Inconsistente','Desajustado'], colors:['verde','amarillo','rojo'] },
+  puntualidad:  { label:'Puntualidad y condiciones de la sesión', momento:'inicio', opts:['Adecuada','Con dificultades','Inadecuada'], colors:['verde','amarillo','rojo'],
+                  frase:['se presenta con puntualidad', 'presentó dificultades de puntualidad o en las condiciones de la sesión', 'no se presentó en el horario acordado o en condiciones adecuadas para la sesión'] },
+  presentacion: { label:'Presentación personal', momento:'inicio', opts:['Adecuada','Mejorable','Inadecuada'], colors:['verde','amarillo','rojo'],
+                  frase:['mantiene una presentación personal adecuada', 'su presentación personal es mejorable para un cargo con uniforme', 'su presentación personal no se ajusta a lo esperado para un cargo con uniforme'] },
+  nivel_estres: { label:'Nerviosismo en la entrevista', momento:'inicio', opts:['Bajo','Moderado','Alto'], colors:['verde','amarillo','rojo'],
+                  frase:['se desenvuelve con tranquilidad', '', 'mostró un nivel alto de nerviosismo durante la evaluación'] },
+  comprension:  { label:'Comprensión de las preguntas', momento:'cierre', opts:['Comprende','Necesita repetir','Le cuesta'], colors:['verde','amarillo','rojo'],
+                  frase:['comprende con facilidad las preguntas', 'en ocasiones necesitó que se le repitieran las preguntas', 'le costó comprender varias de las preguntas'] },
+  coherencia:   { label:'Coherencia con lo declarado al postular', momento:'cierre', opts:['Coherente','Dudas','Contradicciones'], colors:['verde','amarillo','rojo'],
+                  frase:['entrega un relato coherente con los antecedentes declarados', 'algunos aspectos de su relato generan dudas respecto de los antecedentes declarados', 'su relato presenta contradicciones con los antecedentes declarados'] }
 };
+function _evScrSlug(o) { return o.toLowerCase().replace(/[^a-z0-9]/g, '_'); }
+// Observaciones de una entrevista → frases favorables y a considerar (para el Informe RH)
+function _evConductaDe(scr) {
+  var r = { favorables: [], considerar: [], rojas: [] };
+  Object.keys(_EV_SCREEN_OPTS).forEach(function(k) {
+    var o = _EV_SCREEN_OPTS[k], v = (scr || {})[k]; if (!v) return;
+    var idx = o.opts.map(_evScrSlug).indexOf(v); if (idx < 0) return;
+    var f = o.frase[idx]; if (!f) return;
+    (idx === 0 ? r.favorables : r.considerar).push(f);
+    if (idx === 2) r.rojas.push(o.label + ': ' + o.opts[idx].toLowerCase());
+  });
+  return r;
+}
 
 var _EV_RED_FLAGS = [
   'Respuestas evasivas / falta de transparencia en la trayectoria.',
@@ -13829,7 +13856,7 @@ function _evPillClick(el, key, val) {
 function _evGetScreen() {
   var result = {};
   Object.keys(_EV_SCREEN_OPTS).forEach(function(key) {
-    var grp = document.getElementById('ev-pg-' + key);
+    var grp = document.getElementById('ev-pg-' + key); if (!grp) return;
     result[key] = grp ? (grp.dataset.value || '') : '';
   });
   return result;
@@ -13912,8 +13939,8 @@ function _tabEntrevistasDrawer(c) {
     + '<div class="ev-ini"><span class="ev-ini-n">2</span><div class="ev-ini-c"><div class="ev-ini-t">Pídale que se presente</div>'
     + '<div class="ev-guion">“Para comenzar, cuénteme brevemente de usted: a qué se dedica hoy y por qué le interesa este trabajo.”</div>'
     + '<div class="ev-field" style="margin-top:10px"><label>📝 Anotaciones al inicio</label><textarea id="ef-notas-inicio" rows="2" placeholder="Primeras impresiones y lo que surja al comenzar: puntualidad, presentación, disposición, cómo llega a la entrevista, condiciones de la sesión (lugar, conexión), lo que la persona comenta espontáneamente…"></textarea></div></div></div>'
-    + '<div class="ev-ini"><span class="ev-ini-n">3</span><div class="ev-ini-c"><div class="ev-ini-t">Screening de conducta <span class="ev-ini-op">mientras conversan · opcional</span></div><div class="ev-scr">'
-    + Object.keys(_EV_SCREEN_OPTS).map(function(key){ var o = _EV_SCREEN_OPTS[key]; return '<div class="ev-scr-f"><div class="ev-scr-l">' + o.label + '</div>' + _evPillGroup(key, '', o.opts, o.colors) + '</div>'; }).join('')
+    + '<div class="ev-ini"><span class="ev-ini-n">3</span><div class="ev-ini-c"><div class="ev-ini-t">Observe al comenzar <span class="ev-ini-op">solo lo que ve · no suma puntaje</span></div><div class="ev-scr ev-scr3">'
+    + Object.keys(_EV_SCREEN_OPTS).filter(function(k){ return _EV_SCREEN_OPTS[k].momento === 'inicio'; }).map(function(key){ var o = _EV_SCREEN_OPTS[key]; return '<div class="ev-scr-f"><div class="ev-scr-l">' + o.label + '</div>' + _evPillGroup(key, '', o.opts, o.colors) + '</div>'; }).join('')
     + '</div></div></div>'
     + '<div class="ev-ini"><span class="ev-ini-n">4</span><div class="ev-ini-c"><div class="ev-ini-t">Confirme a qué postula</div>'
     // Cargo, instalación y turno a los que postula: pasan solos al Informe RH
@@ -14049,7 +14076,11 @@ function _tabEntrevistasDrawer(c) {
 
   // 6. Cierre y dictamen
   var p5 = '<div class="ev-sub">Resultado de las competencias</div><div id="ev-resultado" style="margin-bottom:16px">' + _evResultadoHtml(_COMP_CONFIG.map(function(x){ return { name:x.name, nivel:0 }; })) + '</div>';
+  p5 += '<div class="ev-sub">Observe durante la conversación <span class="ev-ini-op">no suma puntaje</span></div><div class="ev-scr" style="margin-bottom:14px">'
+    + Object.keys(_EV_SCREEN_OPTS).filter(function(k){ return _EV_SCREEN_OPTS[k].momento === 'cierre'; }).map(function(key){ var o = _EV_SCREEN_OPTS[key]; return '<div class="ev-scr-f"><div class="ev-scr-l">' + o.label + '</div>' + _evPillGroup(key, '', o.opts, o.colors) + '</div>'; }).join('')
+    + '</div>';
   p5 += '<div class="ev-field" style="margin-bottom:14px"><label>Síntesis</label><textarea id="ef-sintesis" rows="4" placeholder="Fortalezas observadas, aspectos a desarrollar, ajuste al cargo, impresión general…"></textarea></div>';
+  p5 += '<div class="ev-obs-aviso" id="ev-obs-aviso" style="display:none"></div>';
   p5 += '<div class="ev-sub">Dictamen</div><div class="ev-dictamen" id="ev-dictamen-group">';
   _EV_DICTAMEN.forEach(function(d) {
     p5 += '<label class="ev-dictamen-opt" style="cursor:pointer" onclick="_evDictamenSel(\'' + d.val + '\')" id="ev-dict-opt-' + d.val + '">'
@@ -14314,6 +14345,8 @@ function _evProgreso() {
   var motivoOk = !_evMotivoRequerido() || val('ef-motivo');
   est[6] = [!!dict && !!motivoOk, dict && motivoOk ? '✓' : ''];
   _evEstPasos = est;
+  var oa = document.getElementById('ev-obs-aviso');
+  if (oa) { var cr = _evConductaDe(_evGetScreen()).rojas; oa.style.display = cr.length ? '' : 'none'; oa.innerHTML = cr.length ? '⚠ <strong>Observaciones en rojo:</strong> ' + htmlEsc(cr.join(' · ')) + '. Considérelas al fundamentar el dictamen.' : ''; }
   _evResumenesPasos(m, comps, dict);
   _evDatosPintar();
   for (var n = 1; n <= _EV_PASOS.length; n++) {
@@ -14605,6 +14638,7 @@ async function saveEntrevistaDrawer(candId) {
       var ant = edita && prev.filter(function(e){ return e.id === edita; })[0];
       dictAntes = ant ? (ant.dictamen || '') : null;
       if (ant && ant.apuntes_psico && !document.getElementById('ef-apuntes-psico')) entry.apuntes_psico = ant.apuntes_psico;
+      if (ant && ant.screening) entry.screening = Object.assign({}, ant.screening, entry.screening);
       // Una entrevista de la pauta anterior que se edita conserva sus 5 competencias como registro
       if (ant && !(ant.v >= 3)) {
         var prev5 = ant.comp_previo || _evCompsDe(ant).filter(function(x){ return x.nivel > 0; }).map(function(x){ return { name:x.name, nivel:x.nivel, nota:x.nota }; });
@@ -15313,7 +15347,8 @@ async function _rhRedactar() {
         cargo: d.cargo || _rhCargoBase(c), categoria: d.categoria,
         fortalezas: d.fortalezas, debilidades: d.debilidades,
         niveles: _RH_COMP.map(function(k){ return { competencia: k.label, ideal: d.ideales[k.key], obtenido: d.niveles[k.key] || '' }; }),
-        recomendacion: d.recomendacion, detalle: d.detalle
+        recomendacion: d.recomendacion, detalle: d.detalle,
+        conducta: (function(){ var x = _rhConducta(c); return { favorables: x.favorables, considerar: x.considerar }; })()
       })
     });
     var j = await r.json().catch(function(){ return {}; });
@@ -15386,6 +15421,10 @@ function _rhUnir(oraciones, inicio) {
     return o;
   }).join(' ');
 }
+function _rhConducta(c) {
+  var ev = (((c && c.scores) || {})._entrevistas || []).filter(function(e){ return e && e.screening; }).pop();
+  return _evConductaDe(ev && ev.screening);
+}
 function _rhRedaccionLocal(d, c) {
   var nom = ((c.nombre || '').trim().split(/\s+/)[0]) || 'La persona evaluada';
   var cargo = (d.cargo || _rhCargoBase(c) || 'el cargo').toLowerCase();
@@ -15409,6 +15448,9 @@ function _rhRedaccionLocal(d, c) {
       : altos.length ? 'ajustado a las exigencias del cargo de ' + cargo : 'acorde a las exigencias básicas del cargo de ' + cargo)
     + (altos.length ? (d.categoria === 'no_apto' ? ', aunque presenta un desempeño destacado en ' : ', con un desempeño destacado en ') + _rhListaY(altos) : '') + '.';
   if (fort.length) p1 += ' ' + _rhUnir(fort);
+  // Conducta observada (sin juzgar rasgos): lo favorable al perfil, lo demás a considerar
+  var cond = _rhConducta(c);
+  if (cond.favorables.length) p1 += ' Durante la evaluación, ' + _rhListaY(cond.favorables) + '.';
   // 2. Oportunidades de mejora: debilidades y competencias bajo el ideal que no tengan ya su frase
   var deb = prosa(d.debilidades, _RH_PROSA_DEB, _RH_DEB, 'deb');
   var conFrase = Object.keys(_RH_DEB).filter(function(k){ return String(d.debilidades || '').indexOf(_RH_DEB[k]) !== -1; });
@@ -15416,6 +15458,7 @@ function _rhRedaccionLocal(d, c) {
   var bajos = resto.filter(function(b){ return b.n === 'Bajo'; }).map(function(b){ return _RH_NOMBRE_TXT[b.key]; });
   var medios = resto.filter(function(b){ return b.n === 'Medio'; }).map(function(b){ return _RH_NOMBRE_TXT[b.key]; });
   var art = function(a){ return (a.length > 1 ? 'las competencias de ' : 'la competencia de ') + _rhListaY(a); };
+  if (cond.considerar.length) deb.push('Durante la evaluación, ' + _rhListaY(cond.considerar) + (cond.considerar.length > 1 ? ', aspectos que conviene considerar.' : ', aspecto que conviene considerar.'));
   if (bajos.length) deb.push(_rhMayus(art(bajos)) + (bajos.length > 1 ? ' se ubican' : ' se ubica') + ' en un nivel bajo respecto de lo requerido para el cargo.');
   if (medios.length) deb.push(_rhMayus(art(medios)) + (medios.length > 1 ? ' se ubican' : ' se ubica') + ' en un nivel medio, bajo el nivel ideal definido para el cargo.');
   var p2 = deb.length ? _rhUnir(deb, 'Como oportunidades de mejora, ')
