@@ -14446,22 +14446,31 @@ function _chapiNombreCoincide(c, ch) {
   if (!a.length || !b.length) return true;
   return a.filter(function(x){ return b.indexOf(x) !== -1; }).length >= Math.min(2, a.length);
 }
-// Descarte automático (mismo criterio que psicoeval-chapi): robo o hurto, o el mismo tipo de delito
+// Descarte automático (mismo criterio que psicoeval-chapi): robos y estafas o Ley de Reclutamiento (imputado,
+// querellado o denunciado), robos y estafas en prensa con coincidencia alta, o el mismo tipo de delito
 // en 2 o más causas distintas, como imputado y en causas que coinciden por RUT
-function _chapiReglas(imp) {
+function _chapiReglas(imp, prensa) {
   var lista = Array.isArray(imp) ? imp : [], porTipo = {};
-  var roboHurto = lista.filter(function(x){ return /^(robo|hurto)$/.test(x.tipo); });
-  lista.forEach(function(x){ if (!/^(robo|hurto)$/.test(x.tipo)) (porTipo[x.tipo] = porTipo[x.tipo] || {})[x.rit || x.delito] = x; });
+  var st = function(t){ return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); };
+  var RE = /(^|\s)(robo|hurto|estafa|receptacion|apropiacion|defraudacion|fraude|abigeato)/;
+  var rh = function(x){ return RE.test(x.tipo) || RE.test(st(x.delito).replace(/[^a-z\s]/g, ' ').trim()); }, rec = function(x){ return !rh(x) && /reclutamiento/.test(st(x.delito)); };
+  var roboHurto = lista.filter(rh), reclutamiento = lista.filter(rec);
+  var pAlta = (Array.isArray(prensa) ? prensa : []).filter(function(e){ return e.confianza >= 0.85; });
+  lista.forEach(function(x){ if (!rh(x) && !rec(x)) (porTipo[x.tipo] = porTipo[x.tipo] || {})[x.rit || x.delito] = x; });
   var reiteradas = Object.keys(porTipo).filter(function(t){ return t && Object.keys(porTipo[t]).length >= 2; })
     .map(function(t){ return { tipo: t, causas: Object.keys(porTipo[t]).map(function(k){ return porTipo[t][k]; }) }; });
-  return { roboHurto: roboHurto, reiteradas: reiteradas, descartar: roboHurto.length > 0 || reiteradas.length > 0 };
+  return { roboHurto: roboHurto, reclutamiento: reclutamiento, reiteradas: reiteradas, prensa: pAlta, descartar: roboHurto.length > 0 || reclutamiento.length > 0 || reiteradas.length > 0 || pAlta.length > 0 };
 }
 // Mismo criterio que la verificación automática (psicoeval-chapi): grave = penales por RUT,
 // causas laborales o riesgo alto; lo demás, aviso para conversarlo en la entrevista
 function _chapiClasificar(r) {
   var k = (r && r.causas) || {}, motivos = [], avisos = [];
-  var rd = _chapiReglas(r && r.imputaciones);
-  if (rd.roboHurto.length) motivos.push('Imputado por robo o hurto (' + rd.roboHurto.length + ')');
+  var rd = _chapiReglas(r && r.imputaciones, r && r.prensa_robos);
+  if (rd.roboHurto.length) motivos.push('Robos y estafas: ' + rd.roboHurto.map(function(x){ return (x.rol || 'Imputado').toLowerCase(); }).filter(function(v, i, a){ return a.indexOf(v) === i; }).join(' / ') + ' (' + rd.roboHurto.length + ')');
+  if (rd.reclutamiento.length) motivos.push('Infracción a la Ley de Reclutamiento (' + rd.reclutamiento.length + ')');
+  if (rd.prensa.length) motivos.push('Prensa: robos y estafas (' + rd.prensa.length + ')');
+  var pBaja = ((r && r.prensa_robos) || []).filter(function(e){ return e.confianza < 0.85; });
+  if (pBaja.length) motivos.push('Prensa: robos y estafas con coincidencia dudosa (' + pBaja.length + ')');
   rd.reiteradas.forEach(function(x){ motivos.push('Imputaciones reiteradas: ' + x.causas[0].delito.toLowerCase() + ' (' + x.causas.length + ' causas)'); });
   if (k.penales_rut > 0) motivos.push('Causas penales por RUT (' + k.penales_rut + ')');
   else if (r && Array.isArray(r.imputaciones) && r.imputaciones.length) motivos.push('Imputado en causa penal (' + r.imputaciones.map(function(x){ return x.rit; }).filter(function(x, i, a){ return a.indexOf(x) === i; }).length + ')');
