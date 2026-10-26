@@ -2760,7 +2760,8 @@ body.adm .rh-box .vac-benef label,.vac-benef label{display:inline-flex;white-spa
             <option value="seleccionado">Seleccionado</option>
             <option value="enviado">Enviado a contratación</option>
             <option value="contratado">Contratado</option>
-            <option value="descartado">Descartado</option>
+            <option value="no_contratado">No contratado</option>
+            <option value="descartado">Rechazado</option>
           </select>
           <button id="bulk-planilla" class="btn btn-sm" onclick="abrirPlanillaEnvio()" style="display:none;background:var(--surface);border:1.5px solid var(--accent-m);color:var(--accent)" title="Tabla con los datos básicos para enviar a RRHH por correo"><svg class="ico"><use href="#i-sheet"/></svg>Planilla de envío</button>
           <button id="bulk-cto" class="btn btn-sm" onclick="contactosExportar()" style="display:none;background:var(--surface);border:1.5px solid var(--accent-m);color:var(--accent)" title="Archivo para importar los seleccionados en Google Contactos"><svg class="ico"><use href="#i-user"/></svg>Contactos</button>
@@ -9428,7 +9429,7 @@ function _porRevisarHtml(cands, desde) {
     if (et === 'antecedentes') { grupos[0].lista.push({ c:c, nota:_chapiMotivoCorto(c) }); return; }
     var f = _fechaCand(c), enPeriodo = !desde || (f && f >= desde);
     if (!enPeriodo) { if (m.segPend.length) grupos[4].lista.push({ c:c, nota:m.segPend.map(function(p){ return p.hito.toLowerCase(); }).join(' y ') }); return; }
-    if (et === 'descartado') { if (m.segPend.length) grupos[4].lista.push({ c:c, nota:m.segPend.map(function(p){ return p.hito.toLowerCase(); }).join(' y ') }); return; }
+    if (_esCierre(et)) { if (m.segPend.length) grupos[4].lista.push({ c:c, nota:m.segPend.map(function(p){ return p.hito.toLowerCase(); }).join(' y ') }); return; }
     if (m.integ === 'riesgo_alto' && !m.dictamen) grupos[1].lista.push({ c:c });
     if (m.incid === 'grave' && !m.dictamen) grupos[2].lista.push({ c:c });
     if (!m.dictamen && et !== 'seleccionado' && et !== 'enviado' && et !== 'contratado') grupos[3].lista.push({ c:c });
@@ -11123,14 +11124,17 @@ async function bulkMoveStage() {
   if (!etapa) return;
   const checked = [...document.querySelectorAll('.row-chk:checked')];
   if (!checked.length) { toast('Selecciona candidatos primero', 'er'); return; }
-  const meta = getPipelineMeta(etapa);
   const n = checked.length;
   var mot = null;
-  if (etapa === 'descartado') { mot = await _pedirMotivoDescarte(n + ' candidato' + (n>1?'s':'') + ' (el mismo motivo para todos)'); if (!mot) return; }
+  if (_esCierre(etapa)) {
+    var r = await _pedirMotivoDescarte(n + ' candidato' + (n>1?'s':'') + ' (el mismo motivo para todos)', etapa); if (!r) return;
+    etapa = r.etapa; mot = r.datos;
+  }
   else if (!(await appConfirm('¿Mover ' + n + ' candidato' + (n>1?'s':'') + ' a "' + meta.label + '"?'))) return;
   for (const chk of checked) {
     try { await _setPipelineEtapa(chk.dataset.id, etapa, mot); } catch(e) { /* skip */ }
   }
+  const meta = getPipelineMeta(etapa);
   toast(meta.icon + ' ' + n + ' candidato' + (n>1?'s':'') + ' movido' + (n>1?'s':'') + ' a ' + meta.label, 'ok');
   clearSelection();
   renderCandidatesTable();
@@ -11716,7 +11720,7 @@ async function renderDashboard() {
   var recomendados = conDict.filter(function(x){ return x.m.dictamen === 'recomendado' || x.m.dictamen === 'obs'; }).length;
   var sinTerminar = cands.filter(function(c){ return c.estado !== 'completed'; }).length;
   // Mismo criterio que "Por revisar": en proceso (ni seleccionados ni descartados) y sin dictamen
-  var sinDict = miradas.filter(function(x){ var e = getPipelineEtapa(x.c); return !x.m.dictamen && e !== 'seleccionado' && e !== 'enviado' && e !== 'contratado' && e !== 'descartado'; }).length;
+  var sinDict = miradas.filter(function(x){ var e = getPipelineEtapa(x.c); return !x.m.dictamen && e !== 'seleccionado' && e !== 'enviado' && e !== 'contratado' && !_esCierre(e); }).length;
   // Seleccionados incluye a los ya contratados
   var seleccionados = cands.filter(function(c){ var e = getPipelineEtapa(c); return e === 'seleccionado' || e === 'enviado' || e === 'contratado'; }).length;
   // Clic en un indicador: Candidatos con el mismo cargo y período, más el filtro del indicador
@@ -12051,12 +12055,12 @@ function _porArchivarBadge(c) {
 }
 // En el archivo: los descartados y los postulantes archivados por inactividad.
 // No aparecen en el tablero ni en las vistas habituales; sí en la vista "Archivo" y al buscar.
-function _bdEnArchivo(c) { return getPipelineEtapa(c) === 'descartado' || _bdArchivado(c); }
+function _bdEnArchivo(c) { return _esCierre(getPipelineEtapa(c)) || _bdArchivado(c); }
 // Al buscar aparecen también los del archivo: se marcan para que se note
 function _enArchivoBadge(c) {
   if ((_BD.filtros || {}).archivo === 'archivados' || !_bdEnArchivo(c)) return '';
-  var desc = getPipelineEtapa(c) === 'descartado';
-  return '<span title="' + (desc ? 'Descartado: está en el Archivo' : 'Sin movimiento hace más de ' + _BD_ARCH_DIAS + ' días: está en el Archivo') + '" style="display:inline-block;margin-left:6px;padding:1px 7px;border-radius:100px;font-size:10px;font-weight:700;vertical-align:1px;white-space:nowrap;background:#f1f5f9;color:#475569;border:1px solid #cbd5e1">🗄 En archivo</span>';
+  var desc = _esCierre(getPipelineEtapa(c));
+  return '<span title="' + (desc ? getPipelineMeta(getPipelineEtapa(c)).label + ': está en el Archivo' : 'Sin movimiento hace más de ' + _BD_ARCH_DIAS + ' días: está en el Archivo') + '" style="display:inline-block;margin-left:6px;padding:1px 7px;border-radius:100px;font-size:10px;font-weight:700;vertical-align:1px;white-space:nowrap;background:#f1f5f9;color:#475569;border:1px solid #cbd5e1">🗄 En archivo</span>';
 }
 function _bdArchivado(c) {
   return getPipelineEtapa(c) === 'postulante' && Date.now() - _ultimoMovimiento(c) > _BD_ARCH_DIAS * 864e5;
@@ -12121,7 +12125,7 @@ var _BD_CAMPOS = {
                 ok:function(c, v){ var m = _miradaDe(c); if (!m.apt.length) return false; return v === 'ok' ? !m.bajo.length : m.bajo.length > 0; } },
   integridad: { label:'Integridad', ops:function(){ return [['riesgo_alto', 'Riesgo alto'], ['explorar', 'A explorar'], ['sin_indicadores', 'Sin indicadores'], ['no_interpretable', 'No interpretable']]; },
                 ok:function(c, v){ return ((c.scores || {}).integridad || {}).nivel === v; } },
-  archivo:    { label:'Archivo', ops:function(){ return [['activos', 'Solo activos'], ['pronto', 'Se archivan esta semana'], ['archivados', 'Archivo (descartados e inactivos)'], ['todos', 'Activos y archivo']]; },
+  archivo:    { label:'Archivo', ops:function(){ return [['activos', 'Solo activos'], ['pronto', 'Se archivan esta semana'], ['archivados', 'Archivo (rechazados, no contratados e inactivos)'], ['todos', 'Activos y archivo']]; },
                 ok:function(c, v){ if (v === 'pronto') return _diasParaArchivo(c) !== null; return v === 'todos' || (v === 'archivados') === _bdEnArchivo(c); } },
   duracion:   { label:'Duración', ops:function(){ return [['rapida', '⚡ Alguna prueba muy rápida'], ['normal', 'Sin pruebas muy rápidas']]; },
                 ok:function(c, v){ var du = _duracionDe(c); if (!du) return false; return v === 'rapida' ? du.rapidas.length > 0 : !du.rapidas.length; } },
@@ -12143,7 +12147,7 @@ function _bdFiltrar(all) {
     }
     // Sin filtro de archivo ni búsqueda, los archivados no se muestran
     var fl = _BD.filtros || {};
-    if (!q && !fl.archivo && !(fl.etapa === 'descartado' && getPipelineEtapa(c) === 'descartado') && _bdEnArchivo(c)) return false;
+    if (!q && !fl.archivo && !(_esCierre(fl.etapa) && getPipelineEtapa(c) === fl.etapa) && _bdEnArchivo(c)) return false;
     return Object.keys(_BD.filtros || {}).every(function(k){ var f = _BD_CAMPOS[k]; return !f || f.ok(c, _BD.filtros[k]); });
   });
 }
@@ -12371,7 +12375,7 @@ function _bdTablero(lista) {
     var del = lista.filter(function(c){ return _bdValorGrupo(c, campo) === g.id; });
     if (manual) del.sort(function(a, b){ return _bdPos(a) - _bdPos(b); });
     // Descartados: van al archivo. Para descartar, la barra que aparece al arrastrar
-    if (arrastra && g.id === 'descartado' && !del.length && !verArchivo) return;
+    if (arrastra && _esCierre(g.id) && !del.length && !verArchivo) return;
     if (arrastra && g.id === 'contratado' && !verArchivo) return;
     h += '<div class="kanban-col" id="kcol-' + g.id + '"' + (arrastra ? ' ondragover="event.preventDefault();this.classList.add(\'drag-over\');kOver(event,\'' + g.id + '\')" ondragleave="if(!this.contains(event.relatedTarget)){this.classList.remove(\'drag-over\')}" ondrop="kDrop(event,\'' + g.id + '\')"' : '') + '>'
       + '<div class="kanban-col-header"><span class="bd-col-dot" style="background:' + g.color + '"></span><span>' + g.label + '</span><span class="bd-col-n">' + del.length + '</span></div>'
@@ -12411,16 +12415,19 @@ function _bdTablero(lista) {
   // También recibe tarjetas arrastradas para descartar.
   if (arrastra && !verArchivo) {
     var cuenta = function(et){ return (_dbCache || []).filter(function(c){ return getPipelineEtapa(c) === et && (!(_BD.filtros || {}).cargo || c.perfil === _BD.filtros.cargo); }).length; };
-    var nDesc = cuenta('descartado'), nCont = cuenta('contratado');
+    var nDesc = cuenta('descartado'), nNoC = cuenta('no_contratado'), nCont = cuenta('contratado');
     h += '<div class="bd-col-lado"><div class="kanban-col bd-col-desc" ondragover="event.preventDefault();this.classList.add(\'drag-over\')" ondragleave="if(!this.contains(event.relatedTarget))this.classList.remove(\'drag-over\')" ondrop="this.classList.remove(\'drag-over\');kDrop(event,\'descartado\')">'
-      + '<div class="kanban-col-header"><span class="bd-col-dot" style="background:#dc2626"></span><span>Descartados</span><span class="bd-col-n">' + nDesc + '</span></div>'
-      + '<div class="bd-lado-b">' + (nDesc ? '<a class="bd-lnk" onclick="_bdIrConFiltros({ etapa:\'descartado\' })">Ver →</a>' : '<span>Arrastre aquí para descartar</span>') + '</div></div>'
+      + '<div class="kanban-col-header"><span class="bd-col-dot" style="background:#dc2626"></span><span>Rechazados</span><span class="bd-col-n">' + nDesc + '</span></div>'
+      + '<div class="bd-lado-b">' + (nDesc ? '<a class="bd-lnk" onclick="_bdIrConFiltros({ etapa:\'descartado\' })">Ver →</a>' : '<span>Arrastre aquí si no cumple el perfil</span>') + '</div></div>'
+      + '<div class="kanban-col bd-col-desc" ondragover="event.preventDefault();this.classList.add(\'drag-over\')" ondragleave="if(!this.contains(event.relatedTarget))this.classList.remove(\'drag-over\')" ondrop="this.classList.remove(\'drag-over\');kDrop(event,\'no_contratado\')">'
+      + '<div class="kanban-col-header"><span class="bd-col-dot" style="background:#64748b"></span><span>No contratados</span><span class="bd-col-n">' + nNoC + '</span></div>'
+      + '<div class="bd-lado-b">' + (nNoC ? '<a class="bd-lnk" onclick="_bdIrConFiltros({ etapa:\'no_contratado\' })">Ver →</a>' : '<span>Arrastre aquí si era apto y no se concretó</span>') + '</div></div>'
       + '<div class="kanban-col bd-col-desc bd-col-cont" ondragover="event.preventDefault();this.classList.add(\'drag-over\')" ondragleave="if(!this.contains(event.relatedTarget))this.classList.remove(\'drag-over\')" ondrop="this.classList.remove(\'drag-over\');kDrop(event,\'contratado\')">'
       + '<div class="kanban-col-header"><span class="bd-col-dot" style="background:#0e7490"></span><span>Contratado</span><span class="bd-col-n">' + nCont + '</span></div>'
       + '<div class="bd-lado-b">' + (nCont ? '<a class="bd-lnk" onclick="_bdIrConFiltros({ etapa:\'contratado\' })">Ver →</a>' : '<span>Arrastre aquí al contratar</span>') + '</div></div></div>';
   }
   if (arrastra) h += '<div id="bd-descartar" class="bd-descartar-barra" ondragover="event.preventDefault();this.classList.add(\'over\')" ondragleave="this.classList.remove(\'over\')" ondrop="kDrop(event,\'descartado\')">'
-    + '<span style="font-size:18px">❌</span><span><b>Suelte aquí para descartar</b><small>El candidato pasa al archivo</small></span></div>';
+    + '<span style="font-size:18px">❌</span><span><b>Suelte aquí para cerrar el proceso</b><small>Rechazado o No contratado: pasa al archivo con su motivo</small></span></div>';
   return h + '</div>';
 }
 
@@ -13452,7 +13459,7 @@ function _vacCupos(v) {
   (_dbCache || []).forEach(function(c){
     if (!(c.scores && c.scores._postula && c.scores._postula.vacante === v.id)) return;
     var e = getPipelineEtapa(c);
-    if (e === 'seleccionado' || e === 'enviado' || e === 'contratado') oc++; else if (e !== 'descartado') pr++;
+    if (e === 'seleccionado' || e === 'enviado' || e === 'contratado') oc++; else if (!_esCierre(e)) pr++;
   });
   return { ocupados: oc, proceso: pr, total: v.cupos || null, libres: v.cupos ? Math.max(0, v.cupos - oc) : null };
 }
@@ -13758,8 +13765,11 @@ var PIPELINE_STAGES = [
   { id:'seleccionado', label:'Seleccionado',          icon:'✅', color:'#16a34a', bg:'#f0fdf4', border:'#bbf7d0' },
   { id:'enviado',      label:'Enviado a contratación', icon:'📨', color:'#7c3aed', bg:'#f5f3ff', border:'#ddd6fe' },
   { id:'contratado',   label:'Contratado',            icon:'🤝', color:'#0e7490', bg:'#ecfeff', border:'#a5f3fc' },
-  { id:'descartado',   label:'Descartado',            icon:'❌', color:'#dc2626', bg:'#fef2f2', border:'#fecaca' },
+  // Dos cierres, los dos van al Archivo: No contratado = era apto pero no se concretó; Rechazado = no cumple el perfil
+  { id:'no_contratado', label:'No contratado',        icon:'⏸', color:'#64748b', bg:'#f8fafc', border:'#cbd5e1' },
+  { id:'descartado',   label:'Rechazado',             icon:'❌', color:'#dc2626', bg:'#fef2f2', border:'#fecaca' },
 ];
+function _esCierre(e) { return e === 'descartado' || e === 'no_contratado'; }
 
 function getPipelineEtapa(c) {
   if (c.scores && c.scores._pipeline_etapa) return c.scores._pipeline_etapa;
@@ -13864,46 +13874,62 @@ async function kDrop(event, newStage) {
     if (mismaEtapa) await _patchScoresField(id, '_pos', pos);
     else {
       var mot = null;
-      if (newStage === 'descartado') {
+      if (_esCierre(newStage)) {
         var cd = (await getDB()).find(function(x){ return x.id === id; });
-        mot = await _pedirMotivoDescarte(cd ? ((cd.nombre || '') + ' ' + (cd.apellido || '')).trim() : '');
-        if (!mot) { _bdRenderCuerpo(); return; }   // sin motivo no se descarta: la tarjeta vuelve a su lugar
+        var r = await _pedirMotivoDescarte(cd ? ((cd.nombre || '') + ' ' + (cd.apellido || '')).trim() : '', newStage);
+        if (!r) { _bdRenderCuerpo(); return; }   // sin motivo no se cierra: la tarjeta vuelve a su lugar
+        newStage = r.etapa; mot = r.datos;
       }
       await _setPipelineEtapa(id, newStage, Object.assign({}, pos === null ? {} : { _pos: pos }, mot || {}));
     }
     _invalidateCache();
-    if (!mismaEtapa) toast(newStage === 'descartado' ? '❌ Descartado: quedó en el Archivo' : getPipelineMeta(newStage).icon + ' Movido a ' + getPipelineMeta(newStage).label, 'ok');
+    if (!mismaEtapa) toast(_esCierre(newStage) ? getPipelineMeta(newStage).icon + ' ' + getPipelineMeta(newStage).label + ': quedó en el Archivo' : getPipelineMeta(newStage).icon + ' Movido a ' + getPipelineMeta(newStage).label, 'ok');
     _bdRenderCuerpo();
     if (!mismaEtapa && newStage === 'contratado') _ofrecerContratacion(id);
   } catch(e) { toast('Error: ' + e.message, 'er'); _bdRenderCuerpo(); }
 }
 
-// Motivo obligatorio al descartar: queda en el historial de etapas con quién y cuándo, y se ve en la ficha
-var _DESCARTE_MOTIVOS = ['No cumple los requisitos del cargo', 'Resultados de la evaluación bajo el mínimo', 'Entrevista no satisfactoria',
-  'Referencias laborales negativas', 'Antecedentes', 'No se presentó o no responde', 'Desistió del proceso', 'Documentación incompleta', 'Otro'];
-function _pedirMotivoDescarte(quien) {
+// Motivo obligatorio al cerrar un proceso: Rechazado (no cumple el perfil) o No contratado (era apto y no se
+// concretó). Queda en el historial de etapas con quién y cuándo, y se ve en la ficha.
+var _CIERRE_MOTIVOS = {
+  descartado: ['No cumple los requisitos del cargo', 'Resultados de la evaluación bajo el mínimo', 'Entrevista no satisfactoria',
+               'Referencias laborales negativas', 'Antecedentes', 'Otro'],
+  no_contratado: ['Desistió del proceso', 'No se presentó o no responde', 'No aceptó las condiciones (sueldo, turno, ubicación)',
+                  'Instalación cubierta o cerrada', 'Se eligió a otro postulante', 'Documentación incompleta', 'Otro']
+};
+// Devuelve { etapa, datos: { _motivo, _detalle } } o null si se cancela. Con tipo, parte en ese cierre.
+function _pedirMotivoDescarte(quien, tipo) {
   return new Promise(function(listo) {
     var prev = document.getElementById('dsc-overlay'); if (prev) prev.remove();
     var e = htmlEsc, ov = document.createElement('div'); ov.id = 'dsc-overlay'; ov.className = 'rh-ov';
     var cerrar = function(r){ ov.remove(); listo(r); };
-    ov.innerHTML = '<div class="rh-box" style="width:min(500px,100%)">'
-      + '<div class="rh-top"><div><div style="font-size:17px;font-weight:800;letter-spacing:-.02em">Motivo del descarte</div>'
+    var et = tipo === 'no_contratado' ? 'no_contratado' : 'descartado';
+    var chip = function(v, t, sub){ return '<label class="reg-chip"><input type="radio" name="dsc-t" value="' + v + '"' + (v === et ? ' checked' : '') + '><span><b>' + t + '</b> · ' + sub + '</span></label>'; };
+    ov.innerHTML = '<div class="rh-box" style="width:min(520px,100%)">'
+      + '<div class="rh-top"><div><div style="font-size:17px;font-weight:800;letter-spacing:-.02em">Cerrar el proceso</div>'
       + '<div style="font-size:12px;color:var(--ink3)">' + e(quien) + ' · queda registrado con su usuario y la fecha.</div></div>'
       + '<button class="dh-close" title="Cerrar" aria-label="Cerrar" data-x><svg class="ico"><use href="#i-x"/></svg></button></div>'
-      + '<div class="rh-body"><div class="field"><label>Motivo <span class="rh-req">*</span></label><div class="vac-benef" style="flex-direction:column;align-items:flex-start">'
-      + _DESCARTE_MOTIVOS.map(function(m){ return '<label><input type="radio" name="dsc-m" value="' + e(m) + '"><span>' + e(m) + '</span></label>'; }).join('') + '</div></div>'
+      + '<div class="rh-body"><div class="field"><label>Resultado <span class="rh-req">*</span></label><div class="reg-chips" style="flex-direction:column;align-items:stretch">'
+      + chip('descartado', 'Rechazado', 'no cumple el perfil o los requisitos') + chip('no_contratado', 'No contratado', 'era apto, pero no se concretó') + '</div></div>'
+      + '<div class="field"><label>Motivo <span class="rh-req">*</span></label><div id="dsc-lista" class="vac-benef" style="flex-direction:column;align-items:flex-start"></div></div>'
       + '<div class="field"><label>Detalle <span id="dsc-req" style="text-transform:none;font-weight:500">(opcional)</span></label><textarea id="dsc-det" class="rh-in" rows="3" maxlength="500" placeholder="Ej: No tiene OS-10 vigente; vence en marzo"></textarea></div>'
       + '<div id="dsc-err" style="display:none;color:#dc2626;font-size:12px"></div>'
       + '</div><div class="rh-pie"><span style="margin-right:auto"></span><button class="rs-btn" data-x>Cancelar</button>'
-      + '<button class="rs-btn prim" style="background:#dc2626" data-ok>Descartar</button></div></div>';
+      + '<button class="rs-btn prim" style="background:#dc2626" data-ok>Cerrar proceso</button></div></div>';
     document.body.appendChild(ov);
+    var lista = function() {
+      document.getElementById('dsc-lista').innerHTML = _CIERRE_MOTIVOS[et].map(function(m){ return '<label><input type="radio" name="dsc-m" value="' + e(m) + '"><span>' + e(m) + '</span></label>'; }).join('');
+      document.getElementById('dsc-req').textContent = '(opcional)';
+      ov.querySelectorAll('input[name="dsc-m"]').forEach(function(r){ r.onchange = function(){ document.getElementById('dsc-req').textContent = r.value === 'Otro' ? '(obligatorio)' : '(opcional)'; }; });
+    };
+    lista();
+    ov.querySelectorAll('input[name="dsc-t"]').forEach(function(r){ r.onchange = function(){ et = r.value; lista(); }; });
     ov.querySelectorAll('[data-x]').forEach(function(b){ b.onclick = function(){ cerrar(null); }; });
-    ov.querySelectorAll('input[name="dsc-m"]').forEach(function(r){ r.onchange = function(){ document.getElementById('dsc-req').textContent = r.value === 'Otro' ? '(obligatorio)' : '(opcional)'; }; });
     ov.querySelector('[data-ok]').onclick = function() {
       var m = (ov.querySelector('input[name="dsc-m"]:checked') || {}).value || '', d = document.getElementById('dsc-det').value.trim();
       var err = !m ? 'Elija un motivo.' : (m === 'Otro' && d.length < 5) ? 'Con "Otro", escriba el motivo en el detalle.' : '';
       if (err) { var x = document.getElementById('dsc-err'); x.textContent = err; x.style.display = ''; return; }
-      cerrar({ _motivo: m === 'Otro' ? 'Otro: ' + d.slice(0, 100) : m, _detalle: m === 'Otro' ? '' : d });
+      cerrar({ etapa: et, datos: { _motivo: m === 'Otro' ? 'Otro: ' + d.slice(0, 100) : m, _detalle: m === 'Otro' ? '' : d } });
     };
   });
 }
@@ -13945,7 +13971,7 @@ function _dashProceso(cands, all, filterCargo) {
   var total = cands.length;
   var completed = cands.filter(function(c){ return c.estado === 'completed'; }).length;
   var seleccionados = (stageCounts['seleccionado'] || 0) + (stageCounts['enviado'] || 0) + (stageCounts['contratado'] || 0);
-  var descartados   = stageCounts['descartado']   || 0;
+  var descartados   = stageCounts['descartado']   || 0, noContratados = stageCounts['no_contratado'] || 0;
   var convRate = total > 0 ? Math.round(seleccionados / total * 100) : 0;
 
   // Avg days per stage from pipeline_history
@@ -13971,7 +13997,7 @@ function _dashProceso(cands, all, filterCargo) {
 
   var out = {}, h = '';
   // ── Embudo: barras finas, sin íconos ──
-  var funnelStages = PIPELINE_STAGES.filter(function(s){ return s.id !== 'descartado' && s.id !== 'antecedentes'; });
+  var funnelStages = PIPELINE_STAGES.filter(function(s){ return !_esCierre(s.id) && s.id !== 'antecedentes'; });
   // Llegaron a una etapa: quienes están hoy en ella o en una posterior, o pasaron por ella
   // según el historial (los descartados cuentan en las etapas que alcanzaron)
   var _fIdx = {}; funnelStages.forEach(function(s, i){ _fIdx[s.id] = i; });
@@ -13995,7 +14021,8 @@ function _dashProceso(cands, all, filterCargo) {
     var meta = (i > 0 ? convFromPrev + ' % de la etapa anterior' : 'Todas las personas del período') + (avgD !== null ? ' · ~' + avgD + ' d' : '');
     h += _dshFila(s.label, meta, cnt, Math.max(pct, cnt > 0 ? 2 : 0), s.color);
   });
-  if (descartados > 0) h += '<div class="dsh-foot"><span><i class="dsh-dot" style="background:#dc2626"></i>Descartados</span><b>' + descartados + '</b></div>';
+  if (descartados > 0) h += '<div class="dsh-foot"><span><i class="dsh-dot" style="background:#dc2626"></i>Rechazados (no cumplen el perfil)</span><b>' + descartados + '</b></div>';
+  if (noContratados > 0) h += '<div class="dsh-foot"><span><i class="dsh-dot" style="background:#64748b"></i>No contratados (eran aptos)</span><b>' + noContratados + '</b></div>';
   h += '</div>';
 
   out.embudo = h; h = '';
@@ -14094,7 +14121,7 @@ function _renderDrawerHeader(c) {
     + paso
     + '<div class="dh-badges">'
     // Descarte rápido: abre la ventana del motivo (obligatorio) sin bajar hasta Etapa del proceso
-    + (S.role === 'admin' && etapa !== 'descartado' ? '<button class="dh-pdf dh-desc" onclick="drawerSetEtapa(\'' + c.id + '\',\'descartado\')" title="Descartar (pide el motivo)"><svg class="ico"><use href="#i-x"/></svg>Descartar</button>' : '')
+    + (S.role === 'admin' && !_esCierre(etapa) ? '<button class="dh-pdf dh-desc" onclick="drawerSetEtapa(\'' + c.id + '\',\'descartado\')" title="Descartar (pide el motivo)"><svg class="ico"><use href="#i-x"/></svg>Descartar</button>' : '')
     + (c.estado === 'completed' && S.role === 'admin' ? '<button class="dh-pdf" onclick="abrirInformeRH(\'' + c.id + '\')" title="Informe RH (formato R-GP-054)"><svg class="ico"><use href="#i-doc"/></svg>RH<span class="dh-pdf-t"> · Informe</span></button>' : '')
     + (c.estado === 'completed' ? '<button class="dh-pdf" onclick="downloadPdfReport(\'' + c.id + '\')" title="Descargar el informe en PDF"><svg class="ico"><use href="#i-down"/></svg>PDF</button>' : '')
     + (S.role === 'admin' && (c.telefono || c.email) ? '<button class="dh-pdf" onclick="contactoAgregar(\'' + c.id + '\')" title="Agregar a contactos (Google o celular)"><svg class="ico"><use href="#i-user"/></svg>Contacto</button>' : '') + '</div>'
@@ -14175,8 +14202,8 @@ function _rsProximoPaso(c, m, modo) {
     d = 'Comenzó la evaluación' + (_momentoTxt(c) ? ' el ' + htmlEsc(_momentoTxt(c)) : '') + ' y no la terminó.';
     if (wa) acc = '<a class="rs-btn prim" href="' + wa + '" target="_blank" rel="noopener"><svg class="ico"><use href="#i-chat"/></svg>Escribirle por WhatsApp</a>';
     tono = 'warn';
-  } else if (etapa === 'descartado') {
-    t = 'Proceso cerrado'; d = 'El candidato fue descartado.'; tono = 'neutro';
+  } else if (_esCierre(etapa)) {
+    t = 'Proceso cerrado'; d = etapa === 'no_contratado' ? 'Era apto, pero no se contrató.' : 'Fue rechazado: no cumple el perfil.'; tono = 'neutro';
     if (m.segPend.length) { t = 'Seguimiento pendiente'; d = m.segPend.map(function(p){ return p.hito.toLowerCase(); }).join(' y ') + '.'; acc = btn('⏱ Registrar seguimiento', "switchDrawerTabById('seguimiento')", true); tono = 'warn'; }
   } else if (etapa === 'seleccionado') {
     if (m.segPend.length) { t = 'Registrar seguimiento'; d = 'Corresponde el seguimiento ' + m.segPend.map(function(p){ return p.hito.toLowerCase(); }).join(' y ') + '.'; acc = btn('⏱ Registrar seguimiento', "switchDrawerTabById('seguimiento')", true); tono = 'warn'; }
@@ -14323,11 +14350,11 @@ function _rsExplorar(c, m) {
 function _rsMotivoHtml(c) {
   var ev = ((c.scores || {})._entrevistas || []).filter(function(e){ return e && (e.dictamen === 'no_recomendable' || e.dictamen === 'obs'); }).pop();
   // Descartado con motivo elegido en el panel (no el de la entrevista ni el de Chapi, que tienen su propia tarjeta)
-  var hd = getPipelineEtapa(c) === 'descartado' ? ((c.scores || {})._pipeline_history || []).filter(function(h){ return h && h.to === 'descartado'; }).pop() : null;
+  var etc = getPipelineEtapa(c), hd = _esCierre(etc) ? ((c.scores || {})._pipeline_history || []).filter(function(h){ return h && h.to === etc; }).pop() : null;
   if (hd && hd.motivo && !/^(Entrevista: |Antecedentes \(Chapi\))/.test(hd.motivo)) {
     var fd = hd.ts ? new Date(hd.ts) : null;
     return '<div class="rs-card rs-motivo rs-motivo-no" style="border:1.5px solid #fca5a5;background:#fef2f2">'
-      + '<div class="rs-lbl" style="color:#991b1b">Motivo del descarte</div>'
+      + '<div class="rs-lbl" style="color:#991b1b">' + (etc === 'no_contratado' ? 'No contratado: motivo' : 'Rechazado: motivo') + '</div>'
       + '<div style="color:var(--ink);font-weight:600">' + htmlEsc(hd.motivo) + '</div>'
       + (hd.detalle ? '<div style="color:var(--ink);white-space:pre-line;margin-top:2px">' + htmlEsc(hd.detalle) + '</div>' : '')
       + '<div style="font-size:11px;color:var(--ink4);margin-top:4px">' + (fd ? fd.toLocaleDateString('es-CL') + ' ' + fd.toLocaleTimeString('es-CL', { hour:'2-digit', minute:'2-digit' }) : '') + (hd.por && hd.por !== 'chapi' ? ' · ' + htmlEsc(hd.por) : '') + '</div></div>';
@@ -14688,7 +14715,7 @@ function _tabResumen(c) {
     }).join('<br>') + '</b></div>';
   var _dpa = _diasParaArchivo(c);
   if (_dpa !== null) h += '<div class="rs-kv"><span>Archivo</span><b style="color:#c2410c">Se archiva ' + (_dpa === 1 ? 'mañana' : 'en ' + _dpa + ' días') + ' si no cambia de etapa.</b></div>';
-  if (getPipelineEtapa(c) === 'descartado') h += '<div class="rs-kv"><span>Archivo</span><b style="color:var(--ink3);font-weight:500">En el archivo por estar descartado. Vuelve a Candidatos al cambiarlo de etapa.</b></div>';
+  if (_esCierre(getPipelineEtapa(c))) h += '<div class="rs-kv"><span>Archivo</span><b style="color:var(--ink3);font-weight:500">En el archivo (' + getPipelineMeta(getPipelineEtapa(c)).label.toLowerCase() + '). Vuelve a Candidatos al cambiarlo de etapa.</b></div>';
   if (_bdArchivado(c)) h += '<div class="rs-kv"><span>Archivo</span><b style="color:var(--ink3);font-weight:500">Archivado: sin movimiento hace más de ' + _BD_ARCH_DIAS + ' días. Vuelve a Candidatos al cambiarlo de etapa.</b></div>';
   h += '</div>';
 
@@ -16323,7 +16350,7 @@ function _estadoFichaHtml(c) {
   var pill = function(icon, txt, col, bg, bd, tip) {
     return '<span class="pipe-badge" title="' + htmlEsc(tip) + '" style="background:' + bg + ';color:' + col + ';border-color:' + bd + '"><i class="pb-dot" style="background:' + col + '"></i>' + txt + '</span>';
   };
-  var final = etapa === 'seleccionado' || etapa === 'enviado' || etapa === 'contratado' || etapa === 'descartado';
+  var final = etapa === 'seleccionado' || etapa === 'enviado' || etapa === 'contratado' || _esCierre(etapa);
   if (final || !d) return pill(em.icon, em.label, em.color, em.bg, em.border, 'Etapa: ' + em.label + ' · Dictamen de entrevista: ' + (d ? d.label : 'sin dictamen'));
   return pill(d.icon, d.label, d.color, d.bg, d.border, 'Dictamen de entrevista: ' + d.label + ' · Etapa: ' + em.label);
 }
@@ -17476,7 +17503,7 @@ async function _plMarcarEnviados() {
       await _patchPrivado(_plIds[i], 'informe_rh', function(prev){ return Object.assign({}, prev || {}, { enviado: hoy }); });
       marcados++;
       var et = _plEtapas[_plIds[i]] || '';
-      if (et === 'seleccionado' || (otros && et !== 'enviado' && et !== 'contratado' && et !== 'descartado')) { await _setPipelineEtapa(_plIds[i], 'enviado'); movidos++; }
+      if (et === 'seleccionado' || (otros && et !== 'enviado' && et !== 'contratado' && !_esCierre(et))) { await _setPipelineEtapa(_plIds[i], 'enviado'); movidos++; }
     }
     catch(e) { fallos++; }
   }
@@ -17517,11 +17544,12 @@ async function _plExcel() {
 async function drawerSetEtapa(candId, etapa) {
   try {
     var mot = null;
-    if (etapa === 'descartado') {
+    if (_esCierre(etapa)) {
       var c0 = (await getDB()).find(function(x){ return x.id === candId; });
-      if (c0 && getPipelineEtapa(c0) === 'descartado') return;
-      mot = await _pedirMotivoDescarte(c0 ? ((c0.nombre || '') + ' ' + (c0.apellido || '')).trim() : '');
-      if (!mot) return;
+      if (c0 && getPipelineEtapa(c0) === etapa) return;
+      var r = await _pedirMotivoDescarte(c0 ? ((c0.nombre || '') + ' ' + (c0.apellido || '')).trim() : '', etapa);
+      if (!r) return;
+      etapa = r.etapa; mot = r.datos;
     }
     await _setPipelineEtapa(candId, etapa, mot);
     var all = await getDB();
