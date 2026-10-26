@@ -2667,7 +2667,7 @@ body.adm .rh-box .vac-benef label,.vac-benef label{display:inline-flex;white-spa
       <button class="nav-btn" id="nav-params" onclick="adminTab('params',this)" style="display:none"></button>
       <div class="sb-sep"></div>
       <button class="nav-btn" id="nav-cargos" onclick="adminTab('cargos',this)"><svg class="ico"><use href="#i-brief"/></svg><span>Cargos</span></button>
-      <button class="nav-btn" id="nav-vacantes" onclick="adminTab('vacantes',this)"><svg class="ico"><use href="#i-pin"/></svg><span>Vacantes</span></button>
+      <button class="nav-btn" id="nav-vacantes" onclick="adminTab('vacantes',this)"><svg class="ico"><use href="#i-pin"/></svg><span>Instalaciones</span></button>
       <button class="nav-btn" id="nav-archivo" onclick="adminTab('archivo',this)"><svg class="ico"><use href="#i-doc"/></svg><span>Archivo</span></button>
       <button class="nav-btn" id="nav-wiki" onclick="adminTab('wiki',this)"><svg class="ico"><use href="#i-book"/></svg><span>Wiki de pruebas</span></button>
       <button class="nav-btn" id="nav-users" onclick="adminTab('users',this)"><svg class="ico"><use href="#i-user"/></svg><span>Usuarios</span></button>
@@ -2709,7 +2709,7 @@ body.adm .rh-box .vac-benef label,.vac-benef label{display:inline-flex;white-spa
             <button class="nav-btn" onclick="mobileNav('candidates')"><svg class="ico"><use href="#i-users"/></svg><span>Candidatos</span></button>
             <div class="sb-sep"></div>
             <button class="nav-btn" onclick="mobileNav('cargos')"><svg class="ico"><use href="#i-brief"/></svg><span>Cargos</span></button>
-            <button class="nav-btn" onclick="mobileNav('vacantes')"><svg class="ico"><use href="#i-pin"/></svg><span>Vacantes</span></button>
+            <button class="nav-btn" onclick="mobileNav('vacantes')"><svg class="ico"><use href="#i-pin"/></svg><span>Instalaciones</span></button>
             <button class="nav-btn" id="mnav-archivo" onclick="mobileNav('archivo')"><svg class="ico"><use href="#i-doc"/></svg><span>Archivo</span></button>
             <button class="nav-btn" onclick="mobileNav('wiki')"><svg class="ico"><use href="#i-book"/></svg><span>Wiki de pruebas</span></button>
             <button class="nav-btn" onclick="mobileNav('users')"><svg class="ico"><use href="#i-user"/></svg><span>Usuarios</span></button>
@@ -2807,13 +2807,13 @@ body.adm .rh-box .vac-benef label,.vac-benef label{display:inline-flex;white-spa
       <div id="tab-vacantes" style="display:none;padding-bottom:40px"><div style="max-width:900px;margin:0 auto">
         <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:20px">
           <div>
-            <h2 class="adm-t" style="margin-bottom:4px">Vacantes</h2>
-            <div style="font-size:13px;color:var(--ink3)">El postulante elige una vacante activa de su cargo al registrarse. En el formulario ve todos los datos de la vacante, menos la instalación, que se ve solo aquí.</div>
+            <h2 class="adm-t" style="margin-bottom:4px">Instalaciones</h2>
+            <div style="font-size:13px;color:var(--ink3)">Cada instalación con su turno y condiciones. El postulante elige una instalación activa de su cargo al registrarse: en el formulario ve todos sus datos, menos el nombre de la instalación, que se ve solo aquí.</div>
           </div>
           <div class="vac-tools" id="vac-tools">
-            <button class="bd-btn" onclick="_vacExcelBajar()" title="Descargar todas las vacantes en Excel"><svg class="ico"><use href="#i-down"/></svg>Descargar Excel</button>
+            <button class="bd-btn" onclick="_vacExcelBajar()" title="Descargar todas las instalaciones en Excel"><svg class="ico"><use href="#i-down"/></svg>Descargar Excel</button>
             <label class="bd-btn" title="Subir la planilla modificada: antes de guardar se muestran los cambios"><svg class="ico"><use href="#i-sheet"/></svg>Subir Excel<input type="file" accept=".xlsx,.xls,.csv" onchange="_vacExcelSubir(this)" hidden></label>
-            <button class="adm-prim" id="vac-nueva" onclick="_vacEditar()">+ Nueva vacante</button>
+            <button class="adm-prim" id="vac-nueva" onclick="_vacEditar()">+ Nueva instalación</button>
           </div>
         </div>
         <div id="vacantes-content"></div>
@@ -5615,8 +5615,8 @@ async function renderVacantesTab() {
   var bN = document.getElementById('vac-tools'); if (bN) bN.style.display = S.role === 'admin' ? '' : 'none';
   box.innerHTML = '<div class="pdf-vacio">Cargando…</div>';
   var lista, all = [];
-  try { lista = await _vacCargar(); all = await getDB(); } catch(e) { box.innerHTML = '<div class="pdf-vacio">No se pudieron cargar las vacantes: ' + htmlEsc(e.message) + '</div>'; return; }
-  if (!lista.length) { box.innerHTML = '<div class="cg-card" style="padding:28px;text-align:center;color:var(--ink3);font-size:13px">Aún no hay vacantes. Cree la primera con <b>+ Nueva vacante</b>.</div>'; return; }
+  try { lista = await _vacCargar(); all = await getDB(); } catch(e) { box.innerHTML = '<div class="pdf-vacio">No se pudieron cargar las instalaciones: ' + htmlEsc(e.message) + '</div>'; return; }
+  if (!lista.length) { box.innerHTML = '<div class="cg-card" style="padding:28px;text-align:center;color:var(--ink3);font-size:13px">Aún no hay instalaciones. Cree la primera con <b>+ Nueva instalación</b>.</div>'; return; }
   var cuenta = {}; all.forEach(function(c){ var v = c.scores && c.scores._postula && c.scores._postula.vacante; if (v) cuenta[v] = (cuenta[v] || 0) + 1; });
   var porCargo = {}; lista.forEach(function(v){ (porCargo[v.perfil] = porCargo[v.perfil] || []).push(v); });
   var admin = S.role === 'admin', h = '';
@@ -5630,9 +5630,9 @@ async function renderVacantesTab() {
         + '<div class="vac-txt"><b>' + htmlEsc(v.instalacion) + (v.cargo_nombre && v.cargo_nombre !== (PERFIL_META[v.perfil] || {}).label ? ' <em class="vac-cargo">' + htmlEsc(v.cargo_nombre) + '</em>' : '') + '</b><span>' + htmlEsc(_vacTxt(v)) + '</span>'
         + (v.direccion ? '<small>' + htmlEsc(v.direccion) + (v.link_mapa ? ' · <a href="' + htmlEsc(v.link_mapa) + '" target="_blank" rel="noopener">Ver mapa</a>' : '') + '</small>' : '') + (v.detalle ? '<small>' + htmlEsc(v.detalle) + '</small>' : '')
         + (_vacDatos(v).length ? '<span class="vac-datos">' + _vacDatos(v).map(function(x){ return '<i>' + htmlEsc(x) + '</i>'; }).join('') + '</span>' : '') + '</div>'
-        + '<span class="vac-n" title="Ocupados: seleccionados, enviados a contratación o contratados con esta vacante">' + htmlEsc(_vacCuposTxt(v)) + '</span>'
+        + '<span class="vac-n" title="Ocupados: seleccionados, enviados a contratación o contratados en esta instalación">' + htmlEsc(_vacCuposTxt(v)) + '</span>'
         + (admin ? '<div class="vac-acc">'
-          + '<button class="rs-btn" onclick="_invAbrirVacante(\'' + id + '\')" title="Invitar a evaluación para esta vacante"' + (v.activa ? '' : ' disabled') + '><svg class="ico"><use href="#i-send"/></svg>Invitar</button>'
+          + '<button class="rs-btn" onclick="_invAbrirVacante(\'' + id + '\')" title="Invitar a evaluación para esta instalación"' + (v.activa ? '' : ' disabled') + '><svg class="ico"><use href="#i-send"/></svg>Invitar</button>'
           + '<button class="bd-icobtn" onclick="_vacEditar(\'' + id + '\')" title="Editar"><svg class="ico"><use href="#i-edit"/></svg></button>'
           + '<button class="bd-icobtn" onclick="_vacEliminar(\'' + id + '\')" title="Eliminar"><svg class="ico"><use href="#i-trash"/></svg></button>'
           + '<span style="font-size:11px;font-weight:700;color:' + (v.activa ? '#16a34a' : '#94a3b8') + '">' + (v.activa ? 'Activa' : 'Inactiva') + '</span>'
@@ -5654,16 +5654,16 @@ async function _vacGuardar(id, datos) {
   if (!Array.isArray(j) || !j.length) throw new Error('sin permisos');
 }
 async function _vacActivar(id, activa) {
-  try { await _vacGuardar(id, { activa: activa }); toast(activa ? 'Vacante activada' : 'Vacante desactivada: ya no aparece en el formulario', 'ok'); renderVacantesTab(); }
+  try { await _vacGuardar(id, { activa: activa }); toast(activa ? 'Instalación activada' : 'Instalación desactivada: ya no aparece en el formulario', 'ok'); renderVacantesTab(); }
   catch(e) { toast('No se pudo cambiar: ' + e.message, 'er'); }
 }
 async function _vacEliminar(id) {
   var v = (_vacLista || []).find(function(x){ return x.id === id; }); if (!v) return;
-  if (!(await appConfirm('¿Eliminar la vacante "' + v.instalacion + '"? Los postulantes que la eligieron conservan su instalación y turno. Si solo quiere ocultarla del formulario, desactívela.'))) return;
+  if (!(await appConfirm('¿Eliminar la instalación "' + v.instalacion + '"? Los postulantes que la eligieron conservan su instalación y turno. Si solo quiere ocultarla del formulario, desactívela.'))) return;
   try {
     var r = await fetch(SUPA_URL + '/rest/v1/psicoeval_vacantes?id=eq.' + encodeURIComponent(id), { method: 'DELETE', headers: getDBHeaders() });
     if (!r.ok) throw new Error('HTTP ' + r.status);
-    toast('Vacante eliminada', 'ok'); renderVacantesTab();
+    toast('Instalación eliminada', 'ok'); renderVacantesTab();
   } catch(e) { toast('No se pudo eliminar: ' + e.message, 'er'); }
 }
 function _vacEditar(id) {
@@ -5674,7 +5674,7 @@ function _vacEditar(id) {
   if (cargos.indexOf(v.perfil) === -1) cargos = cargos.concat([v.perfil]);
   var ov = document.createElement('div'); ov.id = 'vac-overlay'; ov.className = 'rh-ov';
   ov.innerHTML = '<div class="rh-box" style="width:min(560px,100%)">'
-    + '<div class="rh-top"><div><div style="font-size:17px;font-weight:800;letter-spacing:-.02em">' + (id ? 'Editar vacante' : 'Nueva vacante') + '</div>'
+    + '<div class="rh-top"><div><div style="font-size:17px;font-weight:800;letter-spacing:-.02em">' + (id ? 'Editar instalación' : 'Nueva instalación') + '</div>'
     + '<div style="font-size:12px;color:var(--ink3)">La instalación se ve solo en el panel. El resto de los datos se muestran al postulante.</div></div>'
     + '<button class="dh-close" title="Cerrar" aria-label="Cerrar" onclick="document.getElementById(\'vac-overlay\').remove()"><svg class="ico"><use href="#i-x"/></svg></button></div>'
     + '<div class="rh-body">'
@@ -5711,7 +5711,7 @@ async function _vacGuardarForm(id) {
             cargo_nombre: val('vac-cnom'), direccion: val('vac-dir'), cupos: (function(n){ return isNaN(n) || n < 1 ? null : Math.min(n, 500); })(parseInt(val('vac-cupos'), 10)), link_mapa: /^https:\/\//.test(val('vac-mapa')) ? val('vac-mapa') : '' };
   if (val('vac-mapa') && !d.link_mapa) { toast('El link del mapa debe empezar con https://', 'er'); return; }
   if (!d.instalacion) { toast('Escriba la instalación', 'er'); return; }
-  try { await _vacGuardar(id, d); var o = document.getElementById('vac-overlay'); if (o) o.remove(); toast(id ? 'Vacante actualizada' : 'Vacante creada', 'ok'); renderVacantesTab(); }
+  try { await _vacGuardar(id, d); var o = document.getElementById('vac-overlay'); if (o) o.remove(); toast(id ? 'Instalación actualizada' : 'Instalación creada', 'ok'); renderVacantesTab(); }
   catch(e) { toast('No se pudo guardar: ' + e.message, 'er'); }
 }
 
@@ -5833,8 +5833,8 @@ async function _vacExcelBajar() {
     var filas = lista.slice().sort(function(a, b){ return String(a.instalacion).localeCompare(b.instalacion); }).map(_vacAFila);
     var hoja = XLSX.utils.json_to_sheet(filas, { header: _VAC_COLS });
     hoja['!cols'] = _VAC_COLS.map(function(c){ return { wch: { 'Instalación':34, 'Direccion':40, 'Link Mapa':30, 'Horario':30, 'Comentario':40, 'Otros beneficios':26, 'Cupos':8, 'ID':38 }[c] || 14 }; });
-    var libro = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(libro, hoja, 'Vacantes');
-    XLSX.writeFile(libro, 'Vacantes RH Seguridad ' + new Date().toISOString().slice(0, 10) + '.xlsx');
+    var libro = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(libro, hoja, 'Instalaciones');
+    XLSX.writeFile(libro, 'Instalaciones RH Seguridad ' + new Date().toISOString().slice(0, 10) + '.xlsx');
   } catch(e) { toast('No se pudo descargar el Excel: ' + e.message, 'er'); }
 }
 var _vacPlan = null;
@@ -5858,7 +5858,7 @@ function _vacPlanMostrar(nombre) {
   var ov = document.createElement('div'); ov.id = 'vx-overlay'; ov.className = 'rh-ov';
   ov.innerHTML = '<div class="rh-box" style="width:min(820px,100%)">'
     + '<div class="rh-top"><div><div style="font-size:17px;font-weight:800;letter-spacing:-.02em">Revisar cambios del Excel</div>'
-    + '<div style="font-size:12px;color:var(--ink3)">' + e(nombre) + ' · nada se guarda hasta que confirme. Las vacantes que no están en la planilla quedan igual.</div></div>'
+    + '<div style="font-size:12px;color:var(--ink3)">' + e(nombre) + ' · nada se guarda hasta que confirme. Las instalaciones que no están en la planilla quedan igual.</div></div>'
     + '<button class="dh-close" title="Cerrar" aria-label="Cerrar" onclick="document.getElementById(\'vx-overlay\').remove()"><svg class="ico"><use href="#i-x"/></svg></button></div>'
     + '<div class="rh-body">'
     + '<div class="vx-res"><span><b>' + p.nuevas.length + '</b>nuevas</span><span><b>' + p.cambios.length + '</b>con cambios</span><span><b>' + p.iguales + '</b>sin cambios</span><span' + (p.errores.length ? ' class="vx-mal"' : '') + '><b>' + p.errores.length + '</b>con errores</span></div>'
@@ -13430,16 +13430,16 @@ function _invRender() {
     if (!vSel) _invVacante = '';
     var sel = function(id, opts){ return '<select id="' + id + '" style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:9px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--ink)">' + opts + '</select>'; };
     if (vacs.length) {
-      h += '<div style="margin-bottom:10px"><div style="font-size:11.5px;font-weight:700;color:var(--ink3);margin-bottom:4px">Vacante</div>'
+      h += '<div style="margin-bottom:10px"><div style="font-size:11.5px;font-weight:700;color:var(--ink3);margin-bottom:4px">Instalación</div>'
         + '<select id="inv-vacante" onchange="_invSetVacante(this.value)" style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:9px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--ink)">'
-        + '<option value="">Sin vacante (elegir solo el cargo)</option>'
+        + '<option value="">Sin instalación (elegir solo el cargo)</option>'
         + vacs.map(function(v){ var k = _vacCupos(v); return '<option value="' + htmlEsc(v.id) + '"' + (v.id === _invVacante ? ' selected' : '') + '>' + htmlEsc(v.instalacion + ' · ' + _vacTxt(v) + ' · ' + (v.cargo_nombre || (PERFIL_META[v.perfil] || {}).label || v.perfil)
             + (k.total ? ' · ' + (k.libres ? k.libres + (k.libres === 1 ? ' cupo libre' : ' cupos libres') : 'cupos completos') : '')) + '</option>'; }).join('') + '</select>'
-        + (vSel ? '<div style="font-size:11.5px;color:var(--ink4);margin-top:4px">El cargo y su batería de pruebas salen de la vacante. ' + htmlEsc(_vacCuposTxt(vSel)) + '.</div>' : '') + '</div>';
+        + (vSel ? '<div style="font-size:11.5px;color:var(--ink4);margin-top:4px">El cargo y su batería de pruebas salen de la instalación. ' + htmlEsc(_vacCuposTxt(vSel)) + '.</div>' : '') + '</div>';
     }
     h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">'
       + '<div><div style="font-size:11.5px;font-weight:700;color:var(--ink3);margin-bottom:4px">Cargo</div>'
-      + sel('inv-perfil', act.concat(_invPerfil && act.indexOf(_invPerfil) === -1 ? [_invPerfil] : []).map(function(k){ var pm = PERFIL_META[k] || {}; return '<option value="' + htmlEsc(k) + '"' + (k === (vSel ? vSel.perfil : _invPerfil) ? ' selected' : '') + '>' + htmlEsc(pm.label || k) + '</option>'; }).join('')).replace('<select id="inv-perfil"', '<select id="inv-perfil" onchange="_invPerfil=this.value"' + (vSel ? ' disabled title="El cargo lo define la vacante"' : '')) + '</div>'
+      + sel('inv-perfil', act.concat(_invPerfil && act.indexOf(_invPerfil) === -1 ? [_invPerfil] : []).map(function(k){ var pm = PERFIL_META[k] || {}; return '<option value="' + htmlEsc(k) + '"' + (k === (vSel ? vSel.perfil : _invPerfil) ? ' selected' : '') + '>' + htmlEsc(pm.label || k) + '</option>'; }).join('')).replace('<select id="inv-perfil"', '<select id="inv-perfil" onchange="_invPerfil=this.value"' + (vSel ? ' disabled title="El cargo lo define la instalación"' : '')) + '</div>'
       + '<div><div style="font-size:11.5px;font-weight:700;color:var(--ink3);margin-bottom:4px">Vigencia</div>'
       + '<div style="padding:9px 11px;border:1.5px solid var(--border);border-radius:9px;font-size:13px;color:var(--ink2);background:var(--surface2)" title="Si no envía la evaluación en 24 horas, la invitación vence y se entiende que abandonó">24 horas para terminar</div></div></div>';
     if (_invTab === 'rut') {
@@ -14469,7 +14469,7 @@ function _rsPostulaHtml(c) {
   var txt = [p.cargo || _rhCargoBase(c), p.instalacion, turno ? 'turno ' + turno : ''].filter(Boolean).join(' · ');
   var edit = S.role === 'admin' ? ' <a class="rs-link" onclick="_rsPostulaEditar(\'' + htmlEsc(c.id) + '\')" style="font-weight:600;margin-left:6px">Editar</a>' : '';
   var sc = (c && c.scores && c.scores._postula) || {}, vive = c && c.comuna, vcom = sc.comuna;
-  var cerca = vive && vcom ? (_vacNorm(vive) === _vacNorm(vcom) ? '<b style="color:#15803d">Vive en la misma comuna de la vacante (' + htmlEsc(vcom) + ')</b>' : '<b>Vive en ' + htmlEsc(vive) + ' · vacante en ' + htmlEsc(vcom) + '</b>') : '';
+  var cerca = vive && vcom ? (_vacNorm(vive) === _vacNorm(vcom) ? '<b style="color:#15803d">Vive en la misma comuna de la instalación (' + htmlEsc(vcom) + ')</b>' : '<b>Vive en ' + htmlEsc(vive) + ' · instalación en ' + htmlEsc(vcom) + '</b>') : '';
   return '<div id="rs-postula"><div class="rs-kv"><span>Postula a</span><b>' + htmlEsc(txt) + edit + '</b></div>' + (cerca ? '<div class="rs-kv"><span>Cercanía</span>' + cerca + '</div>' : '') + '</div>';
 }
 async function _rsPostulaEditar(id) {
@@ -14481,21 +14481,29 @@ async function _rsPostulaEditar(id) {
   var vacs = (_vacLista || []).filter(function(v){ return v.perfil === c.perfil || v.id === actual; })
     .sort(function(a, b){ return (b.activa - a.activa) || String(a.instalacion).localeCompare(b.instalacion); });
   window._rsPostulaVacs = vacs;
+  var enVac = vacs.some(function(v){ return v.id === actual; }) || (!actual && vacs.length && !p.instalacion);
   var e = htmlEsc, op = function(v, t){ return '<option value="' + v + '"' + (v === (p.turno || '4x4_rotativo') ? ' selected' : '') + '>' + t + '</option>'; };
   el.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px 0">'
     + '<div class="ev-field" style="grid-column:1/-1"><label>Cargo al que postula</label><input id="rs-p-cargo" class="rh-in" autocomplete="off" value="' + e(p.cargo || base) + '"></div>'
-    + (vacs.length ? '<div class="ev-field" style="grid-column:1/-1"><label>Vacante</label><select id="rs-p-vac" class="rh-in" onchange="_rsPostulaVac(this.value)"><option value="">Otra instalación (escribir abajo)</option>'
-        + vacs.map(function(v){ return '<option value="' + e(v.id) + '"' + (v.id === actual ? ' selected' : '') + '>' + e(v.instalacion + ' · ' + _vacTxt(v) + (v.activa ? '' : ' · inactiva')) + '</option>'; }).join('') + '</select></div>' : '')
-    + '<div class="ev-field"><label>Instalación</label><input id="rs-p-inst" class="rh-in" value="' + e(p.instalacion) + '" placeholder="Ej: Rehau" oninput="var s=document.getElementById(\'rs-p-vac\');if(s)s.value=\'\'"></div>'
+    + (vacs.length ? '<div class="ev-field" style="grid-column:1/-1"><label>Instalación</label><select id="rs-p-vac" class="rh-in" onchange="_rsPostulaVac(this.value)">'
+        + vacs.map(function(v){ return '<option value="' + e(v.id) + '"' + (v.id === actual ? ' selected' : '') + '>' + e(v.instalacion + ' · ' + _vacTxt(v) + (v.activa ? '' : ' · inactiva')) + '</option>'; }).join('')
+        + '<option value=""' + (enVac ? '' : ' selected') + '>Otra instalación (escribir)</option></select></div>' : '')
+    // Sin vacante elegida: instalación y turno se escriben a mano
+    + '<div id="rs-p-libre" style="grid-column:1/-1;display:' + (enVac ? 'none' : 'grid') + ';grid-template-columns:1fr 1fr;gap:8px">'
+    + '<div class="ev-field"><label>' + (vacs.length ? 'Nombre de la instalación' : 'Instalación') + '</label><input id="rs-p-inst" class="rh-in" value="' + e(p.instalacion) + '" placeholder="Ej: Rehau"></div>'
     + '<div class="ev-field"><label>Turno</label><select id="rs-p-turno" class="rh-in" onchange="document.getElementById(\'rs-p-otra\').style.display=this.value===\'otra\'?\'\':\'none\'">' + _RH_JORNADAS.map(function(j){ return op(j[0], j[1]); }).join('') + '</select>'
-    + '<input id="rs-p-otra" class="rh-in" value="' + e(p.turno_otra) + '" placeholder="Ej: 5x2 día" style="margin-top:6px;display:' + (p.turno === 'otra' ? '' : 'none') + '"></div>'
+    + '<input id="rs-p-otra" class="rh-in" value="' + e(p.turno_otra) + '" placeholder="Ej: 5x2 día" style="margin-top:6px;display:' + (p.turno === 'otra' ? '' : 'none') + '"></div></div>'
     + '<div style="grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end"><button class="rs-btn" onclick="_switchDrawerTab(\'resumen\', (_dbCache || []).find(function(x){ return x.id === \'' + e(id) + '\'; }))">Cancelar</button>'
     + '<button class="rs-btn prim" onclick="_rsPostulaGuardar(\'' + e(id) + '\')">Guardar</button></div></div>';
+  var sv = document.getElementById('rs-p-vac'); if (sv && sv.value) _rsPostulaVac(sv.value);
 }
-// Al elegir una vacante se completan instalación y turno
+// Al elegir una instalación (vacante) se completan instalación y turno; "Otra" deja escribirlos
 function _rsPostulaVac(vid) {
-  var v = (window._rsPostulaVacs || []).find(function(x){ return x.id === vid; }); if (!v) return;
-  document.getElementById('rs-p-inst').value = v.instalacion;
+  var v = (window._rsPostulaVacs || []).find(function(x){ return x.id === vid; });
+  var libre = document.getElementById('rs-p-libre'), inst = document.getElementById('rs-p-inst');
+  if (libre) libre.style.display = v ? 'none' : 'grid';
+  if (!v) { if ((window._rsPostulaVacs || []).some(function(x){ return x.instalacion === inst.value; })) inst.value = ''; inst.focus(); return; }
+  inst.value = v.instalacion;
   var t = document.getElementById('rs-p-turno'), o = document.getElementById('rs-p-otra');
   if (t && v.turno) { t.value = v.turno; if (o) { o.value = v.turno_otra || ''; o.style.display = v.turno === 'otra' ? '' : 'none'; } }
 }
