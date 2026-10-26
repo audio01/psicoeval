@@ -2977,6 +2977,11 @@ body.adm .rh-box .vac-benef label,.vac-benef label{display:inline-flex;white-spa
         <input type="hidden" id="nc-selected-icon" value="👔">
       </div>
       <div>
+        <label style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:5px">Subtipo de</label>
+        <select id="nc-base" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;font-family:inherit"></select>
+        <div style="font-size:11.5px;color:#64748b;margin-top:4px">Un subtipo usa las preguntas de su cargo base y parte con su misma batería y mínimos; después se ajustan por separado.</div>
+      </div>
+      <div>
         <label style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:5px">Nombre del cargo</label>
         <input id="nc-name" placeholder="Ej: Operador de Bodega" maxlength="50" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;font-family:inherit">
       </div>
@@ -3506,6 +3511,20 @@ function getActiveCargos() {
   return getAllCargos().filter(function(k){ return CARGOS_ACTIVE[k]; });
 }
 
+// Cargo base de un subtipo (Guardia CCTV → guardia): de él salen las preguntas y los datos del registro
+// (30_subtipos_cargo.sql). Los demás cargos son su propia base.
+function _perfilBase(k) {
+  var c = CUSTOM_CARGOS.find(function(x){ return x.key === k; });
+  return c && c.base && BUILTIN_CARGOS.indexOf(c.base) !== -1 ? c.base : k;
+}
+// Cargos en orden, cada subtipo justo debajo de su cargo base
+function _cargosOrdenados(lista) {
+  var out = [];
+  lista.forEach(function(k){ if (_perfilBase(k) === k) { out.push(k); lista.forEach(function(s){ if (s !== k && _perfilBase(s) === k) out.push(s); }); } });
+  lista.forEach(function(k){ if (out.indexOf(k) === -1) out.push(k); });
+  return out;
+}
+
 function isBuiltinCargo(key) {
   return BUILTIN_CARGOS.indexOf(key) !== -1;
 }
@@ -3519,7 +3538,10 @@ function registerCustomCargo(c, skipSave) {
   if (CARGOS_ACTIVE[key] === undefined) CARGOS_ACTIVE[key] = true;
 
   // ── Batería por defecto: nunca vacía para que el link sea siempre funcional ──
+  // Un subtipo parte con la batería de su cargo base
   var _DEFAULT_CUSTOM_BATTERY = ['pai','dc0','comprension','disc','pf16'];
+  var base = _perfilBase(key) !== key ? _perfilBase(key) : '';
+  if (base) _DEFAULT_CUSTOM_BATTERY = (PERFIL_TESTS[base] || PERFIL_TESTS_DEFAULT[base] || _DEFAULT_CUSTOM_BATTERY).slice();
   if (!PERFIL_TESTS_DEFAULT[key] || PERFIL_TESTS_DEFAULT[key].length === 0) {
     PERFIL_TESTS_DEFAULT[key] = _DEFAULT_CUSTOM_BATTERY.slice();
   }
@@ -3527,6 +3549,11 @@ function registerCustomCargo(c, skipSave) {
     PERFIL_TESTS[key] = (PERFIL_TESTS_DEFAULT[key] || _DEFAULT_CUSTOM_BATTERY).slice();
   }
 
+  // Los mínimos (PERFIL_IDEAL) se definen más abajo en la página: al cargar, esta parte espera a
+  // que existan (se vuelve a registrar después de PERFIL_IDEAL_INICIAL)
+  try { PERFIL_IDEAL; } catch(e) { return; }
+  // Un subtipo copia los mínimos de su cargo base; después se ajustan por separado
+  if (!PERFIL_IDEAL[key] && base && PERFIL_IDEAL[base]) PERFIL_IDEAL[key] = JSON.parse(JSON.stringify(PERFIL_IDEAL[base]));
   // Create PERFIL_IDEAL with sensible defaults
   if (!PERFIL_IDEAL[key]) {
     PERFIL_IDEAL[key] = {
@@ -3576,7 +3603,7 @@ var _CG_CORTO = { dc0:'Cognitiva', situacional:'Juicio', vigilancia:'Vigilancia'
 function renderCargosTab() {
   var el = document.getElementById('cargos-content');
   if (!el) return;
-  var ALL = getAllCargos();
+  var ALL = _cargosOrdenados(getAllCargos());
   var activeCount = getActiveCargos().length;
 
   var h = '';
@@ -3590,9 +3617,9 @@ function renderCargosTab() {
     if (!pm) return;
     var isOn = CARGOS_ACTIVE[key];
     var tests = PERFIL_TESTS[key] || [];
-    var isCustom = !isBuiltinCargo(key);
+    var isCustom = !isBuiltinCargo(key), base = _perfilBase(key) !== key ? _perfilBase(key) : '';
 
-    h += '<div class="cg-card' + (isOn ? '' : ' off') + '">';
+    h += '<div class="cg-card' + (isOn ? '' : ' off') + '"' + (base ? ' style="margin-left:28px"' : '') + '>';
 
     // Header row - clickable to open battery
     h += '<div style="display:flex;align-items:center;gap:16px;padding:20px 22px;cursor:' + (isOn ? 'pointer' : 'default') + '" ' + (isOn ? 'onclick="openCargoBattery(\'' + key + '\')"' : '') + '>';
@@ -3600,13 +3627,15 @@ function renderCargosTab() {
     h += '<div style="flex:1;min-width:0">';
     h += '<div style="display:flex;align-items:center;gap:8px">';
     h += '<span style="font-size:16px;font-weight:700;color:var(--ink)">' + pm.label + '</span>';
-    if (isCustom) h += '<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:100px;background:#e0e7ff;color:#4f46e5">PERSONALIZADO</span>';
+    if (base) h += '<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:100px;background:#e0e7ff;color:#4f46e5">SUBTIPO DE ' + htmlEsc(String((PERFIL_META[base] || {}).label || base).toUpperCase()) + '</span>';
+    else if (isCustom) h += '<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:100px;background:#e0e7ff;color:#4f46e5">PERSONALIZADO</span>';
     h += '</div>';
     h += '<div style="font-size:12px;color:var(--ink3);line-height:1.5;margin-top:2px">' + pm.desc + '</div>';
     h += '</div>';
 
     // Actions: edit, delete, toggle (stop propagation for these)
     h += '<div style="flex-shrink:0;display:flex;align-items:center;gap:8px" onclick="event.stopPropagation()">';
+    if (!isCustom) h += '<button class="bd-btn" onclick="openAddCargoModal(\'' + key + '\')" title="Crear un subtipo de este cargo, con su misma batería y mínimos">+ Subtipo</button>';
     if (isCustom) {
       h += '<button onclick="editCargo(\'' + key + '\')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:14px;padding:4px 6px;border-radius:6px;opacity:.6;transition:opacity .15s" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.6" title="Editar cargo"><svg class="ico" style="width:15px;height:15px"><use href="#i-edit"/></svg></button>';
       h += '<button onclick="deleteCargo(\'' + key + '\')" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:14px;padding:4px 6px;border-radius:6px;opacity:.4;transition:opacity .15s" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.4" title="Eliminar cargo"><svg class="ico" style="width:15px;height:15px"><use href="#i-trash"/></svg></button>';
@@ -3746,7 +3775,10 @@ function saveEditCargo(key) {
 // ── Add Cargo Modal ──
 var CARGO_ICONS = ['👔','💼','🛡','⚙️','🏗','🔧','📦','🚛','💊','🍳','📞','🖥','🧑‍🏫','🧑‍⚕️','🧑‍🔬','🧑‍🚒','🏪','📐','🎯','🚀'];
 
-function openAddCargoModal() {
+function openAddCargoModal(base) {
+  document.getElementById('nc-base').innerHTML = '<option value="">Ninguno (cargo independiente)</option>'
+    + BUILTIN_CARGOS.map(function(k){ return '<option value="' + k + '"' + (k === base ? ' selected' : '') + '>' + htmlEsc((PERFIL_META[k] || {}).label || k) + '</option>'; }).join('');
+  document.getElementById('nc-name').placeholder = base === 'guardia' ? 'Ej: Guardia CCTV' : 'Ej: Operador de Bodega';
   document.getElementById('nc-name').value = '';
   document.getElementById('nc-desc').value = '';
   document.getElementById('nc-error').style.display = 'none';
@@ -3786,13 +3818,18 @@ function addCargo() {
   // Check duplicates
   if (PERFIL_META[key]) { errEl.textContent = 'Ya existe un cargo con un nombre similar.'; errEl.style.display = 'block'; return; }
 
-  var cargoData = { key: key, label: name, icon: icon, desc: desc || 'Cargo personalizado: ' + name };
+  var base = (document.getElementById('nc-base') || {}).value || '';
+  if (BUILTIN_CARGOS.indexOf(base) === -1) base = '';
+  var cargoData = { key: key, label: name, icon: icon, desc: desc || (base ? 'Subtipo de ' + PERFIL_META[base].label + '.' : 'Cargo personalizado: ' + name) };
+  if (base) cargoData.base = base;
 
   // Add to custom list
   CUSTOM_CARGOS.push(cargoData);
 
   // Register into system
   registerCustomCargo(cargoData);
+  // Ideales de competencias del Informe RH: los del cargo base
+  if (base) try { var gi = _rhIdealesGuardados(), bi = gi[String(PERFIL_META[base].label).toLowerCase()]; if (bi && !gi[name.toLowerCase()]) { gi[name.toLowerCase()] = bi; localStorage.setItem(LS_RH_IDEALES, JSON.stringify(gi)); } } catch(e) {}
 
   // Save
   saveCargosConfig();
@@ -4608,6 +4645,7 @@ function buildQuestions(perfil) {
   const qs = [];
   const add = (arr, testId, type) => arr.forEach(q => qs.push({...q, testId, type}));
   const active = PERFIL_TESTS[perfil] || PERFIL_TESTS_DEFAULT[perfil] || [];
+  perfil = _perfilBase(perfil);   // las preguntas son las del cargo base (Guardia CCTV → guardia)
 
   // Situacional items vary by profile
   var SIT_MAP = { jefatura:SIT_JEFATURA, supervisor:SIT_SUPERVISOR, guardia:SIT_GUARDIA };
@@ -5672,13 +5710,15 @@ function _vacEditar(id) {
   var benef = v.beneficios || [], otros = benef.filter(function(b){ return _VAC_BENEF.indexOf(b) === -1; });
   var e = htmlEsc, cargos = getActiveCargos();
   if (cargos.indexOf(v.perfil) === -1) cargos = cargos.concat([v.perfil]);
+  // Cargos activos, cada subtipo bajo su cargo base (Guardia de Seguridad, Guardia CCTV…); por defecto, Guardia
+  cargos = _cargosOrdenados(cargos);
   var ov = document.createElement('div'); ov.id = 'vac-overlay'; ov.className = 'rh-ov';
   ov.innerHTML = '<div class="rh-box" style="width:min(560px,100%)">'
     + '<div class="rh-top"><div><div style="font-size:17px;font-weight:800;letter-spacing:-.02em">' + (id ? 'Editar instalación' : 'Nueva instalación') + '</div>'
     + '<div style="font-size:12px;color:var(--ink3)">La instalación se ve solo en el panel. El resto de los datos se muestran al postulante.</div></div>'
     + '<button class="dh-close" title="Cerrar" aria-label="Cerrar" onclick="document.getElementById(\'vac-overlay\').remove()"><svg class="ico"><use href="#i-x"/></svg></button></div>'
     + '<div class="rh-body">'
-    + '<div class="field"><label>Cargo</label><select id="vac-perfil" class="rh-in">' + cargos.map(function(k){ return '<option value="' + e(k) + '"' + (k === v.perfil ? ' selected' : '') + '>' + e((PERFIL_META[k] || {}).label || k) + '</option>'; }).join('') + '</select></div>'
+    + '<div class="field"><label>Cargo</label><select id="vac-perfil" class="rh-in">' + cargos.map(function(k){ return '<option value="' + e(k) + '"' + (k === v.perfil ? ' selected' : '') + '>' + (_perfilBase(k) !== k ? '&nbsp;&nbsp;&nbsp;' : '') + e((PERFIL_META[k] || {}).label || k) + '</option>'; }).join('') + '</select></div>'
     + '<div class="rh-grid2"><div class="field"><label>Instalación <span class="rh-req">*</span></label><input id="vac-inst" class="rh-in" maxlength="120" value="' + e(v.instalacion) + '" placeholder="Ej: Bayer Graneros"></div>'
     + '<div class="field"><label>Comuna</label><input id="vac-comuna" class="rh-in" maxlength="80" value="' + e(v.comuna) + '" placeholder="Ej: Graneros"></div></div>'
     + '<div class="field"><label>Nombre del cargo en el aviso <span style="text-transform:none;font-weight:500">(opcional)</span></label><input id="vac-cnom" class="rh-in" maxlength="80" value="' + e(v.cargo_nombre || '') + '" placeholder="Ej: Guardia CCTV"></div>'
@@ -5739,9 +5779,12 @@ function _vacTurnoA(v) {
   return [resto ? resto.charAt(0).toUpperCase() + resto.slice(1) : '', m ? m[1] : ''];
 }
 function _vacPerfilDe(cargo) {
-  var c = _vacNorm(cargo);
-  // Jefe de turno, patrullero, romanero y CCTV son puestos de guardia, no jefatura
-  if (/guardia|patruller|romaner|cctv|jefe de turno/.test(c)) return 'guardia';
+  var c = _vacNorm(cargo), sl = function(x){ return _vacNorm(x).replace(/[^a-z0-9ñ]/g, ''); };
+  // Un cargo creado en Cargos con ese nombre (Guardia CCTV = "Guardia - CCTV")
+  var cc = (typeof CUSTOM_CARGOS !== 'undefined' ? CUSTOM_CARGOS : []).find(function(x){ return sl(x.label) === sl(cargo); });
+  if (cc) return cc.key;
+  // Jefe de turno o de grupo, patrullero, romanero y CCTV son puestos de guardia, no jefatura
+  if (/guardia|patruller|romaner|cctv|jefe de (turno|grupo)/.test(c)) return 'guardia';
   if (/aseo/.test(c)) return 'auxiliar_aseo';
   if (/conductor|chofer/.test(c)) return 'conductor';
   if (/supervisor/.test(c)) return 'supervisor';
@@ -6005,6 +6048,7 @@ function regSetStep(step) {
     if (fn) fn.max = new Date().toISOString().split('T')[0];
   }
   else if (step === 2) {
+    perfil = _perfilBase(perfil);
     var p2 = perfil === 'guardia' ? 'reg-step-2-guardia' : perfil === 'supervisor' ? 'reg-step-2-supervisor' : 'reg-step-2-general';
     document.getElementById(p2).style.display = 'block';
   }
@@ -6184,7 +6228,7 @@ function regNext(fromStep) {
     });
 
   } else if (fromStep === 2) {
-    const perfil = document.getElementById('r-perfil').value;
+    const perfil = _perfilBase(document.getElementById('r-perfil').value);
     if (perfil === 'guardia') {
       // Validate OS-10
       const os10 = document.querySelector('input[name="os10"]:checked');
@@ -6296,12 +6340,13 @@ function submitRegister() {
 
   // Education & profile data
   let educacion = '', os10 = '';
-  if (perfil === 'guardia') {
+  const perfilBase = _perfilBase(perfil);
+  if (perfilBase === 'guardia') {
     const eduG = document.querySelector('input[name="edu-guardia"]:checked');
     educacion = eduG ? eduG.value : '';
     const os10R = document.querySelector('input[name="os10"]:checked');
     os10 = os10R ? os10R.value : '';
-  } else if (perfil === 'supervisor') {
+  } else if (perfilBase === 'supervisor') {
     var retiroSupSel = document.querySelector('input[name="es-retiro-sup"]:checked');
     if (retiroSupSel && retiroSupSel.value === 'si') {
       educacion = document.getElementById('r-educacion-sup-retiro')?.value || '';
@@ -7715,6 +7760,8 @@ Object.keys(PERFIL_IDEAL).forEach(function(pf) {
     req:'No arriesgar más de lo que conviene: en la tarea de globos, no superar la estrategia de mayor ganancia esperada. Mínimo provisional, a calibrar con los datos propios.' };
 });
 const PERFIL_IDEAL_INICIAL = JSON.parse(JSON.stringify(PERFIL_IDEAL));
+// Mínimos de los cargos personalizados (al cargarlos arriba, PERFIL_IDEAL aún no existía)
+CUSTOM_CARGOS.forEach(function(c){ registerCustomCargo(c, true); });
 
 
 // ═══════════════════════════════════════════════════════════
@@ -14480,7 +14527,7 @@ async function _rsPostulaEditar(id) {
   // Instalaciones = vacantes del panel (25_vacantes.sql): elegir una completa instalación y turno
   if (!_vacLista) { try { await _vacCargar(); } catch(e) {} }
   var actual = ((c.scores || {})._postula || {}).vacante || '';
-  var vacs = (_vacLista || []).filter(function(v){ return v.perfil === c.perfil || v.id === actual; })
+  var vacs = (_vacLista || []).filter(function(v){ return _perfilBase(v.perfil) === _perfilBase(c.perfil) || v.id === actual; })
     .sort(function(a, b){ return (b.activa - a.activa) || String(a.instalacion).localeCompare(b.instalacion); });
   window._rsPostulaVacs = vacs;
   var enVac = vacs.some(function(v){ return v.id === actual; }) || (!actual && vacs.length && !p.instalacion);
