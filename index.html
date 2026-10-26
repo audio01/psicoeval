@@ -14484,11 +14484,13 @@ async function _rsPostulaEditar(id) {
     .sort(function(a, b){ return (b.activa - a.activa) || String(a.instalacion).localeCompare(b.instalacion); });
   window._rsPostulaVacs = vacs;
   var enVac = vacs.some(function(v){ return v.id === actual; }) || (!actual && vacs.length && !p.instalacion);
+  // Sin instalación elegida se propone una del cargo base (Guardia de Seguridad…), no la primera de la lista
+  var elegida = actual || (enVac ? ((vacs.find(function(v){ return v.activa && _vacCargoTxt(v) === base; }) || vacs[0]).id) : '');
   var e = htmlEsc, op = function(v, t){ return '<option value="' + v + '"' + (v === (p.turno || '4x4_rotativo') ? ' selected' : '') + '>' + t + '</option>'; };
   el.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px 0">'
     + '<div class="ev-field" style="grid-column:1/-1"><label>Cargo al que postula</label><input id="rs-p-cargo" class="rh-in" autocomplete="off" value="' + e(p.cargo || base) + '"></div>'
     + (vacs.length ? '<div class="ev-field" style="grid-column:1/-1"><label>Instalación</label><select id="rs-p-vac" class="rh-in" onchange="_rsPostulaVac(this.value)">'
-        + vacs.map(function(v){ return '<option value="' + e(v.id) + '"' + (v.id === actual ? ' selected' : '') + '>' + e(v.instalacion + ' · ' + _vacTxt(v) + (v.activa ? '' : ' · inactiva')) + '</option>'; }).join('')
+        + vacs.map(function(v){ return '<option value="' + e(v.id) + '"' + (v.id === elegida ? ' selected' : '') + '>' + e(v.instalacion + ' · ' + _vacTxt(v) + ' · ' + _vacCargoTxt(v) + (v.activa ? '' : ' · inactiva')) + '</option>'; }).join('')
         + '<option value=""' + (enVac ? '' : ' selected') + '>Otra instalación (escribir)</option></select></div>' : '')
     // Sin vacante elegida: instalación y turno se escriben a mano
     + '<div id="rs-p-libre" style="grid-column:1/-1;display:' + (enVac ? 'none' : 'grid') + ';grid-template-columns:1fr 1fr;gap:8px">'
@@ -14497,15 +14499,18 @@ async function _rsPostulaEditar(id) {
     + '<input id="rs-p-otra" class="rh-in" value="' + e(p.turno_otra) + '" placeholder="Ej: 5x2 día" style="margin-top:6px;display:' + (p.turno === 'otra' ? '' : 'none') + '"></div></div>'
     + '<div style="grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end"><button class="rs-btn" onclick="_switchDrawerTab(\'resumen\', (_dbCache || []).find(function(x){ return x.id === \'' + e(id) + '\'; }))">Cancelar</button>'
     + '<button class="rs-btn prim" onclick="_rsPostulaGuardar(\'' + e(id) + '\')">Guardar</button></div></div>';
-  var sv = document.getElementById('rs-p-vac'); if (sv && sv.value) _rsPostulaVac(sv.value);
+  var sv = document.getElementById('rs-p-vac'); if (sv && sv.value) _rsPostulaVac(sv.value, !!p.cargo);
 }
-// Al elegir una instalación (vacante) se completan instalación y turno; "Otra" deja escribirlos
-function _rsPostulaVac(vid) {
+// Cargo de la instalación tal como se publica; sin nombre, el del cargo base (Guardia de Seguridad…)
+function _vacCargoTxt(v) { return v.cargo_nombre || (PERFIL_META[v.perfil] || {}).label || v.perfil; }
+// Al elegir una instalación (vacante) se completan instalación, cargo y turno; "Otra" deja escribirlos
+function _rsPostulaVac(vid, mantenerCargo) {
   var v = (window._rsPostulaVacs || []).find(function(x){ return x.id === vid; });
   var libre = document.getElementById('rs-p-libre'), inst = document.getElementById('rs-p-inst');
   if (libre) libre.style.display = v ? 'none' : 'grid';
   if (!v) { if ((window._rsPostulaVacs || []).some(function(x){ return x.instalacion === inst.value; })) inst.value = ''; inst.focus(); return; }
   inst.value = v.instalacion;
+  var cg = document.getElementById('rs-p-cargo'); if (cg && !mantenerCargo) cg.value = _vacCargoTxt(v);
   var t = document.getElementById('rs-p-turno'), o = document.getElementById('rs-p-otra');
   if (t && v.turno) { t.value = v.turno; if (o) { o.value = v.turno_otra || ''; o.style.display = v.turno === 'otra' ? '' : 'none'; } }
 }
