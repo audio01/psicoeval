@@ -1690,6 +1690,16 @@ body.adm .pub-aura i{animation:none}   /* estático: el vidrio no recompone en c
 .dsh-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
 .dsh-grid>.dash-card{display:flex;flex-direction:column}
 .dsh-wide{grid-column:1/-1}
+.dsh-act{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.dsh-act-i{padding:12px 14px;border-radius:12px;background:rgba(20,33,61,.035);display:flex;flex-direction:column;gap:2px;min-width:0}
+.dsh-act-i b{font-size:26px;font-weight:800;letter-spacing:-.02em;color:var(--ink)}
+.dsh-act-i span{font-size:12.5px;font-weight:600;color:var(--ink2)}
+.dsh-act-i small{font-size:11px;color:var(--ink4)}.dsh-act-i small i{font-style:normal;font-weight:700}
+.dsh-act-t{width:100%;border-collapse:collapse;font-size:12.5px}
+.dsh-act-t th{font-weight:700;color:var(--ink3);text-align:right;padding:6px 8px;text-transform:capitalize;white-space:nowrap}
+.dsh-act-t td{padding:7px 8px;border-top:1px solid rgba(20,33,61,.07);text-align:right;font-variant-numeric:tabular-nums}
+.dsh-act-t td:first-child{text-align:left;color:var(--ink2);font-weight:600;white-space:nowrap}
+[data-theme="dark"] .dsh-act-i{background:rgba(255,255,255,.05)}
 .dsh-row{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(60px,1fr) 52px;align-items:center;gap:16px;padding:8px 0;border-top:1px solid rgba(20,33,61,.06)}
 .dsh-nota+.dsh-row,.dash-lbl+div+.dsh-row,.dsh-nota+.dsh-ref{border-top:none}
 .dsh-row-go{cursor:pointer}.dsh-row-go:hover .dsh-row-n{color:var(--accent)}
@@ -11787,9 +11797,11 @@ async function renderDashboard() {
   var can = _dashCanalesPartes(cands, ir);
   var card = function(t, inner, nota) { return '<div class="dash-card"><div class="dash-lbl">' + t + '</div>' + (nota ? '<div class="dsh-nota">' + nota + '</div>' : '<div style="height:12px"></div>') + inner + '</div>'; };
   h += '<div class="dsh-grid">';
+  // Actividad: qué se hizo hoy, en 7 días, este mes y mes a mes (no depende del período de arriba)
+  h += '<div class="dash-card dsh-wide" id="dsh-actividad"><div class="dash-lbl">Actividad</div><div class="dsh-vacio">Cargando…</div></div>';
   // Por revisar (seguimientos: siempre; lo demás: dentro del período) junto al dictamen
   h += _porRevisarHtml(delCargo, desde) + proc.dictamen;
-  h += proc.embudo + card('Completadas por semana', '<div class="dsh-chart"><canvas id="chart-weekly"></canvas></div>', '<span id="chart-weekly-res">&nbsp;</span>');
+  h += proc.embudo;
   h += can.canales + card('Resultados por prueba', _dashResultadosHtml(completadas), 'Evaluados que alcanzan el mínimo del cargo en cada prueba de aptitud');
   // Referidos junto a la distribución por cargo (solo con "Todos"); si queda sola, va a lo ancho
   var cargos = perfil === 'all' ? proc.cargos : '';
@@ -11802,7 +11814,69 @@ async function renderDashboard() {
   h += '<div style="text-align:center;padding:18px 0 10px"><a onclick="_bdIrConFiltros(' + (perfil !== 'all' ? "{cargo:'" + perfil + "'}" : '{}') + ')" style="font-size:13px;font-weight:600;color:var(--accent);cursor:pointer">Ver las evaluaciones en Candidatos →</a></div>';
 
   container.innerHTML = h;
-  _initDashCharts(delCargo, dias);
+  _actCargar(delCargo, perfil);
+}
+
+// ── Actividad del equipo: lo que se hizo, por día, semana, mes y mes a mes ──
+// Cada acción cuenta en la fecha en que ocurrió: invitaciones enviadas, evaluaciones terminadas, verificaciones
+// de Chapi, entrevistas, cambios de etapa (historial) e informes RH enviados.
+var _ACT_TIPOS = [['invitacion', 'Invitaciones enviadas'], ['evaluacion', 'Evaluaciones terminadas'], ['chapi', 'Verificados en Chapi'],
+  ['entrevista', 'Entrevistas'], ['seleccionado', 'Seleccionados'], ['enviado', 'Enviados a contratación'], ['informe', 'Informes RH enviados'],
+  ['contratado', 'Contratados'], ['descartado', 'Rechazados'], ['no_contratado', 'No contratados']];
+var _actPeriodo = 'hoy', _actEv = [];
+function _actEventos(cands, invs) {
+  var ev = [], add = function(tipo, t){ var x = typeof t === 'number' ? t : Date.parse(t); if (x && !isNaN(x)) ev.push({ tipo: tipo, t: x }); };
+  (invs || []).forEach(function(i){ add('invitacion', i.creada); });
+  cands.forEach(function(c) {
+    var sc = c.scores || {};
+    if (c.estado === 'completed') { var m = _momentoCand(c); if (m) add('evaluacion', m.getTime()); }
+    if (sc._chapi && sc._chapi.id) add('chapi', sc._chapi.consultado || (sc._chapi.auto || {}).ts);
+    (sc._entrevistas || []).forEach(function(e){ if (e) add('entrevista', e.fecha ? e.fecha + 'T00:00:00' : (e.creada || e.ts)); });
+    if (sc._informe_rh && sc._informe_rh.enviado) add('informe', sc._informe_rh.enviado);
+    (sc._pipeline_history || []).forEach(function(hh){ if (hh && ['seleccionado', 'enviado', 'contratado', 'descartado', 'no_contratado'].indexOf(hh.to) !== -1) add(hh.to, hh.ts); });
+  });
+  return ev;
+}
+async function _actCargar(cands, perfil) {
+  var invs = [];
+  try {
+    var desde = new Date(); desde.setMonth(desde.getMonth() - 6, 1); desde.setHours(0, 0, 0, 0);
+    var r = await fetch(SUPA_URL + '/rest/v1/psicoeval_invitaciones?select=creada,perfil&creada=gte.' + encodeURIComponent(desde.toISOString()) + '&limit=2000', { headers: _invHeaders() });
+    if (r.ok) invs = (await r.json()).filter(function(i){ return !perfil || perfil === 'all' || i.perfil === perfil; });
+  } catch(e) {}
+  _actEv = _actEventos(cands, invs);
+  _actPintar();
+}
+function _actSetPeriodo(p) { _actPeriodo = p; _actPintar(); }
+function _actPintar() {
+  var box = document.getElementById('dsh-actividad'); if (!box) return;
+  var ahora = new Date(), dia = new Date(ahora); dia.setHours(0, 0, 0, 0);
+  var cuenta = function(a, b){ var o = {}; _actEv.forEach(function(e){ if (e.t >= a && e.t < b) o[e.tipo] = (o[e.tipo] || 0) + 1; }); return o; };
+  var seg = [['hoy', 'Hoy'], ['7', '7 días'], ['mes', 'Este mes'], ['meses', 'Mes a mes']].map(function(x){
+    return '<button class="' + (x[0] === _actPeriodo ? 'on' : '') + '" onclick="_actSetPeriodo(\'' + x[0] + '\')">' + x[1] + '</button>'; }).join('');
+  var h = '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px"><div class="dash-lbl" style="margin:0">Actividad</div><div class="dsh-seg" style="margin-left:auto">' + seg + '</div></div>';
+  if (_actPeriodo === 'meses') {
+    // Tabla: los últimos 6 meses, una columna por mes
+    var meses = [];
+    for (var i = 5; i >= 0; i--) { var a = new Date(ahora.getFullYear(), ahora.getMonth() - i, 1), b = new Date(ahora.getFullYear(), ahora.getMonth() - i + 1, 1); meses.push({ a: a, o: cuenta(a.getTime(), b.getTime()) }); }
+    h += '<div style="overflow-x:auto"><table class="dsh-act-t"><thead><tr><th></th>' + meses.map(function(m){ return '<th>' + m.a.toLocaleDateString('es-CL', { month:'short' }).replace('.', '') + (m.a.getMonth() === 0 || m === meses[0] ? ' ' + String(m.a.getFullYear()).slice(2) : '') + '</th>'; }).join('') + '</tr></thead><tbody>'
+      + _ACT_TIPOS.filter(function(t){ return meses.some(function(m){ return m.o[t[0]]; }); }).map(function(t){
+          return '<tr><td>' + t[1] + '</td>' + meses.map(function(m){ return '<td>' + (m.o[t[0]] || '<span style="color:var(--ink4)">·</span>') + '</td>'; }).join('') + '</tr>'; }).join('')
+      + '</tbody></table></div><div class="dsh-pie">Las invitaciones cuentan desde que existe el registro de invitaciones; las entrevistas, en la fecha de la entrevista.</div>';
+  } else {
+    var ini = _actPeriodo === 'hoy' ? dia : _actPeriodo === '7' ? new Date(dia.getTime() - 6 * 864e5) : new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+    var antIni = _actPeriodo === 'hoy' ? new Date(dia.getTime() - 864e5) : _actPeriodo === '7' ? new Date(ini.getTime() - 7 * 864e5) : new Date(ahora.getFullYear(), ahora.getMonth() - 1, 1);
+    // El período anterior se compara hasta el mismo punto (ayer a esta hora, el mes pasado al mismo día)
+    var antFin = _actPeriodo === 'mes' ? Math.min(new Date(ahora.getFullYear(), ahora.getMonth(), 1).getTime(), antIni.getTime() + (ahora - ini)) : antIni.getTime() + (ahora - ini);
+    var o = cuenta(ini.getTime(), ahora.getTime() + 1), ant = cuenta(antIni.getTime(), antFin);
+    var cmp = _actPeriodo === 'hoy' ? 'ayer a esta hora' : _actPeriodo === '7' ? 'los 7 días anteriores' : 'el mes pasado a esta fecha';
+    var tot = _ACT_TIPOS.reduce(function(n, t){ return n + (o[t[0]] || 0); }, 0);
+    h += tot ? '<div class="dsh-act">' + _ACT_TIPOS.filter(function(t){ return o[t[0]] || ant[t[0]]; }).map(function(t){
+        var n = o[t[0]] || 0, d = n - (ant[t[0]] || 0);
+        return '<div class="dsh-act-i"><b>' + n + '</b><span>' + t[1] + '</span><small>' + (d === 0 ? 'igual que ' + cmp : '<i class="' + (d > 0 ? 'dsh-up' : 'dsh-dn') + '">' + (d > 0 ? '+' : '−') + Math.abs(d) + '</i> frente a ' + cmp) + '</small></div>'; }).join('') + '</div>'
+      : '<div class="dsh-vacio">Sin actividad registrada ' + (_actPeriodo === 'hoy' ? 'hoy' : _actPeriodo === '7' ? 'en los últimos 7 días' : 'este mes') + '.</div>';
+  }
+  box.innerHTML = h;
 }
 
 // Canales de llegada: cuántos postulantes por medio y cuántos resultan recomendados;
