@@ -13953,7 +13953,7 @@ async function kDrop(event, newStage) {
 // concretó). Queda en el historial de etapas con quién y cuándo, y se ve en la ficha.
 var _CIERRE_MOTIVOS = {
   descartado: ['No cumple los requisitos del cargo', 'Resultados de la evaluación bajo el mínimo', 'Entrevista no satisfactoria',
-               'Referencias laborales negativas', 'Antecedentes', 'Otro'],
+               'Referencias laborales negativas', 'Antecedentes', 'Edad', 'Otro'],
   no_contratado: ['Desistió del proceso', 'No se presentó o no responde', 'No aceptó las condiciones (sueldo, turno, ubicación)',
                   'Instalación cubierta o cerrada', 'Se eligió a otro postulante', 'Documentación incompleta', 'Otro']
 };
@@ -13980,14 +13980,19 @@ function _pedirMotivoDescarte(quien, tipo) {
     var lista = function() {
       document.getElementById('dsc-lista').innerHTML = _CIERRE_MOTIVOS[et].map(function(m){ return '<label><input type="radio" name="dsc-m" value="' + e(m) + '"><span>' + e(m) + '</span></label>'; }).join('');
       document.getElementById('dsc-req').textContent = '(opcional)';
-      ov.querySelectorAll('input[name="dsc-m"]').forEach(function(r){ r.onchange = function(){ document.getElementById('dsc-req').textContent = r.value === 'Otro' ? '(obligatorio)' : '(opcional)'; }; });
+      ov.querySelectorAll('input[name="dsc-m"]').forEach(function(r){ r.onchange = function(){
+        document.getElementById('dsc-req').textContent = r.value === 'Otro' || r.value === 'Edad' ? '(obligatorio)' : '(opcional)';
+        document.getElementById('dsc-det').placeholder = r.value === 'Edad' ? 'Indique el requisito del cargo que no cumple (ej: menor de 18 años, exigido para el OS-10)' : 'Ej: No tiene OS-10 vigente; vence en marzo';
+      }; });
     };
     lista();
     ov.querySelectorAll('input[name="dsc-t"]').forEach(function(r){ r.onchange = function(){ et = r.value; lista(); }; });
     ov.querySelectorAll('[data-x]').forEach(function(b){ b.onclick = function(){ cerrar(null); }; });
     ov.querySelector('[data-ok]').onclick = function() {
       var m = (ov.querySelector('input[name="dsc-m"]:checked') || {}).value || '', d = document.getElementById('dsc-det').value.trim();
-      var err = !m ? 'Elija un motivo.' : (m === 'Otro' && d.length < 5) ? 'Con "Otro", escriba el motivo en el detalle.' : '';
+      // Edad: se documenta qué requisito del cargo no cumple (la edad por sí sola no es un motivo válido)
+      var err = !m ? 'Elija un motivo.' : (m === 'Otro' && d.length < 5) ? 'Con "Otro", escriba el motivo en el detalle.'
+              : (m === 'Edad' && d.length < 5) ? 'Con "Edad", indique en el detalle qué requisito del cargo no cumple.' : '';
       if (err) { var x = document.getElementById('dsc-err'); x.textContent = err; x.style.display = ''; return; }
       cerrar({ etapa: et, datos: { _motivo: m === 'Otro' ? 'Otro: ' + d.slice(0, 100) : m, _detalle: m === 'Otro' ? '' : d } });
     };
