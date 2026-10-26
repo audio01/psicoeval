@@ -16088,6 +16088,16 @@ async function saveEntrevistaDrawer(candId) {
     _evBorradorBorrar(candId);
     // Cargo, instalación y turno quedan iguales en Resumen y en el Informe RH
     try { var cP = await _guardarPostula(candId, entry, 'entrevista'); if (cP) sc = cP.scores; } catch(e) {}
+    // Si el Informe RH ya tiene categoría, un dictamen nuevo la actualiza: la tarjeta y el informe muestran la categoría
+    var catMsg = '';
+    try {
+      var catNueva = _CAT_DE_DICT[dictamen] || '';
+      if (sc && sc._informe_rh && sc._informe_rh.categoria && catNueva && dictamen !== dictAntes && sc._informe_rh.categoria !== catNueva) {
+        var yaEnviado = !!sc._informe_rh.enviado;
+        sc = await _patchPrivado(candId, 'informe_rh', function(prev){ return Object.assign({}, prev || {}, { categoria: catNueva }); });
+        catMsg = yaEnviado ? ' · categoría del Informe RH actualizada (ya se había enviado a RRHH con la anterior)' : ' · también en el Informe RH';
+      }
+    } catch(e) {}
     try {
       if (sc && sc._informe_rh && Object.keys(sc._informe_rh).length && String(notas).trim() !== String(notasAntes || '').trim()) {
         sc = await _patchPrivado(candId, 'informe_rh', function(prev) {
@@ -16111,7 +16121,7 @@ async function saveEntrevistaDrawer(candId) {
         etapaMsg = ' · etapa: ' + getPipelineMeta(destino).label;
       } catch(e) { etapaMsg = ' · no se pudo cambiar la etapa'; }
     }
-    toast((edita ? 'Entrevista actualizada ✓' : 'Entrevista guardada ✓') + etapaMsg, 'ok');
+    toast((edita ? 'Entrevista actualizada ✓' : 'Entrevista guardada ✓') + etapaMsg + catMsg, 'ok');
     var updated = Object.assign({}, c, { scores: sc });
     _renderDrawerHeader(updated);   // el encabezado muestra el dictamen nuevo
     _switchDrawerTab('entrevistas', updated);
@@ -17396,14 +17406,16 @@ function _plFila(c, d) {
 // marcado, primero muestra los que tienen Informe RH para elegir
 // ── Contactos para Google (vCard de uno, CSV de Google Contactos de varios) ──
 // El archivo se arma en el navegador y lo descarga el administrador: los datos no pasan por otro servicio.
-// Nombre en la agenda: "Apellido paterno Apellido materno Nombres" (así lo guarda RH). Va completo en el
-// campo del nombre para que la agenda lo muestre igual en cualquier teléfono; cargo e instalación van como empresa y puesto.
+// Nombre en la agenda, como lo guarda RH: "APELLIDO PATERNO APELLIDO MATERNO PRIMER NOMBRE - INSTALACIÓN", en mayúsculas.
+// Va completo en el campo del nombre para que la agenda lo muestre igual en cualquier teléfono; cargo e instalación
+// también van como puesto y empresa.
 function _ctoDatos(c) {
   var pz = _postulaDe(c), cargo = pz.cargo || c.cargo || (PERFIL_META[c.perfil] || {}).label || '';
   var tel = String(c.telefono || '').replace(/[^\d+]/g, '');
   if (/^9\d{8}$/.test(tel)) tel = '+56' + tel; else if (/^569\d{8}$/.test(tel)) tel = '+' + tel;
   var f = String(c.created_at || '').slice(0, 10).split('-').reverse().join('-');
-  var completo = _vacLimpio((c.apellido || '') + ' ' + (c.nombre || ''));
+  var may = function(t){ return _vacLimpio(t).toLocaleUpperCase('es-CL'); };
+  var completo = may((c.apellido || '') + ' ' + (_vacLimpio(c.nombre).split(' ')[0] || '')) + (pz.instalacion ? ' - ' + may(pz.instalacion) : '');
   return { nombre: completo, apellido: '', completo: completo,
            tel: tel, email: _vacLimpio(c.email), cargo: cargo, instalacion: pz.instalacion || '',
            nota: 'Postulante RH Seguridad' + (f.length === 10 ? ' · postuló el ' + f : '') + (c.comuna ? ' · vive en ' + _vacLimpio(c.comuna) : '') };
