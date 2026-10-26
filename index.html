@@ -259,6 +259,9 @@ input,select,textarea{font-family:inherit;outline:none}
 :where(#view-admin,#cand-drawer-overlay) :is(button,a,[role="button"],.bd-tr):focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
 .ico{width:18px;height:18px;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .nav-btn .ico{opacity:.8}.nav-btn.active .ico{opacity:1}
+.nav-n{margin-left:auto;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#2563eb;color:#fff;font-size:10.5px;font-weight:800;display:inline-flex;align-items:center;justify-content:center}
+.bd-nuevo{display:inline-flex;align-items:center;gap:4px;margin-right:6px;padding:1px 7px;border-radius:100px;background:#dbeafe;color:#1d4ed8;font-size:10px;font-weight:800;vertical-align:2px;letter-spacing:.02em}
+.bd-nuevo i{width:6px;height:6px;border-radius:50%;background:#2563eb}
 .sb-cta .ico{width:16px;height:16px}
 .nav-btn.active{background:var(--accent-l);color:var(--accent);font-weight:600}
 
@@ -2664,7 +2667,7 @@ body.adm .rh-box .vac-benef label,.vac-benef label{display:inline-flex;white-spa
       <div class="logo">RH <span>Seguridad</span><small class="logo-sub">Panel de selección</small></div>
       <button class="sb-cta" id="sb-invitar" onclick="_invVacante='';showInviteModal()"><svg class="ico"><use href="#i-send"/></svg>Invitar a evaluación</button>
       <button class="nav-btn active" id="nav-dashboard" onclick="adminTab('dashboard',this)"><svg class="ico"><use href="#i-dash"/></svg><span>Dashboard</span></button>
-      <button class="nav-btn" id="nav-candidates" onclick="adminTab('candidates',this)"><svg class="ico"><use href="#i-users"/></svg><span>Candidatos</span></button>
+      <button class="nav-btn" id="nav-candidates" onclick="adminTab('candidates',this)"><svg class="ico"><use href="#i-users"/></svg><span>Candidatos</span><b class="nav-n" data-nuevos title="Nuevos por revisar" style="display:none"></b></button>
       <button class="nav-btn" id="nav-params" onclick="adminTab('params',this)" style="display:none"></button>
       <div class="sb-sep"></div>
       <button class="nav-btn" id="nav-cargos" onclick="adminTab('cargos',this)"><svg class="ico"><use href="#i-brief"/></svg><span>Cargos</span></button>
@@ -2707,7 +2710,7 @@ body.adm .rh-box .vac-benef label,.vac-benef label{display:inline-flex;white-spa
           <button class="sb-cta" onclick="closeMobileSidebar();showInviteModal()"><svg class="ico"><use href="#i-send"/></svg>Invitar a evaluación</button>
           <div style="display:flex;flex-direction:column;gap:2px">
             <button class="nav-btn" onclick="mobileNav('dashboard')"><svg class="ico"><use href="#i-dash"/></svg><span>Dashboard</span></button>
-            <button class="nav-btn" onclick="mobileNav('candidates')"><svg class="ico"><use href="#i-users"/></svg><span>Candidatos</span></button>
+            <button class="nav-btn" onclick="mobileNav('candidates')"><svg class="ico"><use href="#i-users"/></svg><span>Candidatos</span><b class="nav-n" data-nuevos title="Nuevos por revisar" style="display:none"></b></button>
             <div class="sb-sep"></div>
             <button class="nav-btn" onclick="mobileNav('cargos')"><svg class="ico"><use href="#i-brief"/></svg><span>Cargos</span></button>
             <button class="nav-btn" onclick="mobileNav('vacantes')"><svg class="ico"><use href="#i-pin"/></svg><span>Instalaciones</span></button>
@@ -11280,6 +11283,7 @@ function adminLogout(reason) {
   if (_tokenRefreshTimer) { clearTimeout(_tokenRefreshTimer); _tokenRefreshTimer = null; }
   _supaLogout().catch(function(){});  // fire-and-forget
   S.role = null; S.userEmail = null; S.currentAdminTab = null;
+  clearInterval(_nuevosInt); _nuevosPintar();
   S.authToken = null; S.refreshToken = null; S.tokenExpiry = null;
   try { localStorage.removeItem(SESSION_KEY); } catch(e) {}
   showView('landing');
@@ -11356,6 +11360,7 @@ function _startInactivityTimer() {
   clearInterval(_sessionClockInterval);
   _sessionClockInterval = setInterval(_updateSessionClock, 30000);
   _updateSessionClock(); // render inmediato
+  _nuevosIniciar();
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -12048,6 +12053,53 @@ function _diasParaArchivo(c) {
   var quedan = Math.ceil(_BD_ARCH_DIAS - (Date.now() - _ultimoMovimiento(c)) / 864e5);
   return quedan > 0 && quedan <= _BD_ARCH_AVISO ? quedan : null;
 }
+// ── Nuevos por revisar ──
+// Nuevo = evaluación terminada (o movida de etapa por Chapi) que nadie del equipo ha abierto desde entonces.
+// Al abrir la ficha queda scores._revisado = { por, ts }: es compartido entre equipos y deja constancia.
+// Solo cuenta lo que ocurrió desde que existe el aviso (_NUEVO_DESDE), para no marcar lo ya revisado.
+var _NUEVO_DESDE = Date.parse('2026-10-26T14:00:00Z');
+function _nuevoDesde(c) {
+  if (!c || c.estado !== 'completed' || _esCierre(getPipelineEtapa(c))) return 0;
+  var t = (_momentoCand(c) || new Date(0)).getTime();
+  ((c.scores || {})._pipeline_history || []).forEach(function(h){ if (h && h.por === 'chapi') { var x = Date.parse(h.ts); if (x > t) t = x; } });
+  return t;
+}
+function _esNuevo(c) {
+  var t = _nuevoDesde(c), r = Date.parse(((c.scores || {})._revisado || {}).ts || 0) || 0;
+  return t >= _NUEVO_DESDE && t > r;
+}
+function _nuevoBadge(c) {
+  return _esNuevo(c) ? '<span class="bd-nuevo" title="Nuevo: nadie del equipo lo ha revisado"><i></i>Nuevo</span>' : '';
+}
+// Contador en el menú y en la pestaña del navegador
+function _nuevosPintar() {
+  var n = S.role ? (_dbCache || []).filter(_esNuevo).length : 0;
+  document.querySelectorAll('[data-nuevos]').forEach(function(el){ el.textContent = n || ''; el.style.display = n ? '' : 'none'; });
+  var base = document.title.replace(/^\(\d+\) /, '');
+  document.title = n && S.role ? '(' + n + ') ' + base : base;
+}
+// Abrir la ficha la marca como revisada
+function _nuevoMarcarRevisado(c) {
+  if (!c || !_esNuevo(c) || !S.role || S.role === 'viewer') return;
+  var marca = { por: S.userEmail || '', ts: new Date().toISOString() };
+  c.scores = Object.assign({}, c.scores || {}, { _revisado: marca });
+  _patchScores(c.id, function(sc){ sc._revisado = marca; }).catch(function(){});
+  var k = document.getElementById('kcard-' + c.id); if (k) k.querySelectorAll('.bd-nuevo').forEach(function(x){ x.remove(); });
+  var f = document.querySelector('tr[data-id="' + c.id + '"] .bd-nuevo'); if (f) f.remove();
+  _nuevosPintar();
+}
+// Con el panel abierto, cada 2 minutos busca evaluaciones nuevas (sin recargar la página)
+var _nuevosInt = null, _nuevosN = -1;
+async function _nuevosRevisar() {
+  if (!S.authToken || !S.role || document.hidden) return;
+  try { _invalidateCache(); var all = await getDB(); } catch(e) { return; }
+  var n = all.filter(_esNuevo).length, cambio = _nuevosN !== -1 && n !== _nuevosN;
+  _nuevosN = n; _nuevosPintar();
+  // Redibuja Candidatos solo si llegó algo y no hay una ficha, ventana o arrastre en curso
+  if (cambio && S.currentAdminTab === 'candidates' && !_drawerCandId && !document.querySelector('.rh-ov, .kanban-card.dragging')) { try { _bdCuerpoPintar(all); } catch(e) {} }
+}
+function _nuevosIniciar() { clearInterval(_nuevosInt); _nuevosN = -1; _nuevosInt = setInterval(_nuevosRevisar, 120000); setTimeout(_nuevosRevisar, 3000); }
+
 function _porArchivarBadge(c) {
   var d = _diasParaArchivo(c);
   if (d === null) return '';
@@ -12133,6 +12185,8 @@ var _BD_CAMPOS = {
                 ok:function(c, v){ var k = c.scores && c.scores._canal && c.scores._canal.canal; return v === 'sin' ? !k : k === v; } },
   informe:    { label:'Informe RH', ops:function(){ return [['sin', 'Sin informe'], ['guardado', 'Guardado'], ['pdf', 'PDF generado'], ['enviado', 'Enviado a RRHH'], ['por_enviar', 'Por enviar (guardado o PDF, sin enviar)']]; },
                 ok:function(c, v){ var ie = _rhEstado(c); return v === 'por_enviar' ? (ie === 'guardado' || ie === 'pdf') : ie === v; } },
+  nuevo:      { label:'Nuevos', ops:function(){ return [['si', 'Solo nuevos (sin revisar)']]; },
+                ok:function(c){ return _esNuevo(c); } },
   invitacion: { label:'Invitación', ops:function(){ return [['con', 'Con invitación'], ['sin', 'Sin invitación']]; },
                 ok:function(c, v){ var i = !!(c.scores && c.scores._invitacion); return v === 'con' ? i : !i; } }
 };
@@ -12194,7 +12248,7 @@ async function _bdRender() {
   _bdBarPintar();
   _bdCuerpoPintar(all);
 }
-async function _bdRenderCuerpo() { _bdCuerpoPintar(await getDB()); }
+async function _bdRenderCuerpo() { _bdCuerpoPintar(await getDB()); _nuevosPintar(); }
 function _bdCuerpoPintar(all) {
   var cuerpo = document.getElementById('bd-cuerpo'); if (!cuerpo) return;
   var lista = _bdOrdenar(_bdFiltrar(all));
@@ -12335,7 +12389,7 @@ function _bdTabla(lista) {
     if (n > _bdLimite) return '';
     var id = htmlEsc(c.id), nombre = htmlEsc(((c.nombre || '') + ' ' + (c.apellido || '')).trim());
     return '<tr data-id="' + id + '" class="bd-tr" onclick="openCandDrawer(\'' + id + '\')"><td>' + _bdChk(c) + '</td>'
-      + '<td class="bd-td-nom"><div class="bd-nom">' + nombre + _alertBadgesHtml(c.scores) + _rutRepBadge(c) + _porArchivarBadge(c) + _enArchivoBadge(c) + '</div><div class="bd-sub">' + htmlEsc([c.rut, c.email].filter(Boolean).join(' · ')) + '</div></td>'
+      + '<td class="bd-td-nom"><div class="bd-nom">' + _nuevoBadge(c) + nombre + _alertBadgesHtml(c.scores) + _rutRepBadge(c) + _porArchivarBadge(c) + _enArchivoBadge(c) + '</div><div class="bd-sub">' + htmlEsc([c.rut, c.email].filter(Boolean).join(' · ')) + '</div></td>'
       + props.map(function(p){ return '<td>' + _bdCelda(c, p[0]) + '</td>'; }).join('')
       + '<td class="bd-acc" onclick="event.stopPropagation()">'
       + (c.estado === 'completed' ? '<a onclick="viewCandReport(\'' + id + '\')" title="Ver informe" aria-label="Ver informe"><svg class="ico"><use href="#i-doc"/></svg></a><a onclick="downloadPdfReport(\'' + id + '\')" title="Descargar PDF" aria-label="Descargar PDF"><svg class="ico"><use href="#i-down"/></svg></a>' : '')
@@ -12370,13 +12424,15 @@ function _bdTablero(lista) {
   var campo = _BD.columnas === 'dictamen' ? 'dictamen' : 'etapa', arrastra = campo === 'etapa';
   var manual = arrastra && _BD.orden === 'fecha_desc';
   var verArchivo = (_BD.filtros || {}).archivo === 'archivados' || (_BD.filtros || {}).archivo === 'todos';
+  var filtroEtapa = (_BD.filtros || {}).etapa || '';   // con "Ver →" de una casilla lateral, su columna sí se muestra
   var h = '<div class="kanban-board bd-board">';
   _bdGrupos(campo).forEach(function(g) {
     var del = lista.filter(function(c){ return _bdValorGrupo(c, campo) === g.id; });
     if (manual) del.sort(function(a, b){ return _bdPos(a) - _bdPos(b); });
     // Descartados: van al archivo. Para descartar, la barra que aparece al arrastrar
-    if (arrastra && _esCierre(g.id) && !del.length && !verArchivo) return;
-    if (arrastra && g.id === 'contratado' && !verArchivo) return;
+    if (arrastra && _esCierre(g.id) && !del.length && !verArchivo && filtroEtapa !== g.id) return;
+    // Enviados y contratados: casilla pequeña al lado (cuántos hay, Ver → y recibe tarjetas)
+    if (arrastra && (g.id === 'contratado' || g.id === 'enviado') && !verArchivo && filtroEtapa !== g.id) return;
     h += '<div class="kanban-col" id="kcol-' + g.id + '"' + (arrastra ? ' ondragover="event.preventDefault();this.classList.add(\'drag-over\');kOver(event,\'' + g.id + '\')" ondragleave="if(!this.contains(event.relatedTarget)){this.classList.remove(\'drag-over\')}" ondrop="kDrop(event,\'' + g.id + '\')"' : '') + '>'
       + '<div class="kanban-col-header"><span class="bd-col-dot" style="background:' + g.color + '"></span><span>' + g.label + '</span><span class="bd-col-n">' + del.length + '</span></div>'
       + '<div class="kanban-cards" id="kcards-' + g.id + '">';
@@ -12401,7 +12457,7 @@ function _bdTablero(lista) {
       else if (!chE.tipo && _verEntrevistas() && getPipelineEtapa(c) === 'postulante' && c.estado === 'completed')
         chH = '<span class="bd-est ch-kc"><i style="background:#94a3b8"></i>En cola para Chapi</span>';
       h += '<div class="kanban-card bd-kc" id="kcard-' + id + '" title="' + htmlEsc(_momentoTxt(c)) + '"' + (arrastra ? ' draggable="true" ondragstart="kDragStart(event,\'' + id + '\')" ondragend="kDragEnd(event)"' : '') + ' onclick="openCandDrawer(\'' + id + '\')">'
-        + '<div class="bd-kc-top"><div class="bd-nom">' + htmlEsc(((c.nombre || '') + ' ' + (c.apellido || '')).trim()) + _rutRepBadge(c) + _porArchivarBadge(c) + _enArchivoBadge(c) + '</div>' + _bdChk(c) + '</div>'
+        + '<div class="bd-kc-top"><div class="bd-nom">' + _nuevoBadge(c) + htmlEsc(((c.nombre || '') + ' ' + (c.apellido || '')).trim()) + _rutRepBadge(c) + _porArchivarBadge(c) + _enArchivoBadge(c) + '</div>' + _bdChk(c) + '</div>'
         + (pz.instalacion ? '<div class="bd-kc-inst">' + htmlEsc(pz.instalacion) + '</div>' : '')
         + (sub ? '<div class="bd-sub bd-kc-sub">' + htmlEsc(sub) + '</div>' : '')
         + (est ? '<div class="bd-kc-est">' + est + '</div>' : '')
@@ -12415,8 +12471,12 @@ function _bdTablero(lista) {
   // También recibe tarjetas arrastradas para descartar.
   if (arrastra && !verArchivo) {
     var cuenta = function(et){ return (_dbCache || []).filter(function(c){ return getPipelineEtapa(c) === et && (!(_BD.filtros || {}).cargo || c.perfil === _BD.filtros.cargo); }).length; };
-    var nDesc = cuenta('descartado'), nNoC = cuenta('no_contratado'), nCont = cuenta('contratado');
-    h += '<div class="bd-col-lado"><div class="kanban-col bd-col-desc" ondragover="event.preventDefault();this.classList.add(\'drag-over\')" ondragleave="if(!this.contains(event.relatedTarget))this.classList.remove(\'drag-over\')" ondrop="this.classList.remove(\'drag-over\');kDrop(event,\'descartado\')">'
+    var nDesc = cuenta('descartado'), nNoC = cuenta('no_contratado'), nCont = cuenta('contratado'), nEnv = cuenta('enviado');
+    h += '<div class="bd-col-lado">'
+      + '<div class="kanban-col bd-col-desc bd-col-env" ondragover="event.preventDefault();this.classList.add(\'drag-over\')" ondragleave="if(!this.contains(event.relatedTarget))this.classList.remove(\'drag-over\')" ondrop="this.classList.remove(\'drag-over\');kDrop(event,\'enviado\')">'
+      + '<div class="kanban-col-header"><span class="bd-col-dot" style="background:#7c3aed"></span><span>Enviados a contratación</span><span class="bd-col-n">' + nEnv + '</span></div>'
+      + '<div class="bd-lado-b">' + (nEnv ? '<a class="bd-lnk" onclick="_bdIrConFiltros({ etapa:\'enviado\' })">Ver →</a>' : '<span>Arrastre aquí al enviar a RRHH</span>') + '</div></div>'
+      + '<div class="kanban-col bd-col-desc" ondragover="event.preventDefault();this.classList.add(\'drag-over\')" ondragleave="if(!this.contains(event.relatedTarget))this.classList.remove(\'drag-over\')" ondrop="this.classList.remove(\'drag-over\');kDrop(event,\'descartado\')">'
       + '<div class="kanban-col-header"><span class="bd-col-dot" style="background:#dc2626"></span><span>Rechazados</span><span class="bd-col-n">' + nDesc + '</span></div>'
       + '<div class="bd-lado-b">' + (nDesc ? '<a class="bd-lnk" onclick="_bdIrConFiltros({ etapa:\'descartado\' })">Ver →</a>' : '<span>Arrastre aquí si no cumple el perfil</span>') + '</div></div>'
       + '<div class="kanban-col bd-col-desc" ondragover="event.preventDefault();this.classList.add(\'drag-over\')" ondragleave="if(!this.contains(event.relatedTarget))this.classList.remove(\'drag-over\')" ondrop="this.classList.remove(\'drag-over\');kDrop(event,\'no_contratado\')">'
@@ -14084,6 +14144,7 @@ async function openCandDrawer(id) {
   var all = await getDB();
   var c = all.find(function(x){ return x.id === id; });
   if (!c) { document.getElementById('drawer-body').innerHTML = '<div style="padding:20px;color:#e11d48">Candidato no encontrado</div>'; return; }
+  _nuevoMarcarRevisado(c);
   _renderDrawerHeader(c);
   _switchDrawerTab(_drawerActiveTab, c);
 }
