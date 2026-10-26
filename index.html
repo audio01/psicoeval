@@ -3603,7 +3603,11 @@ var _CG_CORTO = { dc0:'Cognitiva', situacional:'Juicio', vigilancia:'Vigilancia'
 function renderCargosTab() {
   var el = document.getElementById('cargos-content');
   if (!el) return;
-  var ALL = _cargosOrdenados(getAllCargos());
+  // Activos primero (cada cargo con sus subtipos debajo, también activos primero); después los inactivos
+  var on = function(k){ return CARGOS_ACTIVE[k] ? 0 : 1; };
+  var grupo = function(k){ var b = _perfilBase(k); return Math.min(on(b), getAllCargos().some(function(x){ return _perfilBase(x) === b && CARGOS_ACTIVE[x]; }) ? 0 : 1); };
+  var orden = getAllCargos().slice().sort(function(a, b){ return grupo(a) - grupo(b) || on(a) - on(b); });
+  var ALL = _cargosOrdenados(orden);
   var activeCount = getActiveCargos().length;
 
   var h = '';
