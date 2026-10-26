@@ -852,7 +852,7 @@ input,select,textarea{font-family:inherit;outline:none}
 .bd-td-nom{min-width:200px}
 .bd-td-nom .bd-nom{white-space:nowrap}
 .bd-btn .ico,.bd-seg .ico{width:15px;height:15px;margin-right:5px;vertical-align:-3px}
-#bulk-planilla .ico{width:15px;height:15px;margin-right:4px}
+#bulk-planilla .ico,#bulk-cto .ico{width:15px;height:15px;margin-right:4px}
 .bd-grp td{background:var(--surface2);cursor:pointer;padding:7px 12px;font-size:12px}
 .bd-grp-ch{display:inline-block;width:14px;color:var(--ink3)}
 .bd-grp-n{font-size:12px;color:var(--ink4);font-weight:700;margin-left:4px}
@@ -2470,11 +2470,6 @@ body.adm .rh-box .vac-benef label,.vac-benef label{display:inline-flex;white-spa
         <div class="field" id="salida1-campo"><label>¿Por qué terminó? *</label><div class="reg-chips"><label class="reg-chip"><input type="radio" name="salida1" value="termino_contrato" onchange="_regCambio(this)"><span>Término de contrato</span></label><label class="reg-chip"><input type="radio" name="salida1" value="renuncia" onchange="_regCambio(this)"><span>Renuncia voluntaria</span></label><label class="reg-chip"><input type="radio" name="salida1" value="despido" onchange="_regCambio(this)"><span>Desvinculación</span></label><label class="reg-chip"><input type="radio" name="salida1" value="mutual" onchange="_regCambio(this)"><span>Acuerdo mutuo</span></label><label class="reg-chip"><input type="radio" name="salida1" value="traslado" onchange="_regCambio(this)"><span>Traslado de instalación</span></label><label class="reg-chip"><input type="radio" name="salida1" value="retiro_ffaa" onchange="_regCambio(this)"><span>Retiro FF.AA. / Carabineros</span></label></div></div>
         <span class="err" id="e-exp1"></span>
       </div>
-      <div class="field" id="exp-otro-campo" style="display:none">
-        <label>¿Tuviste otro trabajo antes de ese? *</label>
-        <div class="reg-chips"><label class="reg-chip"><input type="radio" name="exp-otro" value="si" onchange="_regCambio(this)"><span>Sí</span></label><label class="reg-chip"><input type="radio" name="exp-otro" value="no" onchange="_regCambio(this)"><span>No</span></label></div>
-        <span class="err" id="e-exp-otro"></span>
-      </div>
       <div class="reg-emp" id="exp2-block" style="display:none">
         <div class="reg-emp-tit">El trabajo anterior</div>
         <div class="field"><label>Empresa u organización *</label><input id="r-emp2" placeholder="Ej: Retail ABC" oninput="_regCambio(this)"></div>
@@ -2482,6 +2477,10 @@ body.adm .rh-box .vac-benef label,.vac-benef label{display:inline-flex;white-spa
         <div class="field"><label id="dur2-lbl">¿Cuánto tiempo trabajaste ahí? *</label><div class="reg-chips"><label class="reg-chip"><input type="radio" name="dur2" value="menos_6m" onchange="_regCambio(this)"><span>Menos de 6 meses</span></label><label class="reg-chip"><input type="radio" name="dur2" value="6m_1a" onchange="_regCambio(this)"><span>6 meses a 1 año</span></label><label class="reg-chip"><input type="radio" name="dur2" value="1_2a" onchange="_regCambio(this)"><span>1 a 2 años</span></label><label class="reg-chip"><input type="radio" name="dur2" value="2_5a" onchange="_regCambio(this)"><span>2 a 5 años</span></label><label class="reg-chip"><input type="radio" name="dur2" value="mas_5a" onchange="_regCambio(this)"><span>Más de 5 años</span></label></div></div>
         <div class="field" id="salida2-campo"><label>¿Por qué terminó? *</label><div class="reg-chips"><label class="reg-chip"><input type="radio" name="salida2" value="termino_contrato" onchange="_regCambio(this)"><span>Término de contrato</span></label><label class="reg-chip"><input type="radio" name="salida2" value="renuncia" onchange="_regCambio(this)"><span>Renuncia voluntaria</span></label><label class="reg-chip"><input type="radio" name="salida2" value="despido" onchange="_regCambio(this)"><span>Desvinculación</span></label><label class="reg-chip"><input type="radio" name="salida2" value="mutual" onchange="_regCambio(this)"><span>Acuerdo mutuo</span></label><label class="reg-chip"><input type="radio" name="salida2" value="traslado" onchange="_regCambio(this)"><span>Traslado de instalación</span></label><label class="reg-chip"><input type="radio" name="salida2" value="retiro_ffaa" onchange="_regCambio(this)"><span>Retiro FF.AA. / Carabineros</span></label></div></div>
         <span class="err" id="e-exp2"></span>
+      </div>
+      <!-- El trabajo anterior se pide siempre; para saltarlo hay que declarar que es el único (queda como aviso en la ficha) -->
+      <div class="field" id="exp-otro-campo" style="display:none">
+        <div class="reg-chips"><label class="reg-chip"><input type="checkbox" name="exp-unico" value="si" onchange="_regCambio(this)"><span>No he tenido otro trabajo: este es el único</span></label></div>
       </div>
         <div style="display:flex;gap:10px;margin-top:4px">
           <button class="btn btn-outline" onclick="regBack(3)">← Anterior</button>
@@ -2762,6 +2761,7 @@ body.adm .rh-box .vac-benef label,.vac-benef label{display:inline-flex;white-spa
             <option value="descartado">Descartado</option>
           </select>
           <button id="bulk-planilla" class="btn btn-sm" onclick="abrirPlanillaEnvio()" style="display:none;background:var(--surface);border:1.5px solid var(--accent-m);color:var(--accent)" title="Tabla con los datos básicos para enviar a RRHH por correo"><svg class="ico"><use href="#i-sheet"/></svg>Planilla de envío</button>
+          <button id="bulk-cto" class="btn btn-sm" onclick="contactosExportar()" style="display:none;background:var(--surface);border:1.5px solid var(--accent-m);color:var(--accent)" title="Archivo para importar los seleccionados en Google Contactos"><svg class="ico"><use href="#i-user"/></svg>Contactos</button>
           <button id="bulk-del" class="btn btn-outline btn-sm" onclick="deleteSelected()" style="border-color:#fecdd3;color:#be123c;background:var(--surface)">Eliminar</button>
           <button class="btn btn-outline btn-sm" onclick="clearSelection()" title="Quitar la selección">✕</button>
         </div>
@@ -5974,8 +5974,8 @@ function _regCambio(el) {
   }
   if (n === 'exp-tiene') {
     var tiene = _regVal('exp-tiene') === 'si';
-    _regMostrar('exp1-block', tiene); _regMostrar('exp-otro-campo', tiene);
-    if (!tiene) { _regLimpiar(['r-emp1','r-cargo1','r-emp2','r-cargo2'], ['actual1','dur1','salida1','exp-otro','dur2','salida2']); _regMostrar('exp2-block', false); }
+    _regMostrar('exp1-block', tiene); _regMostrar('exp-otro-campo', tiene); _regMostrar('exp2-block', tiene && _regVal('exp-unico') !== 'si');
+    if (!tiene) _regLimpiar(['r-emp1','r-cargo1','r-emp2','r-cargo2'], ['actual1','dur1','salida1','exp-unico','dur2','salida2']);
   }
   if (n === 'actual1') {
     var act = _regVal('actual1') === 'si';
@@ -5983,9 +5983,10 @@ function _regCambio(el) {
     if (act) _regLimpiar([], ['salida1']);
     var l = document.getElementById('dur1-lbl'); if (l) l.textContent = act ? '¿Cuánto tiempo llevas ahí? *' : '¿Cuánto tiempo trabajaste ahí? *';
   }
-  if (n === 'exp-otro') {
-    var otro = _regVal('exp-otro') === 'si';
+  if (n === 'exp-unico') {
+    var otro = _regVal('exp-unico') !== 'si';
     _regMostrar('exp2-block', otro);
+    if (!otro) { var er = document.getElementById('e-exp2'); if (er) er.textContent = ''; }
     if (!otro) _regLimpiar(['r-emp2','r-cargo2'], ['dur2','salida2']);
   }
   if (n === 'canal') {
@@ -6291,8 +6292,7 @@ function regNext(fromStep) {
         if (f.length) falta.push(['exp' + n + '-block', 'e-exp' + n, 'Falta indicar ' + f.join(', ').replace(/, ([^,]*)$/, ' y $1') + '.']);
       };
       emp(1);
-      if (!_regVal('exp-otro')) falta.push(['e-exp-otro', 'e-exp-otro', 'Responde si tuviste otro trabajo antes']);
-      else if (_regVal('exp-otro') === 'si') emp(2);
+      if (_regVal('exp-unico') !== 'si') emp(2);   // el trabajo anterior es obligatorio, salvo que declare que es el único
     }
     if (!_regFaltas(falta)) return;
     regSetStep(4);
@@ -10987,6 +10987,8 @@ function updateBulkBar() {
     if (all) { all.textContent = 'Seleccionar los ' + tot; all.style.display = tot > checked.length ? '' : 'none'; }
     var pla = document.getElementById('bulk-planilla');
     if (pla) pla.style.display = S.role === 'admin' ? 'inline-flex' : 'none';
+    var cto = document.getElementById('bulk-cto');
+    if (cto) cto.style.display = S.role === 'admin' ? 'inline-flex' : 'none';
     var del = document.getElementById('bulk-del');
     if (del) del.textContent = 'Eliminar' + (checked.length > 1 ? ' ' + checked.length : '');
     // Show compare button only when 2-5 completed candidates are selected
@@ -14043,7 +14045,8 @@ function _renderDrawerHeader(c) {
     + paso
     + '<div class="dh-badges">'
     + (c.estado === 'completed' && S.role === 'admin' ? '<button class="dh-pdf" onclick="abrirInformeRH(\'' + c.id + '\')" title="Informe RH (formato R-GP-054)"><svg class="ico"><use href="#i-doc"/></svg>RH<span class="dh-pdf-t"> · Informe</span></button>' : '')
-    + (c.estado === 'completed' ? '<button class="dh-pdf" onclick="downloadPdfReport(\'' + c.id + '\')" title="Descargar el informe en PDF"><svg class="ico"><use href="#i-down"/></svg>PDF</button>' : '') + '</div>'
+    + (c.estado === 'completed' ? '<button class="dh-pdf" onclick="downloadPdfReport(\'' + c.id + '\')" title="Descargar el informe en PDF"><svg class="ico"><use href="#i-down"/></svg>PDF</button>' : '')
+    + (S.role === 'admin' && (c.telefono || c.email) ? '<button class="dh-pdf" onclick="contactoAgregar(\'' + c.id + '\')" title="Agregar a contactos (Google o celular)"><svg class="ico"><use href="#i-user"/></svg>Contacto</button>' : '') + '</div>'
     + '<button onclick="closeCandDrawer()" class="dh-close" title="Cerrar (Esc)" aria-label="Cerrar"><svg class="ico"><use href="#i-x"/></svg></button>'
     + '</div>';
   if (tabsEl) hdr.querySelector('.dh-tabs-slot').appendChild(tabsEl);
@@ -14580,7 +14583,7 @@ function _tabResumen(c) {
   var sc = c.scores || {};
   var m = _miradaDe(c);
   var h0 = Array.isArray(c.historial) && c.historial[0];
-  var exp = h0 ? [h0.cargo, h0.empresa].filter(Boolean).join(' · ') + (h0.duracion_label ? ' (' + h0.duracion_label + ')' : '')
+  var exp = h0 ? [h0.cargo, h0.empresa].filter(Boolean).join(' · ') + (h0.duracion_label ? ' (' + h0.duracion_label + ')' : '') + (c.historial.length === 1 ? ' · Declaró un solo trabajo' : '')
           : (Array.isArray(c.historial) ? 'Sin experiencia laboral (lo declaró)' : (c.experiencia_label || c.experiencia || ''));
   var iv = sc._invitacion;
   var ents = (sc._entrevistas || []).filter(Boolean);
@@ -17215,6 +17218,51 @@ function _plFila(c, d) {
 
 // Con postulantes marcados en Candidatos, arma la planilla con ellos; si no hay ninguno
 // marcado, primero muestra los que tienen Informe RH para elegir
+// ── Contactos para Google (vCard de uno, CSV de Google Contactos de varios) ──
+// El archivo se arma en el navegador y lo descarga el administrador: los datos no pasan por otro servicio.
+// Nombre en la agenda: "Nombre Apellido – Cargo (Instalación)", para reconocer a la persona.
+function _ctoDatos(c) {
+  var pz = _postulaDe(c), cargo = pz.cargo || c.cargo || (PERFIL_META[c.perfil] || {}).label || '';
+  var tel = String(c.telefono || '').replace(/[^\d+]/g, '');
+  if (/^9\d{8}$/.test(tel)) tel = '+56' + tel; else if (/^569\d{8}$/.test(tel)) tel = '+' + tel;
+  var extra = cargo ? ' – ' + cargo + (pz.instalacion ? ' (' + pz.instalacion + ')' : '') : '';
+  var f = String(c.created_at || '').slice(0, 10).split('-').reverse().join('-');
+  return { nombre: _vacLimpio(c.nombre), apellido: _vacLimpio(c.apellido) + extra, completo: _vacLimpio((c.nombre || '') + ' ' + (c.apellido || '')) + extra,
+           tel: tel, email: _vacLimpio(c.email), cargo: cargo, instalacion: pz.instalacion || '',
+           nota: 'Postulante RH Seguridad' + (f.length === 10 ? ' · postuló el ' + f : '') + (c.comuna ? ' · vive en ' + _vacLimpio(c.comuna) : '') };
+}
+function _ctoVcard(c) {
+  var d = _ctoDatos(c), x = function(t){ return String(t || '').replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/([,;])/g, '\\$1'); };
+  return ['BEGIN:VCARD', 'VERSION:3.0', 'N:' + x(d.apellido) + ';' + x(d.nombre) + ';;;', 'FN:' + x(d.completo)]
+    .concat(d.tel ? ['TEL;TYPE=CELL:' + d.tel] : [], d.email ? ['EMAIL;TYPE=INTERNET:' + x(d.email)] : [],
+            d.instalacion ? ['ORG:' + x(d.instalacion)] : [], d.cargo ? ['TITLE:' + x(d.cargo)] : [],
+            ['NOTE:' + x(d.nota), 'CATEGORIES:Postulantes RH', 'END:VCARD']).join('\r\n') + '\r\n';
+}
+function _ctoCsv(lista) {
+  var q = function(t){ t = String(t == null ? '' : t); return /[",\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
+  var cols = ['First Name', 'Last Name', 'Organization Name', 'Organization Title', 'E-mail 1 - Label', 'E-mail 1 - Value', 'Phone 1 - Label', 'Phone 1 - Value', 'Notes', 'Labels'];
+  return '\ufeff' + [cols.join(',')].concat(lista.map(function(c){ var d = _ctoDatos(c);
+    return [d.nombre, d.apellido, d.instalacion, d.cargo, d.email ? 'Work' : '', d.email, d.tel ? 'Mobile' : '', d.tel, d.nota, 'Postulantes RH ::: * myContacts'].map(q).join(','); })).join('\r\n') + '\r\n';
+}
+function _ctoBajar(texto, nombre, tipo) {
+  var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([texto], { type: tipo })); a.download = nombre;
+  document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+async function contactoAgregar(id) {
+  var c = (await getDB()).find(function(x){ return x.id === id; }); if (!c) return;
+  if (!c.telefono && !c.email) { toast('Esta persona no tiene teléfono ni correo registrados', 'er'); return; }
+  _ctoBajar(_ctoVcard(c), _ctoDatos(c).completo.replace(/[\\/:*?"<>|]/g, '') + '.vcf', 'text/vcard');
+  toast('Contacto descargado: ábralo en el celular o impórtelo en contacts.google.com', 'ok');
+}
+async function contactosExportar() {
+  var ids = [].map.call(document.querySelectorAll('.row-chk:checked'), function(x){ return x.dataset.id; });
+  var lista = (await getDB()).filter(function(c){ return ids.indexOf(c.id) !== -1 && (c.telefono || c.email); });
+  if (!lista.length) { toast('Los seleccionados no tienen teléfono ni correo registrados', 'er'); return; }
+  _ctoBajar(_ctoCsv(lista), 'Contactos postulantes ' + new Date().toISOString().slice(0, 10) + '.csv', 'text/csv;charset=utf-8');
+  var sin = ids.length - lista.length;
+  toast(lista.length + ' contacto' + (lista.length > 1 ? 's' : '') + ' en el archivo' + (sin ? ' (' + sin + ' sin teléfono ni correo)' : '') + '. Impórtelo en contacts.google.com → Importar', 'ok');
+}
+
 async function abrirPlanillaEnvio(idsElegidos) {
   var ids = idsElegidos || [].map.call(document.querySelectorAll('.row-chk:checked'), function(x){ return x.dataset.id; });
   var all = await getDB(), sinInforme = [];
