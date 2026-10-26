@@ -14236,11 +14236,25 @@ function _chapiNombreCoincide(c, ch) {
   if (!a.length || !b.length) return true;
   return a.filter(function(x){ return b.indexOf(x) !== -1; }).length >= Math.min(2, a.length);
 }
+// Descarte automático (mismo criterio que psicoeval-chapi): robo o hurto, o el mismo tipo de delito
+// en 2 o más causas distintas, como imputado y en causas que coinciden por RUT
+function _chapiReglas(imp) {
+  var lista = Array.isArray(imp) ? imp : [], porTipo = {};
+  var roboHurto = lista.filter(function(x){ return /^(robo|hurto)$/.test(x.tipo); });
+  lista.forEach(function(x){ if (!/^(robo|hurto)$/.test(x.tipo)) (porTipo[x.tipo] = porTipo[x.tipo] || {})[x.rit || x.delito] = x; });
+  var reiteradas = Object.keys(porTipo).filter(function(t){ return t && Object.keys(porTipo[t]).length >= 2; })
+    .map(function(t){ return { tipo: t, causas: Object.keys(porTipo[t]).map(function(k){ return porTipo[t][k]; }) }; });
+  return { roboHurto: roboHurto, reiteradas: reiteradas, descartar: roboHurto.length > 0 || reiteradas.length > 0 };
+}
 // Mismo criterio que la verificación automática (psicoeval-chapi): grave = penales por RUT,
 // causas laborales o riesgo alto; lo demás, aviso para conversarlo en la entrevista
 function _chapiClasificar(r) {
   var k = (r && r.causas) || {}, motivos = [], avisos = [];
+  var rd = _chapiReglas(r && r.imputaciones);
+  if (rd.roboHurto.length) motivos.push('Imputado por robo o hurto (' + rd.roboHurto.length + ')');
+  rd.reiteradas.forEach(function(x){ motivos.push('Imputaciones reiteradas: ' + x.causas[0].delito.toLowerCase() + ' (' + x.causas.length + ' causas)'); });
   if (k.penales_rut > 0) motivos.push('Causas penales por RUT (' + k.penales_rut + ')');
+  else if (r && Array.isArray(r.imputaciones) && r.imputaciones.length) motivos.push('Imputado en causa penal (' + r.imputaciones.map(function(x){ return x.rit; }).filter(function(x, i, a){ return a.indexOf(x) === i; }).length + ')');
   if (k.laborales > 0) motivos.push('Causas laborales (' + k.laborales + ')');
   if (r && r.riesgo === 'high') motivos.push('Riesgo alto en Chapi');
   if (k.civiles > 0) avisos.push('Causas civiles (' + k.civiles + ')');
@@ -14337,7 +14351,7 @@ function _rsChapiHtml(c) {
       + '<div class="rs-acciones"><button class="rs-btn prim" onclick="_chapiVisar(\'' + cid + '\')">Visar y pasar a entrevista</button>'
       + '<button class="rs-btn" onclick="_chapiDescartar(\'' + cid + '\')">Descartar</button></div></div>';
   }
-  if (ch.rechazo) h += '<div class="ch-alto"><b>Descartado por antecedentes (Chapi)</b>'
+  if (ch.rechazo) h += '<div class="ch-alto"><b>Descartado por antecedentes (Chapi)' + (ch.rechazo.auto ? ' · automático' : '') + '</b>'
     + '<span>' + htmlEsc((ch.rechazo.motivos || []).join(' · ')) + '</span>'
     + (ch.rechazo.detalle ? '<span style="display:block;margin-top:4px">' + htmlEsc(ch.rechazo.detalle) + '</span>' : '')
     + '<span style="display:block;margin-top:4px;font-size:11px;color:var(--ink4)">' + htmlEsc((ch.rechazo.por || '') + (ch.rechazo.ts ? ' · ' + new Date(ch.rechazo.ts).toLocaleDateString('es-CL') : '')) + '</span></div>';
