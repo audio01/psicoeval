@@ -5740,6 +5740,8 @@ function _vacTurnoA(v) {
 }
 function _vacPerfilDe(cargo) {
   var c = _vacNorm(cargo);
+  // Jefe de turno, patrullero, romanero y CCTV son puestos de guardia, no jefatura
+  if (/guardia|patruller|romaner|cctv|jefe de turno/.test(c)) return 'guardia';
   if (/aseo/.test(c)) return 'auxiliar_aseo';
   if (/conductor|chofer/.test(c)) return 'conductor';
   if (/supervisor/.test(c)) return 'supervisor';
