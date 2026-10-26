@@ -14212,7 +14212,7 @@ function _switchDrawerTab(tab, c) {
   var tabs = [
     { id:'resumen',      label:'Resumen' },
     { id:'evaluaciones', label:'Evaluaciones', n:(c.tests || []).filter(function(t){ return c.scores && c.scores[t]; }).length },
-    { id:'entrevistas',  label:'Entrevistas', n:((c.scores && c.scores._entrevistas) || []).length },
+    { id:'entrevistas',  label:'Entrevista', n:0 },   // una por candidato: sin contador
     { id:'seguimiento',  label:'Seguimiento', alerta:_miradaDe(c).segPend.length > 0 },
   ].filter(function(t){ return t.id !== 'entrevistas' || _verEntrevistas(); });
   var tabsEl = document.getElementById('drawer-tabs');
@@ -14767,7 +14767,7 @@ function _tabResumen(c) {
   // Antecedentes (lo que no está en el encabezado)
   var kv = [['RUT', c.rut], ['Comuna', c.comuna], ['Experiencia', exp], ['Rubro', c.rubro_label || c.rubro], ['Evaluación', _momentoTxt(c)],
             ['Invitación', iv ? (iv.tipo === 'rut' ? 'Por RUT' : 'Link único') + (iv.creada_por ? ' · ' + iv.creada_por : '') : 'Link general'],
-            ['Entrevistas', !_verEntrevistas() ? '' : ents.length ? ents.length + (ult && ult.fecha ? ' · última ' + ult.fecha.split('-').reverse().join('-') : '') + (ult && ult.entrevistador ? ' · ' + ult.entrevistador : '') : 'Ninguna']];
+            ['Entrevista', !_verEntrevistas() ? '' : ult ? ((ult.fecha ? ult.fecha.split('-').reverse().join('-') : 'Registrada') + (ult.entrevistador ? ' · ' + ult.entrevistador : '')) : 'Sin entrevista']];
   h += '<div class="rs-card"><div class="rs-lbl">Antecedentes</div>';
   h += _rsPostulaHtml(c);
   kv.forEach(function(x){ if (x[1]) h += '<div class="rs-kv"><span>' + x[0] + '</span><b>' + htmlEsc(String(x[1])) + '</b></div>'; });
@@ -15311,17 +15311,20 @@ function _tabEntrevistasDrawer(c) {
 
   main += '<div id="ev-borrador-aviso"></div>';
   main += '<div class="ev-reloj" id="ev-reloj"></div>';
-  if (entrevistas.length) {
-    main += '<details class="ev-prev"><summary><span>Entrevistas guardadas (' + entrevistas.length + ')</span>'
-      + entrevistas.slice().reverse().slice(0, 3).map(function(ev){
+  // Una entrevista por candidato: el formulario edita la guardada. Las anteriores (de cuando se podían
+  // guardar varias) se muestran aparte para revisarlas o eliminarlas.
+  var anteriores = entrevistas.slice(0, -1);
+  if (anteriores.length) {
+    main += '<details class="ev-prev"><summary><span>Entrevistas anteriores (' + anteriores.length + ')</span>'
+      + anteriores.slice().reverse().slice(0, 3).map(function(ev){
           var dm = _EV_DICTAMEN.filter(function(d){ return d.val === ev.dictamen; })[0];
           var f = ev.fecha || '';
           try { f = new Date(ev.fecha + 'T12:00').toLocaleDateString('es-CL', { day:'2-digit', month:'short' }); } catch(e) {}
           return '<span class="ev-prev-chip">' + htmlEsc(f) + (dm ? ' · <span style="color:' + dm.color + '">' + dm.icon + ' ' + dm.label + '</span>' : '') + '</span>';
         }).join('')
-      + (c.estado === 'completed' ? '<a class="ev-prev-inf" onclick="event.preventDefault();switchDrawerTabById(\'evaluaciones\')">Ver informe →</a>' : '')
+      + '<a class="ev-prev-inf" style="color:#b91c1c" onclick="event.preventDefault();_evEliminarAnteriores(\'' + c.id + '\')">Eliminar las anteriores</a>'
       + '</summary>';
-    entrevistas.slice().reverse().forEach(function(ev) {
+    anteriores.slice().reverse().forEach(function(ev) {
       var f = ev.fecha || '';
       try { f = new Date(ev.fecha + 'T12:00').toLocaleDateString('es-CL', { day:'2-digit', month:'long', year:'numeric' }); } catch(e) {}
       main += '<div class="ev-prev-item"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'
@@ -15555,12 +15558,19 @@ function _evInit(c) {
   _evRelojIniciar(null);
   var evs = ((c.scores || {})._entrevistas) || [], nueva = _evForzarNueva;
   _evForzarNueva = false;
-  if (!_evBorradorRestaurar(c.id) && evs.length && !nueva) {
+  if (nueva && evs.length) {
+    m.dataset.reemplaza = '1';
+    var ua = evs[evs.length - 1], fa = ua.fecha ? ua.fecha.split('-').reverse().join('-') : '';
+    var avn = document.getElementById('ev-borrador-aviso');
+    if (avn) avn.innerHTML = '<div class="ev-aviso">Rehaciendo la entrevista: al guardar, se eliminará la anterior' + (fa ? ' del ' + fa : '') + '. Mientras no guarde, la anterior se mantiene. <a onclick="_evBorradorBorrar(\'' + c.id + '\');switchDrawerTabById(\'entrevistas\')">Volver a la anterior</a></div>';
+  }
+  if (!nueva && !_evBorradorRestaurar(c.id) && evs.length) {
     var ult = evs[evs.length - 1];
     _evAplicar(_evDesdeGuardada(ult));
     var av = document.getElementById('ev-borrador-aviso'), f = ult.fecha ? ult.fecha.split('-').reverse().join('-') : '';
     if (av) av.innerHTML = '<div class="ev-aviso" style="background:#eff6ff;border-color:#bfdbfe;color:#1e40af">Editando la entrevista guardada' + (f ? ' del ' + f : '')
-      + '. Al guardar, los cambios quedan en esta misma entrevista. <a onclick="_evNuevaEntrevista(\'' + c.id + '\')">Iniciar otra entrevista distinta</a></div>';
+      + '. Al guardar, los cambios quedan en esta misma entrevista.'
+      + ' <button type="button" class="btn btn-ghost btn-sm" style="color:#b91c1c;margin-left:6px" onclick="_evNuevaEntrevista(\'' + c.id + '\')">Rehacer entrevista (elimina la anterior)</button></div>';
   }
   _evCompIr(_evCompIdx);
   document.querySelectorAll('#ev-main .ev-fila').forEach(_evPintarComp);
@@ -15842,7 +15852,7 @@ function _evCambio(e) {
 }
 function _evBorradorGuardar() {
   var m = document.getElementById('ev-main'); if (!m) return;
-  var d = { ts: Date.now(), edita: m.dataset.edita || '', campos: {}, niveles: {}, pills: {}, dictamen: '', comp: _evCompIdx, tiempos: _evT };
+  var d = { ts: Date.now(), edita: m.dataset.edita || '', reemplaza: m.dataset.reemplaza || '', campos: {}, niveles: {}, pills: {}, dictamen: '', comp: _evCompIdx, tiempos: _evT };
   m.querySelectorAll('input[id],textarea[id],select[id]').forEach(function(el){
     if (el.type === 'radio') return;
     d.campos[el.id] = el.type === 'checkbox' ? el.checked : el.value;
@@ -15876,7 +15886,7 @@ function _evBorradorRestaurar(candId) {
 // Pone en el formulario un estado guardado (borrador o entrevista ya registrada)
 function _evAplicar(d) {
   var m = document.getElementById('ev-main');
-  if (m) m.dataset.edita = d.edita || '';
+  if (m) { m.dataset.edita = d.edita || ''; m.dataset.reemplaza = d.reemplaza || ''; }
   Object.keys(d.campos || {}).forEach(function(id){
     var el = document.getElementById(id); if (!el) return;
     if (el.type === 'checkbox') { el.checked = !!d.campos[id]; var lb = el.closest('.ev-flag'); if (lb) lb.classList.toggle('active', el.checked); }
@@ -15940,7 +15950,7 @@ function _evDesdeGuardada(ev) {
 // Iniciar otra entrevista distinta (por ejemplo, una técnica después de la psicolaboral)
 var _evForzarNueva = false;
 async function _evNuevaEntrevista(candId) {
-  if (!(await appConfirm('¿Iniciar otra entrevista distinta? La entrevista guardada no se modifica. Use esto solo si corresponde una entrevista nueva (por ejemplo, una segunda etapa).'))) return;
+  if (!(await appConfirm('¿Rehacer la entrevista? Se abre una pauta en blanco y, al guardarla, se eliminará la entrevista anterior (dictamen, notas y respuestas). Mientras no guarde, la anterior se mantiene.'))) return;
   _evBorradorBorrar(candId); _evForzarNueva = true;
   switchDrawerTabById('entrevistas');
 }
@@ -16072,7 +16082,8 @@ async function saveEntrevistaDrawer(candId) {
         entry.id = edita;
         return prev.map(function(e){ return e.id === edita ? Object.assign({ creada: e.creada || e.ts }, entry) : e; });
       }
-      return prev.concat([entry]);
+      // Una sola entrevista: la nueva (al rehacerla, ya confirmado) reemplaza a la anterior
+      return [entry];
     });
     _evBorradorBorrar(candId);
     // Cargo, instalación y turno quedan iguales en Resumen y en el Informe RH
@@ -16107,6 +16118,16 @@ async function saveEntrevistaDrawer(candId) {
   } catch(e) { toast('Error: ' + e.message, 'er'); }
 }
 
+// Deja solo la entrevista vigente (la última)
+async function _evEliminarAnteriores(candId) {
+  if (!(await appConfirm('¿Eliminar las entrevistas anteriores? Queda solo la entrevista vigente, la que se edita en esta pestaña.'))) return;
+  try {
+    var sc = await _patchPrivado(candId, 'entrevistas', function(prev){ prev = prev || []; return prev.slice(-1); });
+    var c = (await getDB()).find(function(x){ return x.id === candId; });
+    toast('Entrevistas anteriores eliminadas', 'ok');
+    _switchDrawerTab('entrevistas', Object.assign({}, c, { scores: sc }));
+  } catch(e) { toast('Error: ' + e.message, 'er'); }
+}
 async function deleteEntrevistaEntry(candId, evId) {
   if (!(await appConfirm('¿Eliminar esta entrevista del historial?'))) return;
   try {
