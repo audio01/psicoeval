@@ -11123,9 +11123,11 @@ async function bulkMoveStage() {
   if (!checked.length) { toast('Selecciona candidatos primero', 'er'); return; }
   const meta = getPipelineMeta(etapa);
   const n = checked.length;
-  if (!(await appConfirm('¿Mover ' + n + ' candidato' + (n>1?'s':'') + ' a "' + meta.label + '"?'))) return;
+  var mot = null;
+  if (etapa === 'descartado') { mot = await _pedirMotivoDescarte(n + ' candidato' + (n>1?'s':'') + ' (el mismo motivo para todos)'); if (!mot) return; }
+  else if (!(await appConfirm('¿Mover ' + n + ' candidato' + (n>1?'s':'') + ' a "' + meta.label + '"?'))) return;
   for (const chk of checked) {
-    try { await _setPipelineEtapa(chk.dataset.id, etapa); } catch(e) { /* skip */ }
+    try { await _setPipelineEtapa(chk.dataset.id, etapa, mot); } catch(e) { /* skip */ }
   }
   toast(meta.icon + ' ' + n + ' candidato' + (n>1?'s':'') + ' movido' + (n>1?'s':'') + ' a ' + meta.label, 'ok');
   clearSelection();
@@ -13858,7 +13860,15 @@ async function kDrop(event, newStage) {
   if (barra) barra.classList.remove('visible', 'over');
   try {
     if (mismaEtapa) await _patchScoresField(id, '_pos', pos);
-    else await _setPipelineEtapa(id, newStage, pos === null ? null : { _pos: pos });
+    else {
+      var mot = null;
+      if (newStage === 'descartado') {
+        var cd = (await getDB()).find(function(x){ return x.id === id; });
+        mot = await _pedirMotivoDescarte(cd ? ((cd.nombre || '') + ' ' + (cd.apellido || '')).trim() : '');
+        if (!mot) { _bdRenderCuerpo(); return; }   // sin motivo no se descarta: la tarjeta vuelve a su lugar
+      }
+      await _setPipelineEtapa(id, newStage, Object.assign({}, pos === null ? {} : { _pos: pos }, mot || {}));
+    }
     _invalidateCache();
     if (!mismaEtapa) toast(newStage === 'descartado' ? '❌ Descartado: quedó en el Archivo' : getPipelineMeta(newStage).icon + ' Movido a ' + getPipelineMeta(newStage).label, 'ok');
     _bdRenderCuerpo();
@@ -13866,13 +13876,50 @@ async function kDrop(event, newStage) {
   } catch(e) { toast('Error: ' + e.message, 'er'); _bdRenderCuerpo(); }
 }
 
+// Motivo obligatorio al descartar: queda en el historial de etapas con quién y cuándo, y se ve en la ficha
+var _DESCARTE_MOTIVOS = ['No cumple los requisitos del cargo', 'Resultados de la evaluación bajo el mínimo', 'Entrevista no satisfactoria',
+  'Referencias laborales negativas', 'Antecedentes', 'No se presentó o no responde', 'Desistió del proceso', 'Documentación incompleta', 'Otro'];
+function _pedirMotivoDescarte(quien) {
+  return new Promise(function(listo) {
+    var prev = document.getElementById('dsc-overlay'); if (prev) prev.remove();
+    var e = htmlEsc, ov = document.createElement('div'); ov.id = 'dsc-overlay'; ov.className = 'rh-ov';
+    var cerrar = function(r){ ov.remove(); listo(r); };
+    ov.innerHTML = '<div class="rh-box" style="width:min(500px,100%)">'
+      + '<div class="rh-top"><div><div style="font-size:17px;font-weight:800;letter-spacing:-.02em">Motivo del descarte</div>'
+      + '<div style="font-size:12px;color:var(--ink3)">' + e(quien) + ' · queda registrado con su usuario y la fecha.</div></div>'
+      + '<button class="dh-close" title="Cerrar" aria-label="Cerrar" data-x><svg class="ico"><use href="#i-x"/></svg></button></div>'
+      + '<div class="rh-body"><div class="field"><label>Motivo <span class="rh-req">*</span></label><div class="vac-benef" style="flex-direction:column;align-items:flex-start">'
+      + _DESCARTE_MOTIVOS.map(function(m){ return '<label><input type="radio" name="dsc-m" value="' + e(m) + '"><span>' + e(m) + '</span></label>'; }).join('') + '</div></div>'
+      + '<div class="field"><label>Detalle <span id="dsc-req" style="text-transform:none;font-weight:500">(opcional)</span></label><textarea id="dsc-det" class="rh-in" rows="3" maxlength="500" placeholder="Ej: No tiene OS-10 vigente; vence en marzo"></textarea></div>'
+      + '<div id="dsc-err" style="display:none;color:#dc2626;font-size:12px"></div>'
+      + '</div><div class="rh-pie"><span style="margin-right:auto"></span><button class="rs-btn" data-x>Cancelar</button>'
+      + '<button class="rs-btn prim" style="background:#dc2626" data-ok>Descartar</button></div></div>';
+    document.body.appendChild(ov);
+    ov.querySelectorAll('[data-x]').forEach(function(b){ b.onclick = function(){ cerrar(null); }; });
+    ov.querySelectorAll('input[name="dsc-m"]').forEach(function(r){ r.onchange = function(){ document.getElementById('dsc-req').textContent = r.value === 'Otro' ? '(obligatorio)' : '(opcional)'; }; });
+    ov.querySelector('[data-ok]').onclick = function() {
+      var m = (ov.querySelector('input[name="dsc-m"]:checked') || {}).value || '', d = document.getElementById('dsc-det').value.trim();
+      var err = !m ? 'Elija un motivo.' : (m === 'Otro' && d.length < 5) ? 'Con "Otro", escriba el motivo en el detalle.' : '';
+      if (err) { var x = document.getElementById('dsc-err'); x.textContent = err; x.style.display = ''; return; }
+      cerrar({ _motivo: m === 'Otro' ? 'Otro: ' + d.slice(0, 100) : m, _detalle: m === 'Otro' ? '' : d });
+    };
+  });
+}
 async function _setPipelineEtapa(id, etapa, extra) {
+  var por = S.userEmail || '';
   await _patchScores(id, function(scores) {
     var oldEtapa = scores._pipeline_etapa || 'postulante';
     scores._pipeline_etapa = etapa;
     var hist = Array.isArray(scores._pipeline_history) ? scores._pipeline_history : [];
+    // Cada cambio queda con quién lo hizo; un descarte, además, con su motivo (y detalle, si lo hay)
     var paso = { from: oldEtapa, to: etapa, ts: new Date().toISOString() };
-    if (extra && extra._motivo) { paso.motivo = extra._motivo; extra = Object.assign({}, extra); delete extra._motivo; }
+    if (por) paso.por = por;
+    if (extra && (extra._motivo || extra._detalle)) {
+      if (extra._motivo) paso.motivo = String(extra._motivo).slice(0, 120);
+      if (extra._detalle) paso.detalle = String(extra._detalle).slice(0, 500);
+      extra = Object.assign({}, extra); delete extra._motivo; delete extra._detalle;
+      if (!Object.keys(extra).length) extra = null;
+    }
     hist.push(paso);
     scores._pipeline_history = hist;
     if (extra) Object.assign(scores, extra);
@@ -14271,6 +14318,16 @@ function _rsExplorar(c, m) {
 // Resumen: motivo del dictamen de la entrevista (no recomendable u observaciones), arriba de todo
 function _rsMotivoHtml(c) {
   var ev = ((c.scores || {})._entrevistas || []).filter(function(e){ return e && (e.dictamen === 'no_recomendable' || e.dictamen === 'obs'); }).pop();
+  // Descartado con motivo elegido en el panel (no el de la entrevista ni el de Chapi, que tienen su propia tarjeta)
+  var hd = getPipelineEtapa(c) === 'descartado' ? ((c.scores || {})._pipeline_history || []).filter(function(h){ return h && h.to === 'descartado'; }).pop() : null;
+  if (hd && hd.motivo && !/^(Entrevista: |Antecedentes \(Chapi\))/.test(hd.motivo)) {
+    var fd = hd.ts ? new Date(hd.ts) : null;
+    return '<div class="rs-card rs-motivo rs-motivo-no" style="border:1.5px solid #fca5a5;background:#fef2f2">'
+      + '<div class="rs-lbl" style="color:#991b1b">Motivo del descarte</div>'
+      + '<div style="color:var(--ink);font-weight:600">' + htmlEsc(hd.motivo) + '</div>'
+      + (hd.detalle ? '<div style="color:var(--ink);white-space:pre-line;margin-top:2px">' + htmlEsc(hd.detalle) + '</div>' : '')
+      + '<div style="font-size:11px;color:var(--ink4);margin-top:4px">' + (fd ? fd.toLocaleDateString('es-CL') + ' ' + fd.toLocaleTimeString('es-CL', { hour:'2-digit', minute:'2-digit' }) : '') + (hd.por && hd.por !== 'chapi' ? ' · ' + htmlEsc(hd.por) : '') + '</div></div>';
+  }
   if (!ev || !String(ev.motivo || '').trim()) return '';
   var no = ev.dictamen === 'no_recomendable';
   var f = ev.fecha ? ev.fecha.split('-').reverse().join('-') : '';
@@ -15941,7 +15998,7 @@ async function saveEntrevistaDrawer(candId) {
     var etapaAct = c ? getPipelineEtapa(c) : '';
     if (destino && dictamen !== dictAntes && etapaAct !== destino && etapaAct !== 'contratado' && !(destino === 'seleccionado' && etapaAct === 'enviado')) {
       try {
-        await _setPipelineEtapa(candId, destino);
+        await _setPipelineEtapa(candId, destino, destino === 'descartado' ? { _motivo: 'Entrevista: no recomendable' } : null);
         _invalidateCache(); all = await getDB(); c = all.find(function(x){ return x.id === candId; }); sc = c.scores;
         etapaMsg = ' · etapa: ' + getPipelineMeta(destino).label;
       } catch(e) { etapaMsg = ' · no se pudo cambiar la etapa'; }
@@ -16160,8 +16217,9 @@ function _tabSeguimiento(c) {
       var dtStr = dt ? dt.toLocaleDateString('es-CL') + ' ' + dt.toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'}) : '';
       h += '<div class="tl-item"><div class="tl-dot" style="color:' + toM.color + ';border-color:' + toM.border + ';background:' + toM.bg + '">' + toM.icon + '</div>';
       h += '<div style="flex:1;padding-top:3px"><div style="font-size:13px;font-weight:600;color:var(--ink)">→ ' + toM.label + '</div>';
-      h += '<div style="font-size:11px;color:var(--ink3);margin-top:1px">desde ' + fromM.label + (dtStr ? ' · ' + dtStr : '') + (entry.por === 'chapi' ? ' · automático (Chapi)' : '') + '</div>'
-        + (entry.motivo ? '<div style="font-size:11.5px;color:#b91c1c;font-weight:600;margin-top:2px">Motivo: ' + htmlEsc(entry.motivo) + '</div>' : '') + '</div></div>';
+      h += '<div style="font-size:11px;color:var(--ink3);margin-top:1px">desde ' + fromM.label + (dtStr ? ' · ' + dtStr : '') + (entry.por === 'chapi' ? ' · automático (Chapi)' : entry.por ? ' · ' + htmlEsc(entry.por) : '') + '</div>'
+        + (entry.motivo ? '<div style="font-size:11.5px;color:#b91c1c;font-weight:600;margin-top:2px">Motivo: ' + htmlEsc(entry.motivo) + '</div>' : '')
+        + (entry.detalle ? '<div style="font-size:11.5px;color:var(--ink2);margin-top:1px;white-space:pre-line">' + htmlEsc(entry.detalle) + '</div>' : '') + '</div></div>';
     });
   } else {
     h += '<div style="color:var(--ink3);font-size:12px;padding:12px 0">Sin cambios de etapa registrados</div>';
@@ -17220,20 +17278,21 @@ function _plFila(c, d) {
 // marcado, primero muestra los que tienen Informe RH para elegir
 // ── Contactos para Google (vCard de uno, CSV de Google Contactos de varios) ──
 // El archivo se arma en el navegador y lo descarga el administrador: los datos no pasan por otro servicio.
-// Nombre en la agenda: "Nombre Apellido – Cargo (Instalación)", para reconocer a la persona.
+// Nombre en la agenda: "Apellido paterno Apellido materno Nombres" (así lo guarda RH). Va completo en el
+// campo del nombre para que la agenda lo muestre igual en cualquier teléfono; cargo e instalación van como empresa y puesto.
 function _ctoDatos(c) {
   var pz = _postulaDe(c), cargo = pz.cargo || c.cargo || (PERFIL_META[c.perfil] || {}).label || '';
   var tel = String(c.telefono || '').replace(/[^\d+]/g, '');
   if (/^9\d{8}$/.test(tel)) tel = '+56' + tel; else if (/^569\d{8}$/.test(tel)) tel = '+' + tel;
-  var extra = cargo ? ' – ' + cargo + (pz.instalacion ? ' (' + pz.instalacion + ')' : '') : '';
   var f = String(c.created_at || '').slice(0, 10).split('-').reverse().join('-');
-  return { nombre: _vacLimpio(c.nombre), apellido: _vacLimpio(c.apellido) + extra, completo: _vacLimpio((c.nombre || '') + ' ' + (c.apellido || '')) + extra,
+  var completo = _vacLimpio((c.apellido || '') + ' ' + (c.nombre || ''));
+  return { nombre: completo, apellido: '', completo: completo,
            tel: tel, email: _vacLimpio(c.email), cargo: cargo, instalacion: pz.instalacion || '',
            nota: 'Postulante RH Seguridad' + (f.length === 10 ? ' · postuló el ' + f : '') + (c.comuna ? ' · vive en ' + _vacLimpio(c.comuna) : '') };
 }
 function _ctoVcard(c) {
   var d = _ctoDatos(c), x = function(t){ return String(t || '').replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/([,;])/g, '\\$1'); };
-  return ['BEGIN:VCARD', 'VERSION:3.0', 'N:' + x(d.apellido) + ';' + x(d.nombre) + ';;;', 'FN:' + x(d.completo)]
+  return ['BEGIN:VCARD', 'VERSION:3.0', 'N:;' + x(d.nombre) + ';;;', 'FN:' + x(d.completo)]
     .concat(d.tel ? ['TEL;TYPE=CELL:' + d.tel] : [], d.email ? ['EMAIL;TYPE=INTERNET:' + x(d.email)] : [],
             d.instalacion ? ['ORG:' + x(d.instalacion)] : [], d.cargo ? ['TITLE:' + x(d.cargo)] : [],
             ['NOTE:' + x(d.nota), 'CATEGORIES:Postulantes RH', 'END:VCARD']).join('\r\n') + '\r\n';
@@ -17453,7 +17512,14 @@ async function _plExcel() {
 
 async function drawerSetEtapa(candId, etapa) {
   try {
-    await _setPipelineEtapa(candId, etapa);
+    var mot = null;
+    if (etapa === 'descartado') {
+      var c0 = (await getDB()).find(function(x){ return x.id === candId; });
+      if (c0 && getPipelineEtapa(c0) === 'descartado') return;
+      mot = await _pedirMotivoDescarte(c0 ? ((c0.nombre || '') + ' ' + (c0.apellido || '')).trim() : '');
+      if (!mot) return;
+    }
+    await _setPipelineEtapa(candId, etapa, mot);
     var all = await getDB();
     var c = all.find(function(x){ return x.id === candId; });
     if (c) {
