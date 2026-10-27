@@ -1690,6 +1690,13 @@ body.adm .pub-aura i{animation:none}   /* estático: el vidrio no recompone en c
 .dsh-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
 .dsh-grid>.dash-card{display:flex;flex-direction:column}
 .dsh-wide{grid-column:1/-1}
+.rh-alts{margin:12px 0;display:flex;flex-direction:column;gap:10px}
+.rh-alts-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.rh-alts-h span{font-size:12px;color:var(--ink3);margin-right:auto}
+.rh-alts-cargando{margin:12px 0;font-size:12.5px;color:var(--ink3)}
+.rh-alt{border:1.5px solid var(--border);border-radius:12px;padding:12px 14px;background:var(--surface)}
+.rh-alt-h{display:flex;align-items:center;gap:10px;margin-bottom:6px}.rh-alt-h span{font-size:11.5px;color:var(--ink4);margin-right:auto}
+.rh-alt-t{font-size:13px;line-height:1.6;color:var(--ink);max-height:260px;overflow:auto}
+.rh-alt-r{margin-top:8px;font-size:12px;color:var(--ink3);line-height:1.5}
 .dsh-act{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
 .dsh-act-i{padding:12px 14px;border-radius:12px;background:rgba(20,33,61,.035);display:flex;flex-direction:column;gap:2px;min-width:0}
 .dsh-act-i b{font-size:26px;font-weight:800;letter-spacing:-.02em;color:var(--ink)}
@@ -11132,7 +11139,7 @@ function clearSelection() {
 
 async function bulkMoveStage() {
   const sel = document.getElementById('bulk-stage-select');
-  const etapa = sel?.value;
+  let etapa = sel?.value;   // al cerrar el proceso, la ventana del motivo puede cambiarla (Rechazado / No contratado)
   if (sel) sel.value = '';
   if (!etapa) return;
   const checked = [...document.querySelectorAll('.row-chk:checked')];
@@ -11143,7 +11150,7 @@ async function bulkMoveStage() {
     var r = await _pedirMotivoDescarte(n + ' candidato' + (n>1?'s':'') + ' (el mismo motivo para todos)', etapa); if (!r) return;
     etapa = r.etapa; mot = r.datos;
   }
-  else if (!(await appConfirm('¿Mover ' + n + ' candidato' + (n>1?'s':'') + ' a "' + meta.label + '"?'))) return;
+  else if (!(await appConfirm('¿Mover ' + n + ' candidato' + (n>1?'s':'') + ' a "' + getPipelineMeta(etapa).label + '"?'))) return;
   for (const chk of checked) {
     try { await _setPipelineEtapa(chk.dataset.id, etapa, mot); } catch(e) { /* skip */ }
   }
@@ -16901,9 +16908,10 @@ async function abrirInformeRH(id) {
     + '<div class="field" data-rh="recomendacion"><label>Recomendación de contratación <span class="rh-req">*</span></label>' + chips('recomendacion', [['plazo_fijo','Plazo fijo'],['indefinido','Indefinido'],['no_contratar','No contratar']], d.recomendacion) + '</div>'
     + '<div class="field"><label>Detalle de la recomendación <span style="text-transform:none;font-weight:500">(opcional)</span></label>' + input('detalle', d.detalle, 'Ej: con inducción clara y seguimiento cercano en terreno de la jefatura directa') + '</div>'
     + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><button class="rs-btn prim" onclick="_rhRedactarLocal()">Redactar integración</button>'
-    + '<button class="rs-btn" id="rh-btn-ia" onclick="_rhRedactar()">Redactar con IA</button></div>'
-    + '<div style="font-size:11.5px;color:var(--ink4);margin-top:6px">Ambas redactan las Observaciones finales y el Refuerzo de habilidades solo a partir de las fortalezas, debilidades, niveles y la recomendación que usted validó (no usan sus apuntes). '
-    + '<strong>Redactar integración</strong> trabaja en este computador, al instante y sin costo. <strong>Con IA</strong> logra una prosa más elaborada; no envía nombre, RUT ni datos de contacto. Revise el texto antes de generar el PDF.</div>'
+    + '<button class="rs-btn" id="rh-btn-ia" onclick="_rhRedactar()">Redactar con IA (3 alternativas)</button></div>'
+    + '<div style="font-size:11.5px;color:var(--ink4);margin-top:6px"><strong>Redactar integración</strong> trabaja en este computador, al instante y sin costo, con las fortalezas, debilidades, niveles y la recomendación. '
+    + '<strong>Con IA</strong> propone tres redacciones para elegir y usa además los datos laborales (puesto, turno, experiencia y sus notas por competencia) sin nombres, RUT, empresas, instalación ni contacto. Revise el texto antes de generar el PDF.</div>'
+    + '<div id="rh-alts"></div>'
     + '<div class="field"><label>Observaciones finales</label>'
     + '<div style="font-size:12px;color:var(--ink3);margin:2px 0 6px">El PDF comienza con: <em>"Al momento de la evaluación, se concluye que [nombre] se encuentra en la categoría de [categoría] para el cargo de [cargo], turno [turno], en la instalación [instalación]."</em> Escriba aquí el resto; deje una línea en blanco entre párrafos.</div>'
     + area('observaciones', d.observaciones, 8) + '</div>'
@@ -16931,36 +16939,100 @@ function _rhLeer() {
            jornada:r('jornada'), jornada_otra:v('jornada_otra'), referencia:v('referencia'), obs_envio:v('obs_envio'),
            fono:v('fono'), aportados:v('aportados'), observaciones:v('observaciones'), refuerzo:v('refuerzo'), actualizado:new Date().toISOString() };
 }
-// Redacción con IA (Edge Function psicoeval-redactar). Solo viajan textos del informe,
-// nunca el nombre, RUT ni contacto; el nombre se pone aquí, en el computador del psicólogo.
-async function _rhRedactar() {
+// Redacción con IA (Edge Function psicoeval-redactar): tres alternativas para elegir. Solo viajan textos
+// del informe y datos laborales sin identificar (_rhDatosLaborales); el nombre se pone aquí, en el computador.
+// Quita de un texto lo que identifica a la persona o a terceros: su nombre, empresas, instalaciones,
+// referencias, RUT, correos, teléfonos y los nombres propios que queden a mitad de frase.
+var _RH_NO_ES_NOMBRE = /^(Guardia|Guardias|Seguridad|Supervisor|Supervisora|Jefe|Jefa|Jefatura|Turno|Turnos|CCTV|OS|SPD|Patrullero|Romanero|Grupo|Control|Acceso|Rondas|Ronda|Conductor|Aseo|Administrativo|Prevencionista|Riesgo|Riesgos|Ley|Carabineros|PDI|Ejército|Armada|Fuerza|Aérea|Gendarmería|Chile|Santiago|Región|Metropolitana|RRHH|RUT|WhatsApp|Excel|Retail|Mall|Banco|Hospital|Clínica|Colegio|Universidad|Municipalidad|Planta|Bodega|Centro|Comercial|Lunes|Martes|Miércoles|Jueves|Viernes|Sábado|Domingo|Enero|Febrero|Marzo|Abril|Mayo|Junio|Julio|Agosto|Septiembre|Octubre|Noviembre|Diciembre)$/;
+function _rhSinIdentificar(t, c) {
+  t = String(t || '');
+  var esc = function(x){ return x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); };
+  var quitar = function(lista, por){ lista.filter(function(x){ return x && String(x).trim().length >= 2; }).sort(function(a, b){ return b.length - a.length; })
+    .forEach(function(x){ t = t.replace(new RegExp('(^|[^\\wÁÉÍÓÚÑáéíóúñ])' + esc(String(x).trim()) + '(?=$|[^\\wÁÉÍÓÚÑáéíóúñ])', 'gi'), '$1' + por); }); };
+  var hist = (Array.isArray(c && c.historial) ? c.historial : []), ev = (((c && c.scores) || {})._entrevistas || []), pz = _postulaDe(c || {}), ref = (c && c.referencia) || {};
+  var empresas = hist.map(function(h){ return h && h.empresa; }).concat(ev.reduce(function(a, e){ return a.concat(((e && e.experiencia) || []).map(function(x){ return x && x.empresa; })); }, []), [ref.empresa]);
+  var lugares = [pz.instalacion].concat((_vacLista || []).map(function(v){ return v.instalacion; }));
+  quitar(empresas, 'una empresa anterior');
+  quitar(lugares, 'la instalación');
+  quitar([ref.nombre], 'su referencia');
+  var nombres = ((c && c.nombre) || '').split(/\s+/).concat(((c && c.apellido) || '').split(/\s+/)).filter(function(x){ return x.length >= 3; });
+  quitar([((c && c.nombre) || '') + ' ' + ((c && c.apellido) || '')].concat(nombres), 'la persona');
+  t = t.replace(/[\w.+-]+@[\w-]+(\.[\w-]+)+/g, '[correo]').replace(/\b\d{1,2}\.?\d{3}\.?\d{3}-?[\dkK]\b/g, '[rut]').replace(/\+?\d[\d\s-]{7,}\d/g, '[teléfono]');
+  // Nombres propios a mitad de frase (personas, empresas o lugares que no conocemos): se reemplazan
+  return t.replace(/([^.!?:\n]\s+)([A-ZÁÉÍÓÚÑ][a-záéíóúñ]+|[A-ZÁÉÍÓÚÑ]{2,6})(?=[\s,.;:)]|$)/g, function(m, pre, w){ return _RH_NO_ES_NOMBRE.test(w) ? m : pre + '[nombre]'; });
+}
+// Datos laborales para la IA: puesto, turno, experiencia (sin empresas) y las notas por competencia de la entrevista
+function _rhDatosLaborales(c, d) {
+  var si = function(t){ return _rhSinIdentificar(t, c); };
+  var hist = (Array.isArray(c.historial) ? c.historial : []).filter(function(h){ return h && (h.cargo || h.duracion_label); }).slice(0, 3);
+  var ev = ((c.scores || {})._entrevistas || []).slice(-1)[0];
+  var jor = (_RH_JORNADAS.filter(function(j){ return j[0] === d.jornada; })[0] || [])[1] || '';
+  return {
+    puesto: si(d.cargo || _rhCargoBase(c)),
+    turno: d.jornada === 'otra' ? si(d.jornada_otra) : jor,
+    experiencia: hist.map(function(h, i){ return { cargo: si(h.cargo), duracion: h.duracion_label || '', salida: h.salida_label || '', actual: i === 0 && !h.salida }; }),
+    sin_experiencia: Array.isArray(c.historial) && !c.historial.length,
+    competencias: _evCompsDe(ev).filter(function(x){ return String(x.nota || '').trim(); }).map(function(x){ return { competencia: x.name, nota: si(x.nota).slice(0, 400) }; })
+  };
+}
+var _rhAlts = [], _rhAltsAnteriores = [];
+async function _rhRedactar(otras) {
   var d = _rhLeer(), c = _rhCand;
   if (!_rhValidar(d, ['categoria', 'instalacion', 'recomendacion'])) return;
-  var ta = document.getElementById('rh-observaciones'), tr = document.getElementById('rh-refuerzo');
-  if (((ta && ta.value.trim()) || (tr && tr.value.trim())) && !(await appConfirm('¿Reemplazar las Observaciones finales y el Refuerzo de habilidades por la redacción de la IA?'))) return;
-  var btn = document.getElementById('rh-btn-ia');
+  if (!otras) _rhAltsAnteriores = [];
+  var btn = document.getElementById('rh-btn-ia'), caja = document.getElementById('rh-alts');
   if (btn) { btn.disabled = true; btn.textContent = 'Redactando…'; }
+  if (caja) caja.innerHTML = '<div class="rh-alts-cargando">Redactando tres alternativas…</div>';
   try {
     var r = await fetch(SUPA_URL + '/functions/v1/psicoeval-redactar', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + S.authToken },
       body: JSON.stringify({
         cargo: d.cargo || _rhCargoBase(c), categoria: d.categoria,
-        fortalezas: d.fortalezas, debilidades: d.debilidades,
+        fortalezas: _rhSinIdentificar(d.fortalezas, c), debilidades: _rhSinIdentificar(d.debilidades, c),
         niveles: _RH_COMP.map(function(k){ return { competencia: k.label, ideal: d.ideales[k.key], obtenido: d.niveles[k.key] || '' }; }),
-        recomendacion: d.recomendacion, detalle: d.detalle,
-        conducta: (function(){ var x = _rhConducta(c); return { favorables: x.favorables, considerar: x.considerar }; })()
+        recomendacion: d.recomendacion, detalle: _rhSinIdentificar(d.detalle, c),
+        conducta: (function(){ var x = _rhConducta(c); return { favorables: x.favorables, considerar: x.considerar }; })(),
+        datos_laborales: _rhDatosLaborales(c, d),
+        anteriores: _rhAltsAnteriores.slice(-6)
       })
     });
     var j = await r.json().catch(function(){ return {}; });
-    if (!r.ok || !j.texto) throw new Error(j.error || (r.status === 404 ? 'La función de redacción aún no está instalada en Supabase.' : 'Error ' + r.status));
-    // La primera frase del informe ya lleva el nombre completo: aquí basta el primer nombre
-    var nom = ((c.nombre || '').trim().split(/\s+/)[0]) || ((c.nombre || '') + ' ' + (c.apellido || '')).trim();
-    if (ta) ta.value = j.texto.replace(/\[NOMBRE\]/g, nom);
-    if (tr && Array.isArray(j.refuerzo) && j.refuerzo.length) tr.value = _rhMayusTras2p(j.refuerzo.join('\n'));
-    toast('Texto redactado: revíselo antes de generar el PDF', 'ok');
-  } catch(e) { toast('No se pudo redactar: ' + e.message, 'er'); }
-  finally { if (btn) { btn.disabled = false; btn.textContent = 'Redactar con IA'; } }
+    var alts = Array.isArray(j.alternativas) && j.alternativas.length ? j.alternativas : (j.texto ? [{ estilo:'breve', texto:j.texto, refuerzo:j.refuerzo || [] }] : []);
+    if (!r.ok || !alts.length) throw new Error(j.error || (r.status === 404 ? 'La función de redacción aún no está instalada en Supabase.' : 'Error ' + r.status));
+    _rhAlts = alts;
+    _rhAltsAnteriores = _rhAltsAnteriores.concat(alts.map(function(a){ return a.texto; }));
+    _rhAltsPintar();
+  } catch(e) { if (caja) caja.innerHTML = ''; toast('No se pudo redactar: ' + e.message, 'er'); }
+  finally { if (btn) { btn.disabled = false; btn.textContent = 'Redactar con IA (3 alternativas)'; } }
+}
+// El texto vuelve con [NOMBRE]: aquí se pone el primer nombre (la primera frase del PDF ya lleva el completo)
+function _rhAltTexto(a) {
+  var c = _rhCand, nom = ((c.nombre || '').trim().split(/\s+/)[0]) || ((c.nombre || '') + ' ' + (c.apellido || '')).trim();
+  return String(a.texto || '').replace(/\[NOMBRE\]/g, nom);
+}
+var _RH_ESTILOS = { breve:'Breve y directa', detallada:'Detallada', puesto:'Centrada en el puesto' };
+function _rhAltsPintar() {
+  var caja = document.getElementById('rh-alts'); if (!caja) return;
+  caja.innerHTML = '<div class="rh-alts"><div class="rh-alts-h"><b>Elija una redacción</b><span>Puede editarla después de usarla.</span>'
+    + '<button class="rs-btn" onclick="_rhRedactar(true)">Otras tres</button></div>'
+    + _rhAlts.map(function(a, i){
+        var t = _rhAltTexto(a), pal = t.split(/\s+/).filter(Boolean).length;
+        return '<div class="rh-alt"><div class="rh-alt-h"><b>' + htmlEsc(_RH_ESTILOS[a.estilo] || 'Alternativa ' + (i + 1)) + '</b><span>' + pal + ' palabras</span>'
+          + '<button class="rs-btn prim" onclick="_rhAltUsar(' + i + ')">Usar esta</button></div>'
+          + '<div class="rh-alt-t">' + htmlEsc(t).replace(/\n\n/g, '<br><br>') + '</div>'
+          + (a.refuerzo && a.refuerzo.length ? '<div class="rh-alt-r"><b>Refuerzo:</b> ' + a.refuerzo.map(htmlEsc).join(' · ') + '</div>' : '') + '</div>';
+      }).join('') + '</div>';
+}
+async function _rhAltUsar(i) {
+  var a = _rhAlts[i]; if (!a) return;
+  var ta = document.getElementById('rh-observaciones'), tr = document.getElementById('rh-refuerzo');
+  if (((ta && ta.value.trim()) || (tr && tr.value.trim())) && !(await appConfirm('¿Reemplazar las Observaciones finales y el Refuerzo de habilidades por esta redacción?'))) return;
+  if (ta) ta.value = _rhAltTexto(a);
+  if (tr && a.refuerzo && a.refuerzo.length) tr.value = _rhMayusTras2p(a.refuerzo.join('\n'));
+  var caja = document.getElementById('rh-alts'); if (caja) caja.innerHTML = '';
+  if (ta) ta.scrollIntoView({ behavior:'smooth', block:'center' });
+  toast('Redacción aplicada: revísela antes de generar el PDF', 'ok');
 }
 
 // ── Redacción sin IA (en el computador): plantillas a partir de lo que el psicólogo validó ──
