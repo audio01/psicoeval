@@ -937,6 +937,8 @@ input,select,textarea{font-family:inherit;outline:none}
 .dh-cargo{font-size:12.5px;font-weight:700;color:var(--ink2);margin-left:2px}
 .dh-pdf{display:inline-flex;align-items:center;gap:6px}
 .dh-pdf .ico{width:15px;height:15px}
+.dh-edit-nom{margin-left:6px;border:none;background:none;cursor:pointer;color:var(--ink4);padding:2px;border-radius:6px;vertical-align:2px}
+.dh-edit-nom:hover{color:var(--accent);background:var(--surface2)}.dh-edit-nom .ico{width:14px;height:14px}
 .dh-badges .dh-pdf.dh-desc{color:#b91c1c;border-color:#fecaca}
 .dh-badges .dh-pdf.dh-desc:hover{background:#fef2f2}
 .dt-n{display:inline-block;margin-left:6px;min-width:18px;padding:0 6px;border-radius:999px;background:var(--surface2);color:var(--ink3);font-size:10.5px;font-weight:700;line-height:17px;text-align:center}
@@ -14444,6 +14446,7 @@ function _renderDrawerHeader(c) {
     '<div class="dh-row">'
     + '<div class="dh-av">' + initials + '</div>'
     + '<div class="dh-txt"><div class="dh-l1"><span class="dh-name">' + htmlEsc(c.nombre + ' ' + c.apellido) + '</span>'
+    + (S.role === 'admin' ? '<button class="dh-edit-nom" onclick="_nombreEditar(\'' + c.id + '\')" title="Corregir el nombre" aria-label="Corregir el nombre"><svg class="ico"><use href="#i-edit"/></svg></button>' : '')
     + '</div>'
     + '<div class="dh-meta"><span class="dh-chips">' + _estadoFichaHtml(c) + (cat ? _bdDictamenCorto(c) : '') + '</span><span class="dh-cargo">' + htmlEsc(pz.cargo || c.cargo || pm.label || '') + '</span>' + (linea ? ' · ' + linea : '') + '</div></div>'
     + '<div class="dh-tabs-slot"></div>'
@@ -14818,6 +14821,33 @@ async function _chapiNombreEditar(id) {
     + '<button class="rs-btn" onclick="document.getElementById(\'nom-overlay\').remove()">Cancelar</button>'
     + '<button class="rs-btn prim" onclick="_chapiNombreGuardar(\'' + e(id) + '\')">Guardar</button></div></div>';
   document.body.appendChild(ov);
+}
+// Corregir el nombre a mano (por ejemplo, si el postulante lo escribió mal). Si Chapi tiene el nombre, se
+// puede copiar de ahí. Guarda igual que "Usar el nombre de Chapi" (se conserva el que escribió el postulante).
+async function _nombreEditar(id) {
+  var c = (await getDB()).find(function(x){ return x.id === id; }); if (!c) return;
+  var ch = (c.scores && c.scores._chapi) || {}, e = htmlEsc;
+  var ap = String(c.apellido || '').trim().split(/\s+/), pc = ch.nombre ? _chapiPartirNombre(c, ch.nombre) : null;
+  window._nomChapi = pc;
+  var ov = document.createElement('div'); ov.id = 'nom-overlay'; ov.className = 'rh-ov';
+  ov.innerHTML = '<div class="rh-box" style="width:min(520px,100%)">'
+    + '<div class="rh-top"><div><div style="font-size:17px;font-weight:800;letter-spacing:-.02em">Corregir el nombre</div>'
+    + '<div style="font-size:12px;color:var(--ink3)">Actual: ' + e(((c.nombre || '') + ' ' + (c.apellido || '')).trim()) + (c.scores && c.scores._nombre_registrado ? ' · escrito por el postulante: ' + e(c.scores._nombre_registrado) : '') + '</div></div>'
+    + '<button class="dh-close" title="Cerrar" aria-label="Cerrar" onclick="document.getElementById(\'nom-overlay\').remove()"><svg class="ico"><use href="#i-x"/></svg></button></div>'
+    + '<div class="rh-body">'
+    + (pc ? '<div class="ch-nom" style="margin:0"><span>Según Chapi (por RUT): <b>' + e(_nombrePropio(ch.nombre)) + '</b></span><button class="rs-btn" onclick="_nombreUsarChapi()">Usar este</button></div>' : '')
+    + '<div class="field"><label>Nombres</label><input id="nom-n" class="rh-in" maxlength="80" value="' + e(c.nombre || '') + '"></div>'
+    + '<div class="rh-grid2"><div class="field"><label>Apellido paterno</label><input id="nom-p" class="rh-in" maxlength="60" value="' + e(ap[0] || '') + '"></div>'
+    + '<div class="field"><label>Apellido materno</label><input id="nom-m" class="rh-in" maxlength="60" value="' + e(ap.slice(1).join(' ')) + '"></div></div>'
+    + '</div><div class="rh-pie"><span style="margin-right:auto;font-size:11.5px;color:var(--ink4)">Cambia el nombre en la ficha, el Informe RH, la planilla y el contacto.</span>'
+    + '<button class="rs-btn" onclick="document.getElementById(\'nom-overlay\').remove()">Cancelar</button>'
+    + '<button class="rs-btn prim" onclick="_chapiNombreGuardar(\'' + e(id) + '\')">Guardar</button></div></div>';
+  document.body.appendChild(ov);
+  setTimeout(function(){ var i = document.getElementById('nom-n'); if (i) i.focus(); }, 30);
+}
+function _nombreUsarChapi() {
+  var p = window._nomChapi || {}, set = function(id, v){ var el = document.getElementById(id); if (el) el.value = v || ''; };
+  set('nom-n', p.nombres); set('nom-p', p.paterno); set('nom-m', p.materno);
 }
 async function _chapiNombreGuardar(id) {
   var v = function(k){ return _nombrePropio(((document.getElementById(k) || {}).value || '').trim()); };
