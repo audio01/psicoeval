@@ -13671,6 +13671,7 @@ function _invRender() {
   // Lista
   h += '<div style="margin-top:20px;display:flex;justify-content:space-between;align-items:center"><div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3)">Invitaciones recientes</div>'
     + '<button onclick="_invCargarLista()" style="border:none;background:none;color:var(--accent);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">↻ Actualizar</button></div>';
+  h += '<input id="inv-buscar" type="search" value="' + htmlEsc(_invBuscarTxt) + '" oninput="_invBuscar(this.value)" placeholder="Buscar invitación por RUT, nombre, teléfono, correo o código" style="width:100%;margin-top:8px;padding:9px 11px;border:1.5px solid var(--border);border-radius:9px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--ink)">';
   h += '<div id="inv-lista" style="margin-top:6px">' + _invListaHtml() + '</div>';
   body.innerHTML = h;
 }
@@ -13687,7 +13688,7 @@ function _invEstado(v) {
 function _invListaHtml() {
   if (_invLista === null) return '<div style="font-size:12.5px;color:var(--ink4);padding:10px 0">Cargando…</div>';
   if (_invLista.error) return '<div style="font-size:12.5px;color:#b91c1c;padding:10px 0">' + htmlEsc(_invLista.error) + '</div>';
-  if (!_invLista.length) return '<div style="font-size:12.5px;color:var(--ink4);padding:10px 0">Aún no hay invitaciones.</div>';
+  if (!_invLista.length) return '<div style="font-size:12.5px;color:var(--ink4);padding:10px 0">' + (_invBuscarTxt.trim() ? 'Ninguna invitación coincide con "' + htmlEsc(_invBuscarTxt.trim()) + '".' : 'Aún no hay invitaciones.') + '</div>';
   var esAdmin = S.role === 'admin';
   return _invLista.map(function(v) {
     var e = _invEstado(v), pm = PERFIL_META[v.perfil] || {};
@@ -13702,19 +13703,62 @@ function _invListaHtml() {
       acc += '<button onclick="_invRenovar(\'' + v.codigo + '\')" title="Renovar: 24 horas más desde ahora para terminarla" class="btn btn-ghost btn-sm" style="padding:4px 8px">↻</button>'
         + '<button onclick="_invAnular(\'' + v.codigo + '\')" title="Anular" class="btn btn-ghost btn-sm" style="padding:4px 8px;color:#b91c1c">✕</button>';
     }
+    var abierta = _invAbiertas[v.codigo];
     return '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--border);flex-wrap:wrap">'
-      + '<div style="flex:1;min-width:170px"><div style="font-size:12.5px;font-weight:700;color:var(--ink)">' + htmlEsc(quien) + '</div>' + contactoTxt
+      + '<div style="flex:1;min-width:170px;cursor:pointer" onclick="_invDetalle(\'' + v.codigo + '\')" title="Ver el historial de la invitación"><div style="font-size:12.5px;font-weight:700;color:var(--ink)">' + htmlEsc(quien) + ' <span style="color:var(--accent);font-weight:600">' + (abierta ? '▾' : '▸') + '</span></div>' + contactoTxt
       + '<div style="font-size:11px;color:var(--ink4)">' + htmlEsc(pm.label || v.perfil) + (function(){ var vv = v.vacante_id && (_vacLista || []).find(function(x){ return x.id === v.vacante_id; }); return vv ? ' · ' + htmlEsc(vv.instalacion) : ''; })() + ' · ' + (v.usada_en ? 'usada el ' + _invFecha(v.usada_en) : 'vence el ' + _invFecha(v.vence)) + '</div></div>'
       + '<span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:100px;color:' + e[1] + ';background:' + e[2] + '">' + e[0] + '</span>'
-      + '<div style="display:flex;gap:2px">' + acc + '</div></div>';
+      + '<div style="display:flex;gap:2px">' + acc + '</div>'
+      + (abierta ? _invHistorialHtml(v) : '') + '</div>';
   }).join('');
+}
+
+// ── Buscar una invitación y ver su historial (para verificar lo que dice el postulante) ──
+var _invBuscarTxt = '', _invBuscarTimer = null, _invAbiertas = {};
+function _invBuscar(q) {
+  _invBuscarTxt = q; clearTimeout(_invBuscarTimer);
+  _invBuscarTimer = setTimeout(function(){ _invCargarLista(); }, 350);
+}
+// Filtro del servidor: RUT y teléfono por dígitos; nombre, apellido, correo y código por texto
+function _invFiltroBusqueda(q) {
+  q = String(q || '').trim(); if (!q) return '';
+  var lim = function(t){ return t.replace(/[(),*"\\]/g, ' ').trim(); };
+  var dig = q.replace(/[^0-9kK]/g, '').toUpperCase(), txt = lim(q), conds = [];
+  if (dig.length >= 4) conds.push('rut_norm.ilike.*' + dig + '*', 'contacto->>telefono.ilike.*' + dig.replace(/K/g, '') + '*');
+  if (txt.length >= 2) {
+    conds.push('codigo.ilike.*' + txt + '*', 'contacto->>email.ilike.*' + txt + '*');
+    txt.split(/\s+/).filter(function(w){ return w.length >= 2; }).slice(0, 3).forEach(function(w){ conds.push('contacto->>nombre.ilike.*' + w + '*', 'contacto->>apellido.ilike.*' + w + '*'); });
+  }
+  return conds.length ? '&or=(' + encodeURIComponent(conds.join(',')) + ')' : '';
+}
+function _invDetalle(codigo) { _invAbiertas[codigo] = !_invAbiertas[codigo]; var el = document.getElementById('inv-lista'); if (el) el.innerHTML = _invListaHtml(); }
+function _invFechaHora(iso) {
+  var d = iso ? new Date(iso) : null;
+  return d && !isNaN(d) ? d.toLocaleDateString('es-CL') + ' ' + d.toLocaleTimeString('es-CL', { hour:'2-digit', minute:'2-digit', hour12:false }) : '';
+}
+// Línea de tiempo: creada → abierta (ingresó su RUT) → enviada, o vencida / anulada; y la ficha que generó
+function _invHistorialHtml(v) {
+  var paso = function(ok, txt, cuando, color){ return '<div style="display:flex;gap:8px;align-items:baseline;font-size:12px;padding:2px 0"><span style="color:' + (ok ? (color || '#15803d') : '#cbd5e1') + '">●</span>'
+    + '<span style="flex:1;color:' + (ok ? 'var(--ink)' : 'var(--ink4)') + '">' + txt + '</span><span style="color:var(--ink3);white-space:nowrap">' + (cuando || '') + '</span></div>'; };
+  var vencio = !v.usada_en && new Date(v.vence) < new Date();
+  var h = '<div style="flex-basis:100%;margin:4px 0 2px;padding:10px 12px;border-radius:10px;background:var(--surface2);border:1px solid var(--border)">'
+    + '<div style="font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);margin-bottom:4px">Historial · código ' + htmlEsc(v.codigo) + '</div>'
+    + paso(true, 'Creada' + (v.creada_por ? ' por ' + htmlEsc(v.creada_por) : ''), _invFechaHora(v.creada), '#7c3aed')
+    + paso(!!v.iniciada_en, v.iniciada_en ? 'La persona la abrió e ingresó su RUT' + (v.rut_norm ? ' (' + htmlEsc(_invRutTxt(v.rut_norm)) + ')' : '') : 'Nadie la ha abierto todavía', _invFechaHora(v.iniciada_en), '#2563eb')
+    + (v.usada_en ? paso(true, 'Envió la evaluación: la invitación quedó usada', _invFechaHora(v.usada_en))
+      : v.anulada ? paso(true, 'Anulada', '', '#64748b')
+      : paso(vencio, vencio ? (v.iniciada_en ? 'Venció sin enviar la evaluación (abandonó)' : 'Venció sin abrirse') : 'Vence', _invFechaHora(v.vence), '#b45309'));
+  if (v.usada_en && v.candidato_id) h += '<div style="margin-top:6px"><a class="rs-link" style="font-size:12px;font-weight:700;cursor:pointer" onclick="openCandDrawer(\'' + htmlEsc(v.candidato_id) + '\')">Abrir la evaluación que se registró con esta invitación →</a></div>';
+  if (v.usada_en) h += '<div style="font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.5">Si la persona dice que el link ya aparecía usado: quedó usado al enviar la evaluación de arriba. Revise si esa evaluación es suya (RUT y nombre) o si el link lo usó otra persona.</div>';
+  return h + '</div>';
 }
 
 async function _invCargarLista() {
   _invLista = null;
   var el = document.getElementById('inv-lista'); if (el) el.innerHTML = _invListaHtml();
   try {
-    var r = await fetch(SUPA_URL + '/rest/v1/psicoeval_invitaciones?select=*&order=creada.desc&limit=40', { headers: _invHeaders() });
+    var fb = _invFiltroBusqueda(_invBuscarTxt);
+    var r = await fetch(SUPA_URL + '/rest/v1/psicoeval_invitaciones?select=*&order=creada.desc&limit=' + (fb ? 100 : 40) + fb, { headers: _invHeaders() });
     if (r.status === 404) throw new Error('Falta ejecutar 16_invitaciones.sql en Supabase.');
     if (!r.ok) throw new Error('No se pudo cargar la lista (HTTP ' + r.status + ').');
     _invLista = await r.json();
