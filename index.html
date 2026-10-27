@@ -1695,6 +1695,7 @@ body.adm .pub-aura i{animation:none}   /* estático: el vidrio no recompone en c
 .ch-det-g ul{margin:0;padding-left:16px;display:flex;flex-direction:column;gap:3px}
 .ch-det-g li{font-size:12.5px;line-height:1.45;color:var(--ink)}
 .ch-det-n{font-size:11.5px;color:var(--ink4)}
+.ch-resp{margin-top:8px}.ch-resp summary{cursor:pointer;font-size:12px;font-weight:700;color:var(--ink2)}
 .rh-alts{margin:12px 0;display:flex;flex-direction:column;gap:10px}
 .rh-alts-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.rh-alts-h span{font-size:12px;color:var(--ink3);margin-right:auto}
 .rh-alts-cargando{margin:12px 0;font-size:12.5px;color:var(--ink3)}
@@ -14167,6 +14168,12 @@ function _pedirMotivoDescarte(quien, tipo) {
 }
 async function _setPipelineEtapa(id, etapa, extra) {
   var por = S.userEmail || '';
+  // Rechazo por "Antecedentes" desde la ventana general: también deja el respaldo de las causas de Chapi
+  if (etapa === 'descartado' && extra && extra._motivo === 'Antecedentes') {
+    var cR = (_dbCache || []).find(function(x){ return x.id === id; }), chR = cR && cR.scores && cR.scores._chapi;
+    if (chR && chR.id && !chR.rechazo) try { var detR = extra._detalle || '';
+      await _patchPrivado(id, 'chapi', function(prev){ return Object.assign({}, prev || {}, { rechazo: { motivos: ['Antecedentes'], detalle: detR, por: por, ts: new Date().toISOString(), respaldo: _chapiRespaldo(prev) } }); }); } catch(e) {}
+  }
   await _patchScores(id, function(scores) {
     var oldEtapa = scores._pipeline_etapa || 'postulante';
     scores._pipeline_etapa = etapa;
@@ -14630,7 +14637,11 @@ function _chapiReglas(imp, prensa) {
   lista.forEach(function(x){ if (!rh(x) && !rec(x) && !lesG(x)) (porTipo[x.tipo] = porTipo[x.tipo] || {})[x.rit || x.delito] = x; });
   var reiteradas = Object.keys(porTipo).filter(function(t){ return t && Object.keys(porTipo[t]).length >= 2; })
     .map(function(t){ return { tipo: t, causas: Object.keys(porTipo[t]).map(function(k){ return porTipo[t][k]; }) }; });
-  return { roboHurto: roboHurto, reclutamiento: reclutamiento, lesiones: lesiones, lesionesAntiguas: lesionesAntiguas, reiteradas: reiteradas, prensa: pAlta, descartar: roboHurto.length > 0 || reclutamiento.length > 0 || lesiones.length > 0 || reiteradas.length > 0 || pAlta.length > 0 };
+  // 3 o más causas penales distintas por RUT, de cualquier delito
+  var porCausa = {}; lista.forEach(function(x){ var k = x.rit || x.delito; if (!porCausa[k]) porCausa[k] = x; });
+  var multiples = Object.keys(porCausa).length >= 3 ? Object.keys(porCausa).map(function(k){ return porCausa[k]; }) : [];
+  return { roboHurto: roboHurto, reclutamiento: reclutamiento, lesiones: lesiones, lesionesAntiguas: lesionesAntiguas, reiteradas: reiteradas, multiples: multiples, prensa: pAlta,
+           descartar: roboHurto.length > 0 || reclutamiento.length > 0 || lesiones.length > 0 || reiteradas.length > 0 || multiples.length > 0 || pAlta.length > 0 };
 }
 // Mismo criterio que la verificación automática (psicoeval-chapi): grave = penales por RUT,
 // causas laborales o riesgo alto; lo demás, aviso para conversarlo en la entrevista
@@ -14644,6 +14655,7 @@ function _chapiClasificar(r) {
   if (rd.prensa.length) motivos.push('Prensa: robos y estafas (' + rd.prensa.length + ')');
   var pBaja = ((r && r.prensa_robos) || []).filter(function(e){ return e.confianza < 0.85; });
   if (pBaja.length) motivos.push('Prensa: robos y estafas con coincidencia dudosa (' + pBaja.length + ')');
+  if (rd.multiples.length) motivos.push(rd.multiples.length + ' causas penales distintas por RUT');
   rd.reiteradas.forEach(function(x){ motivos.push('Imputaciones reiteradas: ' + x.causas[0].delito.toLowerCase() + ' (' + x.causas.length + ' causas)'); });
   if (k.penales_rut > 0) motivos.push('Causas penales por RUT (' + k.penales_rut + ')');
   else if (r && Array.isArray(r.imputaciones) && r.imputaciones.length) motivos.push('Imputado en causa penal (' + r.imputaciones.map(function(x){ return x.rit; }).filter(function(x, i, a){ return a.indexOf(x) === i; }).length + ')');
@@ -14764,7 +14776,9 @@ function _rsChapiHtml(c) {
   if (ch.rechazo) h += '<div class="ch-alto"><b>Descartado por antecedentes (Chapi)' + (ch.rechazo.auto ? ' · automático' : '') + '</b>'
     + '<span>' + htmlEsc((ch.rechazo.motivos || []).join(' · ')) + '</span>'
     + (ch.rechazo.detalle ? '<span style="display:block;margin-top:4px">' + htmlEsc(ch.rechazo.detalle) + '</span>' : '')
-    + '<span style="display:block;margin-top:4px;font-size:11px;color:var(--ink4)">' + htmlEsc((ch.rechazo.por || '') + (ch.rechazo.ts ? ' · ' + new Date(ch.rechazo.ts).toLocaleDateString('es-CL') : '')) + '</span></div>';
+    + '<span style="display:block;margin-top:4px;font-size:11px;color:var(--ink4)">' + htmlEsc((ch.rechazo.por || '') + (ch.rechazo.ts ? ' · ' + new Date(ch.rechazo.ts).toLocaleDateString('es-CL') : '')) + '</span>'
+    + (ch.rechazo.respaldo ? '<details class="ch-resp"><summary>Respaldo de las causas al rechazar' + (ch.rechazo.respaldo.fecha ? ' (consulta del ' + new Date(ch.rechazo.respaldo.fecha).toLocaleDateString('es-CL') + ')' : '') + '</summary>' + _chapiDetalleHtml(ch.rechazo.respaldo) + '</details>' : '')
+    + '</div>';
   if (a.estado === 'procesando' && !ch.id) return h + '<div class="rs-vacio">Verificando en Chapi…</div></div>';
   if (!ch.id) {
     var enCola = c.estado === 'completed' && etapa === 'postulante';
@@ -14825,13 +14839,18 @@ async function _chapiDescartar(id) {
     + '<button class="rs-btn prim" style="background:#dc2626" onclick="_chapiDescartarGuardar(\'' + e(id) + '\')">Descartar</button></div></div>';
   document.body.appendChild(ov);
 }
+// Respaldo de las causas al rechazar (mismo formato que psicoeval-chapi): queda aunque se actualice Chapi
+function _chapiRespaldo(ch) {
+  ch = ch || {};
+  return { fecha: ch.consultado || ch.fecha || new Date().toISOString(), causas: ch.causas || {}, imputaciones: ch.imputaciones || [], detalle: ch.detalle || null, prensa_robos: ch.prensa_robos || [] };
+}
 async function _chapiDescartarGuardar(id) {
   var motivos = [].slice.call(document.querySelectorAll('.chd-m:checked')).map(function(x){ return x.value; });
   var det = ((document.getElementById('chd-det') || {}).value || '').trim().slice(0, 500);
   if (!motivos.length && !det) { toast('Indique al menos un motivo', 'er'); return; }
   try {
     var por = S.userEmail || (document.getElementById('sidebar-user-label') || {}).textContent || '';
-    await _patchPrivado(id, 'chapi', function(prev){ return Object.assign({}, prev || {}, { rechazo: { motivos: motivos, detalle: det, por: por, ts: new Date().toISOString() } }); });
+    await _patchPrivado(id, 'chapi', function(prev){ return Object.assign({}, prev || {}, { rechazo: { motivos: motivos, detalle: det, por: por, ts: new Date().toISOString(), respaldo: _chapiRespaldo(prev) } }); });
     await _setPipelineEtapa(id, 'descartado', { _motivo: 'Antecedentes (Chapi)' });
     var o = document.getElementById('chd-overlay'); if (o) o.remove();
     _invalidateCache();
