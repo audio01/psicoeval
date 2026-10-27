@@ -14626,6 +14626,15 @@ function _chapiNombreCoincide(c, ch) {
 // Descarte automático (mismo criterio que psicoeval-chapi): robos y estafas o Ley de Reclutamiento (imputado,
 // querellado o denunciado), robos y estafas en prensa con coincidencia alta, o el mismo tipo de delito
 // en 2 o más causas distintas, como imputado y en causas que coinciden por RUT
+// Mismo criterio que psicoeval-chapi: robos y estafas en causas que coinciden solo por nombre
+// (pueden ser de un homónimo) no se rechazan solos; quedan por visar con un aviso destacado
+function _chapiRobosPorNombre(ch) {
+  var st = function(t){ return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); };
+  var RE = /(^|\s)(robo|hurto|estafa|receptacion|apropiacion|defraudacion|fraude|abigeato)/;
+  return ((ch && ch.detalle && Array.isArray(ch.detalle.penal)) ? ch.detalle.penal : []).filter(function(c){
+    return c && c.coincide === 'nombre' && /imput|querell|denunciad/.test(st(c.rol))
+      && (c.delitos || []).some(function(d){ return RE.test(st(d).replace(/[^a-z\s]/g, ' ').trim()); }); });
+}
 function _chapiReglas(imp, prensa) {
   var lista = Array.isArray(imp) ? imp : [], porTipo = {};
   var st = function(t){ return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); };
@@ -14659,6 +14668,8 @@ function _chapiClasificar(r) {
   var pBaja = ((r && r.prensa_robos) || []).filter(function(e){ return e.confianza < 0.85; });
   if (pBaja.length) motivos.push('Prensa: robos y estafas con coincidencia dudosa (' + pBaja.length + ')');
   if (rd.multiples.length) motivos.push(rd.multiples.length + ' causas penales distintas por RUT');
+  var rpn = _chapiRobosPorNombre(r);
+  if (rpn.length) motivos.push('Robos o estafas que coinciden solo por nombre: confirme si es la misma persona (' + rpn.length + ')');
   rd.reiteradas.forEach(function(x){ motivos.push('Imputaciones reiteradas: ' + x.causas[0].delito.toLowerCase() + ' (' + x.causas.length + ' causas)'); });
   if (k.penales_rut > 0) motivos.push('Causas penales por RUT (' + k.penales_rut + ')');
   else if (r && Array.isArray(r.imputaciones) && r.imputaciones.length) motivos.push('Imputado en causa penal (' + r.imputaciones.map(function(x){ return x.rit; }).filter(function(x, i, a){ return a.indexOf(x) === i; }).length + ')');
@@ -14805,6 +14816,9 @@ function _rsChapiHtml(c) {
   var k = ch.causas || {}, cnt = [['Penales', k.penales], ['Civiles', k.civiles], ['Laborales', k.laborales], ['Sindicales', k.sindicales], ['Sanciones internacionales', k.sanciones]];
   h += '<div class="ch-causas">' + cnt.map(function(x){ return '<span' + (x[1] ? ' class="on"' : '') + '><b>' + (x[1] || 0) + '</b>' + x[0] + '</span>'; }).join('') + '</div>';
   if (k.penales && k.penales_nombre && !k.penales_rut) h += '<div class="ch-aviso">Las causas penales coinciden solo por nombre, no por RUT: pueden ser de otra persona.</div>';
+  var rpnF = _chapiRobosPorNombre(ch);
+  if (rpnF.length) h += '<div class="ch-alto"><b>Robo o estafa que coincide solo por nombre</b><span>Confirme si es la misma persona antes de visar: '
+    + htmlEsc(rpnF.map(function(x){ return String(x.fecha || '').slice(0, 4) + ' · ' + String(x.rol || '').replace(/\.$/, '') + ' · ' + (x.delitos || []).join('; ') + (x.rit ? ' · RIT ' + x.rit : '') + (x.tribunal ? ' · ' + x.tribunal : ''); }).join(' / ')) + '</span></div>';
   if (ch.pep) h += '<div class="ch-aviso">Figura como persona políticamente expuesta (PEP).</div>';
   h += _chapiDetalleHtml(ch);
   (ch.fuentes || []).forEach(function(x) {
