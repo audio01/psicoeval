@@ -1690,6 +1690,10 @@ body.adm .pub-aura i{animation:none}   /* estático: el vidrio no recompone en c
 .dsh-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
 .dsh-grid>.dash-card{display:flex;flex-direction:column}
 .dsh-wide{grid-column:1/-1}
+.cmp-c{border:1.5px solid var(--border);border-radius:12px;padding:10px 14px;margin-bottom:10px;background:var(--surface)}
+.cmp-c summary{cursor:pointer;display:flex;flex-direction:column;gap:2px}.cmp-c summary span{font-size:11.5px;color:var(--ink3)}
+.cmp-g3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.cmp-g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media (max-width:700px){.cmp-g3,.cmp-g2{grid-template-columns:1fr}}
 .ch-det{margin:10px 0;display:flex;flex-direction:column;gap:8px}
 .ch-det-g b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--ink3);margin-bottom:3px}
 .ch-det-g ul{margin:0;padding-left:16px;display:flex;flex-direction:column;gap:3px}
@@ -3187,6 +3191,7 @@ const LS_TM_MINS           = 'psicoeval_tm_mins';
 const LS_CONTACTO          = 'psicoeval_contacto';
 const LS_ACCESO            = 'psicoeval_acceso';
 const LS_RH_IDEALES        = 'psicoeval_rh_ideales'; // niveles ideales del Informe RH por cargo (los define el psicólogo)
+const LS_COMPETENCIAS      = 'psicoeval_competencias'; // competencias STAR de la entrevista por cargo (31_competencias_cargo.sql)
 const LS_VISTAS            = 'psicoeval_vistas';      // vistas guardadas de Candidatos (18_vistas.sql)      // { solo_invitacion } (16_invitaciones.sql)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -3205,6 +3210,7 @@ var _CFG_KEYS = {
   contacto:      LS_CONTACTO,       // │ WhatsApp para avisar que terminó (11_contacto.sql)
   acceso:        LS_ACCESO,         // ┘ "Solo con invitación" (16_invitaciones.sql)
   vistas:        LS_VISTAS,         // ┐ solo panel: vistas guardadas de Candidatos
+  competencias:  LS_COMPETENCIAS,   // │ competencias de la entrevista por cargo
   params:        LS_PARAMS,         // │ (el candidato no las ve:
   config_log:    _CONFIG_LOG_KEY    // ┘ le servirían para acomodar respuestas)
 };
@@ -3237,7 +3243,7 @@ function _cfgSetLocal(key, value) {
 // sección queda marcada. No se pisa con la versión del servidor al recargar, se
 // reintenta sola y el panel muestra un aviso hasta que se guarde.
 var _CFG_PENDING_KEY = 'psicoeval_cfg_pendiente';
-var _CFG_NOMBRES = { batteries:'Baterías', cargos:'Cargos activos', custom_cargos:'Cargos personalizados', tm_mins:'Tiempos', contacto:'Mensaje final', acceso:'Acceso con invitación', vistas:'Vistas de Candidatos',
+var _CFG_NOMBRES = { batteries:'Baterías', cargos:'Cargos activos', custom_cargos:'Cargos personalizados', tm_mins:'Tiempos', contacto:'Mensaje final', acceso:'Acceso con invitación', competencias:'Competencias de la entrevista', vistas:'Vistas de Candidatos',
                      params:'Mínimos por cargo', config_log:'Historial' };
 function _cfgPendientes() {
   try { return JSON.parse(localStorage.getItem(_CFG_PENDING_KEY) || '[]'); } catch(e) { return []; }
@@ -3438,6 +3444,7 @@ function _cfgReloadAll() {
   restoreParams();
   loadAcceso();
   loadVistas();
+  loadCompCargo();
   if (_linkPairs) _applyLinkPairs(_linkPairs);   // un link de candidato manda en esa pestaña
   _invAplicarCargo();                            // una invitación fija el cargo
   applyCargoVisibility();
@@ -3669,6 +3676,7 @@ function renderCargosTab() {
 
     // Actions: edit, delete, toggle (stop propagation for these)
     h += '<div style="flex-shrink:0;display:flex;align-items:center;gap:8px" onclick="event.stopPropagation()">';
+    h += '<button class="bd-btn" onclick="_compEditar(\'' + key + '\')" title="Competencias que se exploran con STAR en la entrevista de este cargo">Entrevista</button>';
     if (!isCustom) h += '<button class="bd-btn" onclick="openAddCargoModal(\'' + key + '\')" title="Crear un subtipo de este cargo, con su misma batería y mínimos">+ Subtipo</button>';
     if (isCustom) {
       h += '<button onclick="editCargo(\'' + key + '\')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:14px;padding:4px 6px;border-radius:6px;opacity:.6;transition:opacity .15s" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.6" title="Editar cargo"><svg class="ico" style="width:15px;height:15px"><use href="#i-edit"/></svg></button>';
@@ -3717,6 +3725,84 @@ function renderCargosTab() {
 
   el.innerHTML = h;
   renderConfigLog();
+}
+
+// ── Competencias de la entrevista del cargo (STAR): editar, quitar, volver a agregar o crear nuevas ──
+var _compEd = null;   // { perfil, lista: [ { key, name, def, anclas, questions, nueva } ] }
+var _COMP_STAR_BASE = function(){ return _COMP_CONFIG.filter(function(c){ return c.star; }); };
+function _compEditar(perfil) {
+  var lista = _compCfg(perfil).filter(function(c){ return c.star; }).map(function(c){
+    return { key:c.key, name:c.name, def:c.def || '', anclas:Object.assign({}, c.anclas || {}), questions:(c.questions || []).map(function(q){ return q.slice(); }),
+             nueva: !_COMP_CONFIG.some(function(b){ return b.key === c.key; }) }; });
+  _compEd = { perfil: perfil, lista: lista };
+  _compPintar();
+}
+function _compLeerForm() {
+  if (!_compEd) return;
+  _compEd.lista.forEach(function(c, i) {
+    var v = function(id){ var el = document.getElementById('cmp-' + i + '-' + id); return el ? el.value.trim() : ''; };
+    c.name = v('name') || c.name; c.def = v('def');
+    c.anclas = { 1: v('a1'), 3: v('a3'), 5: v('a5') };
+    c.questions = [0, 1, 2].map(function(j){ return [v('q' + j), v('r' + j)]; }).filter(function(q){ return q[0]; });
+  });
+}
+function _compPintar() {
+  var e = htmlEsc, ed = _compEd, pm = PERFIL_META[ed.perfil] || {};
+  var propio = !!COMP_CARGO[ed.perfil], base = _perfilBase(ed.perfil), dePadre = !propio && base !== ed.perfil && COMP_CARGO[base];
+  var origen = propio ? 'Ajustes propios de este cargo.' : dePadre ? 'Sin ajustes propios: usa los de ' + ((PERFIL_META[base] || {}).label || base) + '.'
+             : base === 'guardia' ? 'Usa las competencias propuestas para guardias.' : 'Usa las competencias de siempre.';
+  var rhDe = function(k){ var r = _RH_COMP.filter(function(x){ return x.key === k; })[0]; return r ? 'En el Informe RH llena la fila «' + r.label + '».' : 'Queda solo en la entrevista (el Informe RH no tiene esa fila).'; };
+  var quitadas = _COMP_STAR_BASE().filter(function(b){ return !ed.lista.some(function(c){ return c.key === b.key; }); });
+  var campo = function(i, id, lab, val, filas){ return '<div class="field"><label>' + lab + '</label>' + (filas ? '<textarea id="cmp-' + i + '-' + id + '" class="rh-in" rows="' + filas + '">' + e(val || '') + '</textarea>' : '<input id="cmp-' + i + '-' + id + '" class="rh-in" value="' + e(val || '') + '">') + '</div>'; };
+  var ov = document.getElementById('cmp-overlay'); if (!ov) { ov = document.createElement('div'); ov.id = 'cmp-overlay'; ov.className = 'rh-ov'; document.body.appendChild(ov); }
+  ov.innerHTML = '<div class="rh-box" style="width:min(760px,100%)">'
+    + '<div class="rh-top"><div><div style="font-size:17px;font-weight:800;letter-spacing:-.02em">Competencias de la entrevista · ' + e(pm.label || ed.perfil) + '</div>'
+    + '<div style="font-size:12px;color:var(--ink3)">Las que se exploran con STAR (paso 3). ' + e(origen) + '</div></div>'
+    + '<button class="dh-close" title="Cerrar" aria-label="Cerrar" onclick="document.getElementById(\'cmp-overlay\').remove()"><svg class="ico"><use href="#i-x"/></svg></button></div>'
+    + '<div class="rh-body">'
+    + ed.lista.map(function(c, i) {
+        return '<details class="cmp-c"' + (i === 0 ? ' open' : '') + '><summary><b>' + e(c.name) + '</b><span>' + e(rhDe(c.key)) + '</span></summary>'
+          + campo(i, 'name', 'Nombre', c.name) + campo(i, 'def', 'Definición', c.def, 2)
+          + '<div class="cmp-g3">' + campo(i, 'a1', 'Ancla 1', c.anclas[1], 3) + campo(i, 'a3', 'Ancla 3', c.anclas[3], 3) + campo(i, 'a5', 'Ancla 5', c.anclas[5], 3) + '</div>'
+          + [0, 1, 2].map(function(j){ var q = c.questions[j] || ['', '']; return '<div class="cmp-g2">' + campo(i, 'q' + j, 'Pregunta ' + (j + 1), q[0], 2) + campo(i, 'r' + j, 'Repregunta', q[1], 2) + '</div>'; }).join('')
+          + '<div style="text-align:right"><button class="rs-btn" style="color:#b91c1c" onclick="_compQuitar(' + i + ')">Quitar del paso STAR</button></div></details>';
+      }).join('')
+    + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="rs-btn" onclick="_compNueva()">+ Nueva competencia</button>'
+    + quitadas.map(function(b){ return '<button class="rs-btn" onclick="_compVolver(\'' + b.key + '\')">+ ' + e(b.name) + ' (de siempre)</button>'; }).join('') + '</div>'
+    + '<div style="font-size:11.5px;color:var(--ink4);margin-top:8px">Los cambios valen para las entrevistas nuevas; las ya guardadas conservan las competencias con que se hicieron.</div>'
+    + '</div><div class="rh-pie">' + (propio ? '<a class="rs-link" style="margin-right:auto" onclick="_compRestablecer()">Restablecer</a>' : '<span style="margin-right:auto"></span>')
+    + '<button class="rs-btn" onclick="document.getElementById(\'cmp-overlay\').remove()">Cancelar</button><button class="rs-btn prim" onclick="_compGuardar()">Guardar</button></div></div>';
+}
+function _compQuitar(i) { _compLeerForm(); _compEd.lista.splice(i, 1); _compPintar(); }
+function _compVolver(key) { _compLeerForm(); var b = _COMP_CONFIG.filter(function(x){ return x.key === key; })[0]; if (b) _compEd.lista.push({ key:b.key, name:b.name, def:b.def, anclas:Object.assign({}, b.anclas), questions:b.questions.map(function(q){ return q.slice(); }) }); _compPintar(); }
+function _compNueva() {
+  _compLeerForm();
+  var n = 1; while (_compEd.lista.some(function(c){ return c.key === 'cmp_' + n; }) || _COMP_CONFIG.some(function(c){ return c.key === 'cmp_' + n; })) n++;
+  _compEd.lista.push({ key:'cmp_' + n, name:'Nueva competencia', def:'', anclas:{}, questions:[], nueva:true });
+  _compPintar();
+  var ds = document.querySelectorAll('#cmp-overlay details'); if (ds.length) { ds[ds.length - 1].open = true; ds[ds.length - 1].scrollIntoView({ block:'center' }); }
+}
+function _compGuardar() {
+  _compLeerForm();
+  var ed = _compEd;
+  if (!ed.lista.length) { toast('Deje al menos una competencia para el paso STAR', 'er'); return; }
+  var sinPreg = ed.lista.filter(function(c){ return !c.questions.length; });
+  if (sinPreg.length) { toast('Falta al menos una pregunta en: ' + sinPreg.map(function(c){ return c.name; }).join(', '), 'er'); return; }
+  var comps = {};
+  ed.lista.forEach(function(c){ comps[c.key] = { name:c.name, def:c.def, anclas:c.anclas, questions:c.questions, star:true }; if (c.nueva) comps[c.key].icon = '📋'; });
+  // Las de siempre que se quitaron del paso STAR se siguen puntuando en el paso 4
+  _COMP_STAR_BASE().forEach(function(b){ if (!comps[b.key]) comps[b.key] = { star:false }; });
+  COMP_CARGO[ed.perfil] = { comps: comps };
+  saveCompCargo();
+  _logConfigChange('Competencias de la entrevista', ((PERFIL_META[ed.perfil] || {}).label || ed.perfil) + ': ' + ed.lista.map(function(c){ return c.name; }).join(', '));
+  document.getElementById('cmp-overlay').remove();
+  toast('Competencias guardadas: se usan en las entrevistas nuevas', 'ok');
+}
+async function _compRestablecer() {
+  if (!(await appConfirm('¿Quitar los ajustes de este cargo y volver a las competencias por defecto?'))) return;
+  delete COMP_CARGO[_compEd.perfil]; saveCompCargo();
+  _compEditar(_compEd.perfil);
+  toast('Competencias restablecidas', 'ok');
 }
 
 // ── Open Battery for a specific cargo ──
@@ -15178,6 +15264,64 @@ var _COMP_CONFIG_V2 = [
   { key:'resultados', name:'Orientación a resultados', icon:'🎯' },
   { key:'adaptabilidad', name:'Adaptabilidad', icon:'🔄' }
 ];
+// ── Competencias de la entrevista por cargo (editables en Cargos · 31_competencias_cargo.sql) ──
+// Cada cargo puede cambiar las competencias que se exploran con STAR: su nombre, definición, anclas y
+// preguntas, quitar alguna del paso STAR o agregar nuevas. Las que conservan la clave de una fila del
+// Informe RH (cliente, comunicacion, equipo…) siguen llenando esa fila; las nuevas quedan solo en la entrevista.
+// Guardia y sus subtipos parten con tres competencias propias del servicio.
+var _COMP_GUARDIA = { comps: {
+  consignas: { name:'Apego a consignas y protocolos', icon:'📋', star:true,
+    def:'Cumple los procedimientos del puesto (registro de ingresos, rondas, revisión de vehículos y bultos) aunque nadie lo supervise ni haya apuro.',
+    anclas:{ 1:'Relata saltarse pasos "porque no pasa nada" o por comodidad.',
+             3:'Cumple lo habitual; relaja el procedimiento con apuro o con gente conocida.',
+             5:'Relata haber cumplido el procedimiento completo bajo presión de tiempo o de una persona, y explica para qué sirve cada paso.' },
+    questions:[
+      ['Cuénteme de una vez en que el procedimiento del puesto le hizo el trabajo más lento o incómodo. ¿Qué hizo?', '¿Qué paso del procedimiento era? ¿Por qué lo cumplió o no? ¿Cómo terminó?'],
+      ['Cuénteme de una vez en que alguien conocido (un trabajador antiguo, un jefe del cliente) quiso pasar sin el registro.', '¿Qué le dijo? ¿Qué hizo finalmente?'],
+      ['Cuénteme de una consigna nueva que le costó cumplir.', '¿Cómo se aseguró de cumplirla completa?'] ] },
+  cliente: { name:'Trato firme en el control de acceso', icon:'🙋', star:true,
+    def:'Aplica la norma de ingreso con respeto, también cuando debe negar la entrada o retener a alguien.',
+    anclas:{ 1:'Cede para evitar el conflicto, o responde con malos tratos o amenazas.',
+             3:'Niega el ingreso, pero sin explicar la norma ni ofrecer alternativas; el conflicto escala.',
+             5:'Explica la norma con calma, ofrece la vía correcta (autorización, contacto con el responsable) y mantiene la decisión sin escalar el conflicto.' },
+    questions:[
+      ['Cuénteme de una vez en que tuvo que negarle la entrada a alguien que insistía o se molestó.', '¿Qué le dijo exactamente? ¿Qué hizo la persona? ¿Pidió apoyo? ¿Cómo terminó?'],
+      ['Cuénteme de una vez en que tuvo que pedirle a alguien que abriera un bolso o mostrara lo que llevaba.', '¿Cómo se lo pidió? ¿Cómo reaccionó la persona?'],
+      ['Cuénteme de una vez en que una visita o un proveedor llegó sin autorización.', '¿Qué hizo para resolverlo sin saltarse la norma?'] ] },
+  comunicacion: { name:'Registro y reporte de novedades', icon:'📝', star:true,
+    def:'Informa a tiempo y por el canal correcto, y deja un registro completo y verificable (radio, libro de novedades, relevo, informe de incidente).',
+    anclas:{ 1:'No recuerda haber reportado algo o lo comunicó solo de palabra, sin registro.',
+             3:'Reporta lo principal, pero sin hora, lugar o personas involucradas.',
+             5:'Describe un reporte completo (qué, cuándo, dónde, quién y qué medida tomó), hecho a tiempo, y cómo confirmó la recepción.' },
+    questions:[
+      ['Cuénteme del último incidente que le tocó informar: qué pasó y cómo lo reportó.', '¿Por qué medio y a quién? ¿Qué anotó en el libro? ¿Qué dato faltó?'],
+      ['Cuénteme de la última vez que entregó el turno con una novedad importante.', '¿Qué informó y cómo supo que su relevo lo entendió?'],
+      ['Cuénteme de una vez en que un reporte suyo quedó incompleto o llegó tarde.', '¿Qué consecuencias tuvo y qué hace distinto ahora?'] ] },
+  equipo: { star:false }
+} };
+var COMP_CARGO = {};   // { perfil: { comps: { clave: { name, def, anclas, questions, star, icon } } } }
+function loadCompCargo() {
+  try { var v = JSON.parse(localStorage.getItem(LS_COMPETENCIAS) || '{}'); COMP_CARGO = v && typeof v === 'object' && !Array.isArray(v) ? v : {}; } catch(e) { COMP_CARGO = {}; }
+}
+function saveCompCargo() {
+  try { localStorage.setItem(LS_COMPETENCIAS, JSON.stringify(COMP_CARGO)); } catch(e) {}
+  _cfgPush('competencias');
+}
+loadCompCargo();
+// Ajustes del cargo: los suyos; si no tiene, los de su cargo base; Guardia parte con _COMP_GUARDIA
+function _compAjustes(perfil) {
+  var b = typeof _perfilBase === 'function' ? _perfilBase(perfil) : perfil;
+  return COMP_CARGO[perfil] || COMP_CARGO[b] || (b === 'guardia' ? _COMP_GUARDIA : null);
+}
+// Competencias de la entrevista de un cargo: las nuevas primero y luego las de siempre con sus cambios
+function _compCfg(perfil) {
+  var ov = _compAjustes(perfil); if (!ov || !ov.comps) return _COMP_CONFIG;
+  var base = _COMP_CONFIG.map(function(c){ return Object.assign({}, c, ov.comps[c.key] || {}); });
+  var nuevas = Object.keys(ov.comps).filter(function(k){ return !_COMP_CONFIG.some(function(c){ return c.key === k; }); })
+    .map(function(k){ return Object.assign({ key:k, icon:'📋', star:true, anclas:{}, questions:[] }, ov.comps[k]); });
+  return nuevas.concat(base);
+}
+var _evCompActual = _COMP_CONFIG;   // competencias del cargo de la entrevista abierta
 // Por qué una competencia no trae puntaje: la prueba que no rindió o la trayectoria que no declaró
 function _evSinFuente(key, c) {
   if (key === 'integridad') return 'No rindió la prueba de integridad: puntúela en la entrevista';
@@ -15185,7 +15329,7 @@ function _evSinFuente(key, c) {
   var t = (_EV_SUG_PRUEBA[key] || [])[0], nom = t && (TESTS_META[t] || {}).name;
   return (nom ? 'No rindió ' + nom : 'Sin resultado de prueba') + ': puntúela en la entrevista';
 }
-function _evCfg(key) { return _COMP_CONFIG.filter(function(x){ return x.key === key; })[0] || {}; }
+function _evCfg(key) { return _evCompActual.filter(function(x){ return x.key === key; })[0] || _COMP_CONFIG.filter(function(x){ return x.key === key; })[0] || {}; }
 
 // Puntaje sugerido (1 a 5) para las competencias que no se exploran con STAR.
 // Pruebas con mínimo: muy bajo el mínimo 1 · bajo 2 · en el mínimo 3 · sobre 4 · muy sobre 5.
@@ -15235,7 +15379,9 @@ function _evBanda(prom) {
 // Antes: las 5 de la pauta anterior (ev.comp por clave, o ev.competencias / ev.notas_comp por posición)
 function _evCompsDe(ev) {
   if (!ev) return [];
-  var cfg = ev.v >= 3 ? _COMP_CONFIG : _COMP_CONFIG_V2;
+  // Desde las competencias por cargo, la entrevista guarda qué competencias se usaron y con qué nombre
+  var cfg = Array.isArray(ev.claves) ? ev.claves.map(function(k){ var g = _evCfg(k); return { key:k, name:(ev.nombres || {})[k] || g.name || k, icon:g.icon || '📋' }; })
+          : ev.v >= 3 ? _COMP_CONFIG : _COMP_CONFIG_V2;
   return cfg.map(function(cc, i) {
     var r = ev.comp ? ev.comp[cc.key] : { nivel:(ev.competencias || [])[i], nota:(ev.notas_comp || [])[i] };
     r = r || {};
@@ -15542,6 +15688,7 @@ function _evGetChecksOp() {
 
 
 function _tabEntrevistasDrawer(c) {
+  _evCompActual = _compCfg(c.perfil);
   var sc = c.scores || {};
   var entrevistas = sc._entrevistas || [];
   var _hoy = new Date(), today = _hoy.getFullYear() + '-' + String(_hoy.getMonth() + 1).padStart(2, '0') + '-' + String(_hoy.getDate()).padStart(2, '0');
@@ -15686,14 +15833,14 @@ function _tabEntrevistasDrawer(c) {
       + '<label class="ev-sin-ej-lbl"><input type="checkbox" class="ev-sin-ej" onchange="_evSinEjemplo(this)"> No dio un ejemplo concreto (máximo 2)</label>'
       + '<div class="ev-field"><textarea id="ef-comp-nota-' + i + '" rows="2" placeholder="' + (abiertas ? 'Evidencia: situación que relató, qué hizo y qué resultado tuvo…' : 'Opcional si confirma: lo que respondió' + (contraste ? ' a la pregunta de contraste' : '') + ' u observó…') + '"></textarea></div>';
   };
-  var _star = _COMP_CONFIG.filter(function(x){ return x.star; }).length, nS = 0;
+  var _star = _evCompActual.filter(function(x){ return x.star; }).length, nS = 0;
   var p3 = '<div class="ev-encuadre"><span>Antes de empezar, diga</span>“Ahora le voy a pedir que me cuente situaciones reales que haya vivido en el trabajo. Me interesa qué hizo usted, paso a paso, y cómo terminó.”</div>'
     + '<div class="ev-hint">Explore cada una con STAR: puntúe lo que la persona <strong>hizo</strong>, no lo que haría. Sin un ejemplo concreto, el máximo es 2. '
     + 'Si nunca vivió la situación, use otra pregunta: valen ejemplos de estudios, servicio militar o voluntariado.</div>'
     + '<div class="ev-comp-cards" id="ev-comp-dots"></div>';
   var p4 = '<div class="ev-hint">Cada una viene <strong>puntuada según la evaluación</strong> (pruebas o estabilidad laboral). Ábrala (▸) solo si quiere revisar sus preguntas o ajustar el puntaje. '
     + 'Conviene revisar las marcadas <strong>Profundizar</strong> (1 o 2).</div><div class="ev-filas">';
-  _COMP_CONFIG.forEach(function(comp, i) {
+  _evCompActual.forEach(function(comp, i) {
     var sg = _sug[comp.key] || null, modo = _evModo(comp, sg), abiertas = modo === 'star' || modo === 'explorar' || modo === 'profundizar';
     var contraste = comp.contraste && (modo === 'contraste' || comp.key === 'integridad');
     var attrs = ' data-ev-comp="' + comp.key + '" data-nivel="0" data-idx="' + i + '" data-modo="' + modo + '"' + (sg ? ' data-sug="' + sg.n + '" data-fuente="' + htmlEsc(sg.fuente) + '"' : '');
@@ -15748,7 +15895,7 @@ function _tabEntrevistasDrawer(c) {
   main += paso(5, 'Contrastar los resultados', p5dp);
 
   // 6. Cierre y dictamen
-  var p5 = '<div class="ev-sub">Resultado de las competencias</div><div id="ev-resultado" style="margin-bottom:16px">' + _evResultadoHtml(_COMP_CONFIG.map(function(x){ return { name:x.name, nivel:0 }; })) + '</div>';
+  var p5 = '<div class="ev-sub">Resultado de las competencias</div><div id="ev-resultado" style="margin-bottom:16px">' + _evResultadoHtml(_evCompActual.map(function(x){ return { name:x.name, nivel:0 }; })) + '</div>';
   p5 += '<div class="ev-sub">Observe durante la conversación <span class="ev-ini-op">no suma puntaje</span></div><div class="ev-scr" style="margin-bottom:14px">'
     + Object.keys(_EV_SCREEN_OPTS).filter(function(k){ return _EV_SCREEN_OPTS[k].momento === 'cierre'; }).map(function(key){ var o = _EV_SCREEN_OPTS[key]; return '<div class="ev-scr-f"><div class="ev-scr-l">' + o.label + '</div>' + _evPillGroup(key, '', o.opts, o.colors) + '</div>'; }).join('')
     + '</div>';
@@ -16306,7 +16453,9 @@ async function saveEntrevistaDrawer(candId) {
     instalacion: ((document.getElementById('ef-instalacion') || {}).value || '').trim(),
     turno: (document.getElementById('ef-turno') || {}).value || '',
     turno_otra: ((document.getElementById('ef-turno-otra') || {}).value || '').trim(), notas: notas, sintesis: sintesis, dictamen: dictamen,
-    v: 3, comp: comp, promedio: _evPromedio(_evCompsDe({ v:3, comp:comp })), motivo: motivoReq ? motivo : '',
+    v: 3, comp: comp, claves: _evCompActual.map(function(x){ return x.key; }),
+    nombres: _evCompActual.reduce(function(o, x){ o[x.key] = x.name; return o; }, {}),
+    promedio: _evPromedio(_evCompsDe({ v:3, comp:comp, claves:_evCompActual.map(function(x){ return x.key; }) })), motivo: motivoReq ? motivo : '',
     desde_pruebas: desdePruebas,
     tiempos: _evT.total ? { total: _evT.total, pasos: Object.assign({}, _evT.pasos), comps: Object.assign({}, _evT.comps) } : undefined,
     screening: _evGetScreen(),
