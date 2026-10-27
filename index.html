@@ -1690,6 +1690,11 @@ body.adm .pub-aura i{animation:none}   /* estático: el vidrio no recompone en c
 .dsh-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
 .dsh-grid>.dash-card{display:flex;flex-direction:column}
 .dsh-wide{grid-column:1/-1}
+.ch-det{margin:10px 0;display:flex;flex-direction:column;gap:8px}
+.ch-det-g b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--ink3);margin-bottom:3px}
+.ch-det-g ul{margin:0;padding-left:16px;display:flex;flex-direction:column;gap:3px}
+.ch-det-g li{font-size:12.5px;line-height:1.45;color:var(--ink)}
+.ch-det-n{font-size:11.5px;color:var(--ink4)}
 .rh-alts{margin:12px 0;display:flex;flex-direction:column;gap:10px}
 .rh-alts-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.rh-alts-h span{font-size:12px;color:var(--ink3);margin-right:auto}
 .rh-alts-cargando{margin:12px 0;font-size:12.5px;color:var(--ink3)}
@@ -12267,11 +12272,43 @@ var _BD_CAMPOS = {
                 ok:function(c, v){ var k = c.scores && c.scores._canal && c.scores._canal.canal; return v === 'sin' ? !k : k === v; } },
   informe:    { label:'Informe RH', ops:function(){ return [['sin', 'Sin informe'], ['guardado', 'Guardado'], ['pdf', 'PDF generado'], ['enviado', 'Enviado a RRHH'], ['por_enviar', 'Por enviar (guardado o PDF, sin enviar)']]; },
                 ok:function(c, v){ var ie = _rhEstado(c); return v === 'por_enviar' ? (ie === 'guardado' || ie === 'pdf') : ie === v; } },
+  instalacion:{ label:'Instalación', ops:function(){ return _bdValores(function(c){ return _instalacionDe(c); }, 'Sin instalación'); },
+                ok:function(c, v){ var x = _vacNorm(_instalacionDe(c)); return v === 'sin' ? !x : x === v; } },
+  turno:      { label:'Turno', ops:function(){ return _RH_JORNADAS.filter(function(j){ return j[0] !== 'otra'; }).concat([['otra', 'Otro turno'], ['sin', 'Sin turno']]); },
+                ok:function(c, v){ var t = _postulaDe(c).turno; return v === 'sin' ? !t : t === v; } },
+  comuna:     { label:'Comuna donde vive', ops:function(){ return _bdValores(function(c){ return c.comuna; }, 'Sin comuna'); },
+                ok:function(c, v){ var x = _vacNorm(c.comuna); return v === 'sin' ? !x : x === v; } },
+  chapi:      { label:'Antecedentes (Chapi)', ops:function(){ return [['por_visar', 'Por visar (antecedentes graves)'], ['visado', 'Visados'], ['rechazado', 'Rechazados por Chapi'],
+                  ['limpio', 'Sin antecedentes'], ['aviso', 'Con avisos menores'], ['error', 'No se pudo verificar'], ['sin', 'Sin verificar']]; },
+                ok:function(c, v){ var ch = (c.scores && c.scores._chapi) || {}, e = _chapiEstado(c).tipo;
+                  if (v === 'rechazado') return !!ch.rechazo; if (v === 'por_visar') return e === 'grave' && !ch.rechazo; if (v === 'error') return e === 'error' || e === 'error_final';
+                  if (v === 'sin') return !e; return e === v; } },
+  entrevista: { label:'Entrevista', ops:function(){ return [['con', 'Con entrevista registrada'], ['sin', 'Sin entrevista']]; },
+                ok:function(c, v){ var n = ((c.scores || {})._entrevistas || []).length; return v === 'con' ? n > 0 : !n; } },
+  motivo:     { label:'Motivo de cierre', ops:function(){ return _bdValores(_bdMotivoCierre, ''); },
+                ok:function(c, v){ return _vacNorm(_bdMotivoCierre(c)) === v; } },
   nuevo:      { label:'Nuevos', ops:function(){ return [['si', 'Solo nuevos (sin revisar)']]; },
                 ok:function(c){ return _esNuevo(c); } },
   invitacion: { label:'Invitación', ops:function(){ return [['con', 'Con invitación'], ['sin', 'Sin invitación']]; },
                 ok:function(c, v){ var i = !!(c.scores && c.scores._invitacion); return v === 'con' ? i : !i; } }
 };
+// Opciones de un filtro de texto libre: los valores que hay en los datos, de más a menos frecuente
+function _bdValores(get, sinTxt) {
+  var cuenta = {}, nombre = {}, sin = 0;
+  (_dbCache || []).forEach(function(c){ var v = String(get(c) || '').trim(), k = _vacNorm(v); if (!k) { sin++; return; } cuenta[k] = (cuenta[k] || 0) + 1; if (!nombre[k]) nombre[k] = v; });
+  return Object.keys(cuenta).sort(function(a, b){ return (cuenta[b] - cuenta[a]) || nombre[a].localeCompare(nombre[b], 'es'); })
+    .map(function(k){ return [k, nombre[k] + ' (' + cuenta[k] + ')']; }).concat(sinTxt && sin ? [['sin', sinTxt + ' (' + sin + ')']] : []);
+}
+// Motivo del último cierre (Rechazado o No contratado), con el resultado al inicio
+function _bdMotivoCierre(c) {
+  var e = getPipelineEtapa(c); if (!_esCierre(e)) return '';
+  var h = ((c.scores || {})._pipeline_history || []).filter(function(x){ return x && x.to === e; }).pop();
+  var m = h && h.motivo ? String(h.motivo).replace(/^Otro: .*/, 'Otro') : 'Sin motivo registrado';
+  return getPipelineMeta(e).label + ': ' + m;
+}
+// Orden del menú de filtros: los de uso diario primero
+var _BD_CAMPOS_ORDEN = ['cargo', 'etapa', 'instalacion', 'fecha', 'nuevo', 'dictamen', 'resultado', 'chapi', 'entrevista', 'motivo', 'turno', 'comuna',
+  'canal', 'informe', 'invitacion', 'integridad', 'duracion', 'archivo', 'estado'];
 function _bdFiltrar(all) {
   var q = (_bdBuscarTxt || '').toLowerCase().trim();
   var qRut = _rutNorm(q);   // el RUT se encuentra con o sin puntos y guion
@@ -12283,7 +12320,8 @@ function _bdFiltrar(all) {
     }
     // Sin filtro de archivo ni búsqueda, los archivados no se muestran
     var fl = _BD.filtros || {};
-    if (!q && !fl.archivo && !(_esCierre(fl.etapa) && getPipelineEtapa(c) === fl.etapa) && _bdEnArchivo(c)) return false;
+    // (filtrar por un cierre, por su motivo o por los rechazados de Chapi también muestra el archivo)
+    if (!q && !fl.archivo && !fl.motivo && fl.chapi !== 'rechazado' && !(_esCierre(fl.etapa) && getPipelineEtapa(c) === fl.etapa) && _bdEnArchivo(c)) return false;
     return Object.keys(_BD.filtros || {}).every(function(k){ var f = _BD_CAMPOS[k]; return !f || f.ok(c, _BD.filtros[k]); });
   });
 }
@@ -12601,7 +12639,8 @@ function _bdMenu(anchor, items) {
   setTimeout(function(){ document.addEventListener('click', _bdCerrarMenu, { once: true }); }, 0);
 }
 function _bdMenuCampos(anchor) {
-  _bdMenu(anchor, [{ titulo:'Filtrar por' }].concat(Object.keys(_BD_CAMPOS).map(function(k){
+  var claves = _BD_CAMPOS_ORDEN.filter(function(k){ return _BD_CAMPOS[k]; }).concat(Object.keys(_BD_CAMPOS).filter(function(k){ return _BD_CAMPOS_ORDEN.indexOf(k) === -1; }));
+  _bdMenu(anchor, [{ titulo:'Filtrar por' }].concat(claves.map(function(k){
     return { label:_BD_CAMPOS[k].label + (_BD.filtros[k] ? ' ·' : ''), fn:function(){ _bdMenuValor(anchor, k); } };
   })));
 }
@@ -14582,12 +14621,16 @@ function _chapiReglas(imp, prensa) {
   var st = function(t){ return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); };
   var RE = /(^|\s)(robo|hurto|estafa|receptacion|apropiacion|defraudacion|fraude|abigeato)/;
   var rh = function(x){ return RE.test(x.tipo) || RE.test(st(x.delito).replace(/[^a-z\s]/g, ' ').trim()); }, rec = function(x){ return !rh(x) && /reclutamiento/.test(st(x.delito)); };
-  var roboHurto = lista.filter(rh), reclutamiento = lista.filter(rec);
+  // Lesiones graves: rechazo si la denuncia tiene menos de 5 años; más antiguas, a criterio (por visar)
+  var lesG = function(x){ return !rh(x) && /lesion(es)?\s+(graves|gravisimas)/.test(st(x.delito)) && !/menos\s+graves/.test(st(x.delito)); };
+  var reciente = function(x){ var t = Date.parse(x.fecha); return !isNaN(t) && (Date.now() - t) / (365.25 * 864e5) < 5; };
+  var les = function(x){ return lesG(x) && reciente(x); };
+  var roboHurto = lista.filter(rh), reclutamiento = lista.filter(rec), lesiones = lista.filter(les), lesionesAntiguas = lista.filter(function(x){ return lesG(x) && !reciente(x); });
   var pAlta = (Array.isArray(prensa) ? prensa : []).filter(function(e){ return e.confianza >= 0.85; });
-  lista.forEach(function(x){ if (!rh(x) && !rec(x)) (porTipo[x.tipo] = porTipo[x.tipo] || {})[x.rit || x.delito] = x; });
+  lista.forEach(function(x){ if (!rh(x) && !rec(x) && !lesG(x)) (porTipo[x.tipo] = porTipo[x.tipo] || {})[x.rit || x.delito] = x; });
   var reiteradas = Object.keys(porTipo).filter(function(t){ return t && Object.keys(porTipo[t]).length >= 2; })
     .map(function(t){ return { tipo: t, causas: Object.keys(porTipo[t]).map(function(k){ return porTipo[t][k]; }) }; });
-  return { roboHurto: roboHurto, reclutamiento: reclutamiento, reiteradas: reiteradas, prensa: pAlta, descartar: roboHurto.length > 0 || reclutamiento.length > 0 || reiteradas.length > 0 || pAlta.length > 0 };
+  return { roboHurto: roboHurto, reclutamiento: reclutamiento, lesiones: lesiones, lesionesAntiguas: lesionesAntiguas, reiteradas: reiteradas, prensa: pAlta, descartar: roboHurto.length > 0 || reclutamiento.length > 0 || lesiones.length > 0 || reiteradas.length > 0 || pAlta.length > 0 };
 }
 // Mismo criterio que la verificación automática (psicoeval-chapi): grave = penales por RUT,
 // causas laborales o riesgo alto; lo demás, aviso para conversarlo en la entrevista
@@ -14596,6 +14639,8 @@ function _chapiClasificar(r) {
   var rd = _chapiReglas(r && r.imputaciones, r && r.prensa_robos);
   if (rd.roboHurto.length) motivos.push('Robos y estafas: ' + rd.roboHurto.map(function(x){ return (x.rol || 'Imputado').toLowerCase(); }).filter(function(v, i, a){ return a.indexOf(v) === i; }).join(' / ') + ' (' + rd.roboHurto.length + ')');
   if (rd.reclutamiento.length) motivos.push('Infracción a la Ley de Reclutamiento (' + rd.reclutamiento.length + ')');
+  if (rd.lesiones.length) motivos.push('Lesiones graves con denuncia de hace menos de 5 años (' + rd.lesiones.length + ')');
+  if (rd.lesionesAntiguas.length) motivos.push('Lesiones graves con denuncia de hace 5 años o más, a su criterio (' + rd.lesionesAntiguas.length + ')');
   if (rd.prensa.length) motivos.push('Prensa: robos y estafas (' + rd.prensa.length + ')');
   var pBaja = ((r && r.prensa_robos) || []).filter(function(e){ return e.confianza < 0.85; });
   if (pBaja.length) motivos.push('Prensa: robos y estafas con coincidencia dudosa (' + pBaja.length + ')');
@@ -14685,17 +14730,35 @@ async function _chapiNombreGuardar(id) {
     try { _bdRenderCuerpo(); } catch(e) {}
   } catch(e) { toast('No se pudo guardar el nombre: ' + e.message, 'er'); }
 }
+// Detalle de cada causa en texto (para no tener que abrir Chapi). Las verificaciones anteriores al
+// detalle solo traen las imputaciones penales; "Actualizar" vuelve a consultar sin costo dentro del mes.
+function _chapiDetalleHtml(ch) {
+  var e = htmlEsc, d = ch.detalle, anio = function(f){ return String(f || '').slice(0, 4); };
+  var linea = function(partes){ return '<li>' + partes.filter(Boolean).map(e).join(' · ') + '</li>'; };
+  var grupo = function(t, items){ return items.length ? '<div class="ch-det-g"><b>' + t + '</b><ul>' + items.join('') + '</ul></div>' : ''; };
+  var h = '';
+  if (d && typeof d === 'object') {
+    h += grupo('Causas penales', (d.penal || []).map(function(x){ return linea([anio(x.fecha), x.rol || 'Rol no identificado', (x.delitos || []).join('; '), x.rit ? 'RIT ' + x.rit : '', x.tribunal, x.estado, x.coincide === 'nombre' ? 'coincide solo por nombre' : '']); }));
+    h += grupo('Causas laborales', (d.laboral || []).map(function(x){ return linea([anio(x.fecha), x.rol, x.caratulado, (x.materias || []).join('; '), x.rit ? 'RIT ' + x.rit : '', x.tribunal, x.estado]); }));
+    h += grupo('Causas civiles', (d.civil || []).map(function(x){ return linea([anio(x.fecha), x.rol, x.caratulado, x.rit ? 'Rol ' + x.rit : '', x.tribunal, x.estado]); }));
+  } else if ((ch.imputaciones || []).length) {
+    h += grupo('Causas penales por RUT', ch.imputaciones.map(function(x){ return linea([anio(x.fecha), x.rol || 'Imputado', x.delito, x.rit ? 'RIT ' + x.rit : '', x.tribunal]); }))
+      + '<div class="ch-det-n">Para ver también las causas laborales y civiles en detalle, use <b>Actualizar</b> (sin costo dentro del mes).</div>';
+  }
+  (ch.prensa_robos || []).forEach(function(p){ h += grupo('Prensa', [linea([anio(p.fecha), p.rol, p.categoria, p.etapa, 'coincidencia ' + Math.round((p.confianza || 0) * 100) + ' %'])]); });
+  return h ? '<div class="ch-det">' + h + '</div>' : '';
+}
 function _rsChapiHtml(c) {
   if (!_verEntrevistas()) return '';
   var ch = (c.scores && c.scores._chapi) || {}, a = ch.auto || {}, etapa = getPipelineEtapa(c), cid = htmlEsc(c.id);
   var h = '<div class="rs-card' + (etapa === 'antecedentes' ? ' ch-visar' : '') + '" id="rs-chapi"><div class="rs-lbl">Antecedentes (Chapi)'
     + (ch.id ? '<a class="rs-link" onclick="_chapiVerificar(\'' + cid + '\', true)">Actualizar</a>' : '') + '</div>';
-  // Detenido en Antecedentes: el administrador visa (pasa a entrevista) o descarta
+  // Detenido en Antecedentes: el administrador visa (pasa a Antecedentes aprobados) o descarta
   if (etapa === 'antecedentes' && S.role === 'admin') {
     var cl0 = ch.id ? _chapiClasificar(ch) : null;
     h += '<div class="ch-alto"><b>' + (cl0 && cl0.grave ? 'Antecedente grave por visar' : 'No se pudo verificar automáticamente') + '</b>'
       + '<span>' + htmlEsc(cl0 && cl0.grave ? cl0.motivos.join(' · ') : (a.error || 'Revise los antecedentes antes de la entrevista.')) + '</span>'
-      + '<div class="rs-acciones"><button class="rs-btn prim" onclick="_chapiVisar(\'' + cid + '\')">Visar y pasar a entrevista</button>'
+      + '<div class="rs-acciones"><button class="rs-btn prim" onclick="_chapiVisar(\'' + cid + '\')">Visar: antecedentes aprobados</button>'
       + '<button class="rs-btn" onclick="_chapiDescartar(\'' + cid + '\')">Descartar</button></div></div>';
   }
   if (ch.rechazo) h += '<div class="ch-alto"><b>Descartado por antecedentes (Chapi)' + (ch.rechazo.auto ? ' · automático' : '') + '</b>'
@@ -14724,6 +14787,7 @@ function _rsChapiHtml(c) {
   h += '<div class="ch-causas">' + cnt.map(function(x){ return '<span' + (x[1] ? ' class="on"' : '') + '><b>' + (x[1] || 0) + '</b>' + x[0] + '</span>'; }).join('') + '</div>';
   if (k.penales && k.penales_nombre && !k.penales_rut) h += '<div class="ch-aviso">Las causas penales coinciden solo por nombre, no por RUT: pueden ser de otra persona.</div>';
   if (ch.pep) h += '<div class="ch-aviso">Figura como persona políticamente expuesta (PEP).</div>';
+  h += _chapiDetalleHtml(ch);
   (ch.fuentes || []).forEach(function(x) {
     h += '<div class="rs-kv"><span>' + htmlEsc(x.etiqueta || x.tipo) + '</span><b><i class="pb-dot" style="background:' + (_CHAPI_COLOR[x.color] || '#94a3b8') + ';margin-right:6px"></i>'
       + htmlEsc(x.procesando ? 'En proceso…' : (x.estado || '—')) + '</b></div>';
