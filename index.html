@@ -9454,6 +9454,9 @@ function _porRevisarHtml(cands, desde) {
     var m = _miradaDe(c), et = getPipelineEtapa(c);
     // Antecedentes por visar: siempre (no dependen del período)
     if (et === 'antecedentes') { grupos[0].lista.push({ c:c, nota:_chapiMotivoCorto(c) }); return; }
+    // …y los que se movieron de etapa sin visar un antecedente grave
+    var chV = (c.scores && c.scores._chapi) || {};
+    if (_chapiEstado(c).tipo === 'grave' && !chV.rechazo && !_esCierre(et)) grupos[0].lista.push({ c:c, nota:'en ' + getPipelineMeta(et).label + ' sin visar · ' + _chapiMotivoCorto(c) });
     var f = _fechaCand(c), enPeriodo = !desde || (f && f >= desde);
     if (!enPeriodo) { if (m.segPend.length) grupos[4].lista.push({ c:c, nota:m.segPend.map(function(p){ return p.hito.toLowerCase(); }).join(' y ') }); return; }
     if (_esCierre(et)) { if (m.segPend.length) grupos[4].lista.push({ c:c, nota:m.segPend.map(function(p){ return p.hito.toLowerCase(); }).join(' y ') }); return; }
@@ -12369,7 +12372,7 @@ async function _bdRender() {
   _bdBarPintar();
   _bdCuerpoPintar(all);
 }
-async function _bdRenderCuerpo() { _bdCuerpoPintar(await getDB()); _nuevosPintar(); }
+async function _bdRenderCuerpo() { if (!_BD || !document.getElementById('bd-cuerpo')) { _nuevosPintar(); return; } _bdCuerpoPintar(await getDB()); _nuevosPintar(); }
 function _bdCuerpoPintar(all) {
   var cuerpo = document.getElementById('bd-cuerpo'); if (!cuerpo) return;
   var lista = _bdOrdenar(_bdFiltrar(all));
@@ -14765,12 +14768,14 @@ function _rsChapiHtml(c) {
   var ch = (c.scores && c.scores._chapi) || {}, a = ch.auto || {}, etapa = getPipelineEtapa(c), cid = htmlEsc(c.id);
   var h = '<div class="rs-card' + (etapa === 'antecedentes' ? ' ch-visar' : '') + '" id="rs-chapi"><div class="rs-lbl">Antecedentes (Chapi)'
     + (ch.id ? '<a class="rs-link" onclick="_chapiVerificar(\'' + cid + '\', true)">Actualizar</a>' : '') + '</div>';
-  // Detenido en Antecedentes: el administrador visa (pasa a Antecedentes aprobados) o descarta
-  if (etapa === 'antecedentes' && S.role === 'admin') {
-    var cl0 = ch.id ? _chapiClasificar(ch) : null;
+  // Por visar: en Antecedentes, o en otra etapa abierta si se movió sin visar. El administrador visa o descarta
+  var cl0 = ch.id ? _chapiClasificar(ch) : null;
+  var porVisar = (etapa === 'antecedentes' || (cl0 && cl0.grave && !ch.visado && !ch.rechazo && !_esCierre(etapa))) && S.role === 'admin';
+  if (porVisar) {
     h += '<div class="ch-alto"><b>' + (cl0 && cl0.grave ? 'Antecedente grave por visar' : 'No se pudo verificar automáticamente') + '</b>'
       + '<span>' + htmlEsc(cl0 && cl0.grave ? cl0.motivos.join(' · ') : (a.error || 'Revise los antecedentes antes de la entrevista.')) + '</span>'
-      + '<div class="rs-acciones"><button class="rs-btn prim" onclick="_chapiVisar(\'' + cid + '\')">Visar: antecedentes aprobados</button>'
+      + (etapa !== 'antecedentes' ? '<span style="display:block;margin-top:4px">Se movió a ' + htmlEsc(getPipelineMeta(etapa).label) + ' sin visar.</span>' : '')
+      + '<div class="rs-acciones"><button class="rs-btn prim" onclick="_chapiVisar(\'' + cid + '\')">' + (etapa === 'antecedentes' ? 'Visar: antecedentes aprobados' : 'Visar antecedentes') + '</button>'
       + '<button class="rs-btn" onclick="_chapiDescartar(\'' + cid + '\')">Descartar</button></div></div>';
   }
   if (ch.rechazo) h += '<div class="ch-alto"><b>Descartado por antecedentes (Chapi)' + (ch.rechazo.auto ? ' · automático' : '') + '</b>'
@@ -14861,12 +14866,24 @@ async function _chapiDescartarGuardar(id) {
   } catch(e) { toast('No se pudo descartar: ' + e.message, 'er'); }
 }
 // Visar un antecedente grave: queda registrado quién y cuándo, y pasa a Antecedentes aprobados
+// Se puede visar en cualquier etapa abierta: si sigue en Antecedentes pasa a Antecedentes aprobados;
+// si ya se movió de etapa (por ejemplo, a Entrevista), queda visado sin cambiar la etapa
 async function _chapiVisar(id) {
-  if (!(await appConfirm('¿Visar los antecedentes y pasar a Antecedentes aprobados? Quedará registrado con su usuario y la fecha.'))) return;
+  var c0 = (await getDB()).find(function(x){ return x.id === id; }), et = c0 ? getPipelineEtapa(c0) : '';
+  var mover = et === 'antecedentes' || et === 'postulante';
+  if (!(await appConfirm(mover ? '¿Visar los antecedentes y pasar a Antecedentes aprobados? Quedará registrado con su usuario y la fecha.'
+                               : '¿Visar los antecedentes? La etapa actual no cambia. Quedará registrado con su usuario y la fecha.'))) return;
   try {
     var por = S.userEmail || (document.getElementById('sidebar-user-label') || {}).textContent || '';
     await _patchPrivado(id, 'chapi', function(prev){ return Object.assign({}, prev || {}, { visado: { por: por, ts: new Date().toISOString() } }); });
-    await drawerSetEtapa(id, 'antecedentes_ok');
+    if (mover) await drawerSetEtapa(id, 'antecedentes_ok');
+    else {
+      _invalidateCache();
+      var c = (await getDB()).find(function(x){ return x.id === id; });
+      if (c && _drawerCandId === id) { _renderDrawerHeader(c); _switchDrawerTab('resumen', c); }
+      toast('Antecedentes visados', 'ok');
+      try { _bdRenderCuerpo(); } catch(e) {}
+    }
   } catch(e) { toast('No se pudo visar: ' + e.message, 'er'); }
 }
 // Primero busca la verificación del mes (sin costo); si no hay, pide confirmar el uso de un crédito
