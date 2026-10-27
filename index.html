@@ -2776,6 +2776,7 @@ body.adm .rh-box .vac-benef label,.vac-benef label{display:inline-flex;white-spa
           <select id="bulk-stage-select" onchange="bulkMoveStage()" title="Mover los seleccionados a otra etapa" style="padding:6px 28px 6px 10px;border:1.5px solid var(--accent-m);border-radius:8px;background:var(--surface);font-size:12px;font-weight:600;font-family:inherit;color:var(--ink);-webkit-appearance:none;background-image:url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2716%27 height=%2716%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%238e8e93%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpolyline points=%276 9 12 15 18 9%27/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 6px center;cursor:pointer">
             <option value="">Mover a etapa…</option>
             <option value="postulante">Postulante</option>
+            <option value="antecedentes_ok">Antecedentes aprobados</option>
             <option value="entrevista">Entrevista Laboral</option>
             <option value="seleccionado">Seleccionado</option>
             <option value="enviado">Enviado a contratación</option>
@@ -13946,6 +13947,8 @@ var PIPELINE_STAGES = [
   { id:'postulante',   label:'Postulante',          icon:'📋', color:'#475569', bg:'#f1f5f9', border:'#cbd5e1' },
   // Antecedentes: verificación de Chapi con algo grave que el administrador debe visar (24_chapi_auto.sql)
   { id:'antecedentes', label:'Antecedentes',         icon:'🔎', color:'#b45309', bg:'#fff7ed', border:'#fed7aa' },
+  // Antecedentes aprobados: Chapi sin antecedentes graves, o visados por el administrador; queda listo para la entrevista
+  { id:'antecedentes_ok', label:'Antecedentes aprobados', icon:'✔', color:'#0f766e', bg:'#f0fdfa', border:'#99f6e4' },
   { id:'entrevista',   label:'Entrevista Laboral',   icon:'💬', color:'#d97706', bg:'#fffbeb', border:'#fde68a' },
   { id:'seleccionado', label:'Seleccionado',          icon:'✅', color:'#16a34a', bg:'#f0fdf4', border:'#bbf7d0' },
   { id:'enviado',      label:'Enviado a contratación', icon:'📨', color:'#7c3aed', bg:'#f5f3ff', border:'#ddd6fe' },
@@ -14187,7 +14190,7 @@ function _dashProceso(cands, all, filterCargo) {
 
   var out = {}, h = '';
   // ── Embudo: barras finas, sin íconos ──
-  var funnelStages = PIPELINE_STAGES.filter(function(s){ return !_esCierre(s.id) && s.id !== 'antecedentes'; });
+  var funnelStages = PIPELINE_STAGES.filter(function(s){ return !_esCierre(s.id) && s.id !== 'antecedentes' && s.id !== 'antecedentes_ok'; });
   // Llegaron a una etapa: quienes están hoy en ella o en una posterior, o pasaron por ella
   // según el historial (los descartados cuentan en las etapas que alcanzaron)
   var _fIdx = {}; funnelStages.forEach(function(s, i){ _fIdx[s.id] = i; });
@@ -14774,13 +14777,13 @@ async function _chapiDescartarGuardar(id) {
     try { _bdRenderCuerpo(); } catch(e) {}
   } catch(e) { toast('No se pudo descartar: ' + e.message, 'er'); }
 }
-// Visar un antecedente grave: queda registrado quién y cuándo, y pasa a Entrevista Laboral
+// Visar un antecedente grave: queda registrado quién y cuándo, y pasa a Antecedentes aprobados
 async function _chapiVisar(id) {
-  if (!(await appConfirm('¿Visar los antecedentes y pasar a Entrevista Laboral? Quedará registrado con su usuario y la fecha.'))) return;
+  if (!(await appConfirm('¿Visar los antecedentes y pasar a Antecedentes aprobados? Quedará registrado con su usuario y la fecha.'))) return;
   try {
     var por = S.userEmail || (document.getElementById('sidebar-user-label') || {}).textContent || '';
     await _patchPrivado(id, 'chapi', function(prev){ return Object.assign({}, prev || {}, { visado: { por: por, ts: new Date().toISOString() } }); });
-    await drawerSetEtapa(id, 'entrevista');
+    await drawerSetEtapa(id, 'antecedentes_ok');
   } catch(e) { toast('No se pudo visar: ' + e.message, 'er'); }
 }
 // Primero busca la verificación del mes (sin costo); si no hay, pide confirmar el uso de un crédito
