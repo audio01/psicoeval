@@ -12401,14 +12401,18 @@ function _bdMotivoCierre(c) {
 // Orden del menú de filtros: los de uso diario primero
 var _BD_CAMPOS_ORDEN = ['cargo', 'etapa', 'instalacion', 'fecha', 'nuevo', 'dictamen', 'resultado', 'chapi', 'entrevista', 'motivo', 'turno', 'comuna',
   'canal', 'informe', 'invitacion', 'integridad', 'duracion', 'archivo', 'estado'];
+function _telDig(t) { var d = String(t || '').replace(/\D/g, ''); return d.length > 9 && d.indexOf('56') === 0 ? d.slice(2) : d; }
 function _bdFiltrar(all) {
   var q = (_bdBuscarTxt || '').toLowerCase().trim();
   var qRut = _rutNorm(q);   // el RUT se encuentra con o sin puntos y guion
+  var qTel = _telDig(q);
   return all.filter(function(c) {
     if (q) {
       var txt = [c.nombre, c.apellido, c.email, c.rut, c.cargo, c.comuna, c.rubro, _canalTxt(c), _instalacionDe(c)].map(function(v){ return v || ''; }).join(' ').toLowerCase();
       var porRut = qRut.length >= 6 && /^[\d.\-\skK]+$/.test(q) && _rutNorm(c.rut).indexOf(qRut) === 0;
-      if (txt.indexOf(q) === -1 && !porRut) return false;
+      // Teléfono: por dígitos, con o sin +56, espacios o guiones (987654321 = +56 9 8765 4321)
+      var porTel = qTel.length >= 6 && /^[\d+\s()-]+$/.test(q) && _telDig(c.telefono).indexOf(qTel) !== -1;
+      if (txt.indexOf(q) === -1 && !porRut && !porTel) return false;
     }
     // Sin filtro de archivo ni búsqueda, los archivados no se muestran
     var fl = _BD.filtros || {};
@@ -12504,7 +12508,7 @@ function _bdBarPintar() {
   }).join('');
   var tab = _BD.vista === 'tablero';
   el.innerHTML = '<div class="bd-bar-l">'
-    + '<input class="bd-buscar" id="bd-buscar" placeholder="Buscar nombre, RUT o correo" value="' + htmlEsc(_bdBuscarTxt) + '" oninput="_bdBuscar(this.value)">'
+    + '<input class="bd-buscar" id="bd-buscar" placeholder="Buscar nombre, RUT, teléfono o correo" value="' + htmlEsc(_bdBuscarTxt) + '" oninput="_bdBuscar(this.value)">'
     + chips + '<button class="bd-add" onclick="_bdMenuCampos(this)">＋ Filtro</button>'
     + '<span class="bd-count" id="bd-count"></span></div>'
     + '<div class="bd-bar-r">'
@@ -15298,19 +15302,10 @@ var _COMP_CONFIG_V2 = [
 // Cada cargo puede cambiar las competencias que se exploran con STAR: su nombre, definición, anclas y
 // preguntas, quitar alguna del paso STAR o agregar nuevas. Las que conservan la clave de una fila del
 // Informe RH (cliente, comunicacion, equipo…) siguen llenando esa fila; las nuevas quedan solo en la entrevista.
-// Guardia y sus subtipos parten con tres competencias propias del servicio.
+// Guardia y sus subtipos evalúan las mismas tres competencias del Informe RH, con preguntas y anclas del servicio.
 var _COMP_GUARDIA = { comps: {
-  consignas: { name:'Apego a consignas y protocolos', icon:'📋', star:true,
-    def:'Cumple los procedimientos del puesto (registro de ingresos, rondas, revisión de vehículos y bultos) aunque nadie lo supervise ni haya apuro.',
-    anclas:{ 1:'Relata saltarse pasos "porque no pasa nada" o por comodidad.',
-             3:'Cumple lo habitual; relaja el procedimiento con apuro o con gente conocida.',
-             5:'Relata haber cumplido el procedimiento completo bajo presión de tiempo o de una persona, y explica para qué sirve cada paso.' },
-    questions:[
-      ['Cuénteme de una vez en que el procedimiento del puesto le hizo el trabajo más lento o incómodo. ¿Qué hizo?', '¿Qué paso del procedimiento era? ¿Por qué lo cumplió o no? ¿Cómo terminó?'],
-      ['Cuénteme de una vez en que alguien conocido (un trabajador antiguo, un jefe del cliente) quiso pasar sin el registro.', '¿Qué le dijo? ¿Qué hizo finalmente?'],
-      ['Cuénteme de una consigna nueva que le costó cumplir.', '¿Cómo se aseguró de cumplirla completa?'] ] },
-  cliente: { name:'Trato firme en el control de acceso', icon:'🙋', star:true,
-    def:'Aplica la norma de ingreso con respeto, también cuando debe negar la entrada o retener a alguien.',
+  cliente: {
+    def:'Atiende con respeto a visitas, trabajadores y personal del cliente, y aplica la norma de ingreso con firmeza y buen trato, también cuando debe negar la entrada.',
     anclas:{ 1:'Cede para evitar el conflicto, o responde con malos tratos o amenazas.',
              3:'Niega el ingreso, pero sin explicar la norma ni ofrecer alternativas; el conflicto escala.',
              5:'Explica la norma con calma, ofrece la vía correcta (autorización, contacto con el responsable) y mantiene la decisión sin escalar el conflicto.' },
@@ -15318,7 +15313,7 @@ var _COMP_GUARDIA = { comps: {
       ['Cuénteme de una vez en que tuvo que negarle la entrada a alguien que insistía o se molestó.', '¿Qué le dijo exactamente? ¿Qué hizo la persona? ¿Pidió apoyo? ¿Cómo terminó?'],
       ['Cuénteme de una vez en que tuvo que pedirle a alguien que abriera un bolso o mostrara lo que llevaba.', '¿Cómo se lo pidió? ¿Cómo reaccionó la persona?'],
       ['Cuénteme de una vez en que una visita o un proveedor llegó sin autorización.', '¿Qué hizo para resolverlo sin saltarse la norma?'] ] },
-  comunicacion: { name:'Registro y reporte de novedades', icon:'📝', star:true,
+  comunicacion: {
     def:'Informa a tiempo y por el canal correcto, y deja un registro completo y verificable (radio, libro de novedades, relevo, informe de incidente).',
     anclas:{ 1:'No recuerda haber reportado algo o lo comunicó solo de palabra, sin registro.',
              3:'Reporta lo principal, pero sin hora, lugar o personas involucradas.',
@@ -15327,7 +15322,15 @@ var _COMP_GUARDIA = { comps: {
       ['Cuénteme del último incidente que le tocó informar: qué pasó y cómo lo reportó.', '¿Por qué medio y a quién? ¿Qué anotó en el libro? ¿Qué dato faltó?'],
       ['Cuénteme de la última vez que entregó el turno con una novedad importante.', '¿Qué informó y cómo supo que su relevo lo entendió?'],
       ['Cuénteme de una vez en que un reporte suyo quedó incompleto o llegó tarde.', '¿Qué consecuencias tuvo y qué hace distinto ahora?'] ] },
-  equipo: { star:false }
+  equipo: {
+    def:'Se coordina con sus compañeros de turno, relevos, central y supervisor; apoya cuando el servicio lo necesita y resuelve los desacuerdos sin descuidar el puesto.',
+    anclas:{ 1:'Relata conflictos con compañeros o haberlos dejado solos en el puesto; no se coordina con la central o el supervisor.',
+             3:'Apoya cuando se lo piden; evita resolver los desacuerdos o los deriva siempre al supervisor.',
+             5:'Relata haber apoyado a un compañero o cubierto un puesto en un momento crítico, coordinándose por radio o con la central, sin descuidar su función.' },
+    questions:[
+      ['Cuénteme de una vez en que un compañero de otro puesto o la central le pidió apoyo durante un incidente.', '¿Qué hizo usted? ¿Cómo se coordinaron y cómo terminó?'],
+      ['Cuénteme de una vez en que su relevo llegó tarde o no llegó.', '¿Qué hizo? ¿Cómo lo resolvieron con su compañero y su supervisor?'],
+      ['Cuénteme de un desacuerdo con un compañero de turno sobre cómo hacer el servicio (rondas, puesto, horarios).', '¿Cómo lo resolvieron? ¿Qué haría distinto?'] ] }
 } };
 var COMP_CARGO = {};   // { perfil: { comps: { clave: { name, def, anclas, questions, star, icon } } } }
 function loadCompCargo() {
