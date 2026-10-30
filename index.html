@@ -11877,6 +11877,7 @@ async function renderDashboard() {
     h += _dashSemanalHtml(delCargo, invs, n);
   }
   container.innerHTML = h;
+  if (_dashVista === 'semanal') { _initDashCharts(); _actEv = _actEventos(delCargo, invs || []); _actPintar(); }
 }
 
 // ── Dashboard: análisis de la selección en tres vistas (Registro semanal, Instalaciones, Calidad) ──
@@ -11930,8 +11931,81 @@ function _dashKpis(items) {
 }
 function _dashPct(a, b) { return b ? Math.round(a / b * 100) : 0; }
 var _DASH_MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+// ── Actividad del equipo: lo que se hizo, por día, semana, mes y mes a mes ──
+// Cada acción cuenta en la fecha en que ocurrió: invitaciones enviadas, evaluaciones terminadas, verificaciones
+// de Chapi, entrevistas, cambios de etapa (historial) e informes RH enviados.
+var _ACT_TIPOS = [['invitacion', 'Invitaciones enviadas'], ['evaluacion', 'Evaluaciones terminadas'], ['chapi', 'Verificados en Chapi'],
+  ['entrevista', 'Entrevistas'], ['seleccionado', 'Seleccionados'], ['enviado', 'Enviados a contratación'], ['informe', 'Informes RH enviados'],
+  ['contratado', 'Contratados'], ['descartado', 'Rechazados'], ['no_contratado', 'No contratados']];
+var _actPeriodo = 'hoy', _actEv = [];
+function _actEventos(cands, invs) {
+  var ev = [], add = function(tipo, t){ var x = typeof t === 'number' ? t : Date.parse(t); if (x && !isNaN(x)) ev.push({ tipo: tipo, t: x }); };
+  (invs || []).forEach(function(i){ add('invitacion', i.creada); });
+  cands.forEach(function(c) {
+    var sc = c.scores || {};
+    if (c.estado === 'completed') { var m = _momentoCand(c); if (m) add('evaluacion', m.getTime()); }
+    if (sc._chapi && sc._chapi.id) add('chapi', sc._chapi.consultado || (sc._chapi.auto || {}).ts);
+    (sc._entrevistas || []).forEach(function(e){ if (e) add('entrevista', e.fecha ? e.fecha + 'T00:00:00' : (e.creada || e.ts)); });
+    if (sc._informe_rh && sc._informe_rh.enviado) add('informe', sc._informe_rh.enviado);
+    (sc._pipeline_history || []).forEach(function(hh){ if (hh && ['seleccionado', 'enviado', 'contratado', 'descartado', 'no_contratado'].indexOf(hh.to) !== -1) add(hh.to, hh.ts); });
+  });
+  return ev;
+}
+function _actSetPeriodo(p) { _actPeriodo = p; _actPintar(); }
+function _actPintar() {
+  var box = document.getElementById('dsh-actividad'); if (!box) return;
+  var ahora = new Date(), dia = new Date(ahora); dia.setHours(0, 0, 0, 0);
+  var cuenta = function(a, b){ var o = {}; _actEv.forEach(function(e){ if (e.t >= a && e.t < b) o[e.tipo] = (o[e.tipo] || 0) + 1; }); return o; };
+  var seg = [['hoy', 'Hoy'], ['7', '7 días'], ['mes', 'Este mes'], ['meses', 'Mes a mes']].map(function(x){
+    return '<button class="' + (x[0] === _actPeriodo ? 'on' : '') + '" onclick="_actSetPeriodo(\'' + x[0] + '\')">' + x[1] + '</button>'; }).join('');
+  var h = '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px"><div class="dash-lbl" style="margin:0">Actividad</div><div class="dsh-seg" style="margin-left:auto">' + seg + '</div></div>';
+  if (_actPeriodo === 'meses') {
+    // Tabla: los últimos 6 meses, una columna por mes
+    var meses = [];
+    for (var i = 5; i >= 0; i--) { var a = new Date(ahora.getFullYear(), ahora.getMonth() - i, 1), b = new Date(ahora.getFullYear(), ahora.getMonth() - i + 1, 1); meses.push({ a: a, o: cuenta(a.getTime(), b.getTime()) }); }
+    h += '<div style="overflow-x:auto"><table class="dsh-act-t"><thead><tr><th></th>' + meses.map(function(m){ return '<th>' + m.a.toLocaleDateString('es-CL', { month:'short' }).replace('.', '') + (m.a.getMonth() === 0 || m === meses[0] ? ' ' + String(m.a.getFullYear()).slice(2) : '') + '</th>'; }).join('') + '</tr></thead><tbody>'
+      + _ACT_TIPOS.filter(function(t){ return meses.some(function(m){ return m.o[t[0]]; }); }).map(function(t){
+          return '<tr><td>' + t[1] + '</td>' + meses.map(function(m){ return '<td>' + (m.o[t[0]] || '<span style="color:var(--ink4)">·</span>') + '</td>'; }).join('') + '</tr>'; }).join('')
+      + '</tbody></table></div><div class="dsh-pie">Las invitaciones cuentan desde que existe el registro de invitaciones; las entrevistas, en la fecha de la entrevista.</div>';
+  } else {
+    var ini = _actPeriodo === 'hoy' ? dia : _actPeriodo === '7' ? new Date(dia.getTime() - 6 * 864e5) : new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+    var antIni = _actPeriodo === 'hoy' ? new Date(dia.getTime() - 864e5) : _actPeriodo === '7' ? new Date(ini.getTime() - 7 * 864e5) : new Date(ahora.getFullYear(), ahora.getMonth() - 1, 1);
+    // El período anterior se compara hasta el mismo punto (ayer a esta hora, el mes pasado al mismo día)
+    var antFin = _actPeriodo === 'mes' ? Math.min(new Date(ahora.getFullYear(), ahora.getMonth(), 1).getTime(), antIni.getTime() + (ahora - ini)) : antIni.getTime() + (ahora - ini);
+    var o = cuenta(ini.getTime(), ahora.getTime() + 1), ant = cuenta(antIni.getTime(), antFin);
+    var cmp = _actPeriodo === 'hoy' ? 'ayer a esta hora' : _actPeriodo === '7' ? 'los 7 días anteriores' : 'el mes pasado a esta fecha';
+    var tot = _ACT_TIPOS.reduce(function(n, t){ return n + (o[t[0]] || 0); }, 0);
+    h += tot ? '<div class="dsh-act">' + _ACT_TIPOS.filter(function(t){ return o[t[0]] || ant[t[0]]; }).map(function(t){
+        var n = o[t[0]] || 0, d = n - (ant[t[0]] || 0);
+        return '<div class="dsh-act-i"><b>' + n + '</b><span>' + t[1] + '</span><small>' + (d === 0 ? 'igual que ' + cmp : '<i class="' + (d > 0 ? 'dsh-up' : 'dsh-dn') + '">' + (d > 0 ? '+' : '−') + Math.abs(d) + '</i> frente a ' + cmp) + '</small></div>'; }).join('') + '</div>'
+      : '<div class="dsh-vacio">Sin actividad registrada ' + (_actPeriodo === 'hoy' ? 'hoy' : _actPeriodo === '7' ? 'en los últimos 7 días' : 'este mes') + '.</div>';
+  }
+  box.innerHTML = h;
+}
+
+// Gráfico de evaluaciones terminadas por semana: mismas semanas que el registro
+var _CHART_LIB = ['https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js', '', 'Chart'];
+var _dashSemFilas = [];
+function _initDashCharts() {
+  if (typeof Chart === 'undefined') { _rhCargarLib(_CHART_LIB).then(_initDashCharts).catch(function(){}); return; }
+  if (window._chartWeekly) { window._chartWeekly.destroy(); window._chartWeekly = null; }
+  var ctx = document.getElementById('chart-weekly');
+  if (!ctx) return;
+  var filas = _dashSemFilas.slice().reverse(), nSem = filas.length;
+  var labels = filas.map(function(f){ return f.ini.getDate() + '/' + (f.ini.getMonth() + 1); }), data = filas.map(function(f){ return f.ev.length; });
+  var tot = data.reduce(function(a, b){ return a + b; }, 0), res = document.getElementById('chart-weekly-res');
+  if (res) res.textContent = tot + ' en las últimas ' + nSem + ' semanas · ' + (Math.round(tot / nSem * 10) / 10).toString().replace('.', ',') + ' por semana en promedio';
+  var oscuro = document.documentElement.getAttribute('data-theme') === 'dark', tinta = oscuro ? 'rgba(235,236,245,.5)' : '#9aa1b2';
+  window._chartWeekly = new Chart(ctx, {
+    type: 'bar',
+    data: { labels: labels, datasets: [{ label: 'Terminadas', data: data, backgroundColor: oscuro ? 'rgba(111,139,255,.8)' : 'rgba(39,71,216,.72)', borderRadius: 5, borderSkipped: false, maxBarThickness: 26 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+      scales: { x: { grid: { display: false }, border: { display: false }, ticks: { color: tinta, font: { size: 11 }, maxRotation: 0, autoSkip: true } },
+                y: { beginAtZero: true, border: { display: false }, ticks: { color: tinta, stepSize: 1, precision: 0, font: { size: 11 }, maxTicksLimit: 5 }, grid: { color: oscuro ? 'rgba(255,255,255,.06)' : 'rgba(20,33,61,.06)' } } } }
+  });
+}
 function _dashSemanalHtml(cands, invs, n) {
-  var filas = _dashSemanas(cands, invs, n), lunes = _dashLunes(new Date()).getTime(), tot = {}, invT = 0;
+  var filas = _dashSemFilas = _dashSemanas(cands, invs, n), lunes = _dashLunes(new Date()).getTime(), tot = {}, invT = 0;
   _DASH_SEM_COLS.forEach(function(k){ tot[k] = []; });
   filas.forEach(function(f){ invT += f.inv; _DASH_SEM_COLS.forEach(function(k){ f[k].forEach(function(id){ if (tot[k].indexOf(id) === -1) tot[k].push(id); }); }); });
   var dic = tot.apto.length + tot.obs.length + tot.no.length;
@@ -11947,6 +12021,7 @@ function _dashSemanalHtml(cands, invs, n) {
       + [['ev', 'Evaluaciones'], ['apr', 'Aprobaron'], ['apto', 'Apto'], ['obs', 'Con observaciones'], ['no', 'No apto'], ['env', 'Enviados'], ['rech', 'Rechazados'], ['noc', 'No contratados']]
         .map(function(k, i){ return '<td' + (i === 2 || i === 5 ? ' class="dsh-sep"' : '') + '>' + _dashNum(f[k[0]], txt(k[1])) + '</td>'; }).join('') + '</tr>';
   };
+  h += '<div class="dash-card"><div class="dash-lbl">Evaluaciones terminadas por semana</div><div class="dsh-nota" id="chart-weekly-res"></div><div style="height:180px"><canvas id="chart-weekly"></canvas></div></div>';
   h += '<div class="dash-card"><div class="dash-lbl">Registro semanal</div><div class="dsh-nota">De lunes a domingo. Cada cifra cuenta en la fecha en que ocurrió; una persona puede aparecer en distintas semanas.</div>'
     + '<div class="dsh-scroll"><table class="dsh-act-t dsh-sem"><thead><tr><th></th><th colspan="3">Llegada</th><th colspan="3" class="dsh-sep">Dictamen</th><th colspan="3" class="dsh-sep">Cierre</th></tr>'
     + '<tr><th>Semana</th><th>Invit.</th><th>Evaluac.</th><th>Aprobaron</th><th class="dsh-sep">Apto</th><th>Con obs.</th><th>No apto</th><th class="dsh-sep">Enviados</th><th>Rechaz.</th><th>No contr.</th></tr></thead><tbody>'
@@ -11956,7 +12031,7 @@ function _dashSemanalHtml(cands, invs, n) {
         return fila(f, etq, '', invs ? f.inv : null);
       }).join('')
     + '</tbody></table></div></div>';
-  return h;
+  return h + '<div class="dash-card" id="dsh-actividad"></div>';
 }
 function _dashInstalacionesHtml(cands) {
   var grupos = {}, sin = [];
