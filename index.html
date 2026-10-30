@@ -1692,6 +1692,25 @@ body.adm .pub-aura i{animation:none}   /* estático: el vidrio no recompone en c
 .dsh-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
 .dsh-grid>.dash-card{display:flex;flex-direction:column}
 .dsh-wide{grid-column:1/-1}
+.dsh-fil{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.dsh-bar>.dsh-seg{max-width:100%;overflow-x:auto;scrollbar-width:none}.dsh-bar>.dsh-seg button{flex-shrink:0;white-space:nowrap}
+.dsh-sel{height:34px;max-width:220px;padding:0 10px;border:1px solid var(--border);border-radius:10px;background:var(--surface,#fff);color:var(--ink2);font:inherit;font-size:13px}
+.dsh-scroll{overflow-x:auto}
+.dsh-kpis .dsh-n{font-size:30px;margin:8px 0 6px}
+.dsh-cel{border:none;background:none;padding:2px 6px;margin:-2px -6px;border-radius:6px;font:inherit;font-weight:700;color:var(--accent);cursor:pointer;font-variant-numeric:tabular-nums}
+.dsh-cel:hover{background:rgba(39,71,216,.1)}.dsh-cero{color:var(--ink4)}
+.dsh-sem th,.dsh-sem td{min-width:46px;padding-left:6px;padding-right:6px}.dsh-sem th[colspan]{text-align:center;color:var(--ink4);font-size:11px;font-weight:600}
+.dsh-act-t th{text-transform:none}.dsh-act-t td small{font-size:11px;color:var(--ink4);margin-left:4px}
+.dsh-act-t td:first-child,.dsh-act-t th:first-child{text-align:left}
+.dsh-sep{border-left:1px solid rgba(20,33,61,.08)}.dsh-tot td{font-weight:800;background:rgba(20,33,61,.03)}
+.dsh-aviso{background:rgba(217,119,6,.1);border:1px solid rgba(217,119,6,.22);color:#92400e;border-radius:12px;padding:10px 14px;font-size:12.5px;line-height:1.5;margin-bottom:16px}
+.dsh-aviso .dsh-cel{color:#92400e;text-decoration:underline}
+.dsh-leg{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--ink3);margin-bottom:6px}.dsh-leg span{display:flex;align-items:center;gap:5px}.dsh-leg i{width:10px;height:10px;border-radius:2px;display:block}
+.dsh-ins td:first-child{max-width:210px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dsh-bar-c{width:28%;min-width:130px}.dsh-sbar{display:flex;gap:2px;height:12px}.dsh-sbar i{display:block;height:12px}.dsh-sbar i:first-child{border-radius:3px 0 0 3px}.dsh-sbar i:last-child{border-radius:0 3px 3px 0}
+.dsh-cup{color:var(--ink3);white-space:nowrap}
+.bd-rev{margin-bottom:12px}.bd-rev summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--ink2);padding:8px 2px}.bd-rev summary b{color:var(--accent);margin-left:4px}
+[data-theme="dark"] .dsh-sep{border-left-color:rgba(255,255,255,.08)}[data-theme="dark"] .dsh-tot td{background:rgba(255,255,255,.05)}[data-theme="dark"] .dsh-aviso{color:#fbbf24}[data-theme="dark"] .dsh-aviso .dsh-cel{color:#fbbf24}
 .cmp-c{border:1.5px solid var(--border);border-radius:12px;padding:10px 14px;margin-bottom:10px;background:var(--surface)}
 .cmp-c summary{cursor:pointer;display:flex;flex-direction:column;gap:2px}.cmp-c summary span{font-size:11.5px;color:var(--ink3)}
 .cmp-g3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.cmp-g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
@@ -2801,6 +2820,7 @@ body.adm .rh-box .vac-benef label,.vac-benef label{display:inline-flex;white-spa
           <button id="bulk-del" class="btn btn-outline btn-sm" onclick="deleteSelected()" style="border-color:#fecdd3;color:#be123c;background:var(--surface)">Eliminar</button>
           <button class="btn btn-outline btn-sm" onclick="clearSelection()" title="Quitar la selección">✕</button>
         </div>
+        <div id="bd-revisar"></div>
         <div id="bd-cuerpo"></div>
       </div><!-- /tab-candidates -->
 
@@ -9424,7 +9444,7 @@ function _bartReportHtml(c, g) {
 //  RESULTADO EN UNA MIRADA
 //  Mismos criterios que el Resumen del informe: aptitudes frente al mínimo del cargo,
 //  nivel de integridad, incidentes, estilo DISC, dictamen y seguimiento.
-//  Se usa en la ficha, en la tabla de candidatos y en "Por revisar" del Dashboard.
+//  Se usa en la ficha, en la tabla de candidatos y en los Pendientes de Candidatos.
 // ═══════════════════════════════════════════════════════════
 var _MIRADA_ORDEN = ['integridad','dc0','pai','disc','pf16','situacional','vigilancia','comprension','normativa_ohs','gonogo','bart'];
 
@@ -9525,8 +9545,8 @@ function _miradaFichaHtml(c) {
   return h + '</div>';
 }
 
-// "Por revisar" del Dashboard: lo que requiere una acción del evaluador
-function _porRevisarHtml(cands, desde) {
+// Pendientes de Candidatos: lo que requiere una acción del evaluador
+function _porRevisarGrupos(cands, desde) {
   var grupos = [
     { titulo:'Antecedentes por visar (Chapi)', color:'#b45309', accion:['Visar', 'resumen'], lista:[] },
     { titulo:'Integridad con riesgo alto', color:'#be123c', accion:['Revisar', 'evaluaciones'], lista:[] },
@@ -9554,10 +9574,12 @@ function _porRevisarHtml(cands, desde) {
     if (m.segPend.length) grupos[4].lista.push({ c:c, nota:m.segPend.map(function(p){ return p.hito.toLowerCase(); }).join(' y ') });
   });
   grupos[5].lista.sort(function(a, b){ return _diasParaArchivo(a.c) - _diasParaArchivo(b.c); });
-  var activos = grupos.filter(function(g){ return g.lista.length; });
-  if (!activos.length) return '<div class="dash-card"><div class="dash-lbl">Por revisar</div>'
-    + '<div class="dsh-aldia"><i class="dsh-dot" style="background:#16a34a"></i><span><b>Todo al día.</b> No hay evaluaciones pendientes de revisar en el período.</span></div></div>';
-  var h = '<div class="dash-card"><div class="dash-lbl">Por revisar</div>';
+  return grupos.filter(function(g){ return g.lista.length; });
+}
+function _porRevisarHtml(cands, desde) {
+  var activos = _porRevisarGrupos(cands, desde);
+  if (!activos.length) return '';
+  var h = '<div class="dash-card">';
   h += '<div class="pr-grupos">';
   activos.forEach(function(g) {
     h += '<div><div class="pr-t"><i class="dsh-dot" style="background:' + g.color + '"></i>' + g.titulo + ' <span>' + g.lista.length + '</span></div>';
@@ -9573,7 +9595,7 @@ function _porRevisarHtml(cands, desde) {
   return h + '</div></div>';
 }
 
-// "Por revisar": abre la ficha directo en la pestaña que corresponde a la acción
+// Pendientes: abre la ficha directo en la pestaña que corresponde a la acción
 async function _prIr(id, tab) {
   await openCandDrawer(id);
   if (tab && tab !== 'resumen') try { switchDrawerTabById(tab); } catch(e) {}
@@ -11770,9 +11792,8 @@ function renderAdmin() { renderDashboard(); }
 
 let _dashPerfil = 'all';
 
-function setDashPerfil(perfil, btn) {
+function setDashPerfil(perfil) {
   _dashPerfil = perfil;
-  document.querySelectorAll('.dash-perfil-btn').forEach(b => b.classList.toggle('on', b === btn));
   renderDashboard();
 }
 
@@ -11823,169 +11844,216 @@ async function renderDashboard() {
   const container = document.getElementById('dash-content');
   if (!container) return;
   container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--ink3);font-size:13px">Cargando…</div>';
-
   const allCands = await getDB();
-  const perfil   = _dashPerfil;
+  const perfil = _dashPerfil;
   const delCargo = perfil === 'all' ? allCands : allCands.filter(c => c.perfil === perfil);
-  // Período: [desde, ahora] y el período anterior del mismo largo, para comparar
-  var ahora = new Date(), dias = _dashPeriodo;
-  var desde = dias ? new Date(ahora.getTime() - dias * 86400000) : null;
-  var desdeAnt = dias ? new Date(ahora.getTime() - 2 * dias * 86400000) : null;
-  var enRango = function(c, a, b){ var f = _fechaCand(c); return f && (!a || f >= a) && (!b || f < b); };
-  var cands = delCargo.filter(function(c){ return !desde || enRango(c, desde, null); });
-  var completadas = cands.filter(function(c){ return c.estado === 'completed'; });
-  var antCompl = dias ? delCargo.filter(function(c){ return c.estado === 'completed' && enRango(c, desdeAnt, desde); }).length : null;
-  var miradas = completadas.map(function(c){ return { c:c, m:_miradaDe(c) }; });
-  var conDict = miradas.filter(function(x){ return x.m.dictamen; });
-  var recomendados = conDict.filter(function(x){ return x.m.dictamen === 'recomendado' || x.m.dictamen === 'obs'; }).length;
-  var sinTerminar = cands.filter(function(c){ return c.estado !== 'completed'; }).length;
-  // Mismo criterio que "Por revisar": en proceso (ni seleccionados ni descartados) y sin dictamen
-  var sinDict = miradas.filter(function(x){ var e = getPipelineEtapa(x.c); return !x.m.dictamen && e !== 'seleccionado' && e !== 'enviado' && e !== 'contratado' && !_esCierre(e); }).length;
-  // Seleccionados incluye a los ya contratados
-  var seleccionados = cands.filter(function(c){ var e = getPipelineEtapa(c); return e === 'seleccionado' || e === 'enviado' || e === 'contratado'; }).length;
-  // Clic en un indicador: Candidatos con el mismo cargo y período, más el filtro del indicador
-  var ir = function(extra) {
-    var f = Object.assign({}, extra);
-    if (perfil && perfil !== 'all') f.cargo = perfil;
-    if (dias) f.fecha = String(dias);
-    return '_bdIrConFiltros(' + JSON.stringify(f).replace(/"/g, "'") + ')';
-  };
-
+  if (_dashPeriodo && [30, 90, 180].indexOf(_dashPeriodo) === -1) _dashPeriodo = 30;
+  var dias = _dashPeriodo, desde = dias ? new Date(Date.now() - dias * 864e5) : null;
+  var cands = delCargo.filter(function(c){ var f = _fechaCand(c); return !desde || (f && f >= desde); });
   var PLABEL = { all:'Todos los cargos' };
-  getAllCargos().forEach(function(k) { var pm = PERFIL_META[k]; if(pm) PLABEL[k] = pm.label; });
-  var PER_LBL = { 7:'Últimos 7 días', 30:'Últimos 30 días', 90:'Últimos 90 días', 0:'Todo' };
-
-  const subEl = document.getElementById('dash-subtitle');
-  if (subEl) subEl.textContent = PLABEL[perfil] + ' · ' + PER_LBL[dias].toLowerCase();
-
-  // ── Filtros: cargo y período, en controles segmentados ──
-  var h = '<div class="dsh-bar">';
-  h += '<div class="dsh-seg dash-pills">';
-  ['all'].concat(_cargosParaFiltro(allCands)).forEach(function(pf) {
-    h += '<button class="dash-perfil-btn' + (pf === perfil ? ' on' : '') + '" onclick="setDashPerfil(\'' + pf + '\',this)">' + (pf === 'all' ? 'Todos' : htmlEsc(PLABEL[pf])) + '</button>';
-  });
-  h += '</div><div class="dsh-seg">';
-  [7, 30, 90, 0].forEach(function(d) {
-    h += '<button class="' + (d === dias ? 'on' : '') + '" onclick="setDashPeriodo(' + d + ')">' + (d ? d + ' días' : 'Todo') + '</button>';
-  });
-  h += '</div></div>';
-
-  // ── Indicadores: una sola franja con cuatro cifras ──
-  // "Sin dictamen" ya está en Por revisar; "Sin terminar" queda como nota de Completadas
-  var kpi = function(lbl, valor, sub, tono, onclick) {
-    return '<div class="dsh-k' + (onclick ? ' dsh-k-go' : '') + '"' + (onclick ? ' onclick="' + onclick + '"' : '') + '>'
-      + '<div class="dash-lbl">' + lbl + '</div>'
-      + '<div class="dsh-n' + (tono ? ' dsh-' + tono : '') + '">' + valor + '</div>'
-      + '<div class="dsh-sub">' + sub + '</div></div>';
-  };
-  var delta = '';
-  if (antCompl !== null) {
-    var dif = completadas.length - antCompl;
-    delta = dif === 0 ? 'Igual que el período anterior' : '<span class="' + (dif > 0 ? 'dsh-up' : 'dsh-dn') + '">' + (dif > 0 ? '+' : '−') + Math.abs(dif) + '</span> frente a los ' + dias + ' días anteriores';
-  } else delta = 'Desde el inicio';
-  if (sinTerminar) delta += '<br><a class="dsh-lnk" onclick="event.stopPropagation();' + ir({ estado:'pending' }) + '">' + sinTerminar + ' sin terminar</a>';
-  h += '<div class="dash-card dsh-kpis">'
-    + kpi('Completadas', completadas.length, delta, '', ir({ estado:'completed' }))
-    + kpi('Recomendados', conDict.length ? Math.round(recomendados / conDict.length * 100) + '<small>%</small>' : '—', conDict.length ? recomendados + ' de ' + conDict.length + ' con dictamen' : 'Aún sin dictámenes', conDict.length ? 'ok' : '', ir({ dictamen:'recomendado' }))
-    + kpi('Seleccionados', seleccionados, completadas.length ? Math.round(seleccionados / completadas.length * 100) + ' % de las completadas' : 'Sin evaluaciones en el período', seleccionados ? 'acc' : '', ir({ etapa:'seleccionado' }))
-    + (function(){
-        var ds = completadas.map(_duracionDe).filter(Boolean), tot = ds.map(function(d){ return d.total; }).sort(function(a, b){ return a - b; });
-        if (!tot.length) return kpi('Duración típica', '—', 'Sin tiempos registrados');
-        var med = tot.length % 2 ? tot[(tot.length - 1) / 2] : (tot[tot.length / 2 - 1] + tot[tot.length / 2]) / 2;
-        var rap = ds.filter(function(d){ return d.rapidas.length; }).length;
-        return kpi('Duración típica', _fmtDur(med), rap ? rap + (rap > 1 ? ' con pruebas' : ' con una prueba') + ' muy rápida' + (rap > 1 ? 's' : '') : 'Mediana · ninguna muy rápida', '', rap ? ir({ duracion:'rapida' }) : '');
-      })()
-    + '</div>';
-
-  // ── Cuerpo: dos columnas parejas ──
-  var proc = _dashProceso(cands, cands, perfil);
-  var can = _dashCanalesPartes(cands, ir);
-  var card = function(t, inner, nota) { return '<div class="dash-card"><div class="dash-lbl">' + t + '</div>' + (nota ? '<div class="dsh-nota">' + nota + '</div>' : '<div style="height:12px"></div>') + inner + '</div>'; };
-  h += '<div class="dsh-grid">';
-  // Actividad: qué se hizo hoy, en 7 días, este mes y mes a mes (no depende del período de arriba)
-  h += '<div class="dash-card dsh-wide" id="dsh-actividad"><div class="dash-lbl">Actividad</div><div class="dsh-vacio">Cargando…</div></div>';
-  // Por revisar (seguimientos: siempre; lo demás: dentro del período) junto al dictamen
-  h += _porRevisarHtml(delCargo, desde) + proc.dictamen;
-  h += proc.embudo;
-  h += can.canales + card('Resultados por prueba', _dashResultadosHtml(completadas), 'Evaluados que alcanzan el mínimo del cargo en cada prueba de aptitud');
-  // Referidos junto a la distribución por cargo (solo con "Todos"); si queda sola, va a lo ancho
-  var cargos = perfil === 'all' ? proc.cargos : '';
-  var pares = [can.refs, cargos].filter(Boolean);
-  h += pares.length === 1 ? '<div class="dsh-wide">' + pares[0] + '</div>' : pares.join('');
-  // Seguimiento después de la contratación (no depende del período)
-  h += '<div class="dsh-wide">' + _segAnalisisHtml(delCargo) + '</div>';
-  h += '</div>';
-
-  h += '<div style="text-align:center;padding:18px 0 10px"><a onclick="_bdIrConFiltros(' + (perfil !== 'all' ? "{cargo:'" + perfil + "'}" : '{}') + ')" style="font-size:13px;font-weight:600;color:var(--accent);cursor:pointer">Ver las evaluaciones en Candidatos →</a></div>';
-
-  container.innerHTML = h;
-  _actCargar(delCargo, perfil);
-}
-
-// ── Actividad del equipo: lo que se hizo, por día, semana, mes y mes a mes ──
-// Cada acción cuenta en la fecha en que ocurrió: invitaciones enviadas, evaluaciones terminadas, verificaciones
-// de Chapi, entrevistas, cambios de etapa (historial) e informes RH enviados.
-var _ACT_TIPOS = [['invitacion', 'Invitaciones enviadas'], ['evaluacion', 'Evaluaciones terminadas'], ['chapi', 'Verificados en Chapi'],
-  ['entrevista', 'Entrevistas'], ['seleccionado', 'Seleccionados'], ['enviado', 'Enviados a contratación'], ['informe', 'Informes RH enviados'],
-  ['contratado', 'Contratados'], ['descartado', 'Rechazados'], ['no_contratado', 'No contratados']];
-var _actPeriodo = 'hoy', _actEv = [];
-function _actEventos(cands, invs) {
-  var ev = [], add = function(tipo, t){ var x = typeof t === 'number' ? t : Date.parse(t); if (x && !isNaN(x)) ev.push({ tipo: tipo, t: x }); };
-  (invs || []).forEach(function(i){ add('invitacion', i.creada); });
-  cands.forEach(function(c) {
-    var sc = c.scores || {};
-    if (c.estado === 'completed') { var m = _momentoCand(c); if (m) add('evaluacion', m.getTime()); }
-    if (sc._chapi && sc._chapi.id) add('chapi', sc._chapi.consultado || (sc._chapi.auto || {}).ts);
-    (sc._entrevistas || []).forEach(function(e){ if (e) add('entrevista', e.fecha ? e.fecha + 'T00:00:00' : (e.creada || e.ts)); });
-    if (sc._informe_rh && sc._informe_rh.enviado) add('informe', sc._informe_rh.enviado);
-    (sc._pipeline_history || []).forEach(function(hh){ if (hh && ['seleccionado', 'enviado', 'contratado', 'descartado', 'no_contratado'].indexOf(hh.to) !== -1) add(hh.to, hh.ts); });
-  });
-  return ev;
-}
-async function _actCargar(cands, perfil) {
-  var invs = [];
-  try {
-    var desde = new Date(); desde.setMonth(desde.getMonth() - 6, 1); desde.setHours(0, 0, 0, 0);
-    var r = await fetch(SUPA_URL + '/rest/v1/psicoeval_invitaciones?select=creada,perfil&creada=gte.' + encodeURIComponent(desde.toISOString()) + '&limit=2000', { headers: _invHeaders() });
-    if (r.ok) invs = (await r.json()).filter(function(i){ return !perfil || perfil === 'all' || i.perfil === perfil; });
-  } catch(e) {}
-  _actEv = _actEventos(cands, invs);
-  _actPintar();
-}
-function _actSetPeriodo(p) { _actPeriodo = p; _actPintar(); }
-function _actPintar() {
-  var box = document.getElementById('dsh-actividad'); if (!box) return;
-  var ahora = new Date(), dia = new Date(ahora); dia.setHours(0, 0, 0, 0);
-  var cuenta = function(a, b){ var o = {}; _actEv.forEach(function(e){ if (e.t >= a && e.t < b) o[e.tipo] = (o[e.tipo] || 0) + 1; }); return o; };
-  var seg = [['hoy', 'Hoy'], ['7', '7 días'], ['mes', 'Este mes'], ['meses', 'Mes a mes']].map(function(x){
-    return '<button class="' + (x[0] === _actPeriodo ? 'on' : '') + '" onclick="_actSetPeriodo(\'' + x[0] + '\')">' + x[1] + '</button>'; }).join('');
-  var h = '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px"><div class="dash-lbl" style="margin:0">Actividad</div><div class="dsh-seg" style="margin-left:auto">' + seg + '</div></div>';
-  if (_actPeriodo === 'meses') {
-    // Tabla: los últimos 6 meses, una columna por mes
-    var meses = [];
-    for (var i = 5; i >= 0; i--) { var a = new Date(ahora.getFullYear(), ahora.getMonth() - i, 1), b = new Date(ahora.getFullYear(), ahora.getMonth() - i + 1, 1); meses.push({ a: a, o: cuenta(a.getTime(), b.getTime()) }); }
-    h += '<div style="overflow-x:auto"><table class="dsh-act-t"><thead><tr><th></th>' + meses.map(function(m){ return '<th>' + m.a.toLocaleDateString('es-CL', { month:'short' }).replace('.', '') + (m.a.getMonth() === 0 || m === meses[0] ? ' ' + String(m.a.getFullYear()).slice(2) : '') + '</th>'; }).join('') + '</tr></thead><tbody>'
-      + _ACT_TIPOS.filter(function(t){ return meses.some(function(m){ return m.o[t[0]]; }); }).map(function(t){
-          return '<tr><td>' + t[1] + '</td>' + meses.map(function(m){ return '<td>' + (m.o[t[0]] || '<span style="color:var(--ink4)">·</span>') + '</td>'; }).join('') + '</tr>'; }).join('')
-      + '</tbody></table></div><div class="dsh-pie">Las invitaciones cuentan desde que existe el registro de invitaciones; las entrevistas, en la fecha de la entrevista.</div>';
+  getAllCargos().forEach(function(k) { var pm = PERFIL_META[k]; if (pm) PLABEL[k] = pm.label; });
+  var VIS = [['semanal', 'Registro semanal'], ['instalaciones', 'Instalaciones'], ['calidad', 'Calidad de la selección']];
+  var subEl = document.getElementById('dash-subtitle');
+  if (subEl) subEl.textContent = (PLABEL[perfil] || perfil) + ' · ' + (dias ? 'últimos ' + dias + ' días' : 'todo');
+  var h = '<div class="dsh-bar"><div class="dsh-seg">' + VIS.map(function(v){ return '<button class="' + (v[0] === _dashVista ? 'on' : '') + '" onclick="setDashVista(\'' + v[0] + '\')">' + v[1] + '</button>'; }).join('') + '</div>'
+    + '<div class="dsh-fil"><select class="dsh-sel" aria-label="Cargo" onchange="setDashPerfil(this.value)">' + ['all'].concat(_cargosParaFiltro(allCands)).map(function(pf) {
+        return '<option value="' + htmlEsc(pf) + '"' + (pf === perfil ? ' selected' : '') + '>' + htmlEsc(PLABEL[pf] || pf) + '</option>'; }).join('') + '</select>'
+    + '<div class="dsh-seg">' + [30, 90, 180, 0].map(function(d){ return '<button class="' + (d === dias ? 'on' : '') + '" onclick="setDashPeriodo(' + d + ')">' + (d ? d + ' días' : 'Todo') + '</button>'; }).join('') + '</div></div></div>';
+  _dashCeldas = [];
+  if (_dashVista === 'instalaciones') {
+    if (!_vacLista) { try { await _vacCargar(); } catch(e) {} }
+    h += _dashInstalacionesHtml(cands);
+  } else if (_dashVista === 'calidad') {
+    h += _dashCalidadHtml(cands);
   } else {
-    var ini = _actPeriodo === 'hoy' ? dia : _actPeriodo === '7' ? new Date(dia.getTime() - 6 * 864e5) : new Date(ahora.getFullYear(), ahora.getMonth(), 1);
-    var antIni = _actPeriodo === 'hoy' ? new Date(dia.getTime() - 864e5) : _actPeriodo === '7' ? new Date(ini.getTime() - 7 * 864e5) : new Date(ahora.getFullYear(), ahora.getMonth() - 1, 1);
-    // El período anterior se compara hasta el mismo punto (ayer a esta hora, el mes pasado al mismo día)
-    var antFin = _actPeriodo === 'mes' ? Math.min(new Date(ahora.getFullYear(), ahora.getMonth(), 1).getTime(), antIni.getTime() + (ahora - ini)) : antIni.getTime() + (ahora - ini);
-    var o = cuenta(ini.getTime(), ahora.getTime() + 1), ant = cuenta(antIni.getTime(), antFin);
-    var cmp = _actPeriodo === 'hoy' ? 'ayer a esta hora' : _actPeriodo === '7' ? 'los 7 días anteriores' : 'el mes pasado a esta fecha';
-    var tot = _ACT_TIPOS.reduce(function(n, t){ return n + (o[t[0]] || 0); }, 0);
-    h += tot ? '<div class="dsh-act">' + _ACT_TIPOS.filter(function(t){ return o[t[0]] || ant[t[0]]; }).map(function(t){
-        var n = o[t[0]] || 0, d = n - (ant[t[0]] || 0);
-        return '<div class="dsh-act-i"><b>' + n + '</b><span>' + t[1] + '</span><small>' + (d === 0 ? 'igual que ' + cmp : '<i class="' + (d > 0 ? 'dsh-up' : 'dsh-dn') + '">' + (d > 0 ? '+' : '−') + Math.abs(d) + '</i> frente a ' + cmp) + '</small></div>'; }).join('') + '</div>'
-      : '<div class="dsh-vacio">Sin actividad registrada ' + (_actPeriodo === 'hoy' ? 'hoy' : _actPeriodo === '7' ? 'en los últimos 7 días' : 'este mes') + '.</div>';
+    var invs = null;
+    try {
+      var r = await fetch(SUPA_URL + '/rest/v1/psicoeval_invitaciones?select=creada,perfil&limit=5000', { headers: _invHeaders() });
+      if (r.ok) invs = (await r.json()).filter(function(i){ return perfil === 'all' || i.perfil === perfil; });
+    } catch(e) {}
+    var n = dias ? Math.ceil(dias / 7) + 1 : (function(){
+      var t = delCargo.reduce(function(m, c){ var f = _fechaCand(c); return f && f.getTime() < m ? f.getTime() : m; }, Date.now());
+      return Math.min(104, Math.ceil((Date.now() - t) / (7 * 864e5)) + 1); })();
+    h += _dashSemanalHtml(delCargo, invs, n);
   }
-  box.innerHTML = h;
+  container.innerHTML = h;
 }
 
-// Canales de llegada: cuántos postulantes por medio y cuántos resultan recomendados;
-// al lado, quiénes de la empresa recomiendan postulantes
+// ── Dashboard: análisis de la selección en tres vistas (Registro semanal, Instalaciones, Calidad) ──
+// Todas comparten el filtro de cargo y período, y una misma estructura: franja de cifras y tarjetas.
+// Cada cifra con personas abre su lista en Candidatos (filtro interno "dash").
+var _DASH_VISTA_KEY = 'psicoeval_dash_vista';
+var _dashVista = (function(){ try { var v = localStorage.getItem(_DASH_VISTA_KEY); return ['semanal', 'instalaciones', 'calidad'].indexOf(v) !== -1 ? v : 'semanal'; } catch(e) { return 'semanal'; } })();
+function setDashVista(v) { _dashVista = v; try { localStorage.setItem(_DASH_VISTA_KEY, v); } catch(e) {} renderDashboard(); }
+var _dashCeldas = [], _dashSel = null;
+function _dashCelda(ids, txt) { _dashCeldas.push({ ids: ids, txt: txt }); return _dashCeldas.length - 1; }
+function _dashAbrir(i) { var x = _dashCeldas[i]; if (!x) return; _dashSel = x; _bdIrConFiltros({ dash: 'sel' }); }
+// Cifra que abre la lista de personas (sin personas, solo el número)
+function _dashNum(ids, txt) {
+  if (!ids.length) return '<span class="dsh-cero">0</span>';
+  return '<button class="dsh-cel" onclick="_dashAbrir(' + _dashCelda(ids, txt) + ')" title="Ver las personas">' + ids.length + '</button>';
+}
+function _dashLunes(d) { var x = new Date(d); x.setHours(0, 0, 0, 0); x.setDate(x.getDate() - (x.getDay() + 6) % 7); return x; }
+var _DASH_SEM_COLS = ['ev', 'apr', 'apto', 'obs', 'no', 'env', 'rech', 'noc'];
+// Una fila por semana (lunes a domingo, la más reciente primero). Cada cifra cuenta en la fecha en que ocurrió
+function _dashSemanas(cands, invs, n, hoy) {
+  var filas = [], idx = {}, ini = _dashLunes(hoy || new Date());
+  for (var i = 0; i < n; i++) {
+    var d = new Date(ini); d.setDate(ini.getDate() - i * 7);
+    var f = { ini: d, inv: 0 }; _DASH_SEM_COLS.forEach(function(k){ f[k] = []; });
+    filas.push(f); idx[d.getTime()] = f;
+  }
+  var en = function(fecha){ var t = fecha ? new Date(fecha) : null; return t && !isNaN(t) ? idx[_dashLunes(t).getTime()] : null; };
+  var suma = function(f, k, id){ if (f && f[k].indexOf(id) === -1) f[k].push(id); };
+  (invs || []).forEach(function(v){ var f = en(v.creada); if (f) f.inv++; });
+  cands.forEach(function(c) {
+    var s = c.scores || {};
+    if (c.estado === 'completed') {
+      var fe = en(_momentoCand(c)), m = _miradaDe(c);
+      suma(fe, 'ev', c.id);
+      if (m.apt.length && !m.bajo.length) suma(fe, 'apr', c.id);
+    }
+    var ev = (s._entrevistas || []).filter(function(e){ return e && e.dictamen; }).pop();
+    var kd = ev && { recomendado:'apto', obs:'obs', no_recomendable:'no' }[ev.dictamen];
+    if (kd) suma(en(String(ev.fecha || '').length === 10 ? ev.fecha + 'T12:00:00' : ev.fecha), kd, c.id);
+    (s._pipeline_history || []).forEach(function(h) {
+      var k = h && { enviado:'env', descartado:'rech', no_contratado:'noc' }[h.to];
+      if (k) suma(en(h.ts), k, c.id);
+    });
+  });
+  return filas;
+}
+function _dashKpis(items) {
+  return '<div class="dash-card dsh-kpis">' + items.map(function(x) {
+    return '<div class="dsh-k"><div class="dash-lbl">' + x[0] + '</div><div class="dsh-n">' + x[1] + '</div><div class="dsh-sub">' + x[2] + '</div></div>';
+  }).join('') + '</div>';
+}
+function _dashPct(a, b) { return b ? Math.round(a / b * 100) : 0; }
+var _DASH_MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+function _dashSemanalHtml(cands, invs, n) {
+  var filas = _dashSemanas(cands, invs, n), lunes = _dashLunes(new Date()).getTime(), tot = {}, invT = 0;
+  _DASH_SEM_COLS.forEach(function(k){ tot[k] = []; });
+  filas.forEach(function(f){ invT += f.inv; _DASH_SEM_COLS.forEach(function(k){ f[k].forEach(function(id){ if (tot[k].indexOf(id) === -1) tot[k].push(id); }); }); });
+  var dic = tot.apto.length + tot.obs.length + tot.no.length;
+  var h = _dashKpis([
+    ['Invitaciones', invs ? invT : '—', invs ? 'enviadas en el período' : 'no se pudieron cargar'],
+    ['Evaluaciones', tot.ev.length, 'terminadas en el período'],
+    ['Aprobaron', tot.ev.length ? _dashPct(tot.apr.length, tot.ev.length) + '<small>%</small>' : '—', tot.apr.length + ' de ' + tot.ev.length + ' pasaron todos los mínimos'],
+    ['Con dictamen', dic, tot.apto.length + ' apto · ' + tot.obs.length + ' con obs. · ' + tot.no.length + ' no apto']
+  ]);
+  var fila = function(f, etq, cls, inv) {
+    var txt = function(s){ return s + ' · ' + etq; };
+    return '<tr' + (cls ? ' class="' + cls + '"' : '') + '><td>' + etq + '</td><td>' + (inv === null ? '—' : inv) + '</td>'
+      + [['ev', 'Evaluaciones'], ['apr', 'Aprobaron'], ['apto', 'Apto'], ['obs', 'Con observaciones'], ['no', 'No apto'], ['env', 'Enviados'], ['rech', 'Rechazados'], ['noc', 'No contratados']]
+        .map(function(k, i){ return '<td' + (i === 2 || i === 5 ? ' class="dsh-sep"' : '') + '>' + _dashNum(f[k[0]], txt(k[1])) + '</td>'; }).join('') + '</tr>';
+  };
+  h += '<div class="dash-card"><div class="dash-lbl">Registro semanal</div><div class="dsh-nota">De lunes a domingo. Cada cifra cuenta en la fecha en que ocurrió; una persona puede aparecer en distintas semanas.</div>'
+    + '<div class="dsh-scroll"><table class="dsh-act-t dsh-sem"><thead><tr><th></th><th colspan="3">Llegada</th><th colspan="3" class="dsh-sep">Dictamen</th><th colspan="3" class="dsh-sep">Cierre</th></tr>'
+    + '<tr><th>Semana</th><th>Invit.</th><th>Evaluac.</th><th>Aprobaron</th><th class="dsh-sep">Apto</th><th>Con obs.</th><th>No apto</th><th class="dsh-sep">Enviados</th><th>Rechaz.</th><th>No contr.</th></tr></thead><tbody>'
+    + fila(tot, 'Total', 'dsh-tot', invs ? invT : null)
+    + filas.map(function(f) {
+        var etq = f.ini.getDate() + ' ' + _DASH_MES[f.ini.getMonth()] + (f.ini.getTime() === lunes ? ' (en curso)' : '');
+        return fila(f, etq, '', invs ? f.inv : null);
+      }).join('')
+    + '</tbody></table></div></div>';
+  return h;
+}
+function _dashInstalacionesHtml(cands) {
+  var grupos = {}, sin = [];
+  cands.forEach(function(c) {
+    var nom = String(_instalacionDe(c) || '').trim(), k = _vacNorm(nom), e = getPipelineEtapa(c);
+    if (!k) { sin.push(c.id); return; }
+    var g = grupos[k] = grupos[k] || { nom: nom, ids: [], env: [], pro: [], noc: [], rech: [], cupos: null, activa: false };
+    g.ids.push(c.id);
+    (e === 'seleccionado' || e === 'enviado' || e === 'contratado' ? g.env : e === 'no_contratado' ? g.noc : e === 'descartado' ? g.rech : g.pro).push(c.id);
+  });
+  (_vacLista || []).filter(function(v){ return v.activa && (!_dashPerfil || _dashPerfil === 'all' || v.perfil === _dashPerfil); }).forEach(function(v) {
+    var k = _vacNorm(v.instalacion), g = grupos[k] = grupos[k] || { nom: v.instalacion, ids: [], env: [], pro: [], noc: [], rech: [], cupos: null, activa: false };
+    g.activa = true; if (v.cupos) g.cupos = (g.cupos || 0) + v.cupos;
+  });
+  var filas = Object.keys(grupos).map(function(k){ return grupos[k]; }).sort(function(a, b){ return (b.ids.length - a.ids.length) || a.nom.localeCompare(b.nom, 'es'); });
+  var activas = filas.filter(function(g){ return g.activa; }), conCupos = activas.filter(function(g){ return g.cupos; });
+  var sum = function(k){ return filas.reduce(function(n, g){ return n + g[k].length; }, 0); };
+  var con = cands.length - sin.length;
+  var h = _dashKpis([
+    ['Con instalación', con, 'de ' + cands.length + ' personas del período'],
+    ['Avanzaron', sum('env'), 'seleccionados o enviados'],
+    ['En proceso', sum('pro'), 'con instalación asignada'],
+    ['Cupos cargados', conCupos.length, 'de ' + activas.length + ' instalaciones activas']
+  ]);
+  if (sin.length) h += '<div class="dsh-aviso"><b>' + _dashNum(sin, 'Sin instalación asignada') + ' personas sin instalación asignada.</b> Sin ese dato no aparecen abajo: asígnela en su ficha.</div>';
+  var max = Math.max.apply(null, filas.map(function(g){ return g.ids.length; }).concat([1]));
+  var seg = [['env', 'Seleccionados o enviados', '#2a78d6'], ['pro', 'En proceso', '#1baf7a'], ['noc', 'No contratados', '#eda100'], ['rech', 'Rechazados', '#e34948']];
+  h += '<div class="dash-card"><div class="dash-lbl">Resultado por instalación</div><div class="dsh-nota">Personas del período y cómo va cada una.</div>'
+    + '<div class="dsh-leg">' + seg.map(function(s){ return '<span><i style="background:' + s[2] + '"></i>' + s[1] + '</span>'; }).join('') + '</div>';
+  if (!filas.length) return h + '<div class="dsh-vacio">Sin instalaciones en el período.</div></div>';
+  h += '<div class="dsh-scroll"><table class="dsh-act-t dsh-ins"><thead><tr><th>Instalación</th><th class="dsh-bar-c"></th><th>Total</th><th>Avanz.</th><th>Proceso</th><th>No contr.</th><th>Rechaz.</th><th>Cupos</th></tr></thead><tbody>'
+    + filas.map(function(g) {
+        var cup = g.cupos ? g.env.length + ' de ' + g.cupos : g.activa ? 'sin cargar' : '—';
+        return '<tr><td title="' + htmlEsc(g.nom) + '">' + htmlEsc(g.nom) + '</td>'
+          + '<td class="dsh-bar-c"><div class="dsh-sbar" style="width:' + Math.max(g.ids.length ? 3 : 0, Math.round(g.ids.length / max * 100)) + '%">'
+          + seg.map(function(s){ return g[s[0]].length ? '<i style="flex:' + g[s[0]].length + ';background:' + s[2] + '" title="' + s[1] + ': ' + g[s[0]].length + '"></i>' : ''; }).join('') + '</div></td>'
+          + '<td>' + _dashNum(g.ids, g.nom) + '</td>'
+          + seg.map(function(s){ return '<td>' + _dashNum(g[s[0]], g.nom + ' · ' + s[1]) + '</td>'; }).join('')
+          + '<td class="dsh-cup">' + cup + '</td></tr>';
+      }).join('') + '</tbody></table></div></div>';
+  return h;
+}
+// Calidad: pruebas con mínimo frente a sí mismas y frente al dictamen. Con pocos casos se muestra el conteo, no el porcentaje
+function _dashCalidadDatos(cands) {
+  var pruebas = {}, dic = { apto: [], obs: [], no: [] }, gr = { todas: [], una: [], mas: [] }, cruce = { aprNo: [], noAprSi: [], coinciden: [] }, evalu = 0;
+  cands.forEach(function(c) {
+    if (c.estado !== 'completed') return;
+    var rows = _aptRowsDe(c).filter(function(r){ return r.cumple !== undefined; }); if (!rows.length) return;
+    evalu++;
+    var malas = rows.filter(function(r){ return !r.cumple; }).length, aprobo = !malas;
+    (aprobo ? gr.todas : malas === 1 ? gr.una : gr.mas).push(c.id);
+    var d = { recomendado:'apto', obs:'obs', no_recomendable:'no' }[_dictamenDe(c.scores)] || '';
+    if (d) {
+      dic[d].push(c.id);
+      if (aprobo && d === 'no') cruce.aprNo.push(c.id);
+      else if (!aprobo && d !== 'no') cruce.noAprSi.push(c.id);
+      else cruce.coinciden.push(c.id);
+    }
+    rows.forEach(function(r) {
+      var p = pruebas[r.tid] = pruebas[r.tid] || { label: r.label, n: 0, ok: 0, mins: {}, bajo: [], apto: [0, 0], obs: [0, 0], no: [0, 0] };
+      p.n++; if (r.min !== undefined) p.mins[r.min] = 1;
+      if (r.cumple) p.ok++; else p.bajo.push(c.id);
+      if (d) { p[d][1]++; if (r.cumple) p[d][0]++; }
+    });
+  });
+  return { evalu: evalu, gr: gr, dic: dic, cruce: cruce, pruebas: Object.keys(pruebas).map(function(k){ return pruebas[k]; }).sort(function(a, b){ return b.n - a.n; }) };
+}
+function _dashCalidadHtml(cands) {
+  var d = _dashCalidadDatos(cands), nDic = d.dic.apto.length + d.dic.obs.length + d.dic.no.length;
+  var h = _dashKpis([
+    ['Evaluados', d.evalu, 'con pruebas de aptitud'],
+    ['Aprobaron', d.evalu ? _dashPct(d.gr.todas.length, d.evalu) + '<small>%</small>' : '—', d.gr.todas.length + ' de ' + d.evalu + ' pasaron todos los mínimos'],
+    ['Con dictamen', nDic, d.dic.apto.length + ' apto · ' + d.dic.obs.length + ' con obs. · ' + d.dic.no.length + ' no apto'],
+    ['Pruebas y dictamen', nDic ? _dashPct(d.cruce.coinciden.length, nDic) + '<small>%</small>' : '—', d.cruce.coinciden.length + ' de ' + nDic + ' coinciden']
+  ]);
+  if (!d.evalu) return h + '<div class="dash-card"><div class="dsh-vacio">Sin evaluaciones con pruebas de aptitud en el período.</div></div>';
+  if (nDic < 30) h += '<div class="dsh-aviso"><b>Lectura orientativa:</b> con ' + nDic + ' dictámenes en este filtro, las comparaciones aún no permiten sacar conclusiones. Tampoco miden desempeño real: para eso falta registrar contratados y su seguimiento.</div>';
+  h += '<div class="dsh-grid"><div class="dash-card"><div class="dash-lbl">Pasan el mínimo por prueba</div><div class="dsh-nota">Si casi nadie pasa o casi todos pasan, conviene revisar el mínimo en Cargos.</div>'
+    + d.pruebas.map(function(p) {
+        var pct = _dashPct(p.ok, p.n), mins = Object.keys(p.mins), det = p.ok + ' de ' + p.n + (mins.length === 1 ? ' · mínimo ' + mins[0] : '');
+        return _dshFila(htmlEsc(p.label), det, pct + ' %', pct, '#2a78d6', '', p.bajo.length ? ' dsh-row-go" onclick="_dashAbrir(' + _dashCelda(p.bajo, 'Bajo el mínimo · ' + p.label) + ')' : '');
+      }).join('') + '</div>';
+  h += '<div class="dash-card"><div class="dash-lbl">Dónde se caen</div><div class="dsh-nota">Cuántas pruebas quedaron bajo el mínimo por persona.</div>'
+    + [['Pasaron todas', d.gr.todas], ['Fallaron una', d.gr.una], ['Fallaron dos o más', d.gr.mas]].map(function(x) {
+        return _dshFila(x[0], _dashPct(x[1].length, d.evalu) + ' % de los evaluados', _dashNum(x[1], 'Pruebas · ' + x[0]), _dashPct(x[1].length, d.evalu), '#2a78d6');
+      }).join('') + '</div>';
+  var cel = function(x){ return x[1] ? x[0] + ' de ' + x[1] + (x[1] >= 10 ? ' <small>' + _dashPct(x[0], x[1]) + ' %</small>' : '') : '<span class="dsh-cero">—</span>'; };
+  h += '<div class="dash-card dsh-wide"><div class="dash-lbl">Pruebas frente al dictamen</div><div class="dsh-nota">En cada dictamen, cuántas personas habían pasado el mínimo de cada prueba.</div>'
+    + '<div class="dsh-scroll"><table class="dsh-act-t"><thead><tr><th>Prueba</th><th>Apto (' + d.dic.apto.length + ')</th><th>Con observaciones (' + d.dic.obs.length + ')</th><th>No apto (' + d.dic.no.length + ')</th></tr></thead><tbody>'
+    + d.pruebas.map(function(p){ return '<tr><td>' + htmlEsc(p.label) + '</td><td>' + cel(p.apto) + '</td><td>' + cel(p.obs) + '</td><td>' + cel(p.no) + '</td></tr>'; }).join('')
+    + '</tbody></table></div></div>';
+  h += '<div class="dash-card dsh-wide"><div class="dash-lbl">Coincidencias y diferencias</div><div class="dsh-nota">Los casos en que pruebas y entrevista no coinciden son los que más conviene revisar.</div>'
+    + [['Pruebas y dictamen coinciden', d.cruce.coinciden], ['Pasó todas las pruebas, pero fue No apto', d.cruce.aprNo], ['No pasó alguna prueba, pero fue Apto o Con observaciones', d.cruce.noAprSi]].map(function(x) {
+        return _dshFila(x[0], '', _dashNum(x[1], x[0]), _dashPct(x[1].length, nDic), '#2a78d6');
+      }).join('') + '</div></div>';
+  return h;
+}
 // Fila de barra del Dashboard: etiqueta y detalle | barra corta | cifra (una sola línea)
 function _dshFila(etiqueta, detalle, valor, pct, color, aux, extra) {
   return '<div class="dsh-row' + (extra || '') + '"><div class="dsh-row-l"><span class="dsh-row-n">' + etiqueta + '</span>' + (detalle ? '<span class="dsh-row-m">' + detalle + '</span>' : '') + '</div>'
@@ -11993,86 +12061,11 @@ function _dshFila(etiqueta, detalle, valor, pct, color, aux, extra) {
     + '<div class="dsh-row-v">' + valor + (aux ? '<small>' + aux + '</small>' : '') + '</div></div>';
 }
 
-function _dashCanalesPartes(cands, ir) {
-  var con = cands.filter(function(c){ return c.scores && c.scores._canal && c.scores._canal.canal; });
-  var card = function(t, inner){ return '<div class="dash-card"><div class="dash-lbl">' + t + '</div>' + inner + '</div>'; };
-  if (!con.length) return { refs:'', canales: card('¿Por dónde llegan?', '<div class="dsh-vacio">Aún no hay respuestas en el período. La pregunta "¿Cómo supiste de esta oferta?" se agregó al registro el 23-10-2026: los postulantes anteriores no tienen este dato.</div>') };
-  var grupos = {};
-  con.forEach(function(c){ var k = c.scores._canal.canal; (grupos[k] = grupos[k] || []).push(c); });
-  var orden = Object.keys(grupos).sort(function(a, b){ return grupos[b].length - grupos[a].length; });
-  var max = grupos[orden[0]].length;
-  var filas = orden.map(function(k) {
-    var g = grupos[k], dic = g.map(function(c){ return _miradaDe(c).dictamen; }).filter(Boolean);
-    var rec = dic.filter(function(d){ return d === 'recomendado' || d === 'obs'; }).length;
-    return _dshFila(htmlEsc(CANAL_LABELS[k] || k), Math.round(g.length / con.length * 100) + ' %' + (dic.length ? ' · ' + rec + ' de ' + dic.length + ' recomendados' : ''), g.length, Math.max(2, Math.round(g.length / max * 100)), 'var(--accent)', '', ' dsh-row-go" onclick="' + ir({ canal:k }));
-  }).join('');
-  var sinDato = cands.length - con.length;
-  var canales = card('¿Por dónde llegan?', '<div class="dsh-nota">' + con.length + ' respondieron' + (sinDato ? ' · ' + sinDato + ' sin dato (registrados antes de la pregunta)' : '') + '</div>' + filas);
-  var colegas = {};
-  (grupos.referido || []).forEach(function(c){ var n = (c.scores._canal.colega || 'Sin nombre').trim(); colegas[n] = (colegas[n] || []).concat([c]); });
-  var nombres = Object.keys(colegas).sort(function(a, b){ return colegas[b].length - colegas[a].length; });
-  var refs = card('Referidos por colegas', nombres.length
-    ? '<div class="dsh-nota">Personas de la empresa que recomendaron postulantes en el período</div>'
-      + nombres.map(function(n) {
-          var l = colegas[n], inst = (l[0].scores._canal.instalacion || '');
-          return '<div class="dsh-ref"><span><b>' + htmlEsc(n) + '</b>' + (inst ? ' <span style="color:var(--ink3)">· ' + htmlEsc(inst) + '</span>' : '') + '</span>'
-            + '<span style="color:var(--ink3);text-align:right">' + l.map(function(c){ return htmlEsc(((c.nombre || '') + ' ' + (c.apellido || '')).trim()); }).join(', ') + '</span></div>';
-        }).join('')
-    : '<div class="dsh-vacio">Nadie llegó recomendado por un colega en el período.</div>');
-  return { canales: canales, refs: refs };
-}
-function _dashCanalesHtml(cands, ir) { var p = _dashCanalesPartes(cands, ir); return '<div class="dash-grid2">' + p.canales + p.refs + '</div>';
-}
-
-// Barras: porcentaje de evaluados sobre el mínimo, por prueba de aptitud
-function _dashResultadosHtml(completadas) {
-  var porPrueba = {};
-  completadas.forEach(function(c){ _aptRowsDe(c).forEach(function(r){ var p = porPrueba[r.tid] || (porPrueba[r.tid] = { label:r.label, icon:r.icon, n:0, ok:0 }); p.n++; if (r.cumple) p.ok++; }); });
-  var filas = Object.keys(porPrueba).map(function(k){ return porPrueba[k]; }).sort(function(a, b){ return b.n - a.n; });
-  if (!filas.length) return '<div class="dsh-vacio">Sin evaluaciones con pruebas de aptitud en el período.</div>';
-  return filas.map(function(p) {
-    var pct = Math.round(p.ok / p.n * 100);
-    var col = pct >= 70 ? '#16a34a' : pct >= 40 ? '#d97706' : '#dc2626';
-    return _dshFila(htmlEsc(p.label), p.ok + ' de ' + p.n + ' evaluados', '<span style="color:' + col + '">' + pct + ' %</span>', pct, col);
-  }).join('') + '<div class="dsh-pie">Si casi nadie alcanza un mínimo, puede ser demasiado exigente: revíselo en Cargos.</div>';
-}
-
-
 function statusBadge(estado) {
   const map = {completed:{cls:'badge-green',lbl:'Completado'},in_progress:{cls:'badge-blue',lbl:'En progreso'},pending:{cls:'badge-gray',lbl:'Pendiente'}};
   const s = map[estado] || map.pending;
   return `<span class="badge ${s.cls}">${s.lbl}</span>`;
 }
-
-// Los gráficos solo se usan en el panel: la biblioteca se carga al abrir el Dashboard, no en la página del postulante
-var _CHART_LIB = ['https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js', '', 'Chart'];
-function _initDashCharts(cands, dias) {
-  if (typeof Chart === 'undefined') { _rhCargarLib(_CHART_LIB).then(function(){ _initDashCharts(cands, dias); }).catch(function(){}); return; }
-  if (window._chartWeekly) { window._chartWeekly.destroy(); window._chartWeekly = null; }
-  // Semanas a mostrar según el período (7 y 30 días: 8 semanas; 90: 13; todo: 26)
-  var nSem = dias === 90 ? 13 : dias === 0 ? 26 : 8;
-  var labels = [], data = [], now = new Date();
-  for (var w = nSem - 1; w >= 0; w--) {
-    var ini = new Date(now); ini.setDate(now.getDate() - w * 7 - now.getDay()); ini.setHours(0, 0, 0, 0);
-    var fin = new Date(ini); fin.setDate(ini.getDate() + 6); fin.setHours(23, 59, 59, 999);
-    labels.push(ini.getDate() + '/' + (ini.getMonth() + 1));
-    data.push(cands.filter(function(c){ var f = _fechaCand(c); return c.estado === 'completed' && f && f >= ini && f <= fin; }).length);
-  }
-  var ctx = document.getElementById('chart-weekly');
-  if (!ctx) return;
-  var tot = data.reduce(function(a, b){ return a + b; }, 0), res = document.getElementById('chart-weekly-res');
-  if (res) res.textContent = tot + ' en las últimas ' + nSem + ' semanas · ' + (Math.round(tot / nSem * 10) / 10).toString().replace('.', ',') + ' por semana en promedio';
-  var oscuro = document.documentElement.getAttribute('data-theme') === 'dark', tinta = oscuro ? 'rgba(235,236,245,.5)' : '#9aa1b2';
-  window._chartWeekly = new Chart(ctx, {
-    type: 'bar',
-    data: { labels: labels, datasets: [{ label: 'Completadas', data: data, backgroundColor: oscuro ? 'rgba(111,139,255,.8)' : 'rgba(39,71,216,.72)', borderRadius: 5, borderSkipped: false, maxBarThickness: 26 }] },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
-      scales: { x: { grid: { display: false }, border: { display: false }, ticks: { color: tinta, font: { size: 11 }, maxRotation: 0, autoSkip: true } },
-                y: { beginAtZero: true, border: { display: false }, ticks: { color: tinta, stepSize: 1, precision: 0, font: { size: 11 }, maxTicksLimit: 5 }, grid: { color: oscuro ? 'rgba(255,255,255,.06)' : 'rgba(20,33,61,.06)' } } } }
-  });
-}
-
-
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -12322,6 +12315,7 @@ function _bdInit() {
   _bdVistaId = (g && g.vistaId) || 'todos';
   if (!_BD_FIJAS.concat(_VISTAS).some(function(x){ return x.id === _bdVistaId; })) _bdVistaId = 'todos';
   _BD = (g && g.bd) ? Object.assign(_bdCfgDe(_bdVistaId), g.bd) : _bdCfgDe(_bdVistaId);
+  if (_BD.filtros) delete _BD.filtros.dash;   // la selección del Dashboard no sobrevive a recargar la página
 }
 function _bdGuardarLocal() { try { localStorage.setItem(_BD_KEY, JSON.stringify({ vistaId: _bdVistaId, bd: _BD })); } catch(e) {} }
 // En las vistas fijas, cambiar entre Tabla y Tablero no cuenta como "cambio sin guardar"
@@ -12379,6 +12373,8 @@ var _BD_CAMPOS = {
                 ok:function(c, v){ var n = ((c.scores || {})._entrevistas || []).length; return v === 'con' ? n > 0 : !n; } },
   motivo:     { label:'Motivo de cierre', ops:function(){ return _bdValores(_bdMotivoCierre, ''); },
                 ok:function(c, v){ return _vacNorm(_bdMotivoCierre(c)) === v; } },
+  dash:       { label:'Dashboard', interno:true, ops:function(){ return [['sel', _dashSel ? _dashSel.txt : 'Selección']]; },
+                ok:function(c){ return !_dashSel || _dashSel.ids.indexOf(c.id) !== -1; } },
   nuevo:      { label:'Nuevos', ops:function(){ return [['si', 'Solo nuevos (sin revisar)']]; },
                 ok:function(c){ return _esNuevo(c); } },
   invitacion: { label:'Invitación', ops:function(){ return [['con', 'Con invitación'], ['sin', 'Sin invitación']]; },
@@ -12417,7 +12413,7 @@ function _bdFiltrar(all) {
     // Sin filtro de archivo ni búsqueda, los archivados no se muestran
     var fl = _BD.filtros || {};
     // (filtrar por un cierre, por su motivo o por los rechazados de Chapi también muestra el archivo)
-    if (!q && !fl.archivo && !fl.motivo && fl.chapi !== 'rechazado' && !(_esCierre(fl.etapa) && getPipelineEtapa(c) === fl.etapa) && _bdEnArchivo(c)) return false;
+    if (!q && !fl.archivo && !fl.motivo && !fl.dash && fl.chapi !== 'rechazado' && !(_esCierre(fl.etapa) && getPipelineEtapa(c) === fl.etapa) && _bdEnArchivo(c)) return false;
     return Object.keys(_BD.filtros || {}).every(function(k){ var f = _BD_CAMPOS[k]; return !f || f.ok(c, _BD.filtros[k]); });
   });
 }
@@ -12475,6 +12471,13 @@ function _bdCuerpoPintar(all) {
           return pr ? ' · <a class="bd-arch" style="color:#c2410c" onclick="_BD.filtros.archivo=\'pronto\';_bdCambio()">' + pr + ' se archiva' + (pr > 1 ? 'n' : '') + ' pronto</a>' : ''; })();
   }
   cuerpo.innerHTML = _BD.vista === 'tablero' ? _bdTablero(lista) : _bdTabla(lista);
+  // Pendientes del día: desplegable sobre la lista (antes en el Dashboard)
+  var rv = document.getElementById('bd-revisar');
+  if (rv) {
+    var abierto = rv.querySelector('details') && rv.querySelector('details').open, gr = _porRevisarGrupos(all, new Date(Date.now() - 30 * 864e5));
+    var nP = gr.reduce(function(n, g){ return n + g.lista.length; }, 0);
+    rv.innerHTML = nP ? '<details class="bd-rev"' + (abierto ? ' open' : '') + '><summary>Pendientes <b>' + nP + '</b></summary>' + _porRevisarHtml(all, new Date(Date.now() - 30 * 864e5)) + '</details>' : '';
+  }
   updateBulkBar();
 }
 
@@ -12735,7 +12738,7 @@ function _bdMenu(anchor, items) {
   setTimeout(function(){ document.addEventListener('click', _bdCerrarMenu, { once: true }); }, 0);
 }
 function _bdMenuCampos(anchor) {
-  var claves = _BD_CAMPOS_ORDEN.filter(function(k){ return _BD_CAMPOS[k]; }).concat(Object.keys(_BD_CAMPOS).filter(function(k){ return _BD_CAMPOS_ORDEN.indexOf(k) === -1; }));
+  var claves = _BD_CAMPOS_ORDEN.filter(function(k){ return _BD_CAMPOS[k]; }).concat(Object.keys(_BD_CAMPOS).filter(function(k){ return _BD_CAMPOS_ORDEN.indexOf(k) === -1 && !_BD_CAMPOS[k].interno; }));
   _bdMenu(anchor, [{ titulo:'Filtrar por' }].concat(claves.map(function(k){
     return { label:_BD_CAMPOS[k].label + (_BD.filtros[k] ? ' ·' : ''), fn:function(){ _bdMenuValor(anchor, k); } };
   })));
@@ -14293,114 +14296,6 @@ async function _setPipelineEtapa(id, etapa, extra) {
 // ── Análisis Tab ─────────────────────────────────────────────────
 // Secciones del proceso para el Dashboard (antes, pestaña Análisis): embudo con conversión y
 // tiempos por etapa, dictamen de la entrevista y distribución por cargo
-function _dashProceso(cands, all, filterCargo) {
-  // Count per stage
-  var stageCounts = {};
-  PIPELINE_STAGES.forEach(function(s){ stageCounts[s.id] = 0; });
-  cands.forEach(function(c){
-    var e = getPipelineEtapa(c);
-    if (stageCounts[e] !== undefined) stageCounts[e]++;
-    else stageCounts['postulante']++;
-  });
-  var total = cands.length;
-  var completed = cands.filter(function(c){ return c.estado === 'completed'; }).length;
-  var seleccionados = (stageCounts['seleccionado'] || 0) + (stageCounts['enviado'] || 0) + (stageCounts['contratado'] || 0);
-  var descartados   = stageCounts['descartado']   || 0, noContratados = stageCounts['no_contratado'] || 0;
-  var convRate = total > 0 ? Math.round(seleccionados / total * 100) : 0;
-
-  // Avg days per stage from pipeline_history
-  var stageDays = {};
-  PIPELINE_STAGES.forEach(function(s){ stageDays[s.id] = []; });
-  cands.forEach(function(c){
-    var hist = (c.scores && c.scores._pipeline_history) || [];
-    // Build entry timestamps per stage from history
-    var arrivals = {};
-    hist.forEach(function(h){
-      if (h.to && !arrivals[h.to]) arrivals[h.to] = new Date(h.ts);
-    });
-    // For each stage, compute time until next move
-    for (var i = 0; i < PIPELINE_STAGES.length - 1; i++) {
-      var s = PIPELINE_STAGES[i];
-      var next = PIPELINE_STAGES[i+1];
-      if (arrivals[s.id] && arrivals[next.id]) {
-        var days = (arrivals[next.id] - arrivals[s.id]) / 86400000;
-        if (days >= 0 && days < 365) stageDays[s.id].push(Math.round(days));
-      }
-    }
-  });
-
-  var out = {}, h = '';
-  // ── Embudo: barras finas, sin íconos ──
-  var funnelStages = PIPELINE_STAGES.filter(function(s){ return !_esCierre(s.id) && s.id !== 'antecedentes' && s.id !== 'antecedentes_ok'; });
-  // Llegaron a una etapa: quienes están hoy en ella o en una posterior, o pasaron por ella
-  // según el historial (los descartados cuentan en las etapas que alcanzaron)
-  var _fIdx = {}; funnelStages.forEach(function(s, i){ _fIdx[s.id] = i; });
-  var reached = {};
-  funnelStages.forEach(function(s, i) {
-    reached[s.id] = cands.filter(function(c) {
-      if (i === 0) return true;
-      var e = getPipelineEtapa(c);
-      if (_fIdx[e] !== undefined && _fIdx[e] >= i) return true;
-      return ((c.scores && c.scores._pipeline_history) || []).some(function(hh){ return _fIdx[hh.to] !== undefined && _fIdx[hh.to] >= i; });
-    }).length;
-  });
-  var maxCount = Math.max(1, reached[funnelStages[0].id]);
-  h += '<div class="dash-card"><div class="dash-lbl">Embudo de selección</div>';
-  h += '<div class="dsh-nota">Personas que llegaron a cada etapa, incluidas las que después avanzaron o fueron descartadas</div>';
-  funnelStages.forEach(function(s, i) {
-    var cnt = reached[s.id] || 0;
-    var pct = Math.round(cnt / maxCount * 100);
-    var convFromPrev = i === 0 ? 100 : (reached[funnelStages[i-1].id] > 0 ? Math.round(cnt / reached[funnelStages[i-1].id] * 100) : 0);
-    var avgD = stageDays[s.id].length > 0 ? Math.round(stageDays[s.id].reduce(function(a,v){return a+v;},0)/stageDays[s.id].length) : null;
-    var meta = (i > 0 ? convFromPrev + ' % de la etapa anterior' : 'Todas las personas del período') + (avgD !== null ? ' · ~' + avgD + ' d' : '');
-    h += _dshFila(s.label, meta, cnt, Math.max(pct, cnt > 0 ? 2 : 0), s.color);
-  });
-  if (descartados > 0) h += '<div class="dsh-foot"><span><i class="dsh-dot" style="background:#dc2626"></i>Rechazados (no cumplen el perfil)</span><b>' + descartados + '</b></div>';
-  if (noContratados > 0) h += '<div class="dsh-foot"><span><i class="dsh-dot" style="background:#64748b"></i>No contratados (eran aptos)</span><b>' + noContratados + '</b></div>';
-  h += '</div>';
-
-  out.embudo = h; h = '';
-  // ── Por cargo ───────────────────────────────────────────────────
-  if (filterCargo === 'all') {
-    var byCargo = {};
-    all.forEach(function(c) {
-      var k = c.perfil || 'sin_cargo';
-      if (!byCargo[k]) byCargo[k] = { total:0, sel:0 };
-      byCargo[k].total++;
-      if (['seleccionado', 'enviado', 'contratado'].indexOf(getPipelineEtapa(c)) >= 0) byCargo[k].sel++;
-    });
-    var cargoKeys = Object.keys(byCargo).sort(function(a,b){ return byCargo[b].total - byCargo[a].total; });
-    if (cargoKeys.length > 1) {
-      var maxC = Math.max.apply(null, cargoKeys.map(function(x){ return byCargo[x].total; }));
-      h += '<div class="dash-card"><div class="dash-lbl">Distribución por cargo</div><div class="dsh-nota">Postulantes por cargo y porcentaje seleccionado</div>';
-      cargoKeys.forEach(function(k) {
-        var pm = PERFIL_META[k] || {}; var d = byCargo[k];
-        var rate = d.total > 0 ? Math.round(d.sel/d.total*100) : 0;
-        h += _dshFila(htmlEsc(pm.label || k), rate + ' % seleccionado', d.total, Math.round(d.total / maxC * 100), 'var(--accent)');
-      });
-      h += '</div>';
-    }
-  }
-
-  out.cargos = h; h = '';
-  // ── Dictámenes de la entrevista ──
-  var _dicts = cands.filter(function(c){ return c.estado === 'completed'; }).map(function(c){ return _dictamenDe(c.scores); });
-  h += '<div class="dash-card"><div class="dash-lbl">Dictamen de la entrevista</div>';
-  if (_dicts.length) {
-    h += '<div class="dsh-nota">' + _dicts.length + ' evaluaciones completadas en el período</div>';
-    _EV_DICTAMEN.concat([{ val:'', label:'Sin dictamen', color:'#94a3b8' }]).forEach(function(d) {
-      var cnt = _dicts.filter(function(x){ return x === d.val; }).length, pct = Math.round(cnt / _dicts.length * 100);
-      h += _dshFila('<i class="dsh-dot" style="background:' + d.color + '"></i>' + d.label, '', cnt, pct, d.color, pct + ' %');
-    });
-  } else {
-    h += '<div class="dsh-vacio">Sin evaluaciones completadas en el período.</div>';
-  }
-  h += '</div>';
-
-  out.dictamen = h;
-  return out;
-}
-
 // ── Candidate Drawer ─────────────────────────────────────────────
 var _drawerCandId = null;
 var _drawerActiveTab = 'resumen';
