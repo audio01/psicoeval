@@ -13789,7 +13789,7 @@ function _invContinuar(rut) {
 }
 
 // ── Panel: invitaciones ───────────────────────────────────────────────────
-var _invTab = 'rut', _invHoras = 24, _invResultados = [], _invLista = null, _invVacante = '', _invPerfil = '';
+var _invTab = 'link', _invHoras = 24, _invResultados = [], _invLista = null, _invVacante = '', _invPerfil = '';
 
 // tipo 'link' (link único): se avisa que es de un solo uso
 function _invMensaje(link, tipo) {
@@ -13886,7 +13886,7 @@ function _invRender() {
     // Tipo
     var tabBtn = function(id, txt){ var on = _invTab === id; return '<button onclick="_invTab=\'' + id + '\';_invResultados=[];_invRender()" style="flex:1;padding:9px;border-radius:9px;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;'
       + (on ? 'background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)' : 'background:transparent;color:var(--ink3)') + '">' + txt + '</button>'; };
-    h += '<div style="display:flex;gap:4px;background:var(--surface2);padding:4px;border-radius:11px;margin-bottom:14px">' + tabBtn('rut', '🪪 Por RUT') + tabBtn('link', '🔗 Link único') + '</div>';
+    h += '<div style="display:flex;gap:4px;background:var(--surface2);padding:4px;border-radius:11px;margin-bottom:14px">' + tabBtn('link', '🔗 Link único') + tabBtn('rut', '🪪 Por RUT') + '</div>';
 
     var act = getActiveCargos();
     var vacs = (_vacLista || []).filter(function(v){ return v.activa; }).sort(function(a, b){ return String(a.instalacion).localeCompare(b.instalacion); });
