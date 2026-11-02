@@ -2619,7 +2619,7 @@ body.adm .rh-box .vac-benef label,.vac-benef label{display:inline-flex;white-spa
       <div class="pre-grp">
         <ul>
           <li id="disclaimer-reloj">Algunas pruebas tienen tiempo propio; al terminarse, la evaluación pasa a la siguiente. En las demás, responde a tu ritmo.</li>
-          <li>Tienes <strong>2 horas</strong> desde que comienzas. Si se corta la conexión, continúas donde quedaste.</li>
+          <li>Tienes <strong>2 horas</strong> desde que comienzas, aunque salgas. Si se corta la conexión, vuelve desde este mismo celular o computador antes de ese plazo: continúas donde quedaste, con el tiempo que te quedaba en esa prueba. Cumplido el plazo, se envía lo que hayas respondido.</li>
           <li>Responde por tu cuenta, sin copiar ni capturar las preguntas y sin salir de esta ventana: si sales, las preguntas se ocultan, la salida queda registrada y, en las pruebas con tiempo, <strong>el tiempo cuenta el doble</strong>.</li>
         </ul>
       </div>
@@ -6923,6 +6923,7 @@ function showTimerWarning(msg) {
 
 function timeExpired() {
   stopTestTimer();
+  if (S.integrity) { S.integrity.plazo_vencido = 1; saveTestProgress(); }
   var div = document.createElement('div');
   div.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px';
   div.innerHTML = '<div style="background:#fff;border-radius:16px;padding:32px;max-width:380px;width:100%;text-align:center;font-family:inherit">'
@@ -8307,7 +8308,7 @@ function _pf16ReportHtml(c, pf, s) {
   var aporta = aportes.map(function(t){ return t.aporta; }).filter(Boolean);
   var considerar = aportes.map(function(t){ return t.considerar; }).filter(Boolean);
 
-  var inc = (s._incomplete || []).find(function(x){ return x.testId === 'pf16'; });
+  var inc = _incompletasDe(s).find(function(x){ return x.testId === 'pf16'; });
   html += '<div style="border-radius:12px;padding:18px 20px;background:linear-gradient(135deg,#134e4a,#0f766e);color:#fff">'
     + '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">'
     + '<div style="font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;opacity:.75">Personalidad laboral · síntesis</div>'
@@ -8800,9 +8801,29 @@ function _integLevel(s) {
   return (ig.salidas >= 3 || (ig.segundos_fuera || 0) >= 60 || ig.copiar > 0 || ig.captura > 0) ? 'grave' : 'leve';
 }
 
+// Evaluación interrumpida: se envió por cumplirse las 2 horas, o estuvo cerrada 1 minuto o más y se retomó
+function _interrupcionDe(s) {
+  var ig = s && s._integridad;
+  if (!ig || typeof ig !== 'object') return null;
+  var aus = ig.segundos_ausente || 0;
+  if (!ig.plazo_vencido && !(ig.reingresos && aus >= 60)) return null;
+  var t = [];
+  if (ig.plazo_vencido) t.push('se envió al cumplirse el plazo de 2 horas');
+  if (ig.reingresos && aus >= 60) t.push('reingresó ' + ig.reingresos + (ig.reingresos === 1 ? ' vez' : ' veces') + ' tras ' + (aus >= 3600 ? Math.floor(aus / 3600) + ' h ' + Math.floor(aus % 3600 / 60) + ' min' : Math.round(aus / 60) + ' min') + ' con la evaluación cerrada');
+  return { plazo: !!ig.plazo_vencido, texto: t.join(' y ') };
+}
+// Preguntas sin responder por prueba. Personalidad se rinde con 20 de los 25 ítems del banco: esos 5 no se cuentan
+function _incompletasDe(s) {
+  return ((s && s._incomplete) || []).map(function(x) {
+    return x.testId === 'pf16' ? { testId: x.testId, missing: x.missing - 5, total: 20 } : x;
+  }).filter(function(x){ return x.missing > 0; });
+}
+
 // Distintivos de alerta para la lista de candidatos
 function _alertBadgesHtml(s) {
   var h = '';
+  var intr = _interrupcionDe(s);
+  if (intr) h += '<span title="' + htmlEsc('Evaluación interrumpida: ' + intr.texto) + '" style="display:inline-block;margin-left:6px;padding:1px 7px;border-radius:100px;font-size:10px;font-weight:700;vertical-align:1px;background:#eff6ff;color:#1e3a8a;border:1px solid #bfdbfe">Interrumpida</span>';
   var lv = _integLevel(s);
   if (lv === 'grave' || lv === 'leve') {
     var ig = s._integridad;
@@ -8942,7 +8963,7 @@ function _discReportHtml(c, disc, s, combos) {
     + '</div></div>';
 
   // ── Calidad de los datos ──
-  var inc = (s._incomplete || []).find(function(x){ return x.testId === 'disc'; });
+  var inc = _incompletasDe(s).find(function(x){ return x.testId === 'disc'; });
   if (inc) {
     html += '<div style="padding:10px 14px;border-radius:10px;background:#fffbeb;border:1.5px solid #fde68a;color:#92400e;font-size:12px;line-height:1.55">'
       + '<strong>Respuestas incompletas:</strong> respondió ' + (inc.total - inc.missing) + ' de ' + inc.total + ' bloques. Interprete el perfil con cautela.</div>';
@@ -9141,7 +9162,9 @@ function _avisosCompactosHtml(s, sinInteg) {
   var inc = s && s._integridad;
   if (inc && typeof inc === 'object') {
     var lv = _integLevel(s);
-    if (lv === 'none') out += chip('🛡 Sin incidentes durante la evaluación', '#166534', '#f0fdf4', '#bbf7d0');
+    var intr = _interrupcionDe(s);
+    if (intr) out += chip('⏸ Evaluación interrumpida: ' + intr.texto, '#1e3a8a', '#eff6ff', '#bfdbfe', 'Revise qué alcanzó a responder antes de usar este resultado y confirme lo ocurrido con la persona.');
+    if (lv === 'none') { if (!intr) out += chip('🛡 Sin incidentes durante la evaluación', '#166534', '#f0fdf4', '#bbf7d0'); }
     else {
       var det = [];
       if (inc.salidas) det.push('salió ' + inc.salidas + (inc.salidas === 1 ? ' vez' : ' veces') + ' de la ventana (' + (inc.segundos_fuera || 0) + ' s fuera)');
@@ -9152,6 +9175,8 @@ function _avisosCompactosHtml(s, sinInteg) {
                             : chip('⚠️ Incidentes: ' + det.join(', '), '#92400e', '#fffbeb', '#fde68a', 'Una salida breve puede deberse a una notificación o a un clic fuera de la ventana. Contrástelo en la entrevista.');
     }
   }
+  var sinResp = _incompletasDe(s);
+  if (sinResp.length) out += chip('Sin responder: ' + sinResp.map(function(x){ return htmlEsc(_testNames([x.testId])) + ' ' + x.missing + ' de ' + x.total; }).join(' · '), '#475569', '#f8fafc', '#e2e8f0', 'Preguntas que quedaron sin respuesta, por tiempo de la prueba o por interrupción.');
   var bt = s && s._bateria;
   if (bt && typeof bt === 'object') {
     var tipB = 'Batería distinta a la configurada para el cargo. Puede deberse a un link generado antes de cambiar la batería, o a una manipulación de la página. Las pruebas no rendidas no tienen puntaje.';
@@ -10043,6 +10068,8 @@ function buildReportHtml(c, withClose) {
     if (_mon && (_mon.salidas || _mon.copiar || _mon.captura || _mon.imprimir)) {
       _rsPuntos.push('<strong>Condiciones de la evaluación:</strong> hubo incidentes mientras respondía (ver aviso arriba). Pregunte si recibió ayuda o consultó otras fuentes.');
     }
+    var _intr = _interrupcionDe(s);
+    if (_intr) _rsPuntos.push('<strong>Evaluación interrumpida:</strong> ' + htmlEsc(_intr.texto) + '. Confirme lo ocurrido antes de usar este resultado.');
     if (s._bateria && s._bateria.faltantes && s._bateria.faltantes.length) {
       _rsPuntos.push('<strong>Batería incompleta:</strong> no rindió ' + htmlEsc(_testNames(s._bateria.faltantes)) + '.');
     }
@@ -13162,7 +13189,7 @@ function saveSession() {
 function restoreSession() {
   try {
     const raw = localStorage.getItem(SESSION_KEY);
-    if (!raw) { showView('landing'); return; }
+    if (!raw) { showView('landing'); checkResumeProgress(); return; }
     const sess = JSON.parse(raw);
     if (sess.role === 'admin' || sess.role === 'viewer') {
       // Verificar que el token no haya expirado
@@ -13270,15 +13297,13 @@ function resumeTestProgress() {
   S._testTotalMinutes = p.totalMinutes || 30;
   S.gameResults   = p.gameResults || {};
   S.blockTimes    = p.blockTimes || {};
-  S.integrity     = p.integrity || null;
-  // Reloj de cada prueba: lo que quedaba al guardar, menos lo transcurrido desde entonces
-  // en la prueba actual si tenía reloj. El plazo de la sesión se cuenta desde el inicio.
+  S.integrity     = p.integrity || { salidas: 0, segundos_fuera: 0, copiar: 0, imprimir: 0, captura: 0 };
+  // Reloj de cada prueba: sigue con lo que quedaba al guardar (no corre con la evaluación cerrada).
+  // El plazo de la sesión sí sigue contando desde el inicio. Cada reingreso queda registrado.
   S.tiempoRestante = p.tiempoRestante || {};
   S.inicioSesion = p.inicioSesion || p.savedAt || Date.now();
-  var _blkTid = (S.selectedTests || [])[S.blockIdx];
-  if (_conTiempo(_blkTid) && typeof S.tiempoRestante[_blkTid] === 'number') {
-    S.tiempoRestante[_blkTid] = Math.max(0, Math.round(S.tiempoRestante[_blkTid] - (Date.now() - p.savedAt) / 1000));
-  }
+  S.integrity.reingresos = (S.integrity.reingresos || 0) + 1;
+  S.integrity.segundos_ausente = (S.integrity.segundos_ausente || 0) + Math.max(0, Math.round((Date.now() - (p.savedAt || Date.now())) / 1000));
   S.allQs         = buildQuestions(S.candidate.perfil);
   S.testBlocks    = S.selectedTests.map(function(tid) {
     return { testId: tid, qs: S.allQs.filter(function(q){ return q.testId === tid; }) };
@@ -13298,6 +13323,9 @@ function checkResumeProgress() {
   var done  = p.blockIdx || 0;
   var pct   = total > 0 ? Math.round(done / total * 100) : 0;
   var savedTime = p.savedAt ? new Date(p.savedAt).toLocaleTimeString('es-CL', { hour:'2-digit', minute:'2-digit' }) : '';
+  // Lo que queda del plazo de 2 horas: la persona lo sabe antes de continuar
+  var plazoMin = p.inicioSesion ? Math.ceil((_PLAZO_SESION - (Date.now() - p.inicioSesion) / 1000) / 60) : null;
+  var plazoTxt = plazoMin === null ? '' : plazoMin > 0 ? 'Te quedan ' + plazoMin + ' min del plazo de 2 horas.' : 'Se cumplió el plazo de 2 horas: al continuar se enviará lo que respondiste.';
 
   // Build banner
   var banner = document.createElement('div');
@@ -13307,6 +13335,7 @@ function checkResumeProgress() {
     + '<div style="flex:1;min-width:200px">'
     + '<div style="font-size:13px;font-weight:700;color:#f1f5f9;margin-bottom:4px">👋 Hola ' + htmlEsc(c.nombre || '') + ', tienes una evaluación pendiente</div>'
     + '<div style="font-size:11px;color:#94a3b8;margin-bottom:8px">' + done + ' de ' + total + ' tests completados' + (savedTime ? ' · guardado a las ' + savedTime : '') + '</div>'
+    + (plazoTxt ? '<div style="font-size:11px;color:#cbd5e1;margin-bottom:8px">' + plazoTxt + '</div>' : '')
     + '<div style="background:#334155;border-radius:6px;height:6px;overflow:hidden">'
     + '<div style="background:#6366f1;height:100%;width:' + pct + '%;border-radius:6px;transition:width .4s"></div>'
     + '</div>'
@@ -14068,6 +14097,7 @@ var _urlConfigApplied = applyCandidateConfig() || _invDesdeLink;
 if (_urlConfigApplied && sessionStorage.getItem('psicoeval_candidate_link')) {
   sessionStorage.removeItem('psicoeval_candidate_link');
   showView('landing');
+  checkResumeProgress();   // quien vuelve por su enlace también puede retomar
 } else {
   if (!_urlConfigApplied) restoreParams();
   restoreSession();
@@ -14655,6 +14685,7 @@ function _rsExplorar(c, m) {
   if (s.gonogo && s.gonogo.valido === false) items.push('<strong>Control de impulsos</strong>: resultado no interpretable; evalúelo en la entrevista.');
   if (s.bart && s.bart.valido === false) items.push('<strong>Control del riesgo</strong>: resultado no interpretable; evalúelo en la entrevista.');
   if (m.incid === 'grave' || m.incid === 'leve') items.push('<strong>Incidentes durante la evaluación</strong>: pregunte en qué condiciones la rindió.');
+  if (_interrupcionDe(s)) items.push('<strong>Evaluación interrumpida</strong>: pregunte qué ocurrió y en qué condiciones retomó.');
   var bt = s._bateria;
   if (bt && bt.faltantes && bt.faltantes.length) items.push('<strong>No rindió</strong> ' + htmlEsc(_testNames(bt.faltantes)) + ': evalúe esos aspectos en la entrevista.');
   var h = '<div class="rs-card"><div class="rs-lbl">Para explorar en la entrevista</div>';
