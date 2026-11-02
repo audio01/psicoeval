@@ -871,6 +871,7 @@ input,select,textarea{font-family:inherit;outline:none}
 .bd-board .kanban-col-header{border-bottom:none;padding:4px 4px 10px;font-size:12.5px;font-weight:700;color:var(--ink2);gap:8px;background:transparent}
 .bd-col-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
 .bd-col-n{margin-left:auto;font-size:12px;font-weight:600;color:var(--ink4)}
+.bd-col-chk{margin:0 0 0 2px;width:15px;height:15px;cursor:pointer;flex-shrink:0;accent-color:var(--accent)}
 .bd-board .kanban-cards{padding:0 2px 8px;gap:8px}
 .bd-board .bd-kc{background:var(--surface);border:1px solid var(--border);box-shadow:0 1px 2px rgba(15,23,42,.04);padding:11px 12px}
 .bd-board .bd-kc:hover{border-color:var(--border2);box-shadow:0 4px 14px -6px rgba(15,23,42,.18)}
@@ -11116,7 +11117,18 @@ function toggleAllChecks(checked) {
   updateBulkBar();
 }
 
+// Tablero: la casilla de cada columna marca o desmarca todas sus tarjetas visibles
+function _bdSelCol(el) {
+  var cards = document.getElementById('kcards-' + el.dataset.col); if (!cards) return;
+  cards.querySelectorAll('.row-chk').forEach(function(c){ c.checked = el.checked; });
+  updateBulkBar();
+  if (el.checked && cards.querySelector(':scope > .btn')) toast('Se seleccionaron solo las tarjetas visibles. Use "Mostrar más" para incluir el resto.', 'ok');
+}
 function updateBulkBar() {
+  document.querySelectorAll('.bd-col-chk').forEach(function(el) {
+    var cards = document.getElementById('kcards-' + el.dataset.col), n = cards ? cards.querySelectorAll('.row-chk').length : 0, m = cards ? cards.querySelectorAll('.row-chk:checked').length : 0;
+    el.checked = n > 0 && m === n; el.indeterminate = m > 0 && m < n;
+  });
   const checked = document.querySelectorAll('.row-chk:checked');
   const bar   = document.getElementById('bulk-bar');
   const count = document.getElementById('bulk-count');
@@ -12729,7 +12741,8 @@ function _bdTablero(lista) {
     // Enviados y contratados: casilla pequeña al lado (cuántos hay, Ver → y recibe tarjetas)
     if (arrastra && (g.id === 'contratado' || g.id === 'enviado') && !verArchivo && filtroEtapa !== g.id) return;
     h += '<div class="kanban-col" id="kcol-' + g.id + '"' + (arrastra ? ' ondragover="event.preventDefault();this.classList.add(\'drag-over\');kOver(event,\'' + g.id + '\')" ondragleave="if(!this.contains(event.relatedTarget)){this.classList.remove(\'drag-over\')}" ondrop="kDrop(event,\'' + g.id + '\')"' : '') + '>'
-      + '<div class="kanban-col-header"><span class="bd-col-dot" style="background:' + g.color + '"></span><span>' + g.label + '</span><span class="bd-col-n">' + del.length + '</span></div>'
+      + '<div class="kanban-col-header"><span class="bd-col-dot" style="background:' + g.color + '"></span><span>' + g.label + '</span><span class="bd-col-n">' + del.length + '</span>'
+      + (del.length ? '<input type="checkbox" class="bd-col-chk" data-col="' + g.id + '" title="Seleccionar toda la columna" aria-label="Seleccionar toda la columna ' + g.label + '" onchange="_bdSelCol(this)">' : '') + '</div>'
       + '<div class="kanban-cards" id="kcards-' + g.id + '">';
     if (!del.length) h += '<div class="bd-vacio">Sin candidatos</div>';
     del.slice(0, _bdLimite).forEach(function(c) {
