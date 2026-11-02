@@ -14718,7 +14718,7 @@ function _chapiReglas(imp, prensa) {
   return { roboHurto: roboHurto, reclutamiento: reclutamiento, lesiones: lesiones, lesionesAntiguas: lesionesAntiguas, reiteradas: reiteradas, multiples: multiples, prensa: pAlta,
            descartar: roboHurto.length > 0 || reclutamiento.length > 0 || lesiones.length > 0 || reiteradas.length > 0 || multiples.length > 0 || pAlta.length > 0 };
 }
-// Mismo criterio que la verificación automática (psicoeval-chapi): grave = penales por RUT,
+// Mismo criterio que la verificación automática (psicoeval-chapi): grave = penales por RUT (salvo solo denunciante),
 // causas laborales o riesgo alto; lo demás, aviso para conversarlo en la entrevista
 function _chapiClasificar(r) {
   var k = (r && r.causas) || {}, motivos = [], avisos = [];
@@ -14734,10 +14734,12 @@ function _chapiClasificar(r) {
   var rpn = _chapiRobosPorNombre(r);
   if (rpn.length) motivos.push('Robos o estafas que coinciden solo por nombre: confirme si es la misma persona (' + rpn.length + ')');
   rd.reiteradas.forEach(function(x){ motivos.push('Imputaciones reiteradas: ' + x.causas[0].delito.toLowerCase() + ' (' + x.causas.length + ' causas)'); });
-  if (k.penales_rut > 0) motivos.push('Causas penales por RUT (' + k.penales_rut + ')');
+  var soloDen = k.penales_rut > 0 && k.penales_denunciante === k.penales_rut && !(r && Array.isArray(r.imputaciones) && r.imputaciones.length);
+  if (k.penales_rut > 0 && !soloDen) motivos.push('Causas penales por RUT (' + k.penales_rut + ')');
   else if (r && Array.isArray(r.imputaciones) && r.imputaciones.length) motivos.push('Imputado en causa penal (' + r.imputaciones.map(function(x){ return x.rit; }).filter(function(x, i, a){ return a.indexOf(x) === i; }).length + ')');
   if (k.laborales > 0) motivos.push('Causas laborales (' + k.laborales + ')');
   if (r && r.riesgo === 'high') motivos.push('Riesgo alto en Chapi');
+  if (soloDen) avisos.push('Figura solo como denunciante en causas penales (' + k.penales_rut + ')');
   if (k.civiles > 0) avisos.push('Causas civiles (' + k.civiles + ')');
   if (k.sindicales > 0) avisos.push('Causas sindicales (' + k.sindicales + ')');
   if (k.sanciones > 0) avisos.push('Sanciones internacionales (' + k.sanciones + ')');
