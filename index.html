@@ -1710,6 +1710,9 @@ body.adm .pub-aura i{animation:none}   /* estático: el vidrio no recompone en c
 .dsh-ins td:first-child{max-width:210px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dsh-bar-c{width:28%;min-width:130px}.dsh-sbar{display:flex;gap:2px;height:12px}.dsh-sbar i{display:block;height:12px}.dsh-sbar i:first-child{border-radius:3px 0 0 3px}.dsh-sbar i:last-child{border-radius:0 3px 3px 0}
 .dsh-cup{color:var(--ink3);white-space:nowrap}
+.bd-volver{align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.bd-volver-b{border:1px solid var(--accent);background:var(--accent);color:#fff;border-radius:10px;padding:7px 13px;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.bd-volver-b:hover{opacity:.9}.bd-volver-t{font-size:13px;color:var(--ink3);min-width:0}.bd-volver-t b{color:var(--ink2)}
 .bd-rev{margin-bottom:12px}.bd-rev summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--ink2);padding:8px 2px}.bd-rev summary b{color:var(--accent);margin-left:4px}
 [data-theme="dark"] .dsh-sep{border-left-color:rgba(255,255,255,.08)}[data-theme="dark"] .dsh-tot td{background:rgba(255,255,255,.05)}[data-theme="dark"] .dsh-aviso{color:#fbbf24}[data-theme="dark"] .dsh-aviso .dsh-cel{color:#fbbf24}
 .cmp-c{border:1.5px solid var(--border);border-radius:12px;padding:10px 14px;margin-bottom:10px;background:var(--surface)}
@@ -2797,6 +2800,7 @@ body.adm .rh-box .vac-benef label,.vac-benef label{display:inline-flex;white-spa
           </div>
         </div>
         <!-- Vistas guardadas -->
+        <div class="bd-volver" id="bd-volver" style="display:none"></div>
         <div class="bd-vistas" id="bd-vistas"></div>
         <!-- Búsqueda, filtros, tipo de vista, orden, agrupación y propiedades -->
         <div class="bd-bar" id="bd-bar"></div>
@@ -11882,6 +11886,7 @@ function _momentoTxt(c) {
 async function renderDashboard() {
   const container = document.getElementById('dash-content');
   if (!container) return;
+  var _scroll = _dashRestaurar();
   container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--ink3);font-size:13px">Cargando…</div>';
   const allCands = await getDB();
   const perfil = _dashPerfil;
@@ -11917,6 +11922,7 @@ async function renderDashboard() {
   }
   container.innerHTML = h;
   if (_dashVista === 'semanal') { _initDashCharts(); _actEv = _actEventos(delCargo, invs || []); _actPintar(); }
+  if (_scroll) { var _main = document.getElementById('admin-main'); if (_main) _main.scrollTop = _scroll; }
 }
 
 // ── Dashboard: análisis de la selección en tres vistas (Registro semanal, Instalaciones, Calidad) ──
@@ -11925,9 +11931,26 @@ async function renderDashboard() {
 var _DASH_VISTA_KEY = 'psicoeval_dash_vista';
 var _dashVista = (function(){ try { var v = localStorage.getItem(_DASH_VISTA_KEY); return ['semanal', 'instalaciones', 'calidad'].indexOf(v) !== -1 ? v : 'semanal'; } catch(e) { return 'semanal'; } })();
 function setDashVista(v) { _dashVista = v; try { localStorage.setItem(_DASH_VISTA_KEY, v); } catch(e) {} renderDashboard(); }
-var _dashCeldas = [], _dashSel = null;
+var _dashCeldas = [], _dashSel = null, _dashPrev = null;
 function _dashCelda(ids, txt) { _dashCeldas.push({ ids: ids, txt: txt }); return _dashCeldas.length - 1; }
-function _dashAbrir(i) { var x = _dashCeldas[i]; if (!x) return; _dashSel = x; _bdIrConFiltros({ dash: 'sel' }); }
+// Al abrir una cifra se recuerda cómo estaba Candidatos y dónde iba en el Dashboard, para volver sin perder el hilo
+function _dashAbrir(i) {
+  var x = _dashCeldas[i]; if (!x) return;
+  if (!_BD) _bdInit();
+  var main = document.getElementById('admin-main');
+  _dashSel = x; _dashPrev = { vistaId: _bdVistaId, bd: JSON.parse(JSON.stringify(_BD)), scroll: main ? main.scrollTop : 0 };
+  _bdIrConFiltros({ dash: 'sel' });
+  if (main) main.scrollTop = 0;
+}
+function _dashVolver() { adminTab('dashboard', document.getElementById('nav-dashboard')); }
+// Al volver al Dashboard por cualquier camino, Candidatos queda como estaba antes de abrir la cifra
+function _dashRestaurar() {
+  var p = _dashPrev, abierta = _BD && _BD.filtros && _BD.filtros.dash;
+  _dashPrev = null; _dashSel = null;
+  if (!p) return null;
+  if (abierta) { _bdVistaId = p.vistaId; _BD = p.bd; _bdGuardarLocal(); }
+  return p.scroll;
+}
 // Cifra que abre la lista de personas (sin personas, solo el número)
 function _dashNum(ids, txt) {
   if (!ids.length) return '<span class="dsh-cero">0</span>';
@@ -12437,6 +12460,7 @@ function _bdGuardarLocal() { try { localStorage.setItem(_BD_KEY, JSON.stringify(
 function _bdSucio() {
   var base = _bdCfgDe(_bdVistaId), fija = _BD_FIJAS.some(function(v){ return v.id === _bdVistaId; });
   var a = Object.assign({}, _BD), b = Object.assign({}, base);
+  a.filtros = Object.assign({}, a.filtros); delete a.filtros.dash;   // abrir una cifra del Dashboard no es un cambio de la vista
   if (fija) { delete a.vista; delete b.vista; }
   return JSON.stringify(a) !== JSON.stringify(b);
 }
@@ -12619,11 +12643,19 @@ function _bdVistasPintar() {
 function _bdBarPintar() {
   var el = document.getElementById('bd-bar'); if (!el) return;
   var chips = Object.keys(_BD.filtros || {}).map(function(k){
-    var f = _BD_CAMPOS[k]; if (!f) return '';
+    var f = _BD_CAMPOS[k]; if (!f || f.interno) return '';
     var op = f.ops().filter(function(o){ return o[0] === _BD.filtros[k]; })[0];
     return '<span class="bd-chip" onclick="_bdMenuValor(this,\'' + k + '\')">' + f.label + ': <b>' + htmlEsc(op ? op[1] : _BD.filtros[k]) + '</b>'
       + '<span class="bd-chip-x" title="Quitar filtro" onclick="event.stopPropagation();_bdQuitar(\'' + k + '\')">✕</span></span>';
   }).join('');
+  // Lista abierta desde una cifra del Dashboard: de dónde viene y cómo volver
+  var vol = document.getElementById('bd-volver');
+  if (vol) {
+    var desde = _BD.filtros && _BD.filtros.dash && _dashSel;
+    var nomV = { semanal:'Registro semanal', instalaciones:'Instalaciones', calidad:'Calidad de la selección' }[_dashVista];
+    vol.innerHTML = desde ? '<button class="bd-volver-b" onclick="_dashVolver()"><span aria-hidden="true">←</span> Volver al Dashboard</button><span class="bd-volver-t">' + nomV + ' · <b>' + htmlEsc(_dashSel.txt) + '</b></span>' : '';
+    vol.style.display = desde ? 'flex' : 'none';
+  }
   var tab = _BD.vista === 'tablero';
   el.innerHTML = '<div class="bd-bar-l">'
     + '<input class="bd-buscar" id="bd-buscar" placeholder="Buscar nombre, RUT, teléfono o correo" value="' + htmlEsc(_bdBuscarTxt) + '" oninput="_bdBuscar(this.value)">'
