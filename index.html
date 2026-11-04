@@ -3093,6 +3093,7 @@ const TESTS_META = {
   comprension:  { name:'Comprensión de Instrucciones',       icon:'📋', color:'var(--lilac)'  },
   disc:         { name:'Estilos Conductuales (DISC-20)',       icon:'🎭', color:'#7c3aed', cand:'Estilos de trabajo' },
   pf16:         { name:'Personalidad laboral',               icon:'🧬', color:'#0d9488', cand:'Cuestionario de estilo personal' },
+  ipip_lt:      { name:'Liderazgo y templanza (IPIP)',       icon:'🧭', color:'#4338ca', cand:'Cómo te describes' },
   normativa_ohs:    { name:'Conocimiento Normativo OHS',       icon:'📐', color:'#0369a1' },
   integridad:       { name:'Actitudes en el trabajo',          icon:'🧭', color:'#b45309' },   // integridad laboral (nombre neutro para el candidato)
   gonogo:           { name:'Control de impulsos',              icon:'🎯', color:'#dc2626', game:true, cand:'Reacción y atención', badge:'⏱ Tarea de reacción' },
@@ -3485,7 +3486,7 @@ function _cfgReloadAll() {
   } catch(e) {}
 }
 
-var TM_MINS_DEFAULTS = { dc0:6, pai:5, situacional:5, vigilancia:3, comprension:4, disc:3, pf16:4, normativa_ohs:6, integridad:5, gonogo:4, bart:3 };
+var TM_MINS_DEFAULTS = { dc0:6, pai:5, situacional:5, vigilancia:3, comprension:4, disc:3, pf16:4, ipip_lt:3, normativa_ohs:6, integridad:5, gonogo:4, bart:3 };
 var TM_MINS_CONFIG = (function(){
   try {
     var saved = localStorage.getItem('psicoeval_tm_mins');
@@ -3663,7 +3664,7 @@ function toggleCargo(key) {
 }
 
 // Nombres cortos de las pruebas para las etiquetas de Cargos
-var _CG_CORTO = { dc0:'Cognitiva', situacional:'Juicio', vigilancia:'Vigilancia', comprension:'Comprensión', normativa_ohs:'Normativa', gonogo:'Impulsos', bart:'Riesgo', disc:'DISC', pf16:'Personalidad', pai:'Ajuste', integridad:'Integridad' };
+var _CG_CORTO = { dc0:'Cognitiva', situacional:'Juicio', vigilancia:'Vigilancia', comprension:'Comprensión', normativa_ohs:'Normativa', gonogo:'Impulsos', bart:'Riesgo', disc:'DISC', pf16:'Personalidad', ipip_lt:'Liderazgo', pai:'Ajuste', integridad:'Integridad' };
 function renderCargosTab() {
   var el = document.getElementById('cargos-content');
   if (!el) return;
@@ -4540,6 +4541,37 @@ const SIT_SUPERVISOR = [
 ];
 
 // ═══════════════════════════════════════════════════════════
+//  LIDERAZGO Y TEMPLANZA (id ipip_lt) — dos escalas del IPIP (dominio público, ipip.ori.org)
+//  Liderazgo: AB5C I+/V+ (10 ítems, α .82) · Templanza: AB5C IV+/V+ "Toughness" (12 ítems, α .84)
+//  Traducción propia. Las claves (dimensión e invertidos) están solo en el servidor
+//  (supabase/33_liderazgo_templanza.sql). Se presentan intercaladas.
+// ═══════════════════════════════════════════════════════════
+const IPIP_LT_ITEMS = [
+  {id:'ipl1',  text:'Tomo el mando.'},
+  {id:'ipt1',  text:'Mantengo la calma incluso en situaciones tensas.'},
+  {id:'ipl8',  text:'Espero a que otros marquen el camino.'},
+  {id:'ipt6',  text:'Entro en pánico con facilidad.'},
+  {id:'ipl2',  text:'Sé cómo cautivar a las personas.'},
+  {id:'ipt9',  text:'Los contratiempos me derrumban.'},
+  {id:'ipl6',  text:'Tengo poco que decir.'},
+  {id:'ipt2',  text:'No pierdo la cabeza.'},
+  {id:'ipl3',  text:'Me expreso con facilidad.'},
+  {id:'ipt5',  text:'Me tomo las cosas a mal con facilidad.'},
+  {id:'ipl10', text:'Dejo que otros tomen las decisiones.'},
+  {id:'ipt3',  text:'Sé cómo enfrentar las dificultades.'},
+  {id:'ipt10', text:'Los acontecimientos me sobrepasan.'},
+  {id:'ipl4',  text:'Soy quien actúa primero.'},
+  {id:'ipt7',  text:'Me hieren con facilidad.'},
+  {id:'ipl9',  text:'Me da miedo llamar la atención.'},
+  {id:'ipt4',  text:'Tolero bien las críticas.'},
+  {id:'ipt11', text:'Me asusto con facilidad.'},
+  {id:'ipl5',  text:'Nunca me quedo sin palabras.'},
+  {id:'ipt8',  text:'Me ofendo con facilidad.'},
+  {id:'ipl7',  text:'Me cuesta expresar lo que siento.'},
+  {id:'ipt12', text:'Me confundo con facilidad.'},
+];
+
+// ═══════════════════════════════════════════════════════════
 //  DISC-20 — Estilos Conductuales
 //  Likert 1–5 (1=Nunca, 5=Siempre)
 //  D=Dominancia, I=Influencia, S=Estabilidad, C=Cumplimiento
@@ -4788,10 +4820,11 @@ const NORMATIVA_OHS_QS = [
     ]},
 ];
 
-function buildQuestions(perfil) {
+function buildQuestions(perfil, soloTests) {
   const qs = [];
   const add = (arr, testId, type) => arr.forEach(q => qs.push({...q, testId, type}));
-  const active = PERFIL_TESTS[perfil] || PERFIL_TESTS_DEFAULT[perfil] || [];
+  // soloTests: Modo prueba arma una prueba aunque no esté en la batería del cargo
+  const active = soloTests || PERFIL_TESTS[perfil] || PERFIL_TESTS_DEFAULT[perfil] || [];
   perfil = _perfilBase(perfil);   // las preguntas son las del cargo base (Guardia CCTV → guardia)
 
   // Situacional items vary by profile
@@ -4814,6 +4847,7 @@ function buildQuestions(perfil) {
   if (active.includes('comprension')) add(compItems, 'comprension', 'choice');
   if (active.includes('disc'))          DISC_BLOCKS.forEach(function(b,i){ qs.push({id:'disc_b'+i, testId:'disc', type:'disc_block', dims:b, blockNum:i+1, total:DISC_BLOCKS.length}); });
   if (active.includes('pf16'))          add(PF16_ITEMS, 'pf16', 'likert');
+  if (active.includes('ipip_lt'))       add(IPIP_LT_ITEMS, 'ipip_lt', 'likert');
   if (active.includes('normativa_ohs')) add(NORMATIVA_OHS_QS, 'normativa_ohs', 'choice');
   if (active.includes('integridad'))    add(INTEG_ITEMS, 'integridad', 'choice');
   // Game tests don't need questions - they render their own UI
@@ -4935,7 +4969,7 @@ function startTestMode() {
   var TM_MINS = TM_MINS_CONFIG;
   var GROUPS = {
     '🧠 Cognitivos':        ['dc0','comprension'],
-    '🧬 Personalidad':      ['pai','disc','pf16'],
+    '🧬 Personalidad':      ['pai','disc','pf16','ipip_lt'],
     '💡 Situacionales':     ['situacional','vigilancia'],
     '⏱ Tareas de conducta': ['gonogo','bart'],
   };
@@ -5020,7 +5054,7 @@ function launchSingleTest(testId) {
   S._testTotalMinutes = 15; // single test estimate
   S.tiempoRestante = {}; S.inicioSesion = Date.now();
   S.selectedTests = [testId];
-  S.allQs = buildQuestions(perfil);
+  S.allQs = buildQuestions(perfil, [testId]);
   S.answers = {};
   S.gameResults = {};
   S.blockTimes = {};
@@ -7399,7 +7433,9 @@ function renderTestBlock() {
   // Personalidad laboral: los ítems son afirmaciones, así que la escala es de acuerdo
   const LIKERT_LABELS = { 1:'Muy en desacuerdo', 2:'En desacuerdo', 3:'Ni de acuerdo ni en desacuerdo', 4:'De acuerdo', 5:'Muy de acuerdo' };
   const PAI_LABELS    = { 1:'Nunca', 2:'A veces', 3:'Frecuente', 4:'Siempre' };
-  const scaleLabels   = type === 'pai' ? PAI_LABELS : LIKERT_LABELS;
+  // Liderazgo y templanza (IPIP): escala original de exactitud ("qué tan bien te describe")
+  const IPIP_LABELS   = { 1:'No me describe', 2:'Me describe poco', 3:'Ni poco ni mucho', 4:'Me describe bastante', 5:'Me describe muy bien' };
+  const scaleLabels   = type === 'pai' ? PAI_LABELS : block.testId === 'ipip_lt' ? IPIP_LABELS : LIKERT_LABELS;
   const legendKeys    = type === 'pai' ? [1,2,3,4] : [1,2,3,4,5];
 
   let instrHtml = '';
@@ -7411,7 +7447,9 @@ function renderTestBlock() {
     instrHtml = '<div style="padding:12px 16px;background:#fef9c3;border:1px solid #fde047;border-radius:8px;font-size:12px;color:#713f12;margin-bottom:4px">'
       + '📌 Para cada bloque, selecciona la cualidad que te representa <strong>MÁS</strong> (verde) y la que te representa <strong>MENOS</strong> (rojo). No puedes elegir la misma para ambos.</div>';
   } else if (isScale) {
-    instrHtml = '<div class="scale-legend">'
+    instrHtml = (block.testId === 'ipip_lt' ? '<div style="padding:12px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;font-size:12.5px;color:#334155;line-height:1.6;margin-bottom:8px">'
+      + 'Indica qué tan bien te describe cada frase, tal como eres hoy y no como te gustaría ser. Compárate con personas de tu edad y sexo que conoces. No hay respuestas buenas ni malas.</div>' : '')
+      + '<div class="scale-legend">'
       + legendKeys.map(n => `<span><strong>${n}</strong> — ${(scaleLabels[n]||'').replace('\n',' ')}</span>`).join('')
       + '</div>';
   }
@@ -8264,6 +8302,75 @@ function pf16ExRangoAntiguo(viejo) {
 // Pestaña de Personalidad laboral del informe (también se usa en el PDF). Descriptiva, sin perfil esperado.
 // Secciones: síntesis · perfil gráfico · validez · lectura por dimensión · combinaciones ·
 // áreas de aplicación laboral · preguntas para la entrevista · nota técnica.
+// ═══════════════════════════════════════════════════════════
+//  LIDERAZGO Y TEMPLANZA (IPIP) — informe descriptivo
+//  scores.ipip_lt = { LI, TE (0-100), _n:{LI, TE}, _plano } (supabase/33_liderazgo_templanza.sql)
+// ═══════════════════════════════════════════════════════════
+var _IPIP_DIMS = ['LI', 'TE'];
+var IPIP_RPT = {
+  LI: { nombre:'Liderazgo', polos:['Prefiere seguir', 'Toma el mando'], items:10,
+        alto:'Se describe con iniciativa para tomar el mando, expresarse con soltura y conducir a otros: tiende a asumir la conducción en vez de esperar instrucciones.',
+        medio:'Se describe con una disposición intermedia a conducir: en algunas situaciones toma la iniciativa y en otras prefiere que otros marquen el rumbo.',
+        bajo:'Se describe más cerca de seguir que de conducir: tiende a esperar que otros marquen el rumbo y le cuesta tomar la palabra o las decisiones frente al grupo.',
+        considerar:{ alto:'Verifique en la entrevista que esa iniciativa se acompañe de escucha y de respeto por la línea de mando.',
+                     bajo:'Para cargos que conducen equipos, explore cómo da instrucciones y cómo corrige a otros.' },
+        preguntas:{ alto:'Cuénteme de una vez en que tomó el mando de una situación sin que se lo pidieran. ¿Qué hizo y cómo lo recibió su jefatura?',
+                    bajo:'Cuénteme de una vez en que tuvo que dar una instrucción que su equipo no quería cumplir. ¿Qué hizo?' } },
+  TE: { nombre:'Templanza ante la presión', polos:['Se ve sobrepasado', 'Mantiene la calma'], items:12,
+        alto:'Se describe con serenidad ante la tensión, las críticas y los contratiempos: dice mantener la cabeza fría y recuperarse con rapidez.',
+        medio:'Se describe con una templanza intermedia: maneja la mayoría de las situaciones tensas, aunque algunas críticas o contratiempos pueden afectarle.',
+        bajo:'Se describe sensible a la presión: reconoce que las críticas, los contratiempos o los imprevistos le afectan y pueden sobrepasarle.',
+        considerar:{ alto:'Una autodescripción muy serena puede reflejar deseabilidad social: contraste con hechos concretos.',
+                     bajo:'Explore en la entrevista cómo ha reaccionado en emergencias o frente a reclamos de clientes.' },
+        preguntas:{ alto:'Cuénteme de una crítica dura que recibió de un cliente o de su jefatura. ¿Qué hizo después?',
+                    bajo:'Cuénteme de la situación de trabajo más tensa que le ha tocado. ¿Qué hizo en los primeros minutos?' } }
+};
+function _ipipResumen(ip) {
+  if (!ip) return '';
+  if (ip._plano) return 'No interpretable: misma respuesta en todo';
+  var ZL = { alto:'alto', medio:'medio', bajo:'bajo' };
+  return _IPIP_DIMS.filter(function(k){ return ip[k] != null; }).map(function(k){ return IPIP_RPT[k].nombre.split(' ')[0] + ' ' + ZL[pf16ZoneOf(Math.round(ip[k]))]; }).join(' · ');
+}
+function _ipipReportHtml(c, ip, s) {
+  var first = htmlEsc(((c.nombre || '').trim().split(/\s+/)[0]) || 'La persona evaluada');
+  var keys = _IPIP_DIMS.filter(function(k){ return ip[k] != null; });
+  var card = function(inner){ return '<div style="background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:16px 18px;break-inside:avoid;page-break-inside:avoid">' + inner + '</div>'; };
+  var ZL = { alto:'Alto', medio:'Medio', bajo:'Bajo' }, ZC = { alto:'#4338ca', medio:'#64748b', bajo:'#b45309' };
+  var html = '';
+  var res = ip._plano
+    ? first + ' respondió lo mismo en todas las frases. Como la mitad de ellas están invertidas, el puntaje queda al medio y no describe nada: no interprete esta prueba.'
+    : keys.map(function(k){ return IPIP_RPT[k][pf16ZoneOf(Math.round(ip[k]))]; }).join(' ') + ' Se trata de una autodescripción: indica cómo se percibe, y su valor para el puesto debe evaluarse en la entrevista.';
+  html += '<div style="border-radius:12px;padding:18px 20px;background:linear-gradient(135deg,#312e81,#4338ca);color:#fff">'
+    + '<div style="font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;opacity:.75;margin-bottom:6px">Liderazgo y templanza · síntesis</div>'
+    + '<div style="font-size:13.5px;line-height:1.7;max-width:780px">' + res + '</div>'
+    + (ip._plano ? '' : '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:12px">' + keys.map(function(k){ return '<span style="padding:3px 10px;border-radius:100px;background:rgba(255,255,255,.16);font-size:11px;font-weight:700">' + IPIP_RPT[k].nombre + ': ' + ZL[pf16ZoneOf(Math.round(ip[k]))] + '</span>'; }).join('') + '</div>')
+    + '</div>';
+  var inc = _incompletasDe(s).find(function(x){ return x.testId === 'ipip_lt'; });
+  if (inc) html += '<div style="padding:10px 14px;border-radius:10px;background:#fffbeb;border:1.5px solid #fde68a;color:#92400e;font-size:12px;line-height:1.55"><strong>Respuestas incompletas:</strong> respondió ' + (inc.total - inc.missing) + ' de ' + inc.total + ' frases. Interprete con cautela.</div>';
+  // Escalas: barra 0-100 con la franja media (40-69)
+  html += card('<div style="font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.7px;margin-bottom:12px">Escalas <span style="text-transform:none;letter-spacing:0;font-weight:600;color:#94a3b8">· posición en la escala de 0 a 100, sin norma de comparación</span></div>'
+    + keys.map(function(k) {
+        var d = IPIP_RPT[k], v = Math.max(0, Math.min(100, Math.round(ip[k]))), z = pf16ZoneOf(v), n = ip._n && ip._n[k];
+        return '<div style="margin-bottom:16px">'
+          + '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:6px"><strong style="font-size:13px;color:#1e293b">' + d.nombre + '</strong>'
+          + (ip._plano ? '<span style="font-size:12px;color:#94a3b8">No interpretable</span>' : '<span style="font-size:12px;font-weight:800;color:' + ZC[z] + '">' + v + ' · ' + ZL[z] + '</span>') + '</div>'
+          + '<div style="position:relative;height:10px;border-radius:5px;background:#f1f5f9">'
+          + '<div style="position:absolute;left:40%;width:30%;top:0;bottom:0;background:#e2e8f0"></div>'
+          + (ip._plano ? '' : '<div style="position:absolute;left:calc(' + v + '% - 7px);top:-3px;width:14px;height:14px;border-radius:50%;background:' + ZC[z] + ';border:2px solid #fff;box-shadow:0 0 0 1px ' + ZC[z] + '"></div>')
+          + '</div>'
+          + '<div style="display:flex;justify-content:space-between;font-size:10.5px;color:#94a3b8;margin-top:4px"><span>' + d.polos[0] + '</span><span>' + d.polos[1] + '</span></div>'
+          + (ip._plano ? '' : '<div style="font-size:12px;color:#475569;line-height:1.55;margin-top:6px">' + d[z] + (d.considerar[z] ? ' <em style="color:#64748b">' + d.considerar[z] + '</em>' : '') + '</div>')
+          + (n && n < d.items ? '<div style="font-size:11px;color:#92400e;margin-top:3px">Respondió ' + n + ' de ' + d.items + ' frases de esta escala.</div>' : '')
+          + '</div>';
+      }).join(''));
+  // Preguntas para la entrevista
+  var pq = ip._plano ? [] : keys.map(function(k){ var z = pf16ZoneOf(Math.round(ip[k])); return IPIP_RPT[k].preguntas[z] ? { t:IPIP_RPT[k].nombre + ' ' + ZL[z].toLowerCase(), q:IPIP_RPT[k].preguntas[z] } : null; }).filter(Boolean);
+  if (pq.length) html += card('<div style="font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">Para la entrevista</div>'
+    + pq.map(function(x){ return '<div style="font-size:12.5px;color:#334155;line-height:1.55;margin-bottom:8px"><span style="font-size:10.5px;font-weight:800;color:#4338ca">' + x.t + ':</span> ' + x.q + '</div>'; }).join(''));
+  html += '<div style="font-size:11px;color:#94a3b8;line-height:1.55">Escalas del International Personality Item Pool (ipip.ori.org, dominio público): Liderazgo AB5C I+/V+ (α = .82) y Templanza AB5C IV+/V+ (α = .84), confiabilidades de la muestra original. Traducción propia, sin normas chilenas. Descriptiva: no se compara con mínimos del cargo.</div>';
+  return html;
+}
+
 function _pf16ReportHtml(c, pf, s) {
   var R = PF16_RPT;
   var keys = R.orden.filter(function(k){ return pf[k] !== undefined && pf[k] !== null; });
@@ -9476,7 +9583,7 @@ function _bartReportHtml(c, g) {
 //  nivel de integridad, incidentes, estilo DISC, dictamen y seguimiento.
 //  Se usa en la ficha, en la tabla de candidatos y en los Pendientes de Candidatos.
 // ═══════════════════════════════════════════════════════════
-var _MIRADA_ORDEN = ['integridad','dc0','pai','disc','pf16','situacional','vigilancia','comprension','normativa_ohs','gonogo','bart'];
+var _MIRADA_ORDEN = ['integridad','dc0','pai','disc','pf16','ipip_lt','situacional','vigilancia','comprension','normativa_ohs','gonogo','bart'];
 
 // Filas de aptitud del candidato (puntaje frente al mínimo del cargo)
 function _aptRowsDe(c) {
@@ -9490,7 +9597,7 @@ function _aptRowsDe(c) {
   var tids = _MIRADA_ORDEN.filter(function(t){ return tests.indexOf(t) !== -1 && s[t]; });
   tids.forEach(function(tid) {
     // DISC y Personalidad laboral son descriptivos: no se comparan con mínimos
-    if (tid === 'disc' || tid === 'pf16') return;
+    if (tid === 'disc' || tid === 'pf16' || tid === 'ipip_lt') return;
     var idSec = ideal[tid]; if (!idSec) return;
     var ts = s[tid] || {};
     if (idSec.min !== undefined) {
@@ -9788,7 +9895,7 @@ function buildReportHtml(c, withClose) {
           lo:'Baja motivación laboral aparente. Puede mostrar dificultades para mantenerse comprometido/a con las tareas, especialmente en períodos sin reconocimiento o variedad.' },
   };
 
-  var TAB_ORDER = ['integridad','dc0','pai','disc','pf16','situacional','vigilancia','comprension','normativa_ohs','gonogo','bart'];
+  var TAB_ORDER = ['integridad','dc0','pai','disc','pf16','ipip_lt','situacional','vigilancia','comprension','normativa_ohs','gonogo','bart'];
   var completedTests = TAB_ORDER.filter(function(tid){ return tests.indexOf(tid) !== -1 && s[tid]; });
   var _ideal = PERFIL_IDEAL[c.perfil] || null;
   var firstTab = completedTests.length ? 'resumen' : '';
@@ -9843,9 +9950,9 @@ function buildReportHtml(c, withClose) {
   // El punto de color resume el resultado: aptitud frente al mínimo del cargo e
   // integridad según su nivel. DISC y 16PF no llevan punto (son descriptivas).
   var _TAB_CORTO = { resumen:'Resumen', integridad:'Integridad', dc0:'Aptitud cognitiva', situacional:'Juicio situacional', vigilancia:'Vigilancia',
-                     comprension:'Comprensión', normativa_ohs:'Normativa OHS', gonogo:'Control de impulsos', bart:'Control del riesgo', disc:'DISC', pf16:'Personalidad laboral', pai:'Ajuste laboral', entrevista:'Entrevista', referencias:'Referencias' };
+                     comprension:'Comprensión', normativa_ohs:'Normativa OHS', gonogo:'Control de impulsos', bart:'Control del riesgo', disc:'DISC', pf16:'Personalidad laboral', ipip_lt:'Liderazgo y templanza', pai:'Ajuste laboral', entrevista:'Entrevista', referencias:'Referencias' };
   var _TAB_GRUPOS = [ ['', ['resumen']], ['Integridad', ['integridad']], ['Aptitud', ['dc0','situacional','vigilancia','comprension','normativa_ohs','gonogo','bart']],
-                      ['Personalidad', ['disc','pf16','pai']], ['', ['entrevista']], ['', ['referencias']] ];
+                      ['Personalidad', ['disc','pf16','ipip_lt','pai']], ['', ['entrevista']], ['', ['referencias']] ];
   var _tabDot = function(tid) {
     if (tid === 'entrevista') { var bb = _evBanda(_evPromedio(_evCompsDe(_evUlt))); return bb ? bb.color : ''; }
     if (tid === 'integridad' && s.integridad) {
@@ -10229,6 +10336,12 @@ function buildReportHtml(c, withClose) {
     html += '</div>';
   }
 
+  // ── Liderazgo y templanza (IPIP) ──
+  if (s.ipip_lt && completedTests.indexOf('ipip_lt') !== -1) {
+    html += '<div class="rpt-tab-panel" id="rpt-panel-ipip_lt" style="display:' + (firstTab === 'ipip_lt' ? 'flex' : 'none') + ';flex-direction:column;gap:14px">'
+      + _ipipReportHtml(c, s.ipip_lt, s) + '</div>';
+  }
+
   // ── Control de impulsos ──
   if (s.gonogo && completedTests.indexOf('gonogo') !== -1) {
     html += '<div class="rpt-tab-panel" id="rpt-panel-gonogo" style="display:' + (firstTab === 'gonogo' ? 'flex' : 'none') + ';flex-direction:column;gap:14px">'
@@ -10475,7 +10588,7 @@ function toggleBatteryTest(cb) {
 function renderWikiTab() {
   var WIKI_GROUPS = {
     '🧠 Tests Cognitivos': ['dc0','comprension'],
-    '🧬 Tests de Personalidad': ['pai','disc','pf16'],
+    '🧬 Tests de Personalidad': ['pai','disc','pf16','ipip_lt'],
     '💡 Tests Situacionales': ['situacional','vigilancia'],
     '📐 Conocimiento e integridad': ['normativa_ohs','integridad'],
     '🎯 Control de impulsos': ['gonogo','bart'],
@@ -10600,6 +10713,16 @@ function renderWikiTab() {
       ],
       scoring: 'Cada dimensión se calcula como promedio de sus 4 ítems (escala 1-5), normalizado a 0-100. Incluye ítems inversos para control de aquiescencia. Clasificación: Muy Bajo (0-19), Bajo (20-39), Medio (40-59), Alto (60-79), Muy Alto (80-100). No hay puntaje "bueno" o "malo" universal — el perfil óptimo depende del cargo.',
       reference: 'Desarrollo propio. Las cinco dimensiones se inspiran en los factores globales de personalidad descritos en la literatura (Cattell; Conn & Rieke, 1994); no reproduce ítems ni normas de instrumentos comerciales.',
+    },
+    ipip_lt: {
+      icon: '🧭', name: 'Liderazgo y templanza (IPIP)', category: 'Personalidad', items: 22, time: '3 min', format: 'Qué tan bien me describe, 1-5',
+      description: 'Dos escalas del International Personality Item Pool (IPIP), de dominio público: Liderazgo (10 ítems) y Templanza ante la presión (12 ítems). Autodescripción: la persona indica qué tan bien la describe cada frase. Se presentan intercaladas y la mitad de las frases están invertidas. El candidato la ve como "Cómo te describes".',
+      dimensions: [
+        { key:'LI', name:'Liderazgo', desc:'Escala AB5C I+/V+ del IPIP (α = .82 en la muestra original). Iniciativa para tomar el mando, expresarse con soltura y conducir a otros, frente a esperar que otros marquen el rumbo y tomen las decisiones.' },
+        { key:'TE', name:'Templanza ante la presión', desc:'Escala AB5C IV+/V+ "Toughness" del IPIP (α = .84). Calma en situaciones tensas, tolerancia a la crítica y recuperación ante contratiempos, frente a ofenderse, asustarse o sentirse sobrepasado con facilidad.' },
+      ],
+      scoring: 'Lo calcula el servidor: promedio de los ítems de cada escala (invertidos 6 − respuesta), llevado a 0-100. Bandas de lectura: bajo (< 40), medio (40-69), alto (≥ 70). No hay normas chilenas: el puntaje es la posición en la escala, no una comparación con otras personas. Descriptiva: no se compara con mínimos del cargo. Si responde lo mismo en todo, no es interpretable.',
+      reference: 'International Personality Item Pool (Goldberg y otros, 2006), ipip.ori.org, dominio público. Escalas AB5C (Hofstee, de Raad y Goldberg, 1992), descritas por el IPIP como preliminares. Traducción propia al español, sin validación local; en selección, la autodescripción puede inflarse.',
     },
   };
 
@@ -10759,7 +10882,7 @@ function renderBateriaTab() {
     '💡 Evaluación Situacional':       ['situacional','vigilancia'],
     '📐 Conocimiento Técnico':         ['normativa_ohs'],
     '🧭 Integridad laboral':          ['integridad'],
-    '🎭 Perfil Conductual':    ['disc','pf16'],
+    '🎭 Perfil Conductual':    ['disc','pf16','ipip_lt'],
     '🎯 Control de impulsos':  ['gonogo','bart'],
   };
 
@@ -10780,6 +10903,7 @@ function renderBateriaTab() {
     pai:'Estabilidad emocional, adaptación, normas, estrés, integridad y motivación en el trabajo.',
     disc:'Dominancia, Influencia, Estabilidad, Cumplimiento.',
     pf16:'Extraversión, ajuste emocional, dureza, independencia y autocontrol.',
+    ipip_lt:'22 ítems, ~3 min. Escalas IPIP de dominio público: Liderazgo y Templanza ante la presión. Descriptiva. El candidato la ve como "Cómo te describes".',
     situacional:'Escenarios laborales con opciones de respuesta.',
     vigilancia:'Protocolos y detección de irregularidades.',
     gonogo:'~4 min. Círculo verde: tocar rápido; cuadrado rojo: no tocar. Mide la capacidad de frenarse. El candidato la ve como "Reacción y atención".',
@@ -10878,7 +11002,7 @@ function renderBateriaTab() {
 
   // ── Sección de tiempos configurables ──
   // Mismos nombres e íconos que la batería (las tareas de reacción y globos tienen duración fija)
-  var TM_TEST_ORDER = ['dc0','comprension','situacional','vigilancia','normativa_ohs','integridad','pai','disc','pf16'].map(function(id){
+  var TM_TEST_ORDER = ['dc0','comprension','situacional','vigilancia','normativa_ohs','integridad','pai','disc','pf16','ipip_lt'].map(function(id){
     return { id:id, label: id === 'integridad' ? 'Integridad laboral' : TESTS_META[id].name, icon: TESTS_META[id].icon };
   });
   var tmTotal = TM_TEST_ORDER.reduce(function(a, t){ return a + (TM_MINS_CONFIG[t.id] || TM_MINS_DEFAULTS[t.id] || 4); }, 0) + 2;
@@ -11204,9 +11328,9 @@ async function openCompareModal() {
   if (cands.length > 5) { toast('Máximo 5 candidatos a la vez', 'er'); return; }
 
   const N = cands.length;
-  const TEST_ORDER = ['dc0','pai','disc','pf16','situacional','vigilancia','comprension','normativa_ohs'];
-  const DIM_LABELS = { V:'Verbal',N:'Numérico',L:'Lógico-Abs.',EE:'Est. Emocional',AS:'Adapt. Social',ON:'Orient. Normativa',ME:'Manejo Estrés',IL:'Integridad',ML:'Motivación',D:'Dominancia',I:'Influencia',S:'Estabilidad',C:'Cumplimiento',EX:'Extraversión',AN:'Aj. Emocional',DU:'Dureza Mental',IN:'Independencia',AC:'Autocontrol',_self:'Puntaje' };
-  const TEST_DIMS = { dc0:['V','N','L'], pai:['EE','AS','ON','ME','IL','ML'], disc:['D','I','S','C'], pf16:['EX','AN','DU','IN','AC'], situacional:['_self'], vigilancia:['_self'], comprension:['_self'], normativa_ohs:['_self'] };
+  const TEST_ORDER = ['dc0','pai','disc','pf16','ipip_lt','situacional','vigilancia','comprension','normativa_ohs'];
+  const DIM_LABELS = { LI:'Liderazgo',TE:'Templanza',V:'Verbal',N:'Numérico',L:'Lógico-Abs.',EE:'Est. Emocional',AS:'Adapt. Social',ON:'Orient. Normativa',ME:'Manejo Estrés',IL:'Integridad',ML:'Motivación',D:'Dominancia',I:'Influencia',S:'Estabilidad',C:'Cumplimiento',EX:'Extraversión',AN:'Aj. Emocional',DU:'Dureza Mental',IN:'Independencia',AC:'Autocontrol',_self:'Puntaje' };
+  const TEST_DIMS = { dc0:['V','N','L'], pai:['EE','AS','ON','ME','IL','ML'], disc:['D','I','S','C'], pf16:['EX','AN','DU','IN','AC'], ipip_lt:['LI','TE'], situacional:['_self'], vigilancia:['_self'], comprension:['_self'], normativa_ohs:['_self'] };
 
   function getScore(c, tid, dim) {
     var sd = c.scores[tid]; if (!sd) return null;
@@ -11558,7 +11682,7 @@ async function downloadPdfReport(id) {
 
   const fname = (c.nombre + '_' + c.apellido + '_Informe').replace(/\s+/g, '_');
   // Mismo orden que las pestañas del informe
-  const _orden = ['resumen','integridad','dc0','situacional','vigilancia','comprension','normativa_ohs','gonogo','bart','pai','disc','pf16','entrevista','referencias'];
+  const _orden = ['resumen','integridad','dc0','situacional','vigilancia','comprension','normativa_ohs','gonogo','bart','pai','disc','pf16','ipip_lt','entrevista','referencias'];
   let reportOrdenado = reportBody;
   try {
     const tmp = document.createElement('div'); tmp.innerHTML = reportBody;
@@ -14639,8 +14763,9 @@ function _rsResultados(c, m) {
   if (s.bart && s.bart.valido === false) h += '<div class="rs-fila" onclick="_fichaVerPrueba(\'bart\')"><span class="rs-nom">Control del riesgo</span><span class="rs-desc">No interpretable</span></div>';
   if (m.integ) h += '<div class="rs-fila" onclick="_fichaVerPrueba(\'integridad\')"><span class="rs-nom">Integridad laboral</span><span class="rs-desc">' + _integNivelBadge(s.integridad) + '</span></div>';
   if (m.disc) h += '<div class="rs-fila" onclick="_fichaVerPrueba(\'disc\')"><span class="rs-nom">Estilo DISC</span><span class="rs-desc">' + htmlEsc(m.disc === 'Perfil equilibrado' ? m.disc : 'Predomina ' + m.disc) + ' <em>· descriptivo</em></span></div>';
+  if (s.ipip_lt) h += '<div class="rs-fila" onclick="_fichaVerPrueba(\'ipip_lt\')"><span class="rs-nom">Liderazgo y templanza</span><span class="rs-desc">' + htmlEsc(_ipipResumen(s.ipip_lt)) + ' <em>· descriptivo</em></span></div>';
   if (s.pf16) h += '<div class="rs-fila" onclick="_fichaVerPrueba(\'pf16\')"><span class="rs-nom">Personalidad laboral</span><span class="rs-desc">Ver perfil <em>· descriptivo</em></span></div>';
-  if (!m.apt.length && !m.integ && !m.disc && !s.pf16) h += '<div class="rs-vacio">Sin pruebas con resultado.</div>';
+  if (!m.apt.length && !m.integ && !m.disc && !s.pf16 && !s.ipip_lt) h += '<div class="rs-vacio">Sin pruebas con resultado.</div>';
   var extra = _avisosCompactosHtml(s, true);   // la integridad ya tiene su fila
   if (extra) h += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">' + extra + '</div>';
   return h + '</div>';
@@ -14661,7 +14786,7 @@ function _rsPfDims(c, s) {
 }
 function _rsEstilo(c, m) {
   var s = c.scores || {};
-  if (!m.completada || (!s.disc && !s.pf16)) return '';
+  if (!m.completada || (!s.disc && !s.pf16 && !s.ipip_lt)) return '';
   var h = '<div class="rs-card"><div class="rs-lbl">Estilo personal <em class="rs-lbl-sub">descriptivo, sin mínimo</em></div>';
   var dc = s.disc;
   if (dc) {
@@ -14684,6 +14809,15 @@ function _rsEstilo(c, m) {
     }).join('');
     h += '<div class="rs-pf-ley">Franja gris = rango medio' + (dims.some(function(x){ return x.z === 'indet'; }) ? ' · Extraversión sin dato exacto (evaluación antigua)' : '') + '</div>';
   }
+  if (s.ipip_lt) {
+    var ip = s.ipip_lt;
+    h += '<div class="rs-est-t" onclick="_fichaVerPrueba(\'ipip_lt\')"' + (dc || s.pf16 ? ' style="margin-top:14px"' : '') + '>Liderazgo y templanza <span>' + htmlEsc(_ipipResumen(ip)) + '</span></div>';
+    h += _IPIP_DIMS.filter(function(k){ return ip[k] != null; }).map(function(k) {
+      var d = IPIP_RPT[k], v = Math.max(0, Math.min(100, Math.round(ip[k]))), z = ip._plano ? '' : pf16ZoneOf(v);
+      return '<div class="rs-pf' + (z === 'alto' ? ' alto' : z === 'bajo' ? ' bajo' : '') + '"><div class="rs-pf-l"><span>' + htmlEsc(d.polos[0]) + '</span><b>' + htmlEsc(d.nombre) + '</b><span>' + htmlEsc(d.polos[1]) + '</span></div>'
+        + '<div class="rs-pf-b"><em></em>' + (ip._plano ? '' : '<i style="left:' + v + '%" title="' + v + '"></i>') + '</div></div>';
+    }).join('');
+  }
   return h + '</div>';
 }
 // Preguntas que salen del estilo (DISC marcado y dimensiones fuera del rango medio, hasta 2)
@@ -14699,6 +14833,13 @@ function _rsPreguntasEstilo(c) {
   if (s.pf16 && _pf16ValidezNivel(_pf16Validez(c, s)).label !== 'Dudosa') {
     _rsPfDims(c, s).filter(function(x){ return (x.z === 'alto' || x.z === 'bajo') && x.d.preguntas && x.d.preguntas[x.z]; }).slice(0, 2).forEach(function(x) {
       out.push({ tag:x.d.polos[x.z === 'alto' ? 1 : 0], col:'#d97706', q:x.d.preguntas[x.z] });
+    });
+  }
+  if (s.ipip_lt && !s.ipip_lt._plano) {
+    _IPIP_DIMS.forEach(function(k) {
+      var v = s.ipip_lt[k]; if (v == null) return;
+      var z = pf16ZoneOf(Math.round(v)), d = IPIP_RPT[k];
+      if (d.preguntas[z]) out.push({ tag:d.nombre + ' ' + z, col:'#4338ca', q:d.preguntas[z] });
     });
   }
   return out;
@@ -16783,13 +16924,13 @@ function _segAnalisisHtml(cands) {
   // Puntajes según resultado
   var grupos = { exito:[], fracaso:[] };
   conSeg.forEach(function(c){ var r = _segResultado(c.scores._seguimiento); if (grupos[r]) grupos[r].push(c); });
-  var filas = [['situacional','Juicio situacional'], ['vigilancia','Aptitud de vigilancia'], ['comprension','Comprensión de instrucciones'], ['normativa_ohs','Normativa OHS'], ['dc0','Aptitud cognitiva'], ['gonogo','Control de impulsos'], ['bart','Control del riesgo']];
-  var media = function(lista, tid){ var v = lista.map(function(c){ var t = c.scores[tid]; return t ? (tid === 'dc0' ? t.total : t.pct) : null; }).filter(function(x){ return typeof x === 'number'; });
+  var filas = [['situacional','Juicio situacional'], ['vigilancia','Aptitud de vigilancia'], ['comprension','Comprensión de instrucciones'], ['normativa_ohs','Normativa OHS'], ['dc0','Aptitud cognitiva'], ['gonogo','Control de impulsos'], ['bart','Control del riesgo'], ['ipip_lt.LI','Liderazgo (IPIP)'], ['ipip_lt.TE','Templanza (IPIP)']];
+  var media = function(lista, tid){ var v = lista.map(function(c){ var p = tid.split('.'), t = c.scores[p[0]]; return t ? (p[1] ? (t._plano ? null : t[p[1]]) : tid === 'dc0' ? t.total : t.pct) : null; }).filter(function(x){ return typeof x === 'number'; });
     return v.length ? { m:Math.round(v.reduce(function(a, b){ return a + b; }, 0) / v.length), n:v.length } : null; };
   var tabla = filas.map(function(f){
     var a = media(grupos.exito, f[0]), b = media(grupos.fracaso, f[0]);
     if (!a && !b) return '';
-    var cel = function(x){ return x ? '<strong>' + x.m + ' %</strong> <span style="color:var(--ink4)">(' + x.n + ')</span>' : '<span style="color:var(--ink4)">—</span>'; };
+    var cel = function(x){ return x ? '<strong>' + x.m + (f[0].indexOf('.') === -1 ? ' %' : '') + '</strong> <span style="color:var(--ink4)">(' + x.n + ')</span>' : '<span style="color:var(--ink4)">—</span>'; };
     return '<tr><td style="padding:6px 8px;border-top:1px solid var(--border)">' + f[1] + '</td><td style="padding:6px 8px;border-top:1px solid var(--border);text-align:center">' + cel(a) + '</td><td style="padding:6px 8px;border-top:1px solid var(--border);text-align:center">' + cel(b) + '</td></tr>';
   }).join('');
   var integ = function(lista){ var v = lista.filter(function(c){ return c.scores.integridad; }); if (!v.length) return null;
