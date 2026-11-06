@@ -2010,6 +2010,47 @@ body.adm .pdf-ic{display:inline-flex;color:var(--ink4)}
 #view-admin .arc-filtros input,#view-admin .arc-filtros select,#view-admin #wiki-search{background:rgba(255,255,255,.6)!important;border:1px solid rgba(20,33,61,.1)!important;border-radius:var(--r-s)!important}
 #view-admin .arc-tabla .rs-btn .ico{width:14px;height:14px}
 #view-admin .arc-tabla .rs-btn{padding:6px 8px}
+/* Instalaciones: lista compacta */
+.vac-barra{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+.vac-buscar{flex:1;min-width:220px;display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.6);border:1px solid rgba(20,33,61,.1);border-radius:var(--r-s,10px);padding:0 12px}
+.vac-buscar .ico{width:15px;height:15px;color:var(--ink4);flex-shrink:0}
+.vac-buscar input{flex:1;border:0;background:transparent;padding:9px 0;font-size:13px;font-family:inherit;color:var(--ink);outline:none;min-width:0}
+.vac-seg{display:inline-flex;background:rgba(20,33,61,.05);border-radius:100px;padding:3px;gap:2px}
+.vac-seg button{border:0;background:transparent;border-radius:100px;padding:6px 12px;font-size:12px;font-weight:700;color:var(--ink3);cursor:pointer;font-family:inherit}
+.vac-seg button span{font-weight:600;color:var(--ink4);margin-left:2px}
+.vac-seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(20,33,61,.12)}
+.vac-grupo{display:flex;align-items:center;gap:8px;margin:18px 2px 6px;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3)}
+.vac-grupo em{font-style:normal;font-weight:700;color:var(--ink4);letter-spacing:0}
+.vac-grupo i{flex:1;height:1px;background:rgba(20,33,61,.08)}
+.vac-lst{background:rgba(255,255,255,.55);border:1px solid rgba(20,33,61,.08);border-radius:12px;overflow:hidden}
+.vac-it+.vac-it{border-top:1px solid rgba(20,33,61,.06)}
+.vac-l{display:flex;align-items:center;gap:12px;padding:10px 14px;cursor:pointer;min-height:48px}
+.vac-l:hover{background:rgba(20,33,61,.025)}
+.vac-dot{width:8px;height:8px;border-radius:50%;background:#16a34a;flex-shrink:0}
+.vac-it.off .vac-dot{background:#cbd5e1}
+.vac-it.off .vac-nom b{color:var(--ink3)}
+.vac-nom{flex:1;min-width:0;display:flex;align-items:baseline;gap:10px}
+.vac-nom b{font-size:13.5px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.vac-nom span{font-size:12px;color:var(--ink4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:1;min-width:0}
+.vac-l .vac-n{font-size:11.5px}
+.vac-l .bd-icobtn[disabled]{opacity:.35;cursor:not-allowed}
+.vac-l .vac-sw{transform:scale(.8)}
+.vac-chev{width:14px;height:14px;color:var(--ink4);transition:transform .2s;flex-shrink:0}
+.vac-it.abierta .vac-chev{transform:rotate(180deg)}
+.vac-det{display:none;padding:2px 14px 14px 34px;flex-direction:column;gap:8px}
+.vac-it.abierta .vac-det{display:flex}
+.vac-it.abierta{background:rgba(255,255,255,.45)}
+.vac-dir{font-size:12.5px;color:var(--ink2);display:flex;align-items:center;gap:6px}
+.vac-dir .ico{width:13px;height:13px;color:var(--ink4)}
+.vac-dir a{color:var(--accent);font-weight:600}
+.vac-detx{font-size:12.5px;color:var(--ink3);line-height:1.5}
+.vac-det .vac-datos{margin-top:0}
+.vac-det .vac-acc{margin-top:2px}
+.vac-del:hover{color:#dc2626}
+.vac-vacio{padding:28px;text-align:center;color:var(--ink3);font-size:13px}
+[data-theme="dark"] .vac-lst,[data-theme="dark"] .vac-buscar{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.08)}
+[data-theme="dark"] .vac-seg button.on{background:rgba(255,255,255,.12)}
+@media (max-width:640px){.vac-nom{flex-direction:column;align-items:stretch;gap:1px}.vac-l{gap:8px;padding:10px 10px 10px 12px}.vac-l .vac-n{display:none}.vac-det{padding-left:14px}}
 /* Cargos */
 .vac-fila{display:flex;align-items:center;gap:14px;padding:16px 18px;flex-wrap:wrap}
 .vac-txt{flex:1;min-width:200px;display:flex;flex-direction:column;gap:2px}
@@ -2110,6 +2151,8 @@ body.adm .rh-box .vac-benef label,.vac-benef label{display:inline-flex;white-spa
   <symbol id="i-pin" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></symbol>
   <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
   <symbol id="i-send" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></symbol>
 </svg>
 <div class="pub-aura" aria-hidden="true"><i class="a1"></i><i class="a2"></i><i class="a3"></i></div>
@@ -5836,31 +5879,58 @@ async function renderVacantesTab() {
   var lista, all = [];
   try { lista = await _vacCargar(); all = await getDB(); } catch(e) { box.innerHTML = '<div class="pdf-vacio">No se pudieron cargar las instalaciones: ' + htmlEsc(e.message) + '</div>'; return; }
   if (!lista.length) { box.innerHTML = '<div class="cg-card" style="padding:28px;text-align:center;color:var(--ink3);font-size:13px">Aún no hay instalaciones. Cree la primera con <b>+ Nueva instalación</b>.</div>'; return; }
-  var cuenta = {}; all.forEach(function(c){ var v = c.scores && c.scores._postula && c.scores._postula.vacante; if (v) cuenta[v] = (cuenta[v] || 0) + 1; });
-  var porCargo = {}; lista.forEach(function(v){ (porCargo[v.perfil] = porCargo[v.perfil] || []).push(v); });
-  var admin = S.role === 'admin', h = '';
+  _vacCuenta = {}; all.forEach(function(c){ var v = c.scores && c.scores._postula && c.scores._postula.vacante; if (v) _vacCuenta[v] = (_vacCuenta[v] || 0) + 1; });
+  // Barra fija (buscador y filtro) y la lista aparte: al escribir solo se repinta la lista
+  box.innerHTML = '<div class="vac-barra"><div class="vac-buscar"><svg class="ico"><use href="#i-search"/></svg>'
+    + '<input id="vac-q" type="search" placeholder="Buscar instalación, comuna o cargo" value="' + htmlEsc(_vacQ) + '" oninput="_vacQ=this.value;_vacPintar()"></div>'
+    + '<div class="vac-seg" id="vac-seg"></div></div><div id="vac-lista"></div>';
+  _vacPintar();
+}
+// Lista compacta: una línea por instalación; el detalle se despliega al hacer clic
+var _vacFiltro = 'activas', _vacQ = '', _vacAbiertas = {}, _vacCuenta = {};
+function _vacFiltrar(f) { _vacFiltro = f; _vacPintar(); }
+function _vacToggle(id) { _vacAbiertas[id] = !_vacAbiertas[id]; var el = document.getElementById('vac-' + id); if (el) el.classList.toggle('abierta', !!_vacAbiertas[id]); }
+function _vacPintar() {
+  var cont = document.getElementById('vac-lista'), seg = document.getElementById('vac-seg'); if (!cont || !_vacLista) return;
+  var q = _vacNorm(_vacQ), admin = S.role === 'admin';
+  var coincide = function(v){ return !q || _vacNorm([v.instalacion, v.comuna, v.direccion, v.cargo_nombre, (PERFIL_META[v.perfil] || {}).label].join(' ')).indexOf(q) !== -1; };
+  var buscadas = _vacLista.filter(coincide);
+  var nAct = buscadas.filter(function(v){ return v.activa; }).length;
+  if (seg) seg.innerHTML = [['activas', 'Activas', nAct], ['inactivas', 'Inactivas', buscadas.length - nAct], ['todas', 'Todas', buscadas.length]].map(function(o){
+    return '<button class="' + (_vacFiltro === o[0] ? 'on' : '') + '" onclick="_vacFiltrar(\'' + o[0] + '\')">' + o[1] + ' <span>' + o[2] + '</span></button>'; }).join('');
+  var vis = buscadas.filter(function(v){ return _vacFiltro === 'todas' || (_vacFiltro === 'activas') === !!v.activa; });
+  if (!vis.length) { cont.innerHTML = '<div class="vac-vacio">' + (q ? 'Ninguna instalación coincide con la búsqueda.' : _vacFiltro === 'activas' ? 'No hay instalaciones activas.' : 'No hay instalaciones inactivas.') + '</div>'; return; }
+  var porCargo = {}; vis.forEach(function(v){ (porCargo[v.perfil] = porCargo[v.perfil] || []).push(v); });
+  var h = '';
   Object.keys(porCargo).forEach(function(k) {
     var pm = PERFIL_META[k] || {};
-    h += '<div class="wk-g" style="display:flex;align-items:center;gap:10px;margin:18px 0 10px">' + htmlEsc(pm.label || k) + '<span class="wk-gl"></span></div>';
+    h += '<div class="vac-grupo"><span>' + htmlEsc(pm.label || k) + '</span><em>' + porCargo[k].length + '</em><i></i></div><div class="vac-lst">';
     porCargo[k].sort(function(a, b){ return (b.activa - a.activa) || String(a.instalacion).localeCompare(b.instalacion); }).forEach(function(v) {
-      var id = htmlEsc(v.id), n = cuenta[v.id] || 0;
-      h += '<div class="cg-card vac-card' + (v.activa ? '' : ' off') + '"><div class="vac-fila">'
-        + '<span class="cg-ic"><svg class="ico"><use href="#i-pin"/></svg></span>'
-        + '<div class="vac-txt"><b>' + htmlEsc(v.instalacion) + (v.cargo_nombre && v.cargo_nombre !== (PERFIL_META[v.perfil] || {}).label ? ' <em class="vac-cargo">' + htmlEsc(v.cargo_nombre) + '</em>' : '') + '</b><span>' + htmlEsc(_vacTxt(v)) + '</span>'
-        + (v.direccion ? '<small>' + htmlEsc(v.direccion) + (v.link_mapa ? ' · <a href="' + htmlEsc(v.link_mapa) + '" target="_blank" rel="noopener">Ver mapa</a>' : '') + '</small>' : '') + (v.detalle ? '<small>' + htmlEsc(v.detalle) + '</small>' : '')
-        + (_vacDatos(v).length ? '<span class="vac-datos">' + _vacDatos(v).map(function(x){ return '<i>' + htmlEsc(x) + '</i>'; }).join('') + '</span>' : '') + '</div>'
+      var id = htmlEsc(v.id), datos = _vacDatos(v), turno = v.turno ? _rhTurnoTxt({ jornada: v.turno, jornada_otra: v.turno_otra }) : '';
+      var sub = [v.comuna, turno].filter(Boolean).map(htmlEsc).join(' · ');
+      h += '<div class="vac-it' + (v.activa ? '' : ' off') + (_vacAbiertas[v.id] ? ' abierta' : '') + '" id="vac-' + id + '">'
+        + '<div class="vac-l" onclick="_vacToggle(\'' + id + '\')">'
+        + '<span class="vac-dot" title="' + (v.activa ? 'Activa' : 'Inactiva') + '"></span>'
+        + '<div class="vac-nom"><b title="' + htmlEsc(v.instalacion) + '">' + htmlEsc(v.instalacion) + (v.cargo_nombre && v.cargo_nombre !== pm.label ? ' <em class="vac-cargo">' + htmlEsc(v.cargo_nombre) + '</em>' : '') + '</b>'
+        + (sub ? '<span>' + sub + '</span>' : '') + '</div>'
         + '<span class="vac-n" title="Ocupados: seleccionados, enviados a contratación o contratados en esta instalación">' + htmlEsc(_vacCuposTxt(v)) + '</span>'
+        + (admin ? '<button class="bd-icobtn" onclick="event.stopPropagation();_invAbrirVacante(\'' + id + '\')" title="' + (v.activa ? 'Invitar a evaluación para esta instalación' : 'Active la instalación para invitar') + '"' + (v.activa ? '' : ' disabled') + '><svg class="ico"><use href="#i-send"/></svg></button>'
+          + '<div class="vac-sw' + (v.activa ? ' on' : '') + '" role="switch" aria-checked="' + v.activa + '" title="' + (v.activa ? 'Activa: clic para desactivar' : 'Inactiva: clic para activar') + '" onclick="event.stopPropagation();_vacActivar(\'' + id + '\',' + !v.activa + ')"><i></i></div>' : '')
+        + '<svg class="ico vac-chev"><use href="#i-chev"/></svg></div>'
+        + '<div class="vac-det">'
+        + (v.direccion ? '<div class="vac-dir"><svg class="ico"><use href="#i-pin"/></svg>' + htmlEsc(v.direccion) + (v.link_mapa ? ' · <a href="' + htmlEsc(v.link_mapa) + '" target="_blank" rel="noopener">Ver mapa</a>' : '') + '</div>' : '')
+        + (v.detalle ? '<div class="vac-detx">' + htmlEsc(v.detalle) + '</div>' : '')
+        + (datos.length ? '<span class="vac-datos">' + datos.map(function(x){ return '<i>' + htmlEsc(x) + '</i>'; }).join('') + '</span>' : '')
+        + (_vacCuenta[v.id] ? '<div class="vac-detx">' + _vacCuenta[v.id] + (_vacCuenta[v.id] === 1 ? ' postulante eligió' : ' postulantes eligieron') + ' esta instalación.</div>' : '')
         + (admin ? '<div class="vac-acc">'
-          + '<button class="rs-btn" onclick="_invAbrirVacante(\'' + id + '\')" title="Invitar a evaluación para esta instalación"' + (v.activa ? '' : ' disabled') + '><svg class="ico"><use href="#i-send"/></svg>Invitar</button>'
-          + '<button class="bd-icobtn" onclick="_vacEditar(\'' + id + '\')" title="Editar"><svg class="ico"><use href="#i-edit"/></svg></button>'
-          + '<button class="bd-icobtn" onclick="_vacEliminar(\'' + id + '\')" title="Eliminar"><svg class="ico"><use href="#i-trash"/></svg></button>'
-          + '<span style="font-size:11px;font-weight:700;color:' + (v.activa ? '#16a34a' : '#94a3b8') + '">' + (v.activa ? 'Activa' : 'Inactiva') + '</span>'
-          + '<div class="vac-sw' + (v.activa ? ' on' : '') + '" role="switch" aria-checked="' + v.activa + '" onclick="_vacActivar(\'' + id + '\',' + !v.activa + ')"><i></i></div></div>'
-          : '<span style="font-size:11px;font-weight:700;color:' + (v.activa ? '#16a34a' : '#94a3b8') + '">' + (v.activa ? 'Activa' : 'Inactiva') + '</span>')
+          + '<button class="rs-btn" onclick="_invAbrirVacante(\'' + id + '\')"' + (v.activa ? '' : ' disabled') + '><svg class="ico"><use href="#i-send"/></svg>Invitar</button>'
+          + '<button class="rs-btn" onclick="_vacEditar(\'' + id + '\')"><svg class="ico"><use href="#i-edit"/></svg>Editar</button>'
+          + '<button class="rs-btn vac-del" onclick="_vacEliminar(\'' + id + '\')"><svg class="ico"><use href="#i-trash"/></svg>Eliminar</button></div>' : '')
         + '</div></div>';
     });
+    h += '</div>';
   });
-  box.innerHTML = h;
+  cont.innerHTML = h;
 }
 async function _vacGuardar(id, datos) {
   var r = await fetch(SUPA_URL + '/rest/v1/psicoeval_vacantes' + (id ? '?id=eq.' + encodeURIComponent(id) : ''), {
