@@ -698,6 +698,25 @@ input,select,textarea{font-family:inherit;outline:none}
   min-height: 44px;
 }
 .q-choice-opt:last-child { margin-bottom: 0; }
+.mx-wrap{display:flex;justify-content:center;margin:6px 0 14px}
+.mx-mat{width:100%;max-width:300px;height:auto}
+.mx-opts{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.mx-opts.mx-8{grid-template-columns:repeat(8,1fr)}
+.q-choice-opt.mx-opt{position:relative;display:block;padding:6px!important;margin:0;min-height:0;aspect-ratio:1;background:#fff}
+.mx-opt svg{display:block;width:100%;height:100%}
+.mx-opt-n{position:absolute;top:3px;left:6px;font-size:10.5px;font-weight:700;color:var(--ink4)}
+.q-choice-opt.mx-opt.sel{box-shadow:0 0 0 3px var(--accent-m)}
+.q-choice-opt.mx-opt.sel .mx-opt-n{color:var(--accent)}
+.mx-instr{padding:14px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;font-size:13px;color:#334155;line-height:1.6;margin-bottom:4px}
+.mx-instr-t{font-weight:800;color:var(--ink);margin-bottom:4px}
+.mx-ej{display:flex;gap:16px;align-items:center;margin-top:10px;flex-wrap:wrap}
+.mx-ej-m{width:150px;flex-shrink:0}
+.mx-ej-o{flex:1;min-width:200px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.mx-ej-op{width:44px;height:44px;padding:4px;border:1.5px solid #d5dae4;border-radius:8px;background:#fff}
+.mx-ej-op.ok{border-color:#16a34a;box-shadow:0 0 0 2px #bbf7d0}
+.mx-ej-op svg{width:100%;height:100%;display:block}
+.mx-ej-n{width:100%;font-size:12.5px;margin-top:4px}
+@media (max-width:560px){.mx-opts,.mx-opts.mx-8{grid-template-columns:repeat(4,1fr)}.mx-opts:not(.mx-8){grid-template-columns:repeat(3,1fr)}}
 .q-choice-opt.sel {
   border-color: var(--accent);
   background: var(--accent-l);
@@ -3136,6 +3155,7 @@ const TESTS_META = {
   comprension:  { name:'Comprensión de Instrucciones',       icon:'📋', color:'var(--lilac)'  },
   disc:         { name:'Estilos Conductuales (DISC-20)',       icon:'🎭', color:'#7c3aed', cand:'Estilos de trabajo' },
   pf16:         { name:'Personalidad laboral',               icon:'🧬', color:'#0d9488', cand:'Cuestionario de estilo personal' },
+  matrices:     { name:'Razonamiento no verbal (matrices)', icon:'🧩', color:'#0e7490', cand:'Razonamiento con figuras' },
   ipip_lt:      { name:'Liderazgo y templanza (IPIP)',       icon:'🧭', color:'#4338ca', cand:'Cómo te describes' },
   normativa_ohs:    { name:'Conocimiento Normativo OHS',       icon:'📐', color:'#0369a1' },
   integridad:       { name:'Actitudes en el trabajo',          icon:'🧭', color:'#b45309' },   // integridad laboral (nombre neutro para el candidato)
@@ -3529,7 +3549,7 @@ function _cfgReloadAll() {
   } catch(e) {}
 }
 
-var TM_MINS_DEFAULTS = { dc0:6, pai:5, situacional:5, vigilancia:3, comprension:4, disc:3, pf16:4, ipip_lt:3, normativa_ohs:6, integridad:5, gonogo:4, bart:3 };
+var TM_MINS_DEFAULTS = { dc0:6, pai:5, situacional:5, vigilancia:3, comprension:4, disc:3, pf16:4, ipip_lt:3, normativa_ohs:6, integridad:5, gonogo:4, bart:3, matrices:12 };
 var TM_MINS_CONFIG = (function(){
   try {
     var saved = localStorage.getItem('psicoeval_tm_mins');
@@ -3682,7 +3702,7 @@ function registerCustomCargo(c, skipSave) {
     };
   }
   // Copiar configuración de todos los tests compartidos desde jefatura (incluye juegos conductuales)
-  ['situacional','vigilancia'].forEach(function(tid) {
+  ['situacional','vigilancia','matrices'].forEach(function(tid) {
     if (!PERFIL_IDEAL[key][tid]) {
       var src = PERFIL_IDEAL['jefatura'] && PERFIL_IDEAL['jefatura'][tid];
       if (src) PERFIL_IDEAL[key][tid] = JSON.parse(JSON.stringify(src));
@@ -3707,7 +3727,7 @@ function toggleCargo(key) {
 }
 
 // Nombres cortos de las pruebas para las etiquetas de Cargos
-var _CG_CORTO = { dc0:'Cognitiva', situacional:'Juicio', vigilancia:'Vigilancia', comprension:'Comprensión', normativa_ohs:'Normativa', gonogo:'Impulsos', bart:'Riesgo', disc:'DISC', pf16:'Personalidad', ipip_lt:'Liderazgo', pai:'Ajuste', integridad:'Integridad' };
+var _CG_CORTO = { dc0:'Cognitiva', matrices:'Matrices', situacional:'Juicio', vigilancia:'Vigilancia', comprension:'Comprensión', normativa_ohs:'Normativa', gonogo:'Impulsos', bart:'Riesgo', disc:'DISC', pf16:'Personalidad', ipip_lt:'Liderazgo', pai:'Ajuste', integridad:'Integridad' };
 function renderCargosTab() {
   var el = document.getElementById('cargos-content');
   if (!el) return;
@@ -4584,6 +4604,99 @@ const SIT_SUPERVISOR = [
 ];
 
 // ═══════════════════════════════════════════════════════════
+//  RAZONAMIENTO NO VERBAL (id matrices) — matrices 3×3 de figuras, instrumento propio
+//  Mismo formato que las matrices progresivas, con ítems originales (no son ítems del Raven).
+//  24 ítems en tres series de dificultad creciente: A (una regla, 6 opciones),
+//  B (dos reglas, 8 opciones) y C (reglas combinadas, 8 opciones).
+//  La clave está en Supabase (34_razonamiento_matrices.sql); aquí solo van las figuras.
+// ═══════════════════════════════════════════════════════════
+const MATRICES_ITEMS = [
+  {"id":"mx1","area":"A","cells":[{"g":{"s":"ci","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"ci","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"ci","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"sq","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"sq","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"sq","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"tr","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"tr","f":"n","n":1,"z":2,"r":0}}],"opts":[{"g":{"s":"tr","f":"n","n":2,"z":2,"r":0}},{"g":{"s":"di","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"tr","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"tr","f":"n","n":1,"z":3,"r":0}},{"g":{"s":"he","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"sq","f":"n","n":1,"z":2,"r":0}}]},
+  {"id":"mx2","area":"A","cells":[{"g":{"s":"sq","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"sq","f":"n","n":2,"z":2,"r":0}},{"g":{"s":"sq","f":"n","n":3,"z":2,"r":0}},{"g":{"s":"ci","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"ci","f":"n","n":2,"z":2,"r":0}},{"g":{"s":"ci","f":"n","n":3,"z":2,"r":0}},{"g":{"s":"di","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"di","f":"n","n":2,"z":2,"r":0}}],"opts":[{"g":{"s":"he","f":"n","n":3,"z":2,"r":0}},{"g":{"s":"tr","f":"n","n":3,"z":2,"r":0}},{"g":{"s":"di","f":"h","n":3,"z":2,"r":0}},{"g":{"s":"di","f":"n","n":5,"z":2,"r":0}},{"g":{"s":"di","f":"n","n":3,"z":2,"r":0}},{"g":{"s":"di","f":"n","n":3,"z":1,"r":0}}]},
+  {"id":"mx3","area":"A","cells":[{"g":{"s":"tr","f":"n","n":1,"z":1,"r":0}},{"g":{"s":"tr","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"tr","f":"n","n":1,"z":3,"r":0}},{"g":{"s":"sq","f":"n","n":1,"z":1,"r":0}},{"g":{"s":"sq","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"sq","f":"n","n":1,"z":3,"r":0}},{"g":{"s":"ci","f":"n","n":1,"z":1,"r":0}},{"g":{"s":"ci","f":"n","n":1,"z":2,"r":0}}],"opts":[{"g":{"s":"st","f":"n","n":1,"z":3,"r":0}},{"g":{"s":"ci","f":"n","n":1,"z":1,"r":0}},{"g":{"s":"ci","f":"n","n":2,"z":3,"r":0}},{"g":{"s":"ci","f":"n","n":1,"z":3,"r":0}},{"g":{"s":"ci","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"he","f":"n","n":1,"z":3,"r":0}}]},
+  {"id":"mx4","area":"A","cells":[{"g":{"s":"di","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"di","f":"h","n":1,"z":2,"r":0}},{"g":{"s":"di","f":"s","n":1,"z":2,"r":0}},{"g":{"s":"ci","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"ci","f":"h","n":1,"z":2,"r":0}},{"g":{"s":"ci","f":"s","n":1,"z":2,"r":0}},{"g":{"s":"he","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"he","f":"h","n":1,"z":2,"r":0}}],"opts":[{"g":{"s":"ci","f":"h","n":1,"z":2,"r":0}},{"g":{"s":"he","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"he","f":"s","n":2,"z":2,"r":0}},{"g":{"s":"ci","f":"s","n":1,"z":2,"r":0}},{"g":{"s":"he","f":"s","n":1,"z":2,"r":0}},{"g":{"s":"tr","f":"s","n":1,"z":2,"r":0}}]},
+  {"id":"mx5","area":"A","cells":[{"g":{"s":"ar","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"ar","f":"n","n":1,"z":2,"r":90}},{"g":{"s":"ar","f":"n","n":1,"z":2,"r":180}},{"g":{"s":"ar","f":"h","n":1,"z":2,"r":0}},{"g":{"s":"ar","f":"h","n":1,"z":2,"r":90}},{"g":{"s":"ar","f":"h","n":1,"z":2,"r":180}},{"g":{"s":"ar","f":"s","n":1,"z":2,"r":0}},{"g":{"s":"ar","f":"s","n":1,"z":2,"r":90}}],"opts":[{"g":{"s":"ar","f":"s","n":1,"z":2,"r":180}},{"g":{"s":"ci","f":"s","n":1,"z":2,"r":180}},{"g":{"s":"ar","f":"h","n":1,"z":2,"r":90}},{"g":{"s":"ar","f":"n","n":1,"z":2,"r":180}},{"g":{"s":"ar","f":"h","n":1,"z":2,"r":180}},{"g":{"s":"ar","f":"s","n":2,"z":2,"r":180}}]},
+  {"id":"mx6","area":"A","cells":[{"g":{"s":"ci","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"sq","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"tr","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"sq","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"tr","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"ci","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"tr","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"ci","f":"n","n":1,"z":2,"r":0}}],"opts":[{"g":{"s":"ci","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"sq","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"sq","f":"h","n":1,"z":2,"r":0}},{"g":{"s":"sq","f":"n","n":1,"z":3,"r":0}},{"g":{"s":"sq","f":"n","n":3,"z":2,"r":0}},{"g":{"s":"sq","f":"n","n":2,"z":2,"r":0}}]},
+  {"id":"mx7","area":"A","cells":[{"p":[0]},{"p":[1]},{"p":[2]},{"p":[3]},{"p":[4]},{"p":[5]},{"p":[6]},{"p":[7]}],"opts":[{"p":[1]},{"p":[2]},{"p":[3]},{"p":[4]},{"p":[6]},{"p":[8]}]},
+  {"id":"mx8","area":"A","cells":[{"g":{"s":"st","f":"s","n":1,"z":1,"r":0}},{"g":{"s":"ci","f":"s","n":1,"z":1,"r":0}},{"g":{"s":"sq","f":"s","n":1,"z":1,"r":0}},{"g":{"s":"st","f":"s","n":2,"z":1,"r":0}},{"g":{"s":"ci","f":"s","n":2,"z":1,"r":0}},{"g":{"s":"sq","f":"s","n":2,"z":1,"r":0}},{"g":{"s":"st","f":"s","n":3,"z":1,"r":0}},{"g":{"s":"ci","f":"s","n":3,"z":1,"r":0}}],"opts":[{"g":{"s":"ci","f":"s","n":2,"z":1,"r":0}},{"g":{"s":"sq","f":"s","n":3,"z":1,"r":0}},{"g":{"s":"sq","f":"n","n":3,"z":1,"r":0}},{"g":{"s":"tr","f":"s","n":3,"z":1,"r":0}},{"g":{"s":"he","f":"s","n":3,"z":1,"r":0}},{"g":{"s":"sq","f":"s","n":3,"z":2,"r":0}}]},
+  {"id":"mx9","area":"B","cells":[{"g":{"s":"ci","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"tr","f":"h","n":1,"z":2,"r":0}},{"g":{"s":"sq","f":"s","n":1,"z":2,"r":0}},{"g":{"s":"tr","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"sq","f":"h","n":1,"z":2,"r":0}},{"g":{"s":"ci","f":"s","n":1,"z":2,"r":0}},{"g":{"s":"sq","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"ci","f":"h","n":1,"z":2,"r":0}}],"opts":[{"g":{"s":"he","f":"s","n":1,"z":2,"r":0}},{"g":{"s":"tr","f":"s","n":2,"z":2,"r":0}},{"g":{"s":"tr","f":"s","n":1,"z":3,"r":0}},{"g":{"s":"tr","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"tr","f":"s","n":1,"z":2,"r":0}},{"g":{"s":"st","f":"s","n":1,"z":2,"r":0}},{"g":{"s":"tr","f":"s","n":1,"z":1,"r":0}},{"g":{"s":"di","f":"s","n":1,"z":2,"r":0}}]},
+  {"id":"mx10","area":"B","cells":[{"g":{"s":"di","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"di","f":"n","n":2,"z":2,"r":0}},{"g":{"s":"di","f":"n","n":3,"z":2,"r":0}},{"g":{"s":"he","f":"n","n":3,"z":2,"r":0}},{"g":{"s":"he","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"he","f":"n","n":2,"z":2,"r":0}},{"g":{"s":"tr","f":"n","n":2,"z":2,"r":0}},{"g":{"s":"tr","f":"n","n":3,"z":2,"r":0}}],"opts":[{"g":{"s":"st","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"ci","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"tr","f":"s","n":1,"z":2,"r":0}},{"g":{"s":"sq","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"di","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"he","f":"n","n":2,"z":2,"r":0}},{"g":{"s":"tr","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"tr","f":"h","n":1,"z":2,"r":0}}]},
+  {"id":"mx11","area":"B","cells":[{"o":{"s":"sq","f":"n"},"g":{"s":"ci","f":"s","n":1,"z":1,"r":0}},{"o":{"s":"sq","f":"n"},"g":{"s":"tr","f":"s","n":1,"z":1,"r":0}},{"o":{"s":"sq","f":"n"},"g":{"s":"di","f":"s","n":1,"z":1,"r":0}},{"o":{"s":"ci","f":"n"},"g":{"s":"ci","f":"s","n":1,"z":1,"r":0}},{"o":{"s":"ci","f":"n"},"g":{"s":"tr","f":"s","n":1,"z":1,"r":0}},{"o":{"s":"ci","f":"n"},"g":{"s":"di","f":"s","n":1,"z":1,"r":0}},{"o":{"s":"he","f":"n"},"g":{"s":"ci","f":"s","n":1,"z":1,"r":0}},{"o":{"s":"he","f":"n"},"g":{"s":"tr","f":"s","n":1,"z":1,"r":0}}],"opts":[{"o":{"s":"he","f":"n"},"g":{"s":"sq","f":"s","n":1,"z":1,"r":0}},{"o":{"s":"he","f":"n"},"g":{"s":"di","f":"s","n":1,"z":1,"r":0}},{"o":{"s":"ci","f":"n"},"g":{"s":"di","f":"s","n":1,"z":1,"r":0}},{"o":{"s":"he","f":"n"},"g":{"s":"di","f":"s","n":1,"z":3,"r":0}},{"o":{"s":"he","f":"n"},"g":{"s":"di","f":"s","n":2,"z":1,"r":0}},{"o":{"s":"he","f":"n"},"g":{"s":"st","f":"s","n":1,"z":1,"r":0}},{"o":{"s":"he","f":"n"},"g":{"s":"ci","f":"s","n":1,"z":1,"r":0}},{"o":{"s":"ci","f":"n"},"g":{"s":"tr","f":"s","n":1,"z":1,"r":0}}]},
+  {"id":"mx12","area":"B","cells":[{"g":{"s":"ci","f":"s","n":1,"z":1,"r":0}},{"g":{"s":"ci","f":"s","n":1,"z":2,"r":0}},{"g":{"s":"ci","f":"s","n":1,"z":3,"r":0}},{"g":{"s":"sq","f":"s","n":1,"z":2,"r":0}},{"g":{"s":"sq","f":"s","n":1,"z":3,"r":0}},{"g":{"s":"sq","f":"s","n":1,"z":1,"r":0}},{"g":{"s":"di","f":"s","n":1,"z":3,"r":0}},{"g":{"s":"di","f":"s","n":1,"z":1,"r":0}}],"opts":[{"g":{"s":"di","f":"h","n":1,"z":2,"r":0}},{"g":{"s":"di","f":"s","n":3,"z":2,"r":0}},{"g":{"s":"di","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"di","f":"s","n":1,"z":3,"r":0}},{"g":{"s":"sq","f":"s","n":1,"z":3,"r":0}},{"g":{"s":"st","f":"s","n":1,"z":2,"r":0}},{"g":{"s":"di","f":"s","n":1,"z":2,"r":0}},{"g":{"s":"di","f":"s","n":1,"z":1,"r":0}}]},
+  {"id":"mx13","area":"B","cells":[{"g":{"s":"sq","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"tr","f":"h","n":1,"z":2,"r":0}},{"g":{"s":"ci","f":"s","n":1,"z":2,"r":0}},{"g":{"s":"ci","f":"h","n":1,"z":2,"r":0}},{"g":{"s":"sq","f":"s","n":1,"z":2,"r":0}},{"g":{"s":"tr","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"tr","f":"s","n":1,"z":2,"r":0}},{"g":{"s":"ci","f":"n","n":1,"z":2,"r":0}}],"opts":[{"g":{"s":"sq","f":"h","n":1,"z":1,"r":0}},{"g":{"s":"tr","f":"h","n":1,"z":2,"r":0}},{"g":{"s":"ci","f":"h","n":1,"z":2,"r":0}},{"g":{"s":"sq","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"sq","f":"h","n":1,"z":3,"r":0}},{"g":{"s":"st","f":"h","n":1,"z":2,"r":0}},{"g":{"s":"sq","f":"s","n":1,"z":2,"r":0}},{"g":{"s":"sq","f":"h","n":1,"z":2,"r":0}}]},
+  {"id":"mx14","area":"B","cells":[{"g":{"s":"ar","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"ar","f":"n","n":1,"z":2,"r":45}},{"g":{"s":"ar","f":"n","n":1,"z":2,"r":90}},{"g":{"s":"ar","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"ar","f":"n","n":1,"z":2,"r":90}},{"g":{"s":"ar","f":"n","n":1,"z":2,"r":180}},{"g":{"s":"ar","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"ar","f":"n","n":1,"z":2,"r":135}}],"opts":[{"g":{"s":"ci","f":"n","n":1,"z":2,"r":270}},{"g":{"s":"ar","f":"n","n":1,"z":2,"r":135}},{"g":{"s":"he","f":"n","n":1,"z":2,"r":270}},{"g":{"s":"ar","f":"n","n":1,"z":2,"r":90}},{"g":{"s":"ar","f":"n","n":1,"z":2,"r":225}},{"g":{"s":"ar","f":"n","n":1,"z":2,"r":270}},{"g":{"s":"ar","f":"n","n":1,"z":2,"r":315}},{"g":{"s":"ar","f":"n","n":1,"z":2,"r":0}}]},
+  {"id":"mx15","area":"B","cells":[{"g":{"s":"tr","f":"n","n":1,"z":1,"r":0}},{"g":{"s":"sq","f":"n","n":2,"z":1,"r":0}},{"g":{"s":"ci","f":"n","n":3,"z":1,"r":0}},{"g":{"s":"tr","f":"n","n":2,"z":1,"r":0}},{"g":{"s":"sq","f":"n","n":3,"z":1,"r":0}},{"g":{"s":"ci","f":"n","n":4,"z":1,"r":0}},{"g":{"s":"tr","f":"n","n":3,"z":1,"r":0}},{"g":{"s":"sq","f":"n","n":4,"z":1,"r":0}}],"opts":[{"g":{"s":"ci","f":"n","n":4,"z":1,"r":0}},{"g":{"s":"tr","f":"n","n":5,"z":1,"r":0}},{"g":{"s":"ci","f":"n","n":6,"z":1,"r":0}},{"g":{"s":"ci","f":"s","n":5,"z":1,"r":0}},{"g":{"s":"ci","f":"n","n":5,"z":2,"r":0}},{"g":{"s":"ci","f":"h","n":5,"z":1,"r":0}},{"g":{"s":"sq","f":"n","n":3,"z":1,"r":0}},{"g":{"s":"ci","f":"n","n":5,"z":1,"r":0}}]},
+  {"id":"mx16","area":"B","cells":[{"k":["h","t"]},{"k":["h","l"]},{"k":["h","d2"]},{"k":["v","t"]},{"k":["v","l"]},{"k":["v","d2"]},{"k":["d1","t"]},{"k":["d1","l"]}],"opts":[{"k":["d1","d2","v"]},{"k":["d1","d2"]},{"k":["d1","l"]},{"k":["d1","d2","h"]},{"k":["d1","d2","b"]},{"k":["v","d2"]},{"k":["d1","d2","t"]},{"k":["v","l"]}]},
+  {"id":"mx17","area":"C","cells":[{"k":["h","t"]},{"k":["v","b"]},{"k":["h","t","v","b"]},{"k":["d1","l"]},{"k":["d2","r"]},{"k":["d1","l","d2","r"]},{"k":["t","b"]},{"k":["h","l","r"]}],"opts":[{"k":["t","b","h","r"]},{"k":["h","l","r"]},{"k":["t","b","h","l","r","v"]},{"k":["t","b","h","l","r"]},{"k":["t","b","h","l"]},{"k":["t","h","l","r"]},{"k":["t","b"]},{"k":["d2","r"]}]},
+  {"id":"mx18","area":"C","cells":[{"k":["h","v","t","b"]},{"k":["t","b"]},{"k":["h","v"]},{"k":["d1","d2","l","r"]},{"k":["d1","r"]},{"k":["d2","l"]},{"k":["h","d1","d2","t","l"]},{"k":["d2","l"]}],"opts":[{"k":["h","d1","t","d2"]},{"k":["d2","l"]},{"k":["h","d1","t"]},{"k":["h","d1","t","l"]},{"k":["h","t"]},{"k":["d1","r"]},{"k":["h","d1","d2","t","l"]},{"k":["h","d1","t","r"]}]},
+  {"id":"mx19","area":"C","cells":[{"k":["h","v","d1"]},{"k":["v","d2"]},{"k":["h","d1","d2"]},{"k":["t","l","h"]},{"k":["h","b","r"]},{"k":["t","l","b","r"]},{"k":["d1","d2","t","r"]},{"k":["d1","b","r","v"]}],"opts":[{"k":["t","b","v"]},{"k":["d2","t","b","v","d1"]},{"k":["d2","t","b","v","l"]},{"k":["d1","d2","t","r","b","v"]},{"k":["d2","t","b"]},{"k":["d2","t","b","v"]},{"k":["d1","b","r","v"]},{"k":["d1","r"]}]},
+  {"id":"mx20","area":"C","cells":[{"g":{"s":"ci","f":"n","n":1,"z":1,"r":0}},{"g":{"s":"sq","f":"s","n":2,"z":1,"r":0}},{"g":{"s":"tr","f":"h","n":3,"z":1,"r":0}},{"g":{"s":"sq","f":"h","n":3,"z":1,"r":0}},{"g":{"s":"tr","f":"n","n":1,"z":1,"r":0}},{"g":{"s":"ci","f":"s","n":2,"z":1,"r":0}},{"g":{"s":"tr","f":"s","n":2,"z":1,"r":0}},{"g":{"s":"ci","f":"h","n":3,"z":1,"r":0}}],"opts":[{"g":{"s":"sq","f":"n","n":1,"z":1,"r":0}},{"g":{"s":"sq","f":"n","n":3,"z":1,"r":0}},{"g":{"s":"ci","f":"s","n":2,"z":1,"r":0}},{"g":{"s":"di","f":"n","n":1,"z":1,"r":0}},{"g":{"s":"he","f":"n","n":1,"z":1,"r":0}},{"g":{"s":"sq","f":"n","n":1,"z":3,"r":0}},{"g":{"s":"sq","f":"h","n":1,"z":1,"r":0}},{"g":{"s":"sq","f":"n","n":2,"z":1,"r":0}}]},
+  {"id":"mx21","area":"C","cells":[{"g":{"s":"ar","f":"n","n":1,"z":2,"r":0}},{"g":{"s":"ar","f":"n","n":1,"z":2,"r":45}},{"g":{"s":"ar","f":"n","n":1,"z":2,"r":90}},{"g":{"s":"ar","f":"h","n":1,"z":2,"r":90}},{"g":{"s":"ar","f":"h","n":1,"z":2,"r":180}},{"g":{"s":"ar","f":"h","n":1,"z":2,"r":270}},{"g":{"s":"ar","f":"s","n":1,"z":2,"r":180}},{"g":{"s":"ar","f":"s","n":1,"z":2,"r":315}}],"opts":[{"g":{"s":"ar","f":"s","n":1,"z":2,"r":90}},{"g":{"s":"ar","f":"s","n":1,"z":1,"r":90}},{"g":{"s":"st","f":"s","n":1,"z":2,"r":90}},{"g":{"s":"ar","f":"n","n":1,"z":2,"r":90}},{"g":{"s":"ar","f":"h","n":1,"z":2,"r":180}},{"g":{"s":"ar","f":"s","n":1,"z":2,"r":315}},{"g":{"s":"ar","f":"s","n":1,"z":2,"r":0}},{"g":{"s":"ar","f":"s","n":1,"z":2,"r":135}}]},
+  {"id":"mx22","area":"C","cells":[{"o":{"s":"ci","f":"n"},"g":{"s":"tr","f":"n","n":1,"z":1,"r":0}},{"o":{"s":"sq","f":"n"},"g":{"s":"sq","f":"h","n":1,"z":1,"r":0}},{"o":{"s":"di","f":"n"},"g":{"s":"ci","f":"s","n":1,"z":1,"r":0}},{"o":{"s":"sq","f":"n"},"g":{"s":"ci","f":"n","n":1,"z":1,"r":0}},{"o":{"s":"di","f":"n"},"g":{"s":"tr","f":"h","n":1,"z":1,"r":0}},{"o":{"s":"ci","f":"n"},"g":{"s":"sq","f":"s","n":1,"z":1,"r":0}},{"o":{"s":"di","f":"n"},"g":{"s":"sq","f":"n","n":1,"z":1,"r":0}},{"o":{"s":"ci","f":"n"},"g":{"s":"ci","f":"h","n":1,"z":1,"r":0}}],"opts":[{"o":{"s":"sq","f":"n"},"g":{"s":"he","f":"s","n":1,"z":1,"r":0}},{"o":{"s":"st","f":"n"},"g":{"s":"tr","f":"s","n":1,"z":1,"r":0}},{"o":{"s":"sq","f":"n"},"g":{"s":"ci","f":"s","n":1,"z":1,"r":0}},{"o":{"s":"sq","f":"n"},"g":{"s":"tr","f":"s","n":1,"z":1,"r":0}},{"o":{"s":"ci","f":"n"},"g":{"s":"tr","f":"s","n":1,"z":1,"r":0}},{"o":{"s":"sq","f":"n"},"g":{"s":"tr","f":"s","n":1,"z":2,"r":0}},{"o":{"s":"ci","f":"n"},"g":{"s":"ci","f":"h","n":1,"z":1,"r":0}},{"o":{"s":"di","f":"n"},"g":{"s":"tr","f":"s","n":1,"z":1,"r":0}}]},
+  {"id":"mx23","area":"C","cells":[{"k":["h","v","t","l"]},{"k":["v","d1","b","l"]},{"k":["h","t","d1","b"]},{"k":["d1","d2","h","r"]},{"k":["d2","t","r","v"]},{"k":["d1","h","t","v"]},{"k":["t","b","l","r","h"]},{"k":["l","r","d1","d2","v"]}],"opts":[{"k":["t","b","h"]},{"k":["l","r"]},{"k":["t","b","h","d1","d2","v"]},{"k":["t","b","h","d1","d2","v","r"]},{"k":["t","b","h","d1","d2","v","l"]},{"k":["t","b","h","d1","d2"]},{"k":["d1","h","t","v"]},{"k":["t","b","h","d1","v"]}]},
+  {"id":"mx24","area":"C","cells":[{"g":{"s":"he","f":"n","n":1,"z":1,"r":0}},{"g":{"s":"tr","f":"n","n":2,"z":1,"r":0}},{"g":{"s":"di","f":"n","n":3,"z":1,"r":0}},{"g":{"s":"tr","f":"h","n":2,"z":1,"r":0}},{"g":{"s":"di","f":"h","n":2,"z":1,"r":0}},{"g":{"s":"he","f":"h","n":4,"z":1,"r":0}},{"g":{"s":"di","f":"s","n":1,"z":1,"r":0}},{"g":{"s":"he","f":"s","n":3,"z":1,"r":0}}],"opts":[{"g":{"s":"st","f":"s","n":4,"z":1,"r":0}},{"g":{"s":"ci","f":"s","n":4,"z":1,"r":0}},{"g":{"s":"tr","f":"s","n":4,"z":3,"r":0}},{"g":{"s":"tr","f":"h","n":4,"z":1,"r":0}},{"g":{"s":"tr","f":"s","n":4,"z":1,"r":0}},{"g":{"s":"he","f":"s","n":4,"z":1,"r":0}},{"g":{"s":"tr","f":"n","n":4,"z":1,"r":0}},{"g":{"s":"sq","f":"s","n":4,"z":1,"r":0}}]}
+];
+// Ejemplo resuelto de las instrucciones (no se puntúa)
+const MATRICES_EJEMPLO = {
+  cells:[{g:{s:'ci',f:'n',n:1,z:2,r:0}},{g:{s:'sq',f:'n',n:1,z:2,r:0}},{g:{s:'tr',f:'n',n:1,z:2,r:0}},
+         {g:{s:'ci',f:'h',n:1,z:2,r:0}},{g:{s:'sq',f:'h',n:1,z:2,r:0}},{g:{s:'tr',f:'h',n:1,z:2,r:0}},
+         {g:{s:'ci',f:'s',n:1,z:2,r:0}},{g:{s:'sq',f:'s',n:1,z:2,r:0}}],
+  opts:[{g:{s:'sq',f:'s',n:1,z:2,r:0}},{g:{s:'tr',f:'n',n:1,z:2,r:0}},{g:{s:'tr',f:'s',n:1,z:2,r:0}},{g:{s:'ci',f:'s',n:1,z:2,r:0}}],
+  ok:2
+};
+
+// ── Dibujo de las matrices (celdas de 100×100; ver MATRICES_ITEMS) ──
+// o: figura exterior · g: figuras (forma, relleno, cantidad, tamaño, giro) · k: trazos · p: puntos
+var _MX_INK = '#1c2742';
+var _MX_TRAZO = { h:[15,50,85,50], v:[50,15,50,85], d1:[20,20,80,80], d2:[80,20,20,80], t:[15,15,85,15], b:[15,85,85,85], l:[15,15,15,85], r:[85,15,85,85] };
+var _MX_POS = {
+  1:[[50,50]], 2:[[30,50],[70,50]], 3:[[50,28],[28,70],[72,70]], 4:[[30,30],[70,30],[30,70],[70,70]],
+  5:[[24,24],[76,24],[24,76],[76,76],[50,50]], 6:[[22,32],[50,32],[78,32],[22,68],[50,68],[78,68]]
+};
+var _MX_RMAX = { 1:40, 2:17, 3:15, 4:15, 5:12, 6:11 };
+function _mxPoly(pts, x, y) { return pts.map(function(p){ return (x + p[0]).toFixed(1) + ',' + (y + p[1]).toFixed(1); }).join(' '); }
+function _mxRegular(n, R, rot0) {
+  var a = []; for (var i = 0; i < n; i++) { var t = (rot0 + i * 360 / n) * Math.PI / 180; a.push([R * Math.sin(t), -R * Math.cos(t)]); } return a;
+}
+function _mxForma(s, x, y, R, fill, rot) {
+  var st = ' fill="' + fill + '" stroke="' + _MX_INK + '" stroke-width="3" stroke-linejoin="round"';
+  var tr = rot ? ' transform="rotate(' + rot + ' ' + x + ' ' + y + ')"' : '';
+  if (s === 'ci') return '<circle cx="' + x + '" cy="' + y + '" r="' + R + '"' + st + '/>';
+  var pts;
+  if (s === 'sq') pts = [[-.8*R,-.8*R],[.8*R,-.8*R],[.8*R,.8*R],[-.8*R,.8*R]];
+  else if (s === 'tr') pts = _mxRegular(3, R, 0).map(function(p){ return [p[0], p[1] + R * .18]; });
+  else if (s === 'di') pts = _mxRegular(4, R, 0);
+  else if (s === 'he') pts = _mxRegular(6, R * .95, 30);
+  else if (s === 'st') { pts = []; for (var i = 0; i < 10; i++) { var t = i * 36 * Math.PI / 180, rr = i % 2 ? R * .45 : R; pts.push([rr * Math.sin(t), -rr * Math.cos(t)]); } }
+  else if (s === 'ar') pts = [[0,-R],[.75*R,-.1*R],[.28*R,-.1*R],[.28*R,R],[-.28*R,R],[-.28*R,-.1*R],[-.75*R,-.1*R]];
+  return '<polygon points="' + _mxPoly(pts, x, y) + '"' + st + tr + '/>';
+}
+function _mxRelleno(f) { return f === 's' ? _MX_INK : f === 'h' ? 'url(#mxh)' : f === 'g' ? '#9aa3b5' : '#fff'; }
+function _mxCelda(c) {
+  var h = '';
+  if (c.o) h += _mxForma(c.o.s, 50, 50, 40, _mxRelleno(c.o.f), 0);
+  (c.k || []).forEach(function(k){ var l = _MX_TRAZO[k]; h += '<line x1="' + l[0] + '" y1="' + l[1] + '" x2="' + l[2] + '" y2="' + l[3] + '" stroke="' + _MX_INK + '" stroke-width="4" stroke-linecap="round"/>'; });
+  (c.p || []).forEach(function(q){ h += '<circle cx="' + (25 + (q % 3) * 25) + '" cy="' + (25 + Math.floor(q / 3) * 25) + '" r="9" fill="' + _MX_INK + '"/>'; });
+  if (c.g) {
+    var n = c.g.n || 1, R = Math.min([0, 11, 17, 25][c.g.z || 2], _MX_RMAX[n] || 11);
+    (_MX_POS[n] || []).forEach(function(p){ h += _mxForma(c.g.s, p[0], p[1], R, _mxRelleno(c.g.f), c.g.r || 0); });
+  }
+  return h;
+}
+var _MX_DEFS = '<defs><pattern id="mxh" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#fff"/><line x1="0" y1="0" x2="0" y2="6" stroke="' + _MX_INK + '" stroke-width="2.6"/></pattern></defs>';
+function _mxSvg(c) { return '<svg viewBox="0 0 100 100" aria-hidden="true">' + _MX_DEFS + _mxCelda(c) + '</svg>'; }
+// La matriz: 8 celdas y el espacio vacío
+function _mxMatriz(cells) {
+  var h = '<svg class="mx-mat" viewBox="0 0 324 324" role="img" aria-label="Matriz de 3 por 3 con la última pieza vacía">' + _MX_DEFS;
+  for (var i = 0; i < 9; i++) {
+    var x = (i % 3) * 108 + 2, y = Math.floor(i / 3) * 108 + 2;
+    if (i < 8) h += '<rect x="' + x + '" y="' + y + '" width="104" height="104" rx="8" fill="#fff" stroke="#d5dae4" stroke-width="1.5"/><g transform="translate(' + (x + 2) + ' ' + (y + 2) + ')">' + _mxCelda(cells[i]) + '</g>';
+    else h += '<rect x="' + x + '" y="' + y + '" width="104" height="104" rx="8" fill="#f3f5fa" stroke="#9aa3b5" stroke-width="2" stroke-dasharray="6 5"/><text x="' + (x + 52) + '" y="' + (y + 66) + '" text-anchor="middle" font-size="44" font-weight="700" fill="#9aa3b5">?</text>';
+  }
+  return h + '</svg>';
+}
+
+// ═══════════════════════════════════════════════════════════
 //  LIDERAZGO Y TEMPLANZA (id ipip_lt) — dos escalas del IPIP (dominio público, ipip.ori.org)
 //  Liderazgo: AB5C I+/V+ (10 ítems, α .82) · Templanza: AB5C IV+/V+ "Toughness" (12 ítems, α .84)
 //  Traducción propia. Las claves (dimensión e invertidos) están solo en el servidor
@@ -4891,6 +5004,7 @@ function buildQuestions(perfil, soloTests) {
   if (active.includes('disc'))          DISC_BLOCKS.forEach(function(b,i){ qs.push({id:'disc_b'+i, testId:'disc', type:'disc_block', dims:b, blockNum:i+1, total:DISC_BLOCKS.length}); });
   if (active.includes('pf16'))          add(PF16_ITEMS, 'pf16', 'likert');
   if (active.includes('ipip_lt'))       add(IPIP_LT_ITEMS, 'ipip_lt', 'likert');
+  if (active.includes('matrices'))      add(MATRICES_ITEMS, 'matrices', 'matrix');
   if (active.includes('normativa_ohs')) add(NORMATIVA_OHS_QS, 'normativa_ohs', 'choice');
   if (active.includes('integridad'))    add(INTEG_ITEMS, 'integridad', 'choice');
   // Game tests don't need questions - they render their own UI
@@ -5011,7 +5125,7 @@ async function checkTestModePwd() {
 function startTestMode() {
   var TM_MINS = TM_MINS_CONFIG;
   var GROUPS = {
-    '🧠 Cognitivos':        ['dc0','comprension'],
+    '🧠 Cognitivos':        ['dc0','comprension','matrices'],
     '🧬 Personalidad':      ['pai','disc','pf16','ipip_lt'],
     '💡 Situacionales':     ['situacional','vigilancia'],
     '⏱ Tareas de conducta': ['gonogo','bart'],
@@ -6775,7 +6889,7 @@ function startTests() {
 // Solo las pruebas de aptitud tienen reloj propio (minutos de Cargos → Tiempos por Test).
 // Al agotarse, la evaluación pasa sola a la prueba siguiente. Las demás se responden
 // a su ritmo. Desde que comienza, la persona tiene _PLAZO_SESION para terminar todo.
-var _CON_TIEMPO = { dc0:1, situacional:1, vigilancia:1, comprension:1, normativa_ohs:1 };
+var _CON_TIEMPO = { dc0:1, situacional:1, vigilancia:1, comprension:1, normativa_ohs:1, matrices:1 };
 var _PLAZO_SESION = 2 * 3600;   // segundos
 var _testInProgress = false;
 var _timerSeconds = 0;          // segundos que quedan en la prueba actual (si tiene reloj)
@@ -7513,6 +7627,14 @@ function renderTestBlock() {
     instrHtml = '<div style="padding:12px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;font-size:12.5px;color:#334155;line-height:1.6;margin-bottom:4px">'
       + 'Responde según lo que realmente piensas o has vivido; no hay respuestas perfectas. '
       + 'Tus respuestas se contrastan con la entrevista y las referencias laborales.</div>';
+  } else if (type === 'matrix') {
+    var ej = MATRICES_EJEMPLO;
+    instrHtml = '<div class="mx-instr"><div class="mx-instr-t">Cómo responder</div>'
+      + '<p>Cada matriz tiene 9 espacios y falta el último. Las figuras cambian siguiendo una regla, de izquierda a derecha y de arriba hacia abajo. Elige la pieza que completa la matriz.</p>'
+      + '<div class="mx-ej"><div class="mx-ej-m">' + _mxMatriz(ej.cells) + '</div><div class="mx-ej-o">'
+      + ej.opts.map(function(o, i){ return '<span class="mx-ej-op' + (i === ej.ok ? ' ok' : '') + '">' + _mxSvg(o) + '</span>'; }).join('')
+      + '<div class="mx-ej-n">En este ejemplo, la forma cambia por columna y el relleno por fila: falta el <strong>triángulo relleno</strong>.</div></div></div>'
+      + '<p style="margin-top:8px">Las primeras son fáciles y se van haciendo más difíciles. Si una te cuesta, elige la que te parezca mejor y sigue.</p></div>';
   } else if (type === 'disc_block') {
     instrHtml = '<div style="padding:12px 16px;background:#fef9c3;border:1px solid #fde047;border-radius:8px;font-size:12px;color:#713f12;margin-bottom:4px">'
       + '📌 Para cada bloque, selecciona la cualidad que te representa <strong>MÁS</strong> (verde) y la que te representa <strong>MENOS</strong> (rojo). No puedes elegir la misma para ambos.</div>';
@@ -7557,6 +7679,15 @@ function renderTestBlock() {
         + makeDiscRow('most',  '¿Qué cualidad te describe MÁS?',   '#16a34a')
         + makeDiscRow('least', '¿Qué cualidad te describe MENOS?', '#dc2626')
         + '</div>';
+    }
+    if (q.type === 'matrix') {
+      const opts = q.opts.map((o, i) => `<button class="q-choice-opt mx-opt${ans === i ? ' sel' : ''}" onclick="answerChoice('${q.id}',${i})"
+          role="radio" aria-checked="${ans === i}" aria-label="Opción ${i+1}">${_mxSvg(o)}<span class="mx-opt-n">${i+1}</span></button>`).join('');
+      return `<div class="q-choice-row mx-row${answered?' answered':''}" id="qrow-${q.id}">
+        <div class="q-choice-text"><span class="q-scale-num">${qi+1}.</span>¿Qué pieza completa la matriz?</div>
+        <div class="mx-wrap">${_mxMatriz(q.cells)}</div>
+        <div class="mx-opts${q.opts.length > 6 ? ' mx-8' : ''}" role="radiogroup" aria-label="Pregunta ${qi+1}: opciones">${opts}</div>
+      </div>`;
     }
     if (isScale) {
       const btns = legendKeys.map(n => {
@@ -8014,6 +8145,11 @@ const PERFIL_IDEAL = {
 Object.keys(PERFIL_IDEAL).forEach(function(pf) {
   PERFIL_IDEAL[pf].bart = { min:50, max:100, label:'Control del riesgo',
     req:'No arriesgar más de lo que conviene: en la tarea de globos, no superar la estrategia de mayor ganancia esperada. Mínimo provisional, a calibrar con los datos propios.' };
+});
+// Razonamiento no verbal (matrices): mínimo inicial 50 en todos los cargos base, a calibrar con los datos propios.
+Object.keys(PERFIL_IDEAL).forEach(function(pf) {
+  PERFIL_IDEAL[pf].matrices = { min:50, max:100, label:'Razonamiento no verbal',
+    req:'Descubrir reglas y patrones en figuras, sin depender del lenguaje ni de la escolaridad. Mínimo provisional, a calibrar con los datos propios.' };
 });
 const PERFIL_IDEAL_INICIAL = JSON.parse(JSON.stringify(PERFIL_IDEAL));
 // Mínimos de los cargos personalizados (al cargarlos arriba, PERFIL_IDEAL aún no existía)
@@ -8898,6 +9034,11 @@ function dimDesc(testId, key, score) {
       if (lv5 >= 3) return 'Comprende instrucciones de mediana complejidad. Ante condiciones encadenadas puede requerir verificación puntual.';
       return 'Presenta dificultades para seguir instrucciones multi-condición. Se recomienda explorar en entrevista cómo enfrenta procedimientos complejos.';
     }
+    if (testId === 'matrices') {
+      if (lv5 >= 4) return 'Descubre con facilidad las reglas que ordenan las figuras, incluso cuando se combinan varias. Indica buena capacidad para aprender procedimientos nuevos y resolver problemas que no ha visto antes.';
+      if (lv5 >= 3) return 'Resuelve las matrices de una y dos reglas; ante reglas combinadas comete más errores. Capacidad de razonamiento abstracto adecuada para tareas habituales.';
+      return 'Tuvo dificultades para descubrir las reglas de las figuras. Conviene apoyar la inducción al cargo con instrucciones concretas y ejemplos, y explorar en entrevista cómo aprende tareas nuevas.';
+    }
     return '';
   }
   if (score >= 65) return d.hi;
@@ -9653,7 +9794,7 @@ function _bartReportHtml(c, g) {
 //  nivel de integridad, incidentes, estilo DISC, dictamen y seguimiento.
 //  Se usa en la ficha, en la tabla de candidatos y en los Pendientes de Candidatos.
 // ═══════════════════════════════════════════════════════════
-var _MIRADA_ORDEN = ['integridad','dc0','pai','disc','pf16','ipip_lt','situacional','vigilancia','comprension','normativa_ohs','gonogo','bart'];
+var _MIRADA_ORDEN = ['integridad','dc0','matrices','pai','disc','pf16','ipip_lt','situacional','vigilancia','comprension','normativa_ohs','gonogo','bart'];
 
 // Filas de aptitud del candidato (puntaje frente al mínimo del cargo)
 function _aptRowsDe(c) {
@@ -9965,7 +10106,7 @@ function buildReportHtml(c, withClose) {
           lo:'Baja motivación laboral aparente. Puede mostrar dificultades para mantenerse comprometido/a con las tareas, especialmente en períodos sin reconocimiento o variedad.' },
   };
 
-  var TAB_ORDER = ['integridad','dc0','pai','disc','pf16','ipip_lt','situacional','vigilancia','comprension','normativa_ohs','gonogo','bart'];
+  var TAB_ORDER = ['integridad','dc0','matrices','pai','disc','pf16','ipip_lt','situacional','vigilancia','comprension','normativa_ohs','gonogo','bart'];
   var completedTests = TAB_ORDER.filter(function(tid){ return tests.indexOf(tid) !== -1 && s[tid]; });
   var _ideal = PERFIL_IDEAL[c.perfil] || null;
   var firstTab = completedTests.length ? 'resumen' : '';
@@ -10019,9 +10160,9 @@ function buildReportHtml(c, withClose) {
   // ── Tab bar: pestañas agrupadas por tipo de prueba ──
   // El punto de color resume el resultado: aptitud frente al mínimo del cargo e
   // integridad según su nivel. DISC y 16PF no llevan punto (son descriptivas).
-  var _TAB_CORTO = { resumen:'Resumen', integridad:'Integridad', dc0:'Aptitud cognitiva', situacional:'Juicio situacional', vigilancia:'Vigilancia',
+  var _TAB_CORTO = { resumen:'Resumen', integridad:'Integridad', dc0:'Aptitud cognitiva', matrices:'Razonamiento no verbal', situacional:'Juicio situacional', vigilancia:'Vigilancia',
                      comprension:'Comprensión', normativa_ohs:'Normativa OHS', gonogo:'Control de impulsos', bart:'Control del riesgo', disc:'DISC', pf16:'Personalidad laboral', ipip_lt:'Liderazgo y templanza', pai:'Ajuste laboral', entrevista:'Entrevista', referencias:'Referencias' };
-  var _TAB_GRUPOS = [ ['', ['resumen']], ['Integridad', ['integridad']], ['Aptitud', ['dc0','situacional','vigilancia','comprension','normativa_ohs','gonogo','bart']],
+  var _TAB_GRUPOS = [ ['', ['resumen']], ['Integridad', ['integridad']], ['Aptitud', ['dc0','matrices','situacional','vigilancia','comprension','normativa_ohs','gonogo','bart']],
                       ['Personalidad', ['disc','pf16','ipip_lt','pai']], ['', ['entrevista']], ['', ['referencias']] ];
   var _tabDot = function(tid) {
     if (tid === 'entrevista') { var bb = _evBanda(_evPromedio(_evCompsDe(_evUlt))); return bb ? bb.color : ''; }
@@ -10069,6 +10210,7 @@ function buildReportHtml(c, withClose) {
       situacional:'Criterio para resolver situaciones habituales del trabajo',
       vigilancia:'Aplicación de protocolos, detección de irregularidades y reacción ante riesgos',
       comprension:'Leer y aplicar instrucciones con varias condiciones sin omitir pasos',
+      matrices:'Descubrir reglas en figuras, sin depender del lenguaje',
       normativa_ohs:'Conocimiento de la normativa de seguridad y salud ocupacional',
       gonogo:'Capacidad de frenar una respuesta automática (tarea de reacción)',
       bart:'No arriesgar más de lo que conviene (tarea de globos)'
@@ -10081,7 +10223,7 @@ function buildReportHtml(c, withClose) {
     var _apt = _resRows.slice();
     if (!_apt.length) {
       // Sin perfil del cargo: se muestran los porcentajes sin mínimo
-      ['dc0','situacional','vigilancia','comprension','normativa_ohs'].forEach(function(tid){
+      ['dc0','matrices','situacional','vigilancia','comprension','normativa_ohs'].forEach(function(tid){
         if (completedTests.indexOf(tid) === -1) return;
         var ts = s[tid] || {}, raw = tid === 'dc0' ? ts.total : ts.pct;
         if (raw === undefined || raw === null) return;
@@ -10432,7 +10574,7 @@ function buildReportHtml(c, withClose) {
   }
 
   // ── Simple tests (situacional, vigilancia, comprension, normativa_ohs) ──
-  [['situacional','💡'],['vigilancia','🛡'],['comprension','📋'],['normativa_ohs','📏']].forEach(function(pair) {
+  [['matrices','🧩'],['situacional','💡'],['vigilancia','🛡'],['comprension','📋'],['normativa_ohs','📏']].forEach(function(pair) {
     var tid = pair[0]; if (!s[tid]) return;
     var tm = TESTS_META[tid]; if (!tm) return;
     var pct = s[tid].pct !== undefined ? s[tid].pct : 0;
@@ -10657,7 +10799,7 @@ function toggleBatteryTest(cb) {
 // ── Wiki de Tests ──
 function renderWikiTab() {
   var WIKI_GROUPS = {
-    '🧠 Tests Cognitivos': ['dc0','comprension'],
+    '🧠 Tests Cognitivos': ['dc0','comprension','matrices'],
     '🧬 Tests de Personalidad': ['pai','disc','pf16','ipip_lt'],
     '💡 Tests Situacionales': ['situacional','vigilancia'],
     '📐 Conocimiento e integridad': ['normativa_ohs','integridad'],
@@ -10690,6 +10832,15 @@ function renderWikiTab() {
       ],
       scoring: 'Cada ítem correcto suma 1 punto (máx. 10). Se normaliza a 0-100. Clasificación en 5 niveles estándar.',
       reference: 'Desarrollo propio basado en modelos de comprensión procedimental (Kintsch, 1998).'
+    },
+    matrices: {
+      icon: '🧩', name: 'Razonamiento no verbal (matrices)', category: 'Cognitivo', items: 24, time: '12 min', format: 'Matrices 3×3 de figuras, 6 u 8 opciones',
+      description: 'Mide el razonamiento abstracto sin depender del lenguaje: la persona descubre las reglas que ordenan las figuras de una matriz y elige la pieza que falta. Es útil cuando la escolaridad o la comprensión lectora de los postulantes varía.',
+      dimensions: [
+        { key:'_self', name:'Razonamiento no verbal', desc:'Porcentaje de matrices resueltas. Tres series de dificultad creciente: A (una regla), B (dos reglas) y C (reglas combinadas: suma, resta y diferencia de trazos, varias reglas a la vez).' },
+      ],
+      scoring: 'Cada matriz correcta suma 1 punto (máx. 24). Se normaliza a 0-100. Sin baremo propio todavía: el mínimo del cargo es provisional.',
+      reference: 'Instrumento propio con el formato de las matrices progresivas (Raven, 1938). Los ítems son originales; no se usan ítems del Raven, que es material protegido.'
     },
     pai: {
       icon: '🔎', name: 'Inventario de Ajuste Laboral', category: 'Personalidad', items: 30, time: '8-12 min', format: 'Likert 1-5',
@@ -10937,6 +11088,7 @@ var BATTERY_TEST_DIMENSIONS = {
   situacional: { icon:'💡', title:'Juicio Situacional',                keys:['_self'] },
   vigilancia:  { icon:'🛡', title:'Aptitud Vigilancia',               keys:['_self'] },
   comprension: { icon:'📋', title:'Comprensión de Instrucciones',     keys:['_self'] },
+  matrices:    { icon:'🧩', title:'Razonamiento no verbal',           keys:['_self'] },
   normativa_ohs:{ icon:'📐', title:'Conocimiento Normativo OHS',       keys:['_self'] },
   gonogo:      { icon:'🎯', title:'Control de impulsos',               keys:['_self'] },
   bart:        { icon:'🎈', title:'Control del riesgo',                keys:['_self'] },
@@ -10948,7 +11100,7 @@ function renderBateriaTab() {
 
 
   var TEST_GROUPS = {
-    '📊 Aptitud Cognitiva':           ['dc0','comprension'],
+    '📊 Aptitud Cognitiva':           ['dc0','comprension','matrices'],
     '💡 Evaluación Situacional':       ['situacional','vigilancia'],
     '📐 Conocimiento Técnico':         ['normativa_ohs'],
     '🧭 Integridad laboral':          ['integridad'],
@@ -10968,6 +11120,7 @@ function renderBateriaTab() {
   var TEST_SHORT_DESC = {
     dc0:'Razonamiento verbal, numérico y lógico-abstracto.',
     comprension:'Interpretar instrucciones multi-condición.',
+    matrices:'24 matrices de figuras, 12 min. Razonamiento abstracto sin lenguaje (formato tipo matrices progresivas, ítems propios). El candidato la ve como "Razonamiento con figuras".',
     normativa_ohs:'15 preguntas sobre DS 44, Ley 16.744, DS 594 y Ley Karin. Recomendado para Prevencionista de Riesgo.',
     integridad:'24 ítems, ~5 min. Actitudes ante hurto, registros, protocolos, sobornos y presiones. Para guardias y seguridad. El candidato la ve como "Actitudes en el trabajo".',
     pai:'Estabilidad emocional, adaptación, normas, estrés, integridad y motivación en el trabajo.',
@@ -11072,7 +11225,7 @@ function renderBateriaTab() {
 
   // ── Sección de tiempos configurables ──
   // Mismos nombres e íconos que la batería (las tareas de reacción y globos tienen duración fija)
-  var TM_TEST_ORDER = ['dc0','comprension','situacional','vigilancia','normativa_ohs','integridad','pai','disc','pf16','ipip_lt'].map(function(id){
+  var TM_TEST_ORDER = ['dc0','comprension','matrices','situacional','vigilancia','normativa_ohs','integridad','pai','disc','pf16','ipip_lt'].map(function(id){
     return { id:id, label: id === 'integridad' ? 'Integridad laboral' : TESTS_META[id].name, icon: TESTS_META[id].icon };
   });
   var tmTotal = TM_TEST_ORDER.reduce(function(a, t){ return a + (TM_MINS_CONFIG[t.id] || TM_MINS_DEFAULTS[t.id] || 4); }, 0) + 2;
@@ -11398,9 +11551,9 @@ async function openCompareModal() {
   if (cands.length > 5) { toast('Máximo 5 candidatos a la vez', 'er'); return; }
 
   const N = cands.length;
-  const TEST_ORDER = ['dc0','pai','disc','pf16','ipip_lt','situacional','vigilancia','comprension','normativa_ohs'];
+  const TEST_ORDER = ['dc0','matrices','pai','disc','pf16','ipip_lt','situacional','vigilancia','comprension','normativa_ohs'];
   const DIM_LABELS = { LI:'Liderazgo',TE:'Templanza',V:'Verbal',N:'Numérico',L:'Lógico-Abs.',EE:'Est. Emocional',AS:'Adapt. Social',ON:'Orient. Normativa',ME:'Manejo Estrés',IL:'Integridad',ML:'Motivación',D:'Dominancia',I:'Influencia',S:'Estabilidad',C:'Cumplimiento',EX:'Extraversión',AN:'Aj. Emocional',DU:'Dureza Mental',IN:'Independencia',AC:'Autocontrol',_self:'Puntaje' };
-  const TEST_DIMS = { dc0:['V','N','L'], pai:['EE','AS','ON','ME','IL','ML'], disc:['D','I','S','C'], pf16:['EX','AN','DU','IN','AC'], ipip_lt:['LI','TE'], situacional:['_self'], vigilancia:['_self'], comprension:['_self'], normativa_ohs:['_self'] };
+  const TEST_DIMS = { dc0:['V','N','L'], pai:['EE','AS','ON','ME','IL','ML'], disc:['D','I','S','C'], pf16:['EX','AN','DU','IN','AC'], ipip_lt:['LI','TE'], matrices:['_self'], situacional:['_self'], vigilancia:['_self'], comprension:['_self'], normativa_ohs:['_self'] };
 
   function getScore(c, tid, dim) {
     var sd = c.scores[tid]; if (!sd) return null;
@@ -11752,7 +11905,7 @@ async function downloadPdfReport(id) {
 
   const fname = (c.nombre + '_' + c.apellido + '_Informe').replace(/\s+/g, '_');
   // Mismo orden que las pestañas del informe
-  const _orden = ['resumen','integridad','dc0','situacional','vigilancia','comprension','normativa_ohs','gonogo','bart','pai','disc','pf16','ipip_lt','entrevista','referencias'];
+  const _orden = ['resumen','integridad','dc0','matrices','situacional','vigilancia','comprension','normativa_ohs','gonogo','bart','pai','disc','pf16','ipip_lt','entrevista','referencias'];
   let reportOrdenado = reportBody;
   try {
     const tmp = document.createElement('div'); tmp.innerHTML = reportBody;
@@ -15630,7 +15783,7 @@ function _evNivelDesdeMin(score, min, max) {
   var r = (max || 100) - min, t4 = min + Math.min(15, r * 0.5), t5 = min + Math.min(25, r * 0.8);
   return score < min - 15 ? 1 : score < min ? 2 : score < t4 ? 3 : score < t5 ? 4 : 5;
 }
-var _EV_SUG_PRUEBA = { autocontrol:['gonogo'], alerta:['vigilancia'], criterio:['situacional'], razonamiento:['comprension', 'dc0'] };
+var _EV_SUG_PRUEBA = { autocontrol:['gonogo'], alerta:['vigilancia'], criterio:['situacional'], razonamiento:['comprension', 'dc0', 'matrices'] };
 function _evSugerencias(c) {
   var s = (c && c.scores) || {}, out = {}, rows = [];
   try { rows = _aptRowsDe(c); } catch(e) {}
