@@ -12831,8 +12831,8 @@ var _BD_CAMPOS = {
                 ok:function(c, v){ return c.perfil === v; } },
   etapa:      { label:'Etapa', ops:function(){ return PIPELINE_STAGES.map(function(s){ return [s.id, s.icon + ' ' + s.label]; }); },
                 ok:function(c, v){ return getPipelineEtapa(c) === v; } },
-  dictamen:   { label:'Dictamen', ops:function(){ return _EV_DICTAMEN.map(function(d){ return [d.val, d.icon + ' ' + d.label]; }).concat([['sin', 'Sin dictamen']]); },
-                ok:function(c, v){ var d = _bdDictamen(c); return v === 'sin' ? !d : d === v; } },
+  dictamen:   { label:'Dictamen', ops:function(){ return _EV_DICTAMEN.map(function(d){ return [d.val, d.icon + ' ' + d.label]; }).concat([['antecedentes', '🚫 Rechazado por antecedentes'], ['rechazo', '✖ Rechazado por otro motivo'], ['sin', 'Sin dictamen']]); },
+                ok:function(c, v){ return _bdDictVal(c) === v; } },
   estado:     { label:'Estado', ops:function(){ return [['completed', 'Completada'], ['in_progress', 'En curso'], ['pending', 'Pendiente']]; },
                 ok:function(c, v){ return c.estado === v; } },
   fecha:      { label:'Fecha', ops:function(){ return [['1', 'Hoy'], ['7', 'Últimos 7 días'], ['30', 'Últimos 30 días'], ['90', 'Últimos 90 días']]; },
@@ -12927,6 +12927,7 @@ function _bdGrupos(campo) {
   // En el tablero, Postulante y Antecedentes son una sola columna (todos pasan por la verificación de Chapi)
   if (campo === 'etapa') return PIPELINE_STAGES.filter(function(s){ return s.id !== 'postulante'; }).map(function(s){ return { id:s.id, label:s.label, color:s.color, bg:s.bg, border:s.border }; });
   if (campo === 'dictamen') return _EV_DICTAMEN.map(function(d){ return { id:d.val, label:d.icon + ' ' + d.label, color:d.color, bg:d.bg, border:d.border }; })
+    .concat(['antecedentes', 'rechazo'].map(function(k){ var m = _DIC_RECH[k]; return { id:k, label:m.icon + ' ' + (k === 'antecedentes' ? 'Rechazado por antecedentes' : 'Rechazado, otro motivo'), color:m.color, bg:m.bg, border:m.border }; }))
     .concat([{ id:'sin', label:'Sin dictamen', color:'#64748b', bg:'#f8fafc', border:'#e2e8f0' }]);
   if (campo === 'estado') return [['completed', 'Completada', '#15803d', '#f0fdf4', '#bbf7d0'], ['in_progress', 'En curso', '#b45309', '#fffbeb', '#fde68a'], ['pending', 'Pendiente', '#64748b', '#f8fafc', '#e2e8f0']]
     .map(function(x){ return { id:x[0], label:x[1], color:x[2], bg:x[3], border:x[4] }; });
@@ -12935,7 +12936,7 @@ function _bdGrupos(campo) {
 }
 function _bdValorGrupo(c, campo) {
   if (campo === 'etapa') { var et = getPipelineEtapa(c); return et === 'postulante' ? 'antecedentes' : et; }
-  if (campo === 'dictamen') return _bdDictamen(c) || 'sin';
+  if (campo === 'dictamen') return _bdDictVal(c);
   if (campo === 'estado') return c.estado;
   if (campo === 'cargo') return c.perfil;
   return '';
@@ -13039,7 +13040,7 @@ function _bdCelda(c, p) {
   // En la tabla, una sola etiqueta de color por fila (la etapa); resultado y dictamen van como texto
   if (p === 'resultado') return _bdResultadoTxt(c);
   if (p === 'etapa') { var em = getPipelineMeta(getPipelineEtapa(c)); return '<span class="bd-pill" style="color:' + em.color + ';background:' + em.bg + ';border-color:' + em.border + '">' + em.label + '</span>'; }
-  if (p === 'dictamen') { var cat = _categoriaDe(c), cm = _CAT_META[cat]; if (!cm) return '<span class="bd-txt-m">—</span>';
+  if (p === 'dictamen') { var cat = _categoriaDe(c), cm = _CAT_META[cat], rch = _rechazoDe(c); if (rch && (rch.antecedentes || !cm)) return _rechazoPill(rch, false); if (!cm) return '<span class="bd-txt-m">—</span>';
     var dd = _EV_DICTAMEN.filter(function(x){ return x.val === cm[1]; })[0]; return '<span class="bd-txt"><i class="bd-dot" style="background:' + dd.color + '"></i>' + cm[0] + '</span>'; }
   if (p === 'estado') return statusBadge(c.estado);
   if (p === 'fecha') return '<span title="' + htmlEsc(_momentoTxt(c)) + '" style="color:var(--ink3);white-space:nowrap">' + htmlEsc(_fechaCorta(c)) + '</span>';
@@ -13082,8 +13083,27 @@ function _categoriaDe(c) {
   var g = (c.scores && c.scores._informe_rh) || {};
   return _CAT_META[g.categoria] ? g.categoria : (_CAT_DE_DICT[_bdDictamen(c)] || '');
 }
+// Rechazado: el dictamen muestra el motivo del cierre. Por antecedentes manda sobre la entrevista y el informe
+function _rechazoDe(c) {
+  if (getPipelineEtapa(c) !== 'descartado') return null;
+  var s = c.scores || {}, h = (s._pipeline_history || []).filter(function(x){ return x && x.to === 'descartado'; }).pop();
+  var mot = h && h.motivo ? String(h.motivo) : '';
+  var ant = /^Antecedentes/.test(mot) || !!(s._chapi && s._chapi.rechazo);
+  return { antecedentes: ant, motivo: ant ? 'Antecedentes' : (mot.replace(/^Otro: /, '').replace(/^Entrevista: no recomendable$/, 'Entrevista no recomendable') || 'Sin motivo registrado'), detalle: (h && h.detalle) || '' };
+}
+// Valor del dictamen para filtrar y agrupar: antecedentes, el de la entrevista, otro rechazo o sin dictamen
+function _bdDictVal(c) { var r = _rechazoDe(c), d = _bdDictamen(c); return r && r.antecedentes ? 'antecedentes' : d || (r ? 'rechazo' : 'sin'); }
+var _DIC_RECH = { antecedentes: { label:'Antecedentes', icon:'🚫', color:'#b91c1c', bg:'#fef2f2', border:'#fecaca' },
+                  rechazo:      { label:'Rechazado',    icon:'✖',  color:'#9f1239', bg:'#fff1f2', border:'#fecdd3' } };
+function _rechazoPill(r, pill) {
+  var m = _DIC_RECH[r.antecedentes ? 'antecedentes' : 'rechazo'], t = r.antecedentes ? 'Antecedentes' : 'Rechazado: ' + r.motivo;
+  var tip = 'Rechazado por ' + (r.antecedentes ? 'antecedentes' : r.motivo.toLowerCase()) + (r.detalle ? ' · ' + r.detalle : '');
+  return pill ? '<span class="bd-pill" title="' + htmlEsc(tip) + '" style="color:' + m.color + ';background:' + m.bg + ';border-color:' + m.border + '"><i class="pb-dot" style="background:' + m.color + '"></i>' + htmlEsc(t) + '</span>'
+              : '<span class="bd-txt" title="' + htmlEsc(tip) + '" style="color:' + m.color + '"><i class="bd-dot" style="background:' + m.color + '"></i>' + htmlEsc(t) + '</span>';
+}
 function _bdDictamenCorto(c) {
-  var cat = _categoriaDe(c), m = _CAT_META[cat];
+  var cat = _categoriaDe(c), m = _CAT_META[cat], r = _rechazoDe(c);
+  if (r && (r.antecedentes || !m)) return _rechazoPill(r, true);
   if (!m) return '<span style="font-size:11px;color:var(--ink4);white-space:nowrap">Sin dictamen</span>';
   var d = _EV_DICTAMEN.filter(function(x){ return x.val === m[1]; })[0];
   return '<span class="bd-pill" title="Categoría: ' + htmlEsc(m[0]) + '" style="color:' + d.color + ';background:' + d.bg + ';border-color:' + d.border + '"><i class="pb-dot" style="background:' + d.color + '"></i>' + m[0] + '</span>';
@@ -13162,8 +13182,9 @@ function _bdTablero(lista) {
       // Tarjeta mínima: nombre, a qué postula y un solo estado (categoría o, si no hay, aptitud)
       var pz = _postulaDe(c), m = _miradaDe(c), cat = campo !== 'dictamen' ? _categoriaDe(c) : '';
       var sub = pz.cargo || c.cargo || pm.label || '';
-      var est = '';
-      if (cat) { var cm = { apto:['Apto', '#16a34a'], obs:['Apto con observaciones', '#d97706'], no_apto:['No apto', '#dc2626'] }[cat]; est = '<span class="bd-est"><i style="background:' + cm[1] + '"></i>' + cm[0] + '</span>'; }
+      var est = '', rch = _rechazoDe(c);
+      if (rch && (rch.antecedentes || !cat || campo === 'dictamen')) { if (!(campo === 'dictamen' && rch.antecedentes)) est = '<span class="bd-est" title="' + htmlEsc(rch.detalle) + '"><i style="background:' + _DIC_RECH[rch.antecedentes ? 'antecedentes' : 'rechazo'].color + '"></i>' + htmlEsc(rch.antecedentes ? 'Antecedentes' : 'Motivo: ' + rch.motivo) + '</span>'; }
+      else if (cat) { var cm = { apto:['Apto', '#16a34a'], obs:['Apto con observaciones', '#d97706'], no_apto:['No apto', '#dc2626'] }[cat]; est = '<span class="bd-est"><i style="background:' + cm[1] + '"></i>' + cm[0] + '</span>'; }
       else if (c.estado !== 'completed') est = '<span class="bd-est"><i style="background:#cbd5e1"></i>Evaluación sin terminar</span>';
       else if (m.apt.length) { var ok = m.aptOk === m.apt.length, nada = m.aptOk === 0; est = '<span class="bd-est" title="Pruebas de aptitud sobre el mínimo"><i style="background:' + (ok ? '#16a34a' : nada ? '#dc2626' : '#d97706') + '"></i>Aptitud ' + m.aptOk + ' de ' + m.apt.length + '</span>'; }
       // Verificación de Chapi en la tarjeta (solo administrador)
@@ -14850,7 +14871,7 @@ function _renderDrawerHeader(c) {
     + '<div class="dh-txt"><div class="dh-l1"><span class="dh-name">' + htmlEsc(c.nombre + ' ' + c.apellido) + '</span>'
     + (S.role === 'admin' ? '<button class="dh-edit-nom" onclick="_nombreEditar(\'' + c.id + '\')" title="Corregir el nombre" aria-label="Corregir el nombre"><svg class="ico"><use href="#i-edit"/></svg></button>' : '')
     + '</div>'
-    + '<div class="dh-meta"><span class="dh-chips">' + _estadoFichaHtml(c) + (cat ? _bdDictamenCorto(c) : '') + '</span><span class="dh-cargo">' + htmlEsc(pz.cargo || c.cargo || pm.label || '') + '</span>' + (linea ? ' · ' + linea : '') + '</div></div>'
+    + '<div class="dh-meta"><span class="dh-chips">' + _estadoFichaHtml(c) + (cat || _rechazoDe(c) ? _bdDictamenCorto(c) : '') + '</span><span class="dh-cargo">' + htmlEsc(pz.cargo || c.cargo || pm.label || '') + '</span>' + (linea ? ' · ' + linea : '') + '</div></div>'
     + '<div class="dh-tabs-slot"></div>'
     + paso
     + '<div class="dh-badges">'
