@@ -15166,8 +15166,10 @@ function _chapiRobosPorNombre(ch) {
       && (c.delitos || []).some(function(d){ return RE.test(st(d).replace(/[^a-z\s]/g, ' ').trim()); }); });
 }
 function _chapiReglas(imp, prensa) {
-  var lista = Array.isArray(imp) ? imp : [], porTipo = {};
   var st = function(t){ return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); };
+  // Desatender el llamado a reclutamiento (Art. 72, D.L. N° 2.306): no es motivo de rechazo ni cuenta para reiteradas o múltiples
+  var des = function(x){ return /desatend/.test(st(x && x.delito)) && /llamado|reclutamiento/.test(st(x && x.delito)); };
+  var todas = Array.isArray(imp) ? imp : [], desatender = todas.filter(des), lista = todas.filter(function(x){ return !des(x); }), porTipo = {};
   var RE = /(^|\s)(robo|hurto|estafa|receptacion|apropiacion|defraudacion|fraude|abigeato)/;
   var rh = function(x){ return RE.test(x.tipo) || RE.test(st(x.delito).replace(/[^a-z\s]/g, ' ').trim()); }, rec = function(x){ return !rh(x) && /reclutamiento/.test(st(x.delito)); };
   // Lesiones graves: rechazo si la denuncia tiene menos de 5 años; más antiguas, a criterio (por visar)
@@ -15182,7 +15184,7 @@ function _chapiReglas(imp, prensa) {
   // 3 o más causas penales distintas por RUT, de cualquier delito
   var porCausa = {}; lista.forEach(function(x){ var k = x.rit || x.delito; if (!porCausa[k]) porCausa[k] = x; });
   var multiples = Object.keys(porCausa).length >= 3 ? Object.keys(porCausa).map(function(k){ return porCausa[k]; }) : [];
-  return { roboHurto: roboHurto, reclutamiento: reclutamiento, lesiones: lesiones, lesionesAntiguas: lesionesAntiguas, reiteradas: reiteradas, multiples: multiples, prensa: pAlta,
+  return { roboHurto: roboHurto, reclutamiento: reclutamiento, lesiones: lesiones, lesionesAntiguas: lesionesAntiguas, reiteradas: reiteradas, multiples: multiples, prensa: pAlta, desatender: desatender,
            descartar: roboHurto.length > 0 || reclutamiento.length > 0 || lesiones.length > 0 || reiteradas.length > 0 || multiples.length > 0 || pAlta.length > 0 };
 }
 // Mismo criterio que la verificación automática (psicoeval-chapi): grave = penales por RUT (salvo solo denunciante),
@@ -15206,6 +15208,7 @@ function _chapiClasificar(r) {
   else if (r && Array.isArray(r.imputaciones) && r.imputaciones.length) motivos.push('Imputado en causa penal (' + r.imputaciones.map(function(x){ return x.rit; }).filter(function(x, i, a){ return a.indexOf(x) === i; }).length + ')');
   if (k.laborales > 0) motivos.push('Causas laborales (' + k.laborales + ')');
   if (r && r.riesgo === 'high') motivos.push('Riesgo alto en Chapi');
+  if (rd.desatender && rd.desatender.length) avisos.push('Desatender el llamado a reclutamiento (Art. 72, D.L. 2.306): no es motivo de rechazo (' + rd.desatender.length + ')');
   if (soloDen) avisos.push('Figura solo como denunciante en causas penales (' + k.penales_rut + ')');
   if (k.civiles > 0) avisos.push('Causas civiles (' + k.civiles + ')');
   if (k.sindicales > 0) avisos.push('Causas sindicales (' + k.sindicales + ')');
