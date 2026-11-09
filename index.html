@@ -1731,9 +1731,23 @@ body.adm .pub-aura i{animation:none}   /* estático: el vidrio no recompone en c
 .dsh-aviso{background:rgba(217,119,6,.1);border:1px solid rgba(217,119,6,.22);color:#92400e;border-radius:12px;padding:10px 14px;font-size:12.5px;line-height:1.5;margin-bottom:16px}
 .dsh-aviso .dsh-cel{color:#92400e;text-decoration:underline}
 .dsh-leg{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--ink3);margin-bottom:6px}.dsh-leg span{display:flex;align-items:center;gap:5px}.dsh-leg i{width:10px;height:10px;border-radius:2px;display:block}
-.dsh-ins td:first-child{max-width:210px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.dsh-bar-c{width:28%;min-width:130px}.dsh-sbar{display:flex;gap:2px;height:12px}.dsh-sbar i{display:block;height:12px}.dsh-sbar i:first-child{border-radius:3px 0 0 3px}.dsh-sbar i:last-child{border-radius:0 3px 3px 0}
 .dsh-cup{color:var(--ink3);white-space:nowrap}
+.rs-exp{display:flex;flex-direction:column;gap:2px;padding:8px 0;border-top:1px solid rgba(20,33,61,.07);font-size:12.5px}.rs-exp:first-of-type{border-top:none;padding-top:2px}
+.rs-exp b{color:var(--ink);font-weight:700}.rs-exp span{color:var(--ink3);line-height:1.45}.rs-exp .rs-exp-ver{color:#0f766e;font-weight:600;font-size:11.5px}
+.rs-exp-src{font-weight:500;text-transform:none;letter-spacing:0;color:var(--ink4);margin-left:4px}.rs-exp-vacio{font-size:12.5px;color:var(--ink3)}
+[data-theme="dark"] .rs-exp{border-top-color:rgba(255,255,255,.08)}
+.dsh-ins2{display:flex;flex-direction:column}
+.dsh-ir{display:grid;grid-template-columns:minmax(120px,220px) 1fr 44px minmax(0,190px);align-items:center;gap:12px;padding:7px 0;border-top:1px solid rgba(20,33,61,.07);font-size:12.5px}
+.dsh-in{font-weight:600;color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dsh-sbar2{display:flex;gap:2px;height:20px;min-width:fit-content}
+.dsh-sbar2 button{min-width:22px;border:none;padding:0 6px;color:#fff;font:inherit;font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums;cursor:pointer;text-align:left}
+.dsh-sbar2 button:first-child{border-radius:5px 0 0 5px}.dsh-sbar2 button:last-child{border-radius:0 5px 5px 0}.dsh-sbar2 button:only-child{border-radius:5px}
+.dsh-sbar2 button:hover{filter:brightness(1.12)}
+.dsh-it{text-align:right}
+.dsh-ix{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
+.dsh-alerta{background:rgba(227,73,72,.1);color:#b42318;border-radius:999px;padding:2px 8px;font-size:11.5px;font-weight:700;white-space:nowrap}
+[data-theme="dark"] .dsh-alerta{color:#fca5a5}[data-theme="dark"] .dsh-ir{border-top-color:rgba(255,255,255,.08)}
+@media (max-width:640px){.dsh-ir{grid-template-columns:1fr 40px;row-gap:6px}.dsh-ib{grid-column:1/-1;grid-row:2}.dsh-ix{grid-column:1/-1;justify-content:flex-start}.dsh-ix:empty{display:none}}
 .bd-volver{align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
 .bd-volver-b{border:1px solid var(--accent);background:var(--accent);color:#fff;border-radius:10px;padding:7px 13px;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
 .bd-volver-b:hover{opacity:.9}.bd-volver-t{font-size:13px;color:var(--ink3);min-width:0}.bd-volver-t b{color:var(--ink2)}
@@ -12472,21 +12486,28 @@ function _dashInstalacionesHtml(cands) {
     ['Cupos cargados', conCupos.length, 'de ' + activas.length + ' instalaciones activas']
   ]);
   if (sin.length) h += '<div class="dsh-aviso"><b>' + _dashNum(sin, 'Sin instalación asignada') + ' personas sin instalación asignada.</b> Sin ese dato no aparecen abajo: asígnela en su ficha.</div>';
-  var max = Math.max.apply(null, filas.map(function(g){ return g.ids.length; }).concat([1]));
   var seg = [['env', 'Seleccionados o enviados', '#2a78d6'], ['pro', 'En proceso', '#1baf7a'], ['noc', 'No contratados', '#eda100'], ['rech', 'Rechazados', '#e34948']];
-  h += '<div class="dash-card"><div class="dash-lbl">Resultado por instalación</div><div class="dsh-nota">Personas del período y cómo va cada una.</div>'
+  var conGente = filas.filter(function(g){ return g.ids.length; }), vacias = activas.filter(function(g){ return !g.ids.length; });
+  var sinCupos = activas.filter(function(g){ return g.ids.length && !g.cupos; }).length;
+  if (vacias.length) h += '<div class="dsh-aviso"><b>Sin postulantes en el período:</b> ' + vacias.map(function(g){ return htmlEsc(g.nom); }).join(', ') + '.</div>';
+  h += '<div class="dash-card"><div class="dash-lbl">Resultado por instalación</div><div class="dsh-nota">Personas del período y cómo va cada una. Toque un tramo para ver a esas personas.'
+    + (sinCupos ? ' ' + sinCupos + (sinCupos === 1 ? ' instalación activa no tiene' : ' instalaciones activas no tienen') + ' cupos cargados.' : '') + '</div>'
     + '<div class="dsh-leg">' + seg.map(function(s){ return '<span><i style="background:' + s[2] + '"></i>' + s[1] + '</span>'; }).join('') + '</div>';
-  if (!filas.length) return h + '<div class="dsh-vacio">Sin instalaciones en el período.</div></div>';
-  h += '<div class="dsh-scroll"><table class="dsh-act-t dsh-ins"><thead><tr><th>Instalación</th><th class="dsh-bar-c"></th><th>Total</th><th>Avanz.</th><th>Proceso</th><th>No contr.</th><th>Rechaz.</th><th>Cupos</th></tr></thead><tbody>'
-    + filas.map(function(g) {
-        var cup = g.cupos ? g.env.length + ' de ' + g.cupos : g.activa ? 'sin cargar' : '—';
-        return '<tr><td title="' + htmlEsc(g.nom) + '">' + htmlEsc(g.nom) + '</td>'
-          + '<td class="dsh-bar-c"><div class="dsh-sbar" style="width:' + Math.max(g.ids.length ? 3 : 0, Math.round(g.ids.length / max * 100)) + '%">'
-          + seg.map(function(s){ return g[s[0]].length ? '<i style="flex:' + g[s[0]].length + ';background:' + s[2] + '" title="' + s[1] + ': ' + g[s[0]].length + '"></i>' : ''; }).join('') + '</div></td>'
-          + '<td>' + _dashNum(g.ids, g.nom) + '</td>'
-          + seg.map(function(s){ return '<td>' + _dashNum(g[s[0]], g.nom + ' · ' + s[1]) + '</td>'; }).join('')
-          + '<td class="dsh-cup">' + cup + '</td></tr>';
-      }).join('') + '</tbody></table></div></div>';
+  if (!conGente.length) return h + '<div class="dsh-vacio">Sin postulantes con instalación en el período.</div></div>';
+  var max = Math.max.apply(null, conGente.map(function(g){ return g.ids.length; }).concat([1]));
+  h += '<div class="dsh-ins2">' + conGente.map(function(g) {
+    var n = g.ids.length, alertas = [];
+    // Señal: 40 % o más rechazados o no contratados (con al menos 5 personas, para no alarmar con 1 de 2)
+    if (n >= 5 && g.rech.length / n >= 0.4) alertas.push(_dashPct(g.rech.length, n) + ' % rechazados');
+    if (n >= 5 && g.noc.length / n >= 0.4) alertas.push(_dashPct(g.noc.length, n) + ' % no contratados');
+    return '<div class="dsh-ir"><div class="dsh-in" title="' + htmlEsc(g.nom) + '">' + htmlEsc(g.nom) + '</div>'
+      + '<div class="dsh-ib"><div class="dsh-sbar2" style="width:' + Math.max(8, Math.round(n / max * 100)) + '%">'
+      + seg.map(function(s){ var ids = g[s[0]]; return ids.length ? '<button style="flex:' + ids.length + ' 0 auto;background:' + s[2] + '" title="' + s[1] + ': ' + ids.length + '" onclick="_dashAbrir(' + _dashCelda(ids, g.nom + ' · ' + s[1]) + ')">' + ids.length + '</button>' : ''; }).join('')
+      + '</div></div>'
+      + '<div class="dsh-it">' + _dashNum(g.ids, g.nom) + '</div>'
+      + '<div class="dsh-ix">' + alertas.map(function(t){ return '<span class="dsh-alerta">' + t + '</span>'; }).join('')
+      + (g.cupos ? '<span class="dsh-cup">' + g.env.length + ' de ' + g.cupos + ' cupos</span>' : '') + '</div></div>';
+  }).join('') + '</div></div>';
   return h;
 }
 // Calidad: pruebas con mínimo frente a sí mismas y frente al dictamen. Con pocos casos se muestra el conteo, no el porcentaje
@@ -15546,12 +15567,36 @@ async function _rsPostulaGuardar(id) {
   } catch(e) { toast('No se pudo guardar: ' + e.message, 'er'); }
 }
 
+// Experiencia laboral en el Resumen: lo revisado en la última entrevista; si no hay, lo declarado al postular
+function _rsExperienciaHtml(c) {
+  var ents = ((c.scores || {})._entrevistas || []).filter(function(e){ return e && (e.experiencia || []).some(function(x){ return x && (x.cargo || x.empresa); }); });
+  var ev = ents[ents.length - 1], e = htmlEsc;
+  var CON = { indefinido:'Indefinido', plazo_fijo:'Plazo fijo', honorarios:'Honorarios', obra:'Por obra o faena' };
+  var VER = { si:'Coincide con lo declarado', corregida:'Corregida en la entrevista', no_verificable:'No se pudo verificar' };
+  var mes = function(m){ var x = String(m || '').match(/^(\d{4})-(\d{2})/); return x ? x[2] + '/' + x[1] : ''; };
+  var items = ev ? ev.experiencia.filter(function(x){ return x && (x.cargo || x.empresa); }).map(function(x) {
+      var per = x.desde ? mes(x.desde) + ' – ' + (x.hasta ? mes(x.hasta) : 'actual') : '';
+      return { tit: [x.cargo, x.empresa], det: [x.tiempo, per, CON[x.contrato] || '', x.motivo ? 'Salida: ' + x.motivo : ''], ver: VER[x.verificacion] || '',
+               tareas: (x.tareas || []).filter(Boolean).join(' · ') };
+    }) : (Array.isArray(c.historial) ? c.historial : []).filter(function(x){ return x && (x.cargo || x.empresa); }).map(function(x, i) {
+      return { tit: [x.cargo, x.empresa], det: [x.duracion_label, x.salida_label ? 'Salida: ' + x.salida_label : (i === 0 && !x.salida ? 'Trabajo actual' : '')] };
+    });
+  var h = '<div class="rs-card"><div class="rs-lbl">Experiencia laboral' + (items.length ? ' <span class="rs-exp-src">' + (ev ? 'revisada en la entrevista' : 'declarada al postular') + '</span>' : '') + '</div>';
+  if (!items.length) return h + '<div class="rs-exp-vacio">' + (Array.isArray(c.historial) ? 'Declaró no tener experiencia laboral.' : e(c.experiencia_label || c.experiencia || 'Sin experiencia registrada.')) + '</div></div>';
+  h += items.map(function(x) {
+    var det = x.det.filter(Boolean);
+    return '<div class="rs-exp"><b>' + e(x.tit.filter(Boolean).join(' · ')) + '</b>'
+      + (det.length ? '<span>' + e(det.join(' · ')) + '</span>' : '')
+      + (x.tareas ? '<span>Tareas: ' + e(x.tareas) + '</span>' : '')
+      + (x.ver ? '<span class="rs-exp-ver">' + e(x.ver) + '</span>' : '') + '</div>';
+  }).join('');
+  if (!ev && Array.isArray(c.historial) && c.historial.length === 1) h += '<div class="rs-exp-vacio">Declaró un solo trabajo.</div>';
+  return h + '</div>';
+}
+
 function _tabResumen(c) {
   var sc = c.scores || {};
   var m = _miradaDe(c);
-  var h0 = Array.isArray(c.historial) && c.historial[0];
-  var exp = h0 ? [h0.cargo, h0.empresa].filter(Boolean).join(' · ') + (h0.duracion_label ? ' (' + h0.duracion_label + ')' : '') + (c.historial.length === 1 ? ' · Declaró un solo trabajo' : '')
-          : (Array.isArray(c.historial) ? 'Sin experiencia laboral (lo declaró)' : (c.experiencia_label || c.experiencia || ''));
   var iv = sc._invitacion;
   var ents = (sc._entrevistas || []).filter(Boolean);
   var ult = ents[ents.length - 1];
@@ -15577,8 +15622,10 @@ function _tabResumen(c) {
     + (c.email ? '<a class="rs-btn" href="mailto:' + encodeURI(c.email) + '"><svg class="ico"><use href="#i-mail"/></svg>Correo</a>' : '')
     + '</div></div>';
 
+  h += _rsExperienciaHtml(c);
+
   // Antecedentes (lo que no está en el encabezado)
-  var kv = [['RUT', c.rut], ['Comuna', c.comuna], ['Experiencia', exp], ['Rubro', c.rubro_label || c.rubro], ['Evaluación', _momentoTxt(c)],
+  var kv = [['RUT', c.rut], ['Comuna', c.comuna], ['Rubro', c.rubro_label || c.rubro], ['Evaluación', _momentoTxt(c)],
             ['Invitación', iv ? (iv.tipo === 'rut' ? 'Por RUT' : 'Link único') + (iv.creada_por ? ' · ' + iv.creada_por : '') : 'Link general'],
             ['Entrevista', !_verEntrevistas() ? '' : ult ? ((ult.fecha ? ult.fecha.split('-').reverse().join('-') : 'Registrada') + (ult.entrevistador ? ' · ' + ult.entrevistador : '')) : 'Sin entrevista']];
   h += '<div class="rs-card"><div class="rs-lbl">Antecedentes</div>';
