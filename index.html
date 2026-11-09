@@ -3858,8 +3858,9 @@ function _compLeerForm() {
 }
 function _compPintar() {
   var e = htmlEsc, ed = _compEd, pm = PERFIL_META[ed.perfil] || {};
-  var propio = !!COMP_CARGO[ed.perfil], base = _perfilBase(ed.perfil), dePadre = !propio && base !== ed.perfil && COMP_CARGO[base];
-  var origen = propio ? 'Ajustes propios de este cargo.' : dePadre ? 'Sin ajustes propios: usa los de ' + ((PERFIL_META[base] || {}).label || base) + '.'
+  var propio = !!COMP_CARGO[ed.perfil], base = _perfilBase(ed.perfil), sugerida = !propio && _compPropia(ed.perfil);
+  var dePadre = !propio && !sugerida && base !== ed.perfil && COMP_CARGO[base];
+  var origen = propio ? 'Ajustes propios de este cargo.' : sugerida ? 'Usa las competencias propuestas para este cargo.' : dePadre ? 'Sin ajustes propios: usa los de ' + ((PERFIL_META[base] || {}).label || base) + '.'
              : base === 'guardia' ? 'Usa las competencias propuestas para guardias.' : 'Usa las competencias de siempre.';
   var rhDe = function(k){ var r = _RH_COMP.filter(function(x){ return x.key === k; })[0]; return r ? 'En el Informe RH llena la fila «' + r.label + '».' : 'Queda solo en la entrevista (el Informe RH no tiene esa fila).'; };
   var quitadas = _COMP_STAR_BASE().filter(function(b){ return !ed.lista.some(function(c){ return c.key === b.key; }); });
@@ -3902,6 +3903,9 @@ function _compGuardar() {
   ed.lista.forEach(function(c){ comps[c.key] = { name:c.name, def:c.def, anclas:c.anclas, questions:c.questions, star:true }; if (c.nueva) comps[c.key].icon = '📋'; });
   // Las de siempre que se quitaron del paso STAR se siguen puntuando en el paso 4
   _COMP_STAR_BASE().forEach(function(b){ if (!comps[b.key]) comps[b.key] = { star:false }; });
+  // Las preguntas propuestas del cargo para las otras 6 se conservan al guardar
+  var prop = _compPropia(ed.perfil);
+  if (prop) Object.keys(prop.comps).forEach(function(k){ if (!comps[k]) comps[k] = prop.comps[k]; });
   COMP_CARGO[ed.perfil] = { comps: comps };
   saveCompCargo();
   _logConfigChange('Competencias de la entrevista', ((PERFIL_META[ed.perfil] || {}).label || ed.perfil) + ': ' + ed.lista.map(function(c){ return c.name; }).join(', '));
@@ -15821,6 +15825,71 @@ var _COMP_GUARDIA = { comps: {
       ['Cuénteme de una vez en que su relevo llegó tarde o no llegó.', '¿Qué hizo? ¿Cómo lo resolvieron con su compañero y su supervisor?'],
       ['Cuénteme de un desacuerdo con un compañero de turno sobre cómo hacer el servicio (rondas, puesto, horarios).', '¿Cómo lo resolvieron? ¿Qué haría distinto?'] ] }
 } };
+// ACC (Administrador de Clientes Clave, perfil E-GP-059): mismas competencias, con preguntas y anclas del cargo
+// (relación con el administrador del contrato, coberturas y relevos, conducción de guardias, actas y registros).
+var _COMP_ACC = { comps: {
+  // Trabajo bajo presión (perfil E-GP-059, nivel Alto): competencia propia del ACC, se explora con STAR
+  presion: { name:'Manejo de presión', icon:'⏱️', star:true,
+    def:'Mantiene un desempeño estable y ordenado ante alta carga de trabajo, plazos cortos u oposición; prioriza, cumple lo comprometido y responde con equilibrio a las distintas demandas.',
+    anclas:{ 1:'Se desordena o se bloquea; deja tareas sin cumplir, reacciona con molestia o traspasa la presión a su equipo.',
+             3:'Cumple lo urgente, pero sin priorizar con claridad; lo secundario queda pendiente o necesita que otro ordene.',
+             5:'Relata una situación de alta carga en que priorizó con criterio, delegó o pidió apoyo a tiempo, cumplió lo comprometido e informó, manteniendo el buen trato con su equipo y el cliente.' },
+    questions:[
+      ['Cuénteme del día más complicado que le tocó como supervisor, con varias cosas urgentes al mismo tiempo.', '¿Qué atendió primero y por qué? ¿Qué dejó para después y cómo terminó?'],
+      ['Cuénteme de una vez en que el cliente y su jefatura le exigieron cosas distintas con poco plazo.', '¿Cómo lo resolvió y qué resultado tuvo?'],
+      ['Cuénteme de un período largo de mucha carga (falta de personal, un servicio nuevo, turnos extendidos).', '¿Cómo mantuvo el servicio funcionando? ¿Qué le costó más y cómo se cuidó usted?'] ] },
+  cliente: {
+    def:'Mantiene una relación cercana y profesional con el administrador del contrato del cliente: evalúa sus requerimientos, responde a tiempo y defiende los procedimientos de RH sin dañar la relación.',
+    anclas:{ 1:'Acepta todo lo que pide el cliente o lo evita; no relata reclamos resueltos.',
+             3:'Responde a los reclamos cuando llegan y resuelve lo puntual, sin anticiparse ni dejar registro.',
+             5:'Relata un requerimiento que evaluó, resolvió a tiempo y dejó en acta, sin saltarse los procedimientos y cuidando la relación; se anticipa a los problemas.' },
+    questions:[
+      ['Cuénteme del último reclamo serio que un cliente le hizo por el servicio.', '¿Qué le respondió en ese momento, qué hizo después y cómo quedó la relación?'],
+      ['Cuénteme de una vez en que el cliente le pidió algo que no correspondía al contrato o a los procedimientos.', '¿Cómo se lo dijo? ¿Qué alternativa le ofreció? ¿Quedó registrado?'],
+      ['Cuénteme de un problema del servicio que detectó y resolvió antes de que el cliente lo reclamara.', '¿Cómo lo detectó? ¿Se lo informó después al cliente?'] ] },
+  comunicacion: {
+    def:'Informa lo relevante al jefe zonal, a la central y al cliente, a tiempo y por escrito; deja constancia en actas y registros, y da instrucciones claras a los guardias.',
+    anclas:{ 1:'Informa de palabra o tarde, sin registro; sus instrucciones se pierden entre turnos.',
+             3:'Informa lo principal, pero el registro queda incompleto o no verifica que se haya entendido.',
+             5:'Informa a tiempo y a quien corresponde, deja acta firmada y comprueba que los guardias apliquen la instrucción.' },
+    questions:[
+      ['Cuénteme de un incidente en una instalación a su cargo que tuvo que informar al jefe zonal y al cliente.', '¿A quién informó primero, por qué medio y en cuánto tiempo? ¿Qué dejó por escrito?'],
+      ['Cuénteme de una instrucción nueva que tuvo que transmitir a guardias de distintos turnos.', '¿Cómo se aseguró de que todos la entendieran y la aplicaran?'],
+      ['Cuénteme de un acuerdo con el cliente que después generó un malentendido.', '¿Había acta? ¿Cómo se resolvió y qué hace distinto ahora?'] ] },
+  equipo: {
+    def:'Coordina a los guardias de sus instalaciones y trabaja con la central, los supervisores y las áreas de la oficina zonal; apoya y corrige a su equipo para asegurar las coberturas.',
+    anclas:{ 1:'Deja turnos sin cubrir o culpa a otros; evita corregir, o corrige con malos tratos.',
+             3:'Cubre las ausencias cuando ocurren y corrige solo los problemas evidentes; deriva los desacuerdos al jefe zonal.',
+             5:'Relata una cobertura crítica que aseguró coordinándose con la central y otras áreas, y una corrección hecha con respeto, con registro y seguimiento.' },
+    questions:[
+      ['Cuénteme de una vez en que le faltó personal para cubrir un turno en una instalación crítica.', '¿Cómo consiguió el relevo, con quién se coordinó y cómo terminó?'],
+      ['Cuénteme de una vez en que tuvo que corregir a un guardia por su desempeño o su conducta.', '¿Cómo se lo planteó, qué registró en su hoja de vida y qué cambió después?'],
+      ['Cuénteme de un desacuerdo con otro supervisor o con un área de la oficina zonal.', '¿Cómo lo resolvieron sin afectar el servicio?'] ] },
+  integridad: { questions:[
+      ['Cuénteme de una vez en que un guardia le pidió encubrir un atraso o una inasistencia para evitar la multa del cliente.', '¿Qué hizo usted y qué pasó después?'],
+      ['Cuénteme de una vez en que encontró horas extra o asistencia mal registradas en el SICA.', '¿Qué hizo con eso y a quién informó?'],
+      ['Cuénteme de una vez en que alguien le ofreció un favor o una ventaja a cambio de saltarse una norma.', '¿Cómo respondió y qué resultado tuvo?'] ] },
+  autocontrol: { questions:[
+      ['Cuénteme de una vez en que el cliente le habló con dureza delante de su equipo.', '¿Qué hizo en ese momento y cómo terminó?'],
+      ['Cuénteme de una vez en que perdió la paciencia en el trabajo.', '¿Qué hizo después y qué aprendió?'],
+      ['Cuénteme de una vez en que un guardia desafió su autoridad.', '¿Cómo reaccionó y qué hizo después?'] ] },
+  alerta: { questions:[
+      ['Cuénteme de algo irregular que detectó revisando el libro de novedades o el SICA.', '¿Cómo se dio cuenta, qué hizo y a quién avisó?'],
+      ['Cuénteme de una visita de supervisión en que encontró una falla con la lista de chequeo.', '¿Qué encontró y qué medida tomó?'],
+      ['Cuénteme de algo que se le pasó y que terminó en una multa o un descuento del cliente.', '¿Qué consecuencias tuvo y qué hace distinto ahora?'] ] },
+  criterio: { questions:[
+      ['Cuénteme de una vez en que el cliente pidió algo fuera del plan de operación.', '¿Qué evaluó antes de responder y qué decidió?'],
+      ['Cuénteme de una vez en que tuvo que decidir rápido sin poder consultar al jefe zonal.', '¿Qué opciones consideró y a quién informó después?'],
+      ['Cuénteme de una vez en que una instrucción de su jefatura le pareció un error.', '¿Qué hizo y cómo terminó?'] ] },
+  razonamiento: { questions:[
+      ['Explíqueme cómo controla las horas extraordinarias y las jornadas excepcionales de los guardias a su cargo.', '¿Qué hace cuando un caso no calza con la regla?'],
+      ['Cuénteme de un servicio nuevo que le tocó implementar.', '¿Qué pasos siguió y cómo se aseguró de no omitir ninguno?'],
+      ['Cuénteme de un procedimiento nuevo del SIG que tuvo que aprender rápido.', '¿Cómo lo aprendió y cuánto le tomó aplicarlo bien?'] ] },
+  identificacion: { questions:[
+      ['Cuénteme por qué dejó su último trabajo (o por qué quiere dejar el actual).', '¿Cómo fue la salida? ¿Qué opina hoy de esa empresa?'],
+      ['Cuénteme de una vez en que cuidó el vehículo, los equipos o la imagen de la empresa ante el cliente sin que se lo pidieran.', '¿Qué resultado tuvo?'],
+      ['Cuénteme de un momento en que pensó en renunciar y se quedó.', '¿Qué lo hizo quedarse? ¿Qué espera de esta empresa?'] ] }
+} };
 var COMP_CARGO = {};   // { perfil: { comps: { clave: { name, def, anclas, questions, star, icon } } } }
 function loadCompCargo() {
   try { var v = JSON.parse(localStorage.getItem(LS_COMPETENCIAS) || '{}'); COMP_CARGO = v && typeof v === 'object' && !Array.isArray(v) ? v : {}; } catch(e) { COMP_CARGO = {}; }
@@ -15830,11 +15899,13 @@ function saveCompCargo() {
   _cfgPush('competencias');
 }
 loadCompCargo();
-// Ajustes del cargo: los suyos; si no tiene, los de su cargo base; Guardia parte con _COMP_GUARDIA
+// Ajustes del cargo: los suyos; el ACC parte con _COMP_ACC; si no, los de su cargo base; Guardia parte con _COMP_GUARDIA
 function _compAjustes(perfil) {
   var b = typeof _perfilBase === 'function' ? _perfilBase(perfil) : perfil;
-  return COMP_CARGO[perfil] || COMP_CARGO[b] || (b === 'guardia' ? _COMP_GUARDIA : null);
+  return COMP_CARGO[perfil] || _compPropia(perfil) || COMP_CARGO[b] || (b === 'guardia' ? _COMP_GUARDIA : null);
 }
+// Pauta propuesta que trae el propio cargo (no la de su cargo base)
+function _compPropia(perfil) { return perfil === 'c_acc' ? _COMP_ACC : null; }
 // Competencias de la entrevista de un cargo: las nuevas primero y luego las de siempre con sus cambios
 function _compCfg(perfil) {
   var ov = _compAjustes(perfil); if (!ov || !ov.comps) return _COMP_CONFIG;
