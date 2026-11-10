@@ -986,6 +986,13 @@ input,select,textarea{font-family:inherit;outline:none}
 .rh-body{overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:12px}
 .rh-pie{display:flex;gap:8px;align-items:center;padding:12px 20px;border-top:1px solid var(--border)}
 .rh-grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.rh-ref{display:flex;flex-direction:column;gap:10px;padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:var(--surface2,rgba(255,255,255,.4))}
+.rh-ref-t{display:flex;align-items:center;gap:10px;font-size:12.5px;font-weight:800;color:var(--ink)}
+.rh-ref-t span{font-size:11px;font-weight:600;color:#b45309;background:#fef3c7;padding:2px 8px;border-radius:100px}
+.rh-ref-t .rs-link{margin-left:auto;font-size:12px;color:#b91c1c}
+#rh-refs-extra{display:flex;flex-direction:column;gap:10px}
+#rh-refs-extra:empty{display:none}
+[data-theme="dark"] .rh-ref-t span{background:rgba(245,158,11,.16);color:#fbbf24}
 .rh-sec{font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#1e3a8a;background:#dbeafe;padding:6px 10px;border-radius:6px;margin-top:4px}
 .pdf-lista{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
 .pdf-fila{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--border);border-radius:9px;background:var(--surface);font-size:13px}
@@ -17689,7 +17696,7 @@ function _rhSugerencias(c) {
     fortalezas:fd.fortalezas, debilidades:fd.debilidades,
     empresa:ref.empresa || (h0 && h0.empresa) || '',
     corrobora:[ref.nombre, ref.cargo].filter(Boolean).join(', '),
-    fono:ref.telefono || '', aportados:s._ref_notas || '',
+    fono:ref.telefono || '', aportados:s._ref_notas || '', refs_extra:[],
     observaciones:'', refuerzo:'',
     psicologo:(ev && ev.entrevistador) || _evPreferencias().entrevistador || ''
   };
@@ -17706,7 +17713,10 @@ async function abrirInformeRH(id) {
   if (g.cargo && !g.ideales) d.ideales = _rhIdealesDe(g.cargo);
   // Informe guardado sin instalación o sin turno: se completan con lo anotado en la entrevista
   // Referencia laboral y canal del formulario: completan los campos que estén vacíos
-  ['empresa', 'corrobora', 'fono', 'referencia'].forEach(function(k){ if (!String(g[k] || '').trim() && sug[k]) d[k] = sug[k]; });
+  // Desde que el informe guarda referencias adicionales (refs_extra), lo que el psicólogo corrigió o borró se respeta
+  (Array.isArray(g.refs_extra) ? ['referencia'] : ['empresa', 'corrobora', 'fono', 'referencia'])
+    .forEach(function(k){ if (!String(g[k] || '').trim() && sug[k]) d[k] = sug[k]; });
+  d.refs_extra = Array.isArray(g.refs_extra) ? g.refs_extra.map(function(r){ return Object.assign({}, r); }) : [];
   var pz = _postulaDe(c);
   if (pz.instalacion) d.instalacion = pz.instalacion;
   if (pz.cargo) d.cargo = pz.cargo;
@@ -17754,10 +17764,14 @@ async function abrirInformeRH(id) {
     + '<div class="field"><label>Fortalezas <span style="text-transform:none;font-weight:500">(una por línea)</span></label>' + area('fortalezas', d.fortalezas, 5) + '</div>'
     + '<div class="field"><label>Debilidades <span style="text-transform:none;font-weight:500">(una por línea)</span></label>' + area('debilidades', d.debilidades, 3) + '</div>'
     + sec('Antecedentes laborales')
+    + '<div class="rh-ref"><div class="rh-ref-t">Referencia 1' + (d.ref_corregida ? '<span>Corregida el ' + htmlEsc(d.ref_corregida) + '</span>' : '') + '</div>'
     + '<div class="rh-grid2"><div class="field"><label>Empresa en que trabajó anteriormente</label>' + input('empresa', d.empresa) + '</div>'
     + '<div class="field"><label>Fono del empleador anterior</label>' + input('fono', d.fono) + '</div></div>'
     + '<div class="field"><label>Nombre y cargo de quien corrobora</label>' + input('corrobora', d.corrobora) + '</div>'
-    + '<div class="field"><label>Antecedentes aportados por el empleador anterior</label>' + area('aportados', d.aportados, 3) + '</div>'
+    + '<div class="field"><label>Antecedentes aportados por el empleador anterior</label>' + area('aportados', d.aportados, 3) + '</div></div>'
+    + '<div id="rh-refs-extra">' + d.refs_extra.map(_rhRefExtraHtml).join('') + '</div>'
+    + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><button class="rs-btn" onclick="_rhRefAgregar()">+ Agregar otra referencia</button>'
+    + '<span style="font-size:11.5px;color:var(--ink4)">Puede corregir cualquier dato si llega información posterior; al guardar queda anotada la fecha de la corrección.</span></div>'
     + sec('Planilla de envío')
     + '<div class="field"><label>Turno <span style="text-transform:none;font-weight:500">(va en el informe y en la planilla)</span></label>' + chips('jornada', _RH_JORNADAS, d.jornada).replace('<div class="reg-chips">', '<div class="reg-chips" onchange="var o=document.getElementById(\'rh-jornada-otra-c\');if(o)o.style.display=(document.querySelector(\'input[name=rh-jornada]:checked\')||{}).value===\'otra\'?\'\':\'none\'">')
     + '<div id="rh-jornada-otra-c" style="margin-top:6px;display:' + (d.jornada === 'otra' ? '' : 'none') + '">' + input('jornada_otra', d.jornada_otra, 'Ej: 5x2 día') + '</div></div>'
@@ -17796,7 +17810,64 @@ function _rhLeer() {
   return { cargo:v('cargo'), ideales:ideales, lista:r('lista'), zonal:r('zonal'), instalacion:v('instalacion'), recomendacion:r('recomendacion'), detalle:v('detalle'), categoria:r('categoria'), publico:r('publico'), fecha:v('fecha'), psicologo:v('psicologo'),
            niveles:niveles, fortalezas:v('fortalezas'), debilidades:v('debilidades'), empresa:v('empresa'), corrobora:v('corrobora'),
            jornada:r('jornada'), jornada_otra:v('jornada_otra'), referencia:v('referencia'), obs_envio:v('obs_envio'),
-           fono:v('fono'), aportados:v('aportados'), observaciones:v('observaciones'), refuerzo:v('refuerzo'), actualizado:new Date().toISOString() };
+           fono:v('fono'), aportados:v('aportados'), refs_extra:_rhRefsExtraLeer(), observaciones:v('observaciones'), refuerzo:v('refuerzo'), actualizado:new Date().toISOString() };
+}
+// ── Referencias laborales adicionales del Informe RH (la 1 son los campos de siempre) ──
+var _RH_REF_CAMPOS = ['empresa', 'fono', 'corrobora', 'aportados'];
+function _rhRefExtraHtml(r, i) {
+  var e = htmlEsc, val = function(k){ return e((r && r[k]) || ''); }, id = function(k){ return 'rh-rx-' + i + '-' + k; };
+  return '<div class="rh-ref" data-i="' + i + '"><div class="rh-ref-t">Referencia ' + (i + 2)
+    + (r && r.corregida ? '<span>Corregida el ' + e(r.corregida) + '</span>' : '')
+    + '<button type="button" class="rs-link" onclick="_rhRefQuitar(' + i + ')">Quitar</button></div>'
+    + '<div class="rh-grid2"><div class="field"><label>Empresa</label><input id="' + id('empresa') + '" class="rh-in" value="' + val('empresa') + '"></div>'
+    + '<div class="field"><label>Fono</label><input id="' + id('fono') + '" class="rh-in" value="' + val('fono') + '"></div></div>'
+    + '<div class="field"><label>Nombre y cargo de quien corrobora</label><input id="' + id('corrobora') + '" class="rh-in" value="' + val('corrobora') + '"></div>'
+    + '<div class="field"><label>Antecedentes aportados</label><textarea id="' + id('aportados') + '" class="rh-in" rows="3">' + val('aportados') + '</textarea></div>'
+    + '<input type="hidden" id="' + id('corregida') + '" value="' + val('corregida') + '"></div>';
+}
+// Lee las referencias adicionales del formulario; las que quedaron vacías no se guardan
+function _rhRefsExtraLeer() {
+  var out = [];
+  document.querySelectorAll('#rh-refs-extra .rh-ref').forEach(function(b) {
+    var i = b.getAttribute('data-i'), r = {};
+    _RH_REF_CAMPOS.concat('corregida').forEach(function(k){ var el = document.getElementById('rh-rx-' + i + '-' + k); r[k] = el ? el.value.trim() : ''; });
+    if (_RH_REF_CAMPOS.some(function(k){ return r[k]; })) { if (!r.corregida) delete r.corregida; out.push(r); }
+  });
+  return out;
+}
+function _rhRefsPintar(lista) {
+  var box = document.getElementById('rh-refs-extra'); if (!box) return;
+  box.innerHTML = lista.map(_rhRefExtraHtml).join('');
+}
+function _rhRefAgregar() {
+  var lista = _rhRefsExtraLeer(); lista.push({});
+  _rhRefsPintar(lista);
+  var bs = document.querySelectorAll('#rh-refs-extra .rh-ref'), u = bs[bs.length - 1];
+  if (u) { u.scrollIntoView({ block:'center', behavior:'smooth' }); var f = u.querySelector('input'); if (f) f.focus(); }
+}
+function _rhRefQuitar(i) {
+  var lista = [];
+  document.querySelectorAll('#rh-refs-extra .rh-ref').forEach(function(b) {
+    var j = b.getAttribute('data-i'); if (String(j) === String(i)) return;
+    var r = {}; _RH_REF_CAMPOS.concat('corregida').forEach(function(k){ var el = document.getElementById('rh-rx-' + j + '-' + k); r[k] = el ? el.value : ''; });
+    lista.push(r);
+  });
+  _rhRefsPintar(lista);
+}
+// Fecha de corrección: una referencia ya guardada cuyos datos cambian queda marcada con la fecha de hoy
+function _rhMarcarCorrecciones(d, prev, hoy) {
+  var dif = function(a, b){ return _RH_REF_CAMPOS.some(function(k){ return String((a || {})[k] || '').trim() !== String((b || {})[k] || '').trim(); }); };
+  var lleno = function(r){ return _RH_REF_CAMPOS.some(function(k){ return String((r || {})[k] || '').trim(); }); };
+  prev = prev || {};
+  d.ref_corregida = prev.ref_corregida || '';
+  if (lleno(prev) && dif(d, prev)) d.ref_corregida = hoy;
+  if (!d.ref_corregida) delete d.ref_corregida;
+  var antes = Array.isArray(prev.refs_extra) ? prev.refs_extra : [];
+  (d.refs_extra || []).forEach(function(r) {
+    var p = antes.filter(function(x){ return x && (x.empresa || '') === (r.empresa || '') && (x.corrobora || '') === (r.corrobora || ''); })[0] || antes[(d.refs_extra || []).indexOf(r)];
+    if (p && lleno(p) && dif(r, p)) r.corregida = hoy;
+  });
+  return d;
 }
 // Redacción con IA (Edge Function psicoeval-redactar): tres alternativas para elegir. Solo viajan textos
 // del informe y datos laborales sin identificar (_rhDatosLaborales); el nombre se pone aquí, en el computador.
@@ -18057,6 +18128,7 @@ async function _rhGuardar(silencioso, marcas) {
     // Las marcas de PDF generado y envío a RRHH no están en el formulario: se conservan
     await _patchPrivado(_rhCand.id, 'informe_rh', function(prev) {
       prev = prev || {};
+      _rhMarcarCorrecciones(d, prev, new Date().toLocaleDateString('es-CL', { day:'2-digit', month:'2-digit', year:'numeric' }).replace(/-/g, '/'));
       return Object.assign(d, { pdf: prev.pdf || null, enviado: prev.enviado || null }, marcas || {});
     });
     _rhRecordarIdeales(d.cargo, d.ideales);
@@ -18374,6 +18446,15 @@ function _rhArmarPdf(c, d, nom) {
     fila([celda(0.34, AZ, txt(r[0], { just: true })), celda(0.66, null, txt(r[1] || ''))]);
   });
   fila([celda(0.34, AZ, txt('Antecedentes aportados por el empleador anterior:', { just: true })), celda(0.66, null, function(an){ return parrafos(d.aportados, an, { just: true }); })]);
+  // Referencias adicionales: mismas filas, con su número
+  (Array.isArray(d.refs_extra) ? d.refs_extra : []).forEach(function(r, i) {
+    titulo('REFERENCIA ' + (i + 2), PT - 1, 6, 3);
+    [['Empresa en que trabajó anteriormente:', r.empresa], ['Nombre y cargo de la persona que corrobora antecedentes antiguo empleo:', r.corrobora],
+     ['Fono o celular del empleador anterior:', r.fono]].forEach(function(x) {
+      fila([celda(0.34, AZ, txt(x[0], { just: true })), celda(0.66, null, txt(x[1] || ''))]);
+    });
+    fila([celda(0.34, AZ, txt('Antecedentes aportados por el empleador anterior:', { just: true })), celda(0.66, null, function(an){ return parrafos(r.aportados, an, { just: true }); })]);
+  });
 
   // ── Hoja 4: observaciones finales y refuerzo ──
   seccion();
