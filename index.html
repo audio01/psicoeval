@@ -3308,6 +3308,7 @@ const LS_TM_MINS           = 'psicoeval_tm_mins';
 const LS_CONTACTO          = 'psicoeval_contacto';
 const LS_ACCESO            = 'psicoeval_acceso';
 const LS_RH_IDEALES        = 'psicoeval_rh_ideales'; // niveles ideales del Informe RH por cargo (los define el psicólogo)
+const LS_RH_PAUTA          = 'psicoeval_informe_rh';   // pauta del Informe RH por cargo (39_informe_rh_cargo.sql)
 const LS_COMPETENCIAS      = 'psicoeval_competencias'; // competencias STAR de la entrevista por cargo (31_competencias_cargo.sql)
 const LS_VISTAS            = 'psicoeval_vistas';      // vistas guardadas de Candidatos (18_vistas.sql)      // { solo_invitacion } (16_invitaciones.sql)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -3328,6 +3329,7 @@ var _CFG_KEYS = {
   acceso:        LS_ACCESO,         // ┘ "Solo con invitación" (16_invitaciones.sql)
   vistas:        LS_VISTAS,         // ┐ solo panel: vistas guardadas de Candidatos
   competencias:  LS_COMPETENCIAS,   // │ competencias de la entrevista por cargo
+  informe_rh:    LS_RH_PAUTA,       // │ competencias y textos del Informe RH por cargo
   params:        LS_PARAMS,         // │ (el candidato no las ve:
   config_log:    _CONFIG_LOG_KEY    // ┘ le servirían para acomodar respuestas)
 };
@@ -3360,7 +3362,7 @@ function _cfgSetLocal(key, value) {
 // sección queda marcada. No se pisa con la versión del servidor al recargar, se
 // reintenta sola y el panel muestra un aviso hasta que se guarde.
 var _CFG_PENDING_KEY = 'psicoeval_cfg_pendiente';
-var _CFG_NOMBRES = { batteries:'Baterías', cargos:'Cargos activos', custom_cargos:'Cargos personalizados', tm_mins:'Tiempos', contacto:'Mensaje final', acceso:'Acceso con invitación', competencias:'Competencias de la entrevista', vistas:'Vistas de Candidatos',
+var _CFG_NOMBRES = { batteries:'Baterías', cargos:'Cargos activos', custom_cargos:'Cargos personalizados', tm_mins:'Tiempos', contacto:'Mensaje final', acceso:'Acceso con invitación', competencias:'Competencias de la entrevista', informe_rh:'Pauta del Informe RH', vistas:'Vistas de Candidatos',
                      params:'Mínimos por cargo', config_log:'Historial' };
 function _cfgPendientes() {
   try { return JSON.parse(localStorage.getItem(_CFG_PENDING_KEY) || '[]'); } catch(e) { return []; }
@@ -3562,6 +3564,7 @@ function _cfgReloadAll() {
   loadAcceso();
   loadVistas();
   loadCompCargo();
+  loadRhPauta();
   if (_linkPairs) _applyLinkPairs(_linkPairs);   // un link de candidato manda en esa pestaña
   _invAplicarCargo();                            // una invitación fija el cargo
   applyCargoVisibility();
@@ -3794,6 +3797,7 @@ function renderCargosTab() {
     // Actions: edit, delete, toggle (stop propagation for these)
     h += '<div style="flex-shrink:0;display:flex;align-items:center;gap:8px" onclick="event.stopPropagation()">';
     h += '<button class="bd-btn" onclick="_compEditar(\'' + key + '\')" title="Competencias que se exploran con STAR en la entrevista de este cargo">Entrevista</button>';
+    h += '<button class="bd-btn" onclick="_rhpEditar(\'' + key + '\')" title="Competencias, niveles ideales y textos del Informe RH de este cargo">Informe RH</button>';
     if (!isCustom) h += '<button class="bd-btn" onclick="openAddCargoModal(\'' + key + '\')" title="Crear un subtipo de este cargo, con su misma batería y mínimos">+ Subtipo</button>';
     if (isCustom) {
       h += '<button onclick="editCargo(\'' + key + '\')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:14px;padding:4px 6px;border-radius:6px;opacity:.6;transition:opacity .15s" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.6" title="Editar cargo"><svg class="ico" style="width:15px;height:15px"><use href="#i-edit"/></svg></button>';
@@ -3869,7 +3873,7 @@ function _compPintar() {
   var dePadre = !propio && !sugerida && base !== ed.perfil && COMP_CARGO[base];
   var origen = propio ? 'Ajustes propios de este cargo.' : sugerida ? 'Usa las competencias propuestas para este cargo.' : dePadre ? 'Sin ajustes propios: usa los de ' + ((PERFIL_META[base] || {}).label || base) + '.'
              : base === 'guardia' ? 'Usa las competencias propuestas para guardias.' : 'Usa las competencias de siempre.';
-  var rhDe = function(k){ var r = _rhLista(pm.label || ed.perfil).filter(function(x){ return x.key === k; })[0]; return r ? 'En el Informe RH llena la fila «' + r.label + '».' : 'Queda solo en la entrevista (el Informe RH no tiene esa fila).'; };
+  var rhDe = function(k){ var r = _rhPautaDe(ed.perfil).filter(function(x){ return x.key === k; })[0]; return r ? 'En el Informe RH llena la fila «' + r.label + '».' : 'Queda solo en la entrevista (el Informe RH no tiene esa fila).'; };
   var quitadas = _COMP_STAR_BASE().filter(function(b){ return !ed.lista.some(function(c){ return c.key === b.key; }); });
   var campo = function(i, id, lab, val, filas){ return '<div class="field"><label>' + lab + '</label>' + (filas ? '<textarea id="cmp-' + i + '-' + id + '" class="rh-in" rows="' + filas + '">' + e(val || '') + '</textarea>' : '<input id="cmp-' + i + '-' + id + '" class="rh-in" value="' + e(val || '') + '">') + '</div>'; };
   var ov = document.getElementById('cmp-overlay'); if (!ov) { ov = document.createElement('div'); ov.id = 'cmp-overlay'; ov.className = 'rh-ov'; document.body.appendChild(ov); }
@@ -3924,6 +3928,92 @@ async function _compRestablecer() {
   delete COMP_CARGO[_compEd.perfil]; saveCompCargo();
   _compEditar(_compEd.perfil);
   toast('Competencias restablecidas', 'ok');
+}
+
+// ── Pauta del Informe RH del cargo: competencias de la tabla, nivel ideal y textos ──
+var _rhpEd = null;   // { perfil, preset, lista:[{ key, label, ideal, fort, deb, refuerzo }] }
+function _rhpEditar(perfil, desde) {
+  var o = desde ? null : _rhPautaOrigen(perfil);
+  var lista = _rhPautaDe(desde || perfil).map(function(k){ return { key:k.key, label:k.label, ideal:k.ideal, fort:k.fort || '', deb:k.deb || '', refuerzo:k.refuerzo || '' }; });
+  _rhpEd = { perfil: perfil, preset: _rhPresetDe(desde || perfil), lista: lista, copiada: desde || '' };
+  _rhpPintar();
+}
+function _rhpLeerForm() {
+  if (!_rhpEd) return;
+  _rhpEd.lista.forEach(function(c, i) {
+    var v = function(id){ var el = document.getElementById('rhp-' + i + '-' + id); return el ? el.value.trim() : ''; };
+    c.label = v('label') || c.label; c.ideal = v('ideal') || c.ideal;
+    c.fort = v('fort'); c.deb = v('deb'); c.refuerzo = v('refuerzo');
+  });
+}
+function _rhpPintar() {
+  var e = htmlEsc, ed = _rhpEd, pm = PERFIL_META[ed.perfil] || {}, o = _rhPautaOrigen(ed.perfil);
+  var origen = ed.copiada ? 'Copiada de ' + (((PERFIL_META[ed.copiada] || {}).label) || ed.copiada) + ': revísela y guarde.'
+             : o.tipo === 'propia' ? 'Pauta propia de este cargo.' : o.tipo === 'acc' ? 'Usa la pauta propuesta del ACC (perfil E-GP-059).'
+             : o.tipo === 'base' ? 'Sin pauta propia: usa la de ' + (((PERFIL_META[o.base] || {}).label) || o.base) + '.' : 'Usa la pauta de guardia.';
+  var preset = _rhPreset(ed.preset).concat(_rhPreset(ed.preset === 'acc' ? 'guardia' : 'acc'));
+  var vistas = {}, quitadas = preset.filter(function(b){ if (vistas[b.key] || ed.lista.some(function(c){ return c.key === b.key; })) return false; vistas[b.key] = 1; return true; });
+  var campo = function(i, id, lab, val, filas){ return '<div class="field"><label>' + lab + '</label>' + (filas ? '<textarea id="rhp-' + i + '-' + id + '" class="rh-in" rows="' + filas + '">' + e(val || '') + '</textarea>' : '<input id="rhp-' + i + '-' + id + '" class="rh-in" value="' + e(val || '') + '">') + '</div>'; };
+  var otros = Object.keys(PERFIL_META).filter(function(k){ return k !== ed.perfil; });
+  var ov = document.getElementById('rhp-overlay'); if (!ov) { ov = document.createElement('div'); ov.id = 'rhp-overlay'; ov.className = 'rh-ov'; document.body.appendChild(ov); }
+  ov.innerHTML = '<div class="rh-box" style="width:min(760px,100%)">'
+    + '<div class="rh-top"><div><div style="font-size:17px;font-weight:800;letter-spacing:-.02em">Informe RH · ' + e(pm.label || ed.perfil) + '</div>'
+    + '<div style="font-size:12px;color:var(--ink3)">Competencias de la tabla del informe, su nivel ideal y los textos de la redacción. ' + e(origen) + '</div></div>'
+    + '<button class="dh-close" title="Cerrar" aria-label="Cerrar" onclick="document.getElementById(\'rhp-overlay\').remove()"><svg class="ico"><use href="#i-x"/></svg></button></div>'
+    + '<div class="rh-body">'
+    + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12.5px;color:var(--ink3)">Partir de la pauta de '
+    + '<select id="rhp-copiar" class="rh-in" style="width:auto;padding:5px 8px" onchange="if(this.value)_rhpEditar(_rhpEd.perfil,this.value)"><option value="">— elegir cargo —</option>'
+    + otros.map(function(k){ return '<option value="' + e(k) + '">' + e((PERFIL_META[k] || {}).label || k) + '</option>'; }).join('') + '</select></div>'
+    + ed.lista.map(function(c, i) {
+        return '<details class="cmp-c"' + (i === 0 ? ' open' : '') + '><summary><b>' + (i + 1) + '. ' + e(c.label) + '</b><span>Nivel ideal: ' + e(c.ideal) + '</span></summary>'
+          + '<div class="cmp-g2">' + campo(i, 'label', 'Competencia', c.label)
+          + '<div class="field"><label>Nivel ideal</label><select id="rhp-' + i + '-ideal" class="rh-in">' + _RH_NIVELES.map(function(n){ return '<option' + (n === c.ideal ? ' selected' : '') + '>' + n + '</option>'; }).join('') + '</select></div></div>'
+          + campo(i, 'fort', 'Fortaleza (cuando alcanza el nivel ideal)', c.fort, 2)
+          + campo(i, 'deb', 'Debilidad (cuando queda en Bajo)', c.deb, 2)
+          + campo(i, 'refuerzo', 'Refuerzo para el supervisor ("Título: qué hacer y para qué")', c.refuerzo, 2)
+          + '<div style="display:flex;gap:8px;justify-content:flex-end">'
+          + (i > 0 ? '<button class="rs-btn" onclick="_rhpMover(' + i + ',-1)">↑ Subir</button>' : '')
+          + (i < ed.lista.length - 1 ? '<button class="rs-btn" onclick="_rhpMover(' + i + ',1)">↓ Bajar</button>' : '')
+          + '<button class="rs-btn" style="color:#b91c1c" onclick="_rhpQuitar(' + i + ')">Quitar</button></div></details>';
+      }).join('')
+    + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="rs-btn" onclick="_rhpNueva()">+ Nueva competencia</button>'
+    + quitadas.map(function(b){ return '<button class="rs-btn" onclick="_rhpVolver(\'' + b.key + '\')">+ ' + e(b.label) + '</button>'; }).join('') + '</div>'
+    + '<div style="font-size:11.5px;color:var(--ink4);margin-top:8px">El nivel obtenido se sugiere desde las pruebas y la entrevista cuando la competencia tiene fuente; una competencia nueva toma el puntaje de la competencia de la entrevista que tenga su mismo nombre. Los informes ya guardados conservan sus competencias.</div>'
+    + '</div><div class="rh-pie">' + (o.tipo === 'propia' ? '<a class="rs-link" style="margin-right:auto" onclick="_rhpRestablecer()">Restablecer</a>' : '<span style="margin-right:auto"></span>')
+    + '<button class="rs-btn" onclick="document.getElementById(\'rhp-overlay\').remove()">Cancelar</button><button class="rs-btn prim" onclick="_rhpGuardar()">Guardar</button></div></div>';
+}
+function _rhpMover(i, d) { _rhpLeerForm(); var l = _rhpEd.lista, j = i + d; if (j < 0 || j >= l.length) return; var x = l[i]; l[i] = l[j]; l[j] = x; _rhpPintar(); }
+function _rhpQuitar(i) { _rhpLeerForm(); _rhpEd.lista.splice(i, 1); _rhpPintar(); }
+function _rhpVolver(key) {
+  _rhpLeerForm();
+  var b = _rhPreset(_rhpEd.preset).concat(_rhPreset('guardia'), _rhPreset('acc')).filter(function(x){ return x.key === key; })[0];
+  if (b) _rhpEd.lista.push({ key:b.key, label:b.label, ideal:b.ideal, fort:b.fort, deb:b.deb, refuerzo:b.refuerzo });
+  _rhpPintar();
+}
+function _rhpNueva() {
+  _rhpLeerForm();
+  var n = 1; while (_rhpEd.lista.some(function(c){ return c.key === 'rh_' + n; })) n++;
+  _rhpEd.lista.push({ key:'rh_' + n, label:'Nueva competencia', ideal:'Alto', fort:'', deb:'', refuerzo:'' });
+  _rhpPintar();
+  var ds = document.querySelectorAll('#rhp-overlay details'); if (ds.length) { var u = ds[ds.length - 1]; u.open = true; u.scrollIntoView({ block:'center' }); }
+}
+function _rhpGuardar() {
+  _rhpLeerForm();
+  var ed = _rhpEd;
+  if (!ed.lista.length) { toast('Deje al menos una competencia en el informe', 'er'); return; }
+  var nombres = ed.lista.map(function(c){ return c.label.toLowerCase(); });
+  if (nombres.some(function(n, i){ return nombres.indexOf(n) !== i; })) { toast('Hay dos competencias con el mismo nombre', 'er'); return; }
+  RH_PAUTA[ed.perfil] = { preset: ed.preset, comps: ed.lista.map(function(c){ return { key:c.key, label:c.label, ideal:c.ideal, fort:c.fort, deb:c.deb, refuerzo:c.refuerzo }; }) };
+  saveRhPauta();
+  _logConfigChange('Pauta del Informe RH', ((PERFIL_META[ed.perfil] || {}).label || ed.perfil) + ': ' + ed.lista.map(function(c){ return c.label; }).join(', '));
+  document.getElementById('rhp-overlay').remove();
+  toast('Pauta del Informe RH guardada: se usa en los informes nuevos', 'ok');
+}
+async function _rhpRestablecer() {
+  if (!(await appConfirm('¿Quitar la pauta propia de este cargo y volver a la propuesta?'))) return;
+  delete RH_PAUTA[_rhpEd.perfil]; saveRhPauta();
+  _rhpEditar(_rhpEd.perfil);
+  toast('Pauta del Informe RH restablecida', 'ok');
 }
 
 // ── Open Battery for a specific cargo ──
@@ -17504,18 +17594,70 @@ var _RH_COMP_ACC = [
   { key:'alerta',         label:'Alerta',                             ideal:'Alto' },
   { key:'monitoreo',      label:'Monitoreo y control',                ideal:'Alto' }
 ];
-// Competencias del informe según el cargo escrito en él (el ACC tiene las de su perfil; el resto, las de guardia)
+// ── Pauta del Informe RH por cargo: competencias, nivel ideal y textos (fortaleza, debilidad, refuerzo) ──
+// Vienen dos pautas propuestas: Guardia (también para los cargos sin pauta propia) y ACC (perfil E-GP-059).
+// Cada cargo puede tener la suya desde Cargos → Informe RH; un subtipo usa la de su cargo base.
 function _rhEsAcc(cargo) { return /clientes\s+clave|\(acc\)|^\s*acc\s*$/i.test(String(cargo || '')); }
-function _rhLista(cargo) { return _rhEsAcc(cargo) ? _RH_COMP_ACC : _RH_COMP; }
+var RH_PAUTA = {};   // { perfil: { preset:'guardia'|'acc', comps:[{ key, label, ideal, fort, deb, refuerzo }] } }
+function loadRhPauta() {
+  try { var v = JSON.parse(localStorage.getItem(LS_RH_PAUTA) || '{}'); RH_PAUTA = v && typeof v === 'object' && !Array.isArray(v) ? v : {}; } catch(e) { RH_PAUTA = {}; }
+}
+function saveRhPauta() {
+  try { localStorage.setItem(LS_RH_PAUTA, JSON.stringify(RH_PAUTA)); } catch(e) {}
+  _cfgPush('informe_rh');
+}
+loadRhPauta();
+// Pautas propuestas, armadas con los textos de siempre
+function _rhPreset(nombre) {
+  var acc = nombre === 'acc', T = _rhTextosPreset(nombre);
+  return (acc ? _RH_COMP_ACC : _RH_COMP).map(function(k) {
+    return { key:k.key, label:k.label, ideal:k.ideal, fort:_RH_FORT[k.key] || '', deb:_RH_DEB[k.key] || '', refuerzo:T.refuerzo[k.key] || '',
+             prosaFort:T.fort[k.key] || '', prosaDeb:T.deb[k.key] || '' };
+  });
+}
+// Qué pauta usa un cargo y de dónde viene
+function _rhPautaOrigen(perfil) {
+  var b = typeof _perfilBase === 'function' ? _perfilBase(perfil) : perfil;
+  if (RH_PAUTA[perfil] && Array.isArray(RH_PAUTA[perfil].comps)) return { tipo:'propia', pauta:RH_PAUTA[perfil] };
+  if (perfil === 'c_acc') return { tipo:'acc' };
+  if (b !== perfil && RH_PAUTA[b] && Array.isArray(RH_PAUTA[b].comps)) return { tipo:'base', base:b, pauta:RH_PAUTA[b] };
+  return { tipo:'guardia' };
+}
+function _rhPautaDe(perfil) {
+  var o = _rhPautaOrigen(perfil);
+  if (o.pauta) return o.pauta.comps.map(function(k){ return Object.assign({ fort:'', deb:'', refuerzo:'' }, k, { ideal:_RH_NIVELES.indexOf(k.ideal) >= 0 ? k.ideal : 'Medio' }); });
+  return _rhPreset(o.tipo === 'acc' ? 'acc' : 'guardia');
+}
+function _rhPresetDe(perfil) { var o = _rhPautaOrigen(perfil); return o.pauta ? (o.pauta.preset || 'guardia') : (o.tipo === 'acc' ? 'acc' : 'guardia'); }
+// Cargo escrito en el informe → cargo del panel (por nombre); si no calza, el cargo al que postuló
+function _rhPerfilDeCargo(cargo, c) {
+  var t = String(cargo || '').trim().toLowerCase();
+  var k = t && Object.keys(PERFIL_META || {}).filter(function(x){ return String((PERFIL_META[x] || {}).label || '').trim().toLowerCase() === t; })[0];
+  if (k) return k;
+  if (_rhEsAcc(cargo)) return 'c_acc';
+  c = c || _rhCand;
+  return (c && c.perfil) || 'guardia';
+}
+function _rhLista(cargo, c) { return _rhPautaDe(_rhPerfilDeCargo(cargo, c)); }
+// Competencias de un informe: las guardadas con él (comps_rh) o las de la pauta de su cargo
+function _rhListaD(d, c) {
+  var actual = _rhLista(d && d.cargo, c);
+  if (!d || !Array.isArray(d.comps_rh) || !d.comps_rh.length) return actual;
+  var todas = actual.concat(_rhPreset('guardia'), _rhPreset('acc'));
+  return d.comps_rh.map(function(x) {
+    var m = todas.filter(function(k){ return k.key === x.key; })[0] || {};
+    return Object.assign({ fort:'', deb:'', refuerzo:'' }, m, { key:x.key, label:x.label || m.label || x.key, ideal:m.ideal || 'Medio' });
+  });
+}
 var _RH_NIVELES = ['Alto', 'Medio', 'Bajo'];
 var _RH_JORNADAS = [['4x4_rotativo','4x4 rotativo'], ['4x4_dia','4x4 día'], ['4x4_noche','4x4 noche'], ['7x7_noche','7x7 noche'], ['otra','Otra']];
 // Niveles ideales: los define el psicólogo según su organización. Se recuerdan por cargo
 // en este computador para no tener que ingresarlos de nuevo en el siguiente informe.
 function _rhCargoBase(c) { return c.cargo || (PERFIL_META[c.perfil] || {}).label || ''; }
 function _rhIdealesGuardados() { try { return JSON.parse(localStorage.getItem(LS_RH_IDEALES) || '{}') || {}; } catch(e) { return {}; } }
-function _rhIdealesDe(cargo) {
+function _rhIdealesDe(cargo, c) {
   var r = {}, g = _rhIdealesGuardados()[String(cargo || '').trim().toLowerCase()] || {};
-  _rhLista(cargo).forEach(function(k){ r[k.key] = _RH_NIVELES.indexOf(g[k.key]) >= 0 ? g[k.key] : k.ideal; });
+  _rhLista(cargo, c).forEach(function(k){ r[k.key] = _RH_NIVELES.indexOf(g[k.key]) >= 0 ? g[k.key] : k.ideal; });
   return r;
 }
 function _rhRecordarIdeales(cargo, ideales) {
@@ -17525,12 +17667,14 @@ function _rhRecordarIdeales(cargo, ideales) {
 // Al cambiar el cargo del informe se cargan los ideales que usó antes para ese cargo
 function _rhCargoCambio() {
   var cargo = ((document.getElementById('rh-cargo') || {}).value || '').trim();
-  var tb = document.getElementById('rh-comp-filas');
-  if (tb && tb.getAttribute('data-lista') !== (_rhEsAcc(cargo) ? 'acc' : 'base')) {
+  var tb = document.getElementById('rh-comp-filas'), pf = _rhPerfilDeCargo(cargo);
+  if (tb && tb.getAttribute('data-lista') !== pf) {
     var niv = {}; document.querySelectorAll('[id^="rh-n-"]').forEach(function(el){ if (el.value) niv[el.id.slice(5)] = el.value; });
-    tb.innerHTML = _rhFilasHtml(cargo, _rhIdealesDe(cargo), niv);
-    tb.setAttribute('data-lista', _rhEsAcc(cargo) ? 'acc' : 'base');
-    toast(_rhEsAcc(cargo) ? 'Competencias del perfil del ACC cargadas' : 'Competencias de guardia cargadas', 'ok');
+    var lista = _rhLista(cargo), antes = tb.getAttribute('data-firma') || '';
+    lista.forEach(function(k){ if (!niv[k.key] && _rhFuentes[k.key]) niv[k.key] = _rhFuentes[k.key].v; });
+    tb.innerHTML = _rhFilasHtml(lista, _rhIdealesDe(cargo), niv);
+    tb.setAttribute('data-lista', pf); tb.setAttribute('data-firma', lista.map(function(k){ return k.key; }).join());
+    if (antes !== tb.getAttribute('data-firma')) toast('Competencias del Informe RH de ' + (((PERFIL_META[pf] || {}).label) || cargo) + ' cargadas', 'ok');
     return;
   }
   if (!_rhIdealesGuardados()[cargo.toLowerCase()]) return;
@@ -17540,27 +17684,34 @@ function _rhCargoCambio() {
 }
 // Filas de la tabla de competencias del formulario (lista según el cargo)
 var _rhFuentes = {}, _rhSinDatoTxt = 'Sin resultado: Medio por defecto';
-function _rhFilasHtml(cargo, ideales, niveles) {
-  return _rhLista(cargo).map(function(k) {
+function _rhFilasHtml(lista, ideales, niveles) {
+  if (!Array.isArray(lista)) lista = _rhLista(lista);
+  return lista.map(function(k) {
     var f = _rhFuentes[k.key], id = ideales[k.key] || k.ideal, nv = niveles[k.key];
-    return '<tr><td>' + k.label + '</td><td>'
+    return '<tr data-key="' + htmlEsc(k.key) + '" data-label="' + htmlEsc(k.label) + '"><td>' + htmlEsc(k.label) + '</td><td>'
       + '<select id="rh-i-' + k.key + '" class="rh-in" style="padding:5px 8px">'
       + _RH_NIVELES.map(function(n){ return '<option' + (id === n ? ' selected' : '') + '>' + n + '</option>'; }).join('') + '</select></td><td>'
       + '<select id="rh-n-' + k.key + '" class="rh-in" style="padding:5px 8px"><option value="">—</option>'
       + _RH_NIVELES.map(function(n){ return '<option' + (nv === n ? ' selected' : '') + '>' + n + '</option>'; }).join('') + '</select></td>'
-      + '<td style="font-size:11px;color:var(--ink4)">' + (f ? htmlEsc(f.fuente) : (_RH_SIN_FUENTE[k.key] || _rhSinDatoTxt)) + '</td></tr>';
+      + '<td style="font-size:11px;color:var(--ink4)">' + (f ? htmlEsc(f.fuente) : (_RH_SIN_FUENTE[k.key] || (_RH_CON_FUENTE.indexOf(k.key) >= 0 ? _rhSinDatoTxt : _RH_SIN_FUENTE.otra))) + '</td></tr>';
   }).join('');
 }
 // Competencias del ACC sin prueba ni pregunta que las mida: las define el psicólogo
 var _RH_SIN_FUENTE = {
   liderazgo:'Sin medición directa: defínalo con la entrevista (Medio por defecto)',
   responsabilidad:'Sin medición directa: defínalo con la entrevista y las referencias (Medio por defecto)',
-  monitoreo:'Sin medición directa: defínalo con la entrevista y las referencias (Medio por defecto)'
+  monitoreo:'Sin medición directa: defínalo con la entrevista y las referencias (Medio por defecto)',
+  otra:'Sin medición directa: defínalo con la entrevista y las referencias (Medio por defecto)'
 };
+// Competencias que pueden traer nivel desde las pruebas o la entrevista
+var _RH_CON_FUENTE = ['integridad', 'autocontrol', 'alerta', 'criterio', 'razonamiento', 'identificacion', 'cliente', 'comunicacion', 'equipo', 'presion'];
 var _RH_CAT = [['apto', 'Apto'], ['obs', 'Apto con Observaciones'], ['no_apto', 'No Apto']];
 // Prueba que sugiere cada competencia
 var _RH_FUENTE = { autocontrol:'gonogo', alerta:'vigilancia', criterio:'situacional', razonamiento:'comprension' };
 var _RH_FORT = {
+  liderazgo:'Conduce a su equipo con claridad y logra motivarlo hacia objetivos comunes.',
+  responsabilidad:'Cumple sus compromisos y asume las consecuencias de sus decisiones.',
+  monitoreo:'Mantiene un control constante del servicio y registros claros y al día.',
   presion:'Mantiene un desempeño ordenado ante alta carga de trabajo y demandas simultáneas.',
   integridad:'Sus respuestas sobre actitudes en el trabajo no muestran indicadores de riesgo de integridad.',
   autocontrol:'Buen control de impulsos: logra frenar una respuesta automática cuando la situación lo exige.',
@@ -17571,6 +17722,9 @@ var _RH_FORT = {
   equipo:'Colabora con su equipo y apoya cuando hace falta.'
 };
 var _RH_DEB = {
+  liderazgo:'Le cuesta conducir y motivar a su equipo hacia objetivos comunes.',
+  responsabilidad:'Presenta dificultades para cumplir compromisos y plazos.',
+  monitoreo:'El control del servicio y de los registros se ubica bajo lo esperado para el cargo.',
   presion:'Ante alta carga de trabajo o demandas simultáneas tiende a desordenarse o a postergar lo secundario.',
   integridad:'La prueba de integridad muestra indicadores que deben contrastarse con referencias antes de contratar.',
   autocontrol:'Dificultad para frenar respuestas automáticas: puede actuar antes de evaluar la situación.',
@@ -17592,10 +17746,10 @@ function _rhNivelPrueba(c, tid) {
 // sinDato: competencias sin resultado (quedan en Medio por defecto y no generan frases)
 function _rhFortDeb(c, niveles, ideales, sinDato, cargo) {
   var fort = [], deb = [];
-  _rhLista(cargo === undefined ? _rhCargoBase(c) : cargo).forEach(function(k) {
+  (Array.isArray(cargo) ? cargo : _rhLista(cargo === undefined ? _rhCargoBase(c) : cargo, c)).forEach(function(k) {
     var n = niveles[k.key]; if (!n || (sinDato && sinDato[k.key] && n === 'Medio')) return;
-    if (n === 'Bajo' && _RH_DEB[k.key]) deb.push(_RH_DEB[k.key]);
-    else if (_RH_NIVELES.indexOf(n) <= _RH_NIVELES.indexOf(ideales[k.key] || k.ideal) && _RH_FORT[k.key]) fort.push(_RH_FORT[k.key]);
+    if (n === 'Bajo' && k.deb) deb.push(k.deb);
+    else if (_RH_NIVELES.indexOf(n) <= _RH_NIVELES.indexOf(ideales[k.key] || k.ideal) && k.fort) fort.push(k.fort);
   });
   var h0 = Array.isArray(c.historial) && c.historial[0];
   if (h0 && /guardia|vigilan|seguridad|conserje|portero|control de acceso/i.test(h0.cargo || '')) fort.push('Experiencia como ' + h0.cargo.toLowerCase() + (h0.empresa ? ' en ' + h0.empresa : '') + '.');
@@ -17723,14 +17877,20 @@ function _rhSugerencias(c) {
   var _rhN = function(n){ return n >= 4 ? 'Alto' : n === 3 ? 'Medio' : 'Bajo'; };
   if (!niveles.identificacion) { var sI = _evSugerencias(c).identificacion; if (sI) niveles.identificacion = { v: _rhN(sI.n), fuente: sI.fuente }; }
   // La entrevista manda: 4–5 Alto · 3 Medio · 1–2 Bajo (entrevistas antiguas: solo Comunicación y Trabajo en equipo)
+  var cargoInf = evPost.cargo || _rhCargoBase(c), listaInf = _rhLista(cargoInf, c), ideales = _rhIdealesDe(cargoInf, c);
+  var norm = function(t){ return String(t || '').trim().toLowerCase(); };
+  var claves = _RH_CON_FUENTE.concat(listaInf.map(function(k){ return k.key; }));
   _evCompsDe(ev).forEach(function(x) {
-    if (x.nivel && _RH_COMP.concat(_RH_COMP_ACC).some(function(k){ return k.key === x.key; })) niveles[x.key] = { v: _rhN(x.nivel), fuente: 'Entrevista: ' + x.nivel + ' de 5' };
+    if (!x.nivel) return;
+    var n = { v: _rhN(x.nivel), fuente: 'Entrevista: ' + x.nivel + ' de 5' };
+    if (claves.indexOf(x.key) >= 0) niveles[x.key] = n;
+    // Una competencia nueva de la entrevista llena la fila del informe que tenga su mismo nombre
+    listaInf.forEach(function(k){ if (k.key !== x.key && norm(k.label) === norm(x.name) && !niveles[k.key]) niveles[k.key] = n; });
   });
-  var cargoInf = evPost.cargo || _rhCargoBase(c), ideales = _rhIdealesDe(cargoInf);
   // Sin resultado, el nivel obtenido queda en Medio por defecto (el psicólogo lo ajusta)
   var nv = {}, sinDato = {};
-  _rhLista(cargoInf).forEach(function(k){ if (niveles[k.key]) nv[k.key] = niveles[k.key].v; else { nv[k.key] = 'Medio'; sinDato[k.key] = true; } });
-  var fd = _rhFortDeb(c, nv, ideales, sinDato, cargoInf), h0 = Array.isArray(c.historial) && c.historial[0];
+  listaInf.forEach(function(k){ if (niveles[k.key]) nv[k.key] = niveles[k.key].v; else { nv[k.key] = 'Medio'; sinDato[k.key] = true; } });
+  var fd = _rhFortDeb(c, nv, ideales, sinDato, listaInf), h0 = Array.isArray(c.historial) && c.historial[0];
   var dic = _dictamenDe(s);
   var cat = dic === 'recomendado' ? 'apto' : dic === 'obs' ? 'obs' : dic === 'no_recomendable' ? 'no_apto' : '';
   var ref = c.referencia || s._referencia || {};
@@ -17772,7 +17932,7 @@ async function abrirInformeRH(id) {
   if (pz.turno) { d.jornada = pz.turno; d.jornada_otra = pz.turno_otra; }
   var fEnt = _rhFechaEntrevista(c.scores || {}), fEval = (_momentoTxt(c) || '').slice(0, 10).replace(/-/g, '/');
   if (fEnt && (!g.fecha || g.fecha === fEval)) d.fecha = fEnt;
-  d.ideales = Object.assign({}, _rhIdealesDe(d.cargo), sug.ideales, d.ideales || {});
+  d.ideales = Object.assign({}, _rhIdealesDe(d.cargo, c), sug.ideales, d.ideales || {});
   var guardado = !!Object.keys(g).length;
   var chips = function(name, ops, val) {
     return '<div class="reg-chips">' + ops.map(function(o){ return '<label class="reg-chip"><input type="radio" name="rh-' + name + '" value="' + o[0] + '"' + (o[0] === val ? ' checked' : '') + '><span>' + o[1] + '</span></label>'; }).join('') + '</div>';
@@ -17780,9 +17940,10 @@ async function abrirInformeRH(id) {
   var area = function(id, val, rows, ph) { return '<textarea id="rh-' + id + '" rows="' + rows + '" placeholder="' + (ph || '') + '" class="rh-in">' + htmlEsc(val || '') + '</textarea>'; };
   var input = function(id, val, ph) { return '<input id="rh-' + id + '" value="' + htmlEsc(val || '') + '" placeholder="' + (ph || '') + '" class="rh-in">'; };
   _rhFuentes = sug.fuentes || {};
-  // Niveles de las competencias del ACC sin guardar: los sugeridos (la tabla puede cambiar con el cargo)
-  _rhLista(d.cargo).forEach(function(k){ if (!d.niveles[k.key] && sug.niveles[k.key]) d.niveles[k.key] = sug.niveles[k.key]; });
-  var filas = _rhFilasHtml(d.cargo, d.ideales, d.niveles);
+  // Informe guardado: sus competencias; si no, las de la pauta del cargo (niveles sin guardar: los sugeridos)
+  var listaRh = _rhListaD(Object.assign({}, d, { comps_rh: d.cargo === g.cargo ? g.comps_rh : null }), c);
+  listaRh.forEach(function(k){ if (!d.niveles[k.key] && (sug.niveles[k.key] || _rhFuentes[k.key])) d.niveles[k.key] = sug.niveles[k.key] || _rhFuentes[k.key].v; });
+  var filas = _rhFilasHtml(listaRh, d.ideales, d.niveles);
   var sec = function(t){ return '<div class="rh-sec">' + t + '</div>'; };
   var ov = document.createElement('div');
   ov.id = 'rh-overlay';
@@ -17802,7 +17963,7 @@ async function abrirInformeRH(id) {
     + (d.cargo !== sug.cargo ? '<div style="font-size:11.5px;color:var(--ink4);margin-top:3px">Postuló a: ' + htmlEsc(sug.cargo) + '</div>' : '<div style="font-size:11.5px;color:var(--ink4);margin-top:3px">Si lo evalúa para otro cargo, cámbielo aquí. No modifica su postulación.</div>') + '</div>'
     + '<div class="field" data-rh="instalacion"><label>Instalación <span class="rh-req">*</span></label>' + input('instalacion', d.instalacion, 'Ej: Rehau') + '</div></div>'
     + '<div class="field" data-rh="publico"><label>Atención a público <span class="rh-req">*</span></label>' + chips('publico', [['si','Recomendable'],['no','No Recomendable']], d.publico) + '</div>'
-    + '<table class="rh-tbl"><thead><tr><th>Competencia</th><th>Nivel ideal</th><th>Nivel obtenido</th><th>Sugerencia</th></tr></thead><tbody id="rh-comp-filas" data-lista="' + (_rhEsAcc(d.cargo) ? 'acc' : 'base') + '">' + filas + '</tbody></table>'
+    + '<table class="rh-tbl"><thead><tr><th>Competencia</th><th>Nivel ideal</th><th>Nivel obtenido</th><th>Sugerencia</th></tr></thead><tbody id="rh-comp-filas" data-lista="' + _rhPerfilDeCargo(d.cargo, c) + '" data-firma="' + listaRh.map(function(k){ return k.key; }).join() + '">' + filas + '</tbody></table>'
     + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:4px 0 2px"><button class="rs-btn" onclick="_rhRecalcular()"><svg class="ico"><use href="#i-redo"/></svg>Recalcular desde los resultados</button>'
     + '<span style="font-size:11.5px;color:var(--ink4)">Vuelve a armar fortalezas y debilidades con los niveles e ideales de la tabla y los perfiles DISC y Personalidad laboral (sin IA). Úselo si cambió niveles o ideales.</span></div>'
     + '<div class="field"><label>Fortalezas <span style="text-transform:none;font-weight:500">(una por línea)</span></label>' + area('fortalezas', d.fortalezas, 5) + '</div>'
@@ -17850,8 +18011,11 @@ function _rhLeer() {
   var v = function(id){ return ((document.getElementById('rh-' + id) || {}).value || '').trim(); };
   var r = function(n){ var x = document.querySelector('input[name="rh-' + n + '"]:checked'); return x ? x.value : ''; };
   var niveles = {}, ideales = {};
-  _rhLista(v('cargo')).forEach(function(k){ var x = v('n-' + k.key); if (x) niveles[k.key] = x; ideales[k.key] = v('i-' + k.key) || k.ideal; });
-  return { cargo:v('cargo'), ideales:ideales, lista:r('lista'), zonal:r('zonal'), instalacion:v('instalacion'), recomendacion:r('recomendacion'), detalle:v('detalle'), categoria:r('categoria'), publico:r('publico'), fecha:v('fecha'), psicologo:v('psicologo'),
+  var comps_rh = [];
+  document.querySelectorAll('#rh-comp-filas tr[data-key]').forEach(function(tr){ comps_rh.push({ key:tr.getAttribute('data-key'), label:tr.getAttribute('data-label') }); });
+  if (!comps_rh.length) comps_rh = _rhLista(v('cargo')).map(function(k){ return { key:k.key, label:k.label }; });
+  comps_rh.forEach(function(k){ var x = v('n-' + k.key); if (x) niveles[k.key] = x; ideales[k.key] = v('i-' + k.key) || 'Medio'; });
+  return { cargo:v('cargo'), ideales:ideales, comps_rh:comps_rh, lista:r('lista'), zonal:r('zonal'), instalacion:v('instalacion'), recomendacion:r('recomendacion'), detalle:v('detalle'), categoria:r('categoria'), publico:r('publico'), fecha:v('fecha'), psicologo:v('psicologo'),
            niveles:niveles, fortalezas:v('fortalezas'), debilidades:v('debilidades'), empresa:v('empresa'), corrobora:v('corrobora'),
            jornada:r('jornada'), jornada_otra:v('jornada_otra'), referencia:v('referencia'), obs_envio:v('obs_envio'),
            fono:v('fono'), aportados:v('aportados'), refs_extra:_rhRefsExtraLeer(), observaciones:v('observaciones'), refuerzo:v('refuerzo'), actualizado:new Date().toISOString() };
@@ -17964,7 +18128,7 @@ async function _rhRedactar(otras) {
       body: JSON.stringify({
         cargo: d.cargo || _rhCargoBase(c), categoria: d.categoria,
         fortalezas: _rhSinIdentificar(d.fortalezas, c), debilidades: _rhSinIdentificar(d.debilidades, c),
-        niveles: _rhLista(d.cargo).map(function(k){ return { competencia: k.label, ideal: d.ideales[k.key], obtenido: d.niveles[k.key] || '' }; }),
+        niveles: _rhListaD(d, c).map(function(k){ return { competencia: k.label, ideal: d.ideales[k.key], obtenido: d.niveles[k.key] || '' }; }),
         recomendacion: d.recomendacion, detalle: _rhSinIdentificar(d.detalle, c),
         conducta: (function(){ var x = _rhConducta(c); return { favorables: x.favorables, considerar: x.considerar }; })(),
         datos_laborales: _rhDatosLaborales(c, d),
@@ -18054,6 +18218,48 @@ var _RH_REFUERZO_BASE = [
   'Inducción en el puesto: Presentar las consignas específicas de la instalación y verificar que las conozca, para asegurar un inicio ordenado en sus funciones.',
   'Seguimiento del período de adaptación: Retroalimentar su desempeño durante las primeras semanas, para consolidar las conductas esperadas en el cargo.'
 ];
+// ACC (perfil E-GP-059): acciones de refuerzo y frases propias del cargo, en lugar de las de guardia
+var _RH_REFUERZO_ACC = {
+  integridad:'Cumplimiento de normas: Revisar periódicamente con la persona los registros de asistencia, horas extra y novedades de sus instalaciones, para asegurar que los controle con transparencia y sin excepciones.',
+  autocontrol:'Manejo de situaciones tensas: Acompañar sus primeras reuniones con el cliente y con guardias en conflicto, y retroalimentar cómo mantiene la calma y responde según los procedimientos.',
+  alerta:'Detección de riesgos: Revisar con la persona los hallazgos de sus visitas de supervisión y listas de chequeo, para asegurar que anticipe las fallas del servicio y los riesgos de las instalaciones.',
+  identificacion:'Integración a la empresa: Presentarle los objetivos de los servicios clave y la Visión de RH, y hacer seguimiento de su adaptación durante los primeros meses, para favorecer su compromiso y permanencia.',
+  criterio:'Decisiones en situaciones no previstas: Revisar con la persona los requerimientos del cliente y los casos fuera del plan de operación, para orientar qué decidir y cuándo escalar al jefe zonal.',
+  comunicacion:'Informes y actas: Revisar los informes al jefe zonal y las actas de reunión con el cliente, y pedir que complete la información que falte, para asegurar registros claros, oportunos y firmados.',
+  equipo:'Coordinación con la oficina zonal: Observar su coordinación con la central, los otros supervisores y las áreas de la oficina zonal, y abordar a tiempo los desacuerdos, para asegurar las coberturas.',
+  razonamiento:'Procedimientos del SIG: Entregar por escrito los procedimientos e instructivos del cargo y verificar que los explique con sus palabras, para asegurar su correcta aplicación en las instalaciones.'
+};
+var _RH_REFUERZO_BASE_ACC = [
+  'Inducción en el cargo: Presentar los servicios clave a su cargo, el contrato con cada cliente y los Planes de Operación, y verificar que los conozca, para asegurar un inicio ordenado en sus funciones.',
+  'Seguimiento del período de adaptación: Retroalimentar su gestión durante las primeras semanas junto al jefe zonal, para consolidar las conductas esperadas en el cargo.'
+];
+var _RH_PROSA_FORT_ACC = {
+  alerta:'Presenta una adecuada capacidad para detectar irregularidades y anticipar riesgos en los servicios a su cargo.',
+  comunicacion:'Se comunica de forma clara y respetuosa, lo que favorece la coordinación con el cliente, el jefe zonal y los guardias a su cargo.',
+  equipo:'Colabora con su equipo de trabajo y con las distintas áreas, y presta apoyo cuando el servicio lo requiere.'
+};
+var _RH_PROSA_DEB_ACC = {
+  alerta:'Su capacidad para detectar irregularidades y anticipar riesgos se ubica bajo lo esperado para el cargo.',
+  comunicacion:'Su comunicación tiende a ser poco clara o escueta, lo que podría afectar la calidad de los informes, las actas y las instrucciones a su equipo.',
+  equipo:'Refiere dificultades para colaborar con su equipo, aspecto que requiere seguimiento en un cargo que coordina personal y áreas distintas.'
+};
+// Textos de la redacción según el cargo del informe
+function _rhTextosPreset(nombre) {
+  var acc = nombre === 'acc';
+  return { refuerzo: acc ? Object.assign({}, _RH_REFUERZO, _RH_REFUERZO_ACC) : _RH_REFUERZO, base: acc ? _RH_REFUERZO_BASE_ACC : _RH_REFUERZO_BASE,
+           fort: acc ? Object.assign({}, _RH_PROSA_FORT, _RH_PROSA_FORT_ACC) : _RH_PROSA_FORT, deb: acc ? Object.assign({}, _RH_PROSA_DEB, _RH_PROSA_DEB_ACC) : _RH_PROSA_DEB };
+}
+function _rhTextosDe(lista, preset) {
+  var P = _rhTextosPreset(preset), tx = { refuerzo:{}, fort:{}, deb:{}, fortCorta:{}, debCorta:{}, base:P.base };
+  (lista || []).forEach(function(k) {
+    tx.refuerzo[k.key] = k.refuerzo || '';
+    tx.fortCorta[k.key] = k.fort || ''; tx.debCorta[k.key] = k.deb || '';
+    // La frase larga solo si el texto corto es el propuesto (si lo editó, se usa su texto)
+    if (k.fort && k.fort === _RH_FORT[k.key] && P.fort[k.key]) tx.fort[k.key] = P.fort[k.key];
+    if (k.deb && k.deb === _RH_DEB[k.key] && P.deb[k.key]) tx.deb[k.key] = P.deb[k.key];
+  });
+  return tx;
+}
 function _rhListaY(a) { return a.length <= 1 ? (a[0] || '') : a.slice(0, -1).join(', ') + ' y ' + a[a.length - 1]; }
 function _rhMinus(t) { return t ? t.charAt(0).toLowerCase() + t.slice(1) : t; }
 // Una línea de fortalezas o debilidades → oración. Las frases nominales ("Facilidad para…")
@@ -18094,14 +18300,14 @@ function _rhRedaccionLocal(d, c) {
       return k && mapa[k] ? mapa[k] : _rhOracion(t, tipo);
     }).filter(Boolean);
   };
-  var altos = [], brecha = [];
-  _rhLista(d.cargo).forEach(function(k) {
+  var altos = [], brecha = [], listaD = _rhListaD(d, c), TX = _rhTextosDe(listaD, _rhPresetDe(_rhPerfilDeCargo(d.cargo, c)));
+  listaD.forEach(function(k) {
     var n = d.niveles[k.key], id = d.ideales[k.key] || k.ideal; if (!n) return;
-    if (n === 'Alto') altos.push(_RH_NOMBRE_TXT[k.key]);
+    if (n === 'Alto') altos.push(_RH_NOMBRE_TXT[k.key] || _rhMinus(k.label));
     if (idx(n) > idx(id)) brecha.push({ key:k.key, n:n, gap:idx(n) - idx(id) });
   });
   // 1. Perfil y fortalezas
-  var fort = prosa(d.fortalezas, _RH_PROSA_FORT, _RH_FORT, 'fort');
+  var fort = prosa(d.fortalezas, TX.fort, TX.fortCorta, 'fort');
   var p1 = nom + ' demuestra un perfil ' + (d.categoria === 'no_apto' ? 'con brechas relevantes respecto de las exigencias del cargo de ' + cargo
       : altos.length ? 'ajustado a las exigencias del cargo de ' + cargo : 'acorde a las exigencias básicas del cargo de ' + cargo)
     + (altos.length ? (d.categoria === 'no_apto' ? ', aunque presenta un desempeño destacado en ' : ', con un desempeño destacado en ') + _rhListaY(altos) : '') + '.';
@@ -18110,11 +18316,12 @@ function _rhRedaccionLocal(d, c) {
   var cond = _rhConducta(c);
   if (cond.favorables.length) p1 += ' Durante la evaluación, ' + _rhListaY(cond.favorables) + '.';
   // 2. Oportunidades de mejora: debilidades y competencias bajo el ideal que no tengan ya su frase
-  var deb = prosa(d.debilidades, _RH_PROSA_DEB, _RH_DEB, 'deb');
-  var conFrase = Object.keys(_RH_DEB).filter(function(k){ return String(d.debilidades || '').indexOf(_RH_DEB[k]) !== -1; });
+  var deb = prosa(d.debilidades, TX.deb, TX.debCorta, 'deb');
+  var conFrase = Object.keys(TX.debCorta).filter(function(k){ return TX.debCorta[k] && String(d.debilidades || '').indexOf(TX.debCorta[k]) !== -1; });
   var resto = brecha.filter(function(b){ return conFrase.indexOf(b.key) === -1; });
-  var bajos = resto.filter(function(b){ return b.n === 'Bajo'; }).map(function(b){ return _RH_NOMBRE_TXT[b.key]; });
-  var medios = resto.filter(function(b){ return b.n === 'Medio'; }).map(function(b){ return _RH_NOMBRE_TXT[b.key]; });
+  var nomTxt = function(b){ return _RH_NOMBRE_TXT[b.key] || _rhMinus((listaD.filter(function(k){ return k.key === b.key; })[0] || {}).label || b.key); };
+  var bajos = resto.filter(function(b){ return b.n === 'Bajo'; }).map(nomTxt);
+  var medios = resto.filter(function(b){ return b.n === 'Medio'; }).map(nomTxt);
   var art = function(a){ return (a.length > 1 ? 'las competencias de ' : 'la competencia de ') + _rhListaY(a); };
   if (cond.considerar.length) deb.push('Durante la evaluación, ' + _rhListaY(cond.considerar) + (cond.considerar.length > 1 ? ', aspectos que conviene considerar.' : ', aspecto que conviene considerar.'));
   if (bajos.length) deb.push(_rhMayus(art(bajos)) + (bajos.length > 1 ? ' se ubican' : ' se ubica') + ' en un nivel bajo respecto de lo requerido para el cargo.');
@@ -18134,8 +18341,8 @@ function _rhRedaccionLocal(d, c) {
     if (d.categoria === 'obs') p3 += ' Se sugiere que la jefatura directa considere las observaciones señaladas durante el período de inducción.';
   }
   // Refuerzo: las competencias más alejadas del ideal (hasta 3)
-  var ref = brecha.slice().sort(function(a, b){ return (b.gap - a.gap) || ((b.n === 'Bajo') - (a.n === 'Bajo')); }).map(function(b){ return _RH_REFUERZO[b.key]; }).filter(Boolean).slice(0, 3);
-  if (ref.length < 2 && d.recomendacion !== 'no_contratar') _RH_REFUERZO_BASE.forEach(function(x){ if (ref.length < 2) ref.push(x); });
+  var ref = brecha.slice().sort(function(a, b){ return (b.gap - a.gap) || ((b.n === 'Bajo') - (a.n === 'Bajo')); }).map(function(b){ return TX.refuerzo[b.key]; }).filter(Boolean).slice(0, 3);
+  if (ref.length < 2 && d.recomendacion !== 'no_contratar') TX.base.forEach(function(x){ if (ref.length < 2) ref.push(x); });
   return { texto: [p1, p2, p3].join('\n\n'), refuerzo: ref };
 }
 function _rhMayus(t) { return t ? t.charAt(0).toUpperCase() + t.slice(1) : t; }
@@ -18152,7 +18359,7 @@ async function _rhRedactarLocal() {
 
 // Recalcula fortalezas y debilidades con lo que hay en la tabla (en el computador, sin IA)
 async function _rhRecalcular() {
-  var d = _rhLeer(), fd = _rhFortDeb(_rhCand, d.niveles, d.ideales, _rhSinDato, d.cargo);
+  var d = _rhLeer(), fd = _rhFortDeb(_rhCand, d.niveles, d.ideales, _rhSinDato, _rhListaD(d, _rhCand));
   var tf = document.getElementById('rh-fortalezas'), td = document.getElementById('rh-debilidades');
   if (((tf.value.trim() && tf.value.trim() !== fd.fortalezas) || (td.value.trim() && td.value.trim() !== fd.debilidades))
       && !(await appConfirm('¿Reemplazar las Fortalezas y Debilidades por las calculadas desde los resultados? Se perderá lo que editó en ellas.'))) return;
@@ -18227,7 +18434,7 @@ async function _rhPdf() {
   // Campos no obligatorios que, vacíos, dejan el informe incompleto
   var vacios = [['fecha','Fecha de evaluación'], ['psicologo','Psicólogo que realiza el informe'], ['fortalezas','Fortalezas'], ['debilidades','Debilidades'],
                 ['observaciones','Observaciones finales'], ['refuerzo','Refuerzo de habilidades']].filter(function(x){ return !String(dv[x[0]] || '').trim(); });
-  var sinNivel = _rhLista(dv.cargo).filter(function(k){ return !dv.niveles[k.key]; });
+  var sinNivel = _rhListaD(dv, _rhCand).filter(function(k){ return !dv.niveles[k.key]; });
   if (sinNivel.length) vacios.push(['', 'Nivel obtenido de ' + sinNivel.map(function(k){ return k.label; }).join(', ')]);
   if (vacios.length && !(await appConfirm('El informe tiene campos vacíos:<ul style="margin:8px 0 10px;padding-left:18px;font-weight:500">' + vacios.map(function(x){ return '<li>' + x[1] + '</li>'; }).join('') + '</ul>¿Generar el PDF de todas formas?'))) return;
   var d = await _rhGuardar(true, { pdf: new Date().toISOString() }); if (!d) return;
@@ -18477,7 +18684,7 @@ function _rhArmarPdf(c, d, nom) {
   var comp = { x: ML + W * 0.23, ancho: W * 0.77, pad: 0.7 }, cw = [0.53, 0.2, 0.27];
   var cabecera = function(){ fila([celda(cw[0], AZ, txt('Competencia', { b: true, centro: true })), celda(cw[1], AZ, txt('Nivel Ideal', { b: true, centro: true })), celda(cw[2], AZ, txt('Nivel Obtenido', { b: true, centro: true }))], comp); };
   cabecera();
-  _rhLista(d.cargo).forEach(function(k) {
+  _rhListaD(d, c).forEach(function(k) {
     // Tabla larga (ACC, 12 competencias): si la fila no cabe, sigue en la hoja siguiente con su encabezado
     var hF = Math.max(lh(PT), txt(k.label, { b: true, centro: true })(cw[0] * comp.ancho - 2 * PAD).reduce(function(a, i){ return a + i.h; }, 0)) + 2 * comp.pad;
     if (PH - MB - y < hF) { nueva(); cabecera(); }
