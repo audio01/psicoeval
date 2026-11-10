@@ -8411,38 +8411,38 @@ const PF16_RPT = {
   orden: ['EX','AN','DU','IN','AC'],
   dim: {
     EX: { nombre:'Extraversión', polos:['Reserva','Sociabilidad'], mide:'Orientación hacia el contacto con otras personas',
-          alto:  { txt:'Busca la interacción, participa activamente en grupo y se siente con energía en contextos sociales.', aporta:'Facilidad para relacionarse, integrarse a equipos y generar buen clima.', considerar:'Las tareas aisladas o de concentración prolongada pueden resultarle menos motivadoras.' },
+          alto:  { txt:'Busca la interacción, participa activamente en grupo y se siente con energía en contextos sociales.', aporta:'Facilidad para relacionarse, integrarse a equipos y generar buen clima.', considerar:'Las tareas aisladas o de concentración prolongada pueden resultarle menos motivadoras.', inf:'Se relaciona con facilidad, se integra con rapidez a los equipos y favorece un buen clima de trabajo.' },
           medio: { txt:'Equilibra la interacción social con el trabajo individual y se adapta a ambos contextos.', aporta:'Flexibilidad para trabajar en equipo o de forma autónoma.', considerar:'' },
-          bajo:  { txt:'Prefiere el trabajo individual y las relaciones selectivas; se expresa con mesura.', aporta:'Concentración, autonomía y capacidad de escucha.', considerar:'Los contextos con interacción social intensa y sostenida pueden demandarle más energía.' },
+          bajo:  { txt:'Prefiere el trabajo individual y las relaciones selectivas; se expresa con mesura.', aporta:'Concentración, autonomía y capacidad de escucha.', considerar:'Los contextos con interacción social intensa y sostenida pueden demandarle más energía.', inf:'Trabaja con concentración y autonomía, y escucha con atención a los demás.' },
           rasgoAlto:'la sociabilidad',
           preguntas:{ alto:'¿Cómo se organiza cuando debe trabajar varias horas en una tarea individual, sin contacto con otras personas?',
                       bajo:'Cuénteme de una situación en que tuvo que relacionarse con muchas personas nuevas. ¿Cómo la abordó?',
                       indet:'¿En qué tareas se siente con más energía: las que implican trabajar con otras personas o las que realiza de forma individual? Deme un ejemplo de cada una.' } },
     AN: { nombre:'Ajuste emocional', polos:['Sensibilidad al estrés','Serenidad'], mide:'Cómo vive la presión, la incertidumbre y las críticas',
-          alto:  { txt:'Se describe con calma ante la presión, los imprevistos y las críticas, y con capacidad para recuperarse de las dificultades.', aporta:'Estabilidad en situaciones exigentes o de incertidumbre.', considerar:'Una autodescripción muy alta puede reflejar deseabilidad social; contrástela con ejemplos concretos.' },
+          alto:  { txt:'Se describe con calma ante la presión, los imprevistos y las críticas, y con capacidad para recuperarse de las dificultades.', aporta:'Estabilidad en situaciones exigentes o de incertidumbre.', considerar:'Una autodescripción muy alta puede reflejar deseabilidad social; contrástela con ejemplos concretos.', inf:'Se mantiene estable ante situaciones exigentes o de incertidumbre.' },
           medio: { txt:'Maneja la presión habitual del trabajo; ante exigencias intensas o prolongadas puede sentir cierta tensión.', aporta:'Ajuste adecuado a las demandas habituales.', considerar:'' },
-          bajo:  { txt:'Se describe con mayor tendencia a preocuparse y a resentir la presión o las críticas.', aporta:'Sensibilidad ante riesgos y autoexigencia.', considerar:'Conviene explorar en la entrevista cómo maneja el estrés y qué apoyos le resultan útiles. No constituye un diagnóstico.' },
+          bajo:  { txt:'Se describe con mayor tendencia a preocuparse y a resentir la presión o las críticas.', aporta:'Sensibilidad ante riesgos y autoexigencia.', considerar:'Conviene explorar en la entrevista cómo maneja el estrés y qué apoyos le resultan útiles. No constituye un diagnóstico.', inf:'Es sensible a los riesgos y se exige un alto nivel en su trabajo.', infDeb:'Tiende a preocuparse y a resentir la presión o las críticas, por lo que puede requerir apoyo en períodos de alta exigencia.' },
           rasgoAlto:'la calma ante la presión',
           preguntas:{ alto:'Cuénteme de un momento de mucha presión en el trabajo. ¿Qué sintió y qué hizo concretamente?',
                       bajo:'¿Qué situaciones de trabajo le generan más tensión y cómo las maneja?' } },
     DU: { nombre:'Objetividad', polos:['Sensibilidad interpersonal','Orientación a hechos'], mide:'Qué pesa más al decidir: los hechos o el impacto en las personas',
-          alto:  { txt:'Decide a partir de hechos y criterios prácticos, separando lo emocional de lo profesional.', aporta:'Decisiones objetivas y capacidad para dar retroalimentación difícil.', considerar:'Puede dar menos peso al impacto emocional de sus decisiones en otras personas.' },
+          alto:  { txt:'Decide a partir de hechos y criterios prácticos, separando lo emocional de lo profesional.', aporta:'Decisiones objetivas y capacidad para dar retroalimentación difícil.', considerar:'Puede dar menos peso al impacto emocional de sus decisiones en otras personas.', inf:'Toma decisiones objetivas, basadas en hechos, y es capaz de entregar retroalimentación difícil.' },
           medio: { txt:'Combina el análisis de los hechos con la consideración del impacto en las personas.', aporta:'Equilibrio entre criterio práctico y sensibilidad interpersonal.', considerar:'' },
-          bajo:  { txt:'Considera especialmente el impacto de sus decisiones en las personas y las relaciones.', aporta:'Empatía, cuidado del clima y atención a las necesidades de otros.', considerar:'Las decisiones que afectan negativamente a personas cercanas o la retroalimentación negativa pueden costarle más.' },
+          bajo:  { txt:'Considera especialmente el impacto de sus decisiones en las personas y las relaciones.', aporta:'Empatía, cuidado del clima y atención a las necesidades de otros.', considerar:'Las decisiones que afectan negativamente a personas cercanas o la retroalimentación negativa pueden costarle más.', inf:'Muestra empatía, cuida el clima de trabajo y considera las necesidades de los demás.' },
           rasgoAlto:'la toma de decisiones basada en hechos',
           preguntas:{ alto:'Cuénteme de una decisión correcta que afectó negativamente a alguien. ¿Cómo la comunicó?',
                       bajo:'Describa una ocasión en que tuvo que entregar una retroalimentación negativa. ¿Cómo lo hizo?' } },
     IN: { nombre:'Independencia', polos:['Orientación al consenso','Criterio propio'], mide:'Cuánto se guía por su propio criterio frente a la opinión del grupo',
-          alto:  { txt:'Forma sus propias opiniones, las defiende y cuestiona las instrucciones que no le parecen lógicas.', aporta:'Autonomía, iniciativa y capacidad para plantear desacuerdos.', considerar:'En contextos muy jerárquicos o normados puede cuestionar más de lo esperado.' },
+          alto:  { txt:'Forma sus propias opiniones, las defiende y cuestiona las instrucciones que no le parecen lógicas.', aporta:'Autonomía, iniciativa y capacidad para plantear desacuerdos.', considerar:'En contextos muy jerárquicos o normados puede cuestionar más de lo esperado.', inf:'Actúa con autonomía e iniciativa, y plantea sus desacuerdos cuando lo considera necesario.' },
           medio: { txt:'Defiende su posición cuando tiene argumentos y se ajusta al consenso cuando corresponde.', aporta:'Equilibrio entre criterio propio y trabajo en equipo.', considerar:'' },
-          bajo:  { txt:'Valora el consenso y las orientaciones de la jefatura o del grupo antes de decidir.', aporta:'Disposición a colaborar y a seguir directrices.', considerar:'Puede requerir apoyo para plantear desacuerdos o decidir sin validación.' },
+          bajo:  { txt:'Valora el consenso y las orientaciones de la jefatura o del grupo antes de decidir.', aporta:'Disposición a colaborar y a seguir directrices.', considerar:'Puede requerir apoyo para plantear desacuerdos o decidir sin validación.', inf:'Muestra disposición a colaborar y a seguir las directrices de su jefatura.' },
           rasgoAlto:'el criterio propio',
           preguntas:{ alto:'Cuénteme de una vez en que debió seguir una instrucción con la que no estaba de acuerdo. ¿Qué hizo?',
                       bajo:'Describa una situación en que mantuvo su opinión aunque el grupo pensaba distinto.' } },
     AC: { nombre:'Autocontrol', polos:['Espontaneidad','Planificación'], mide:'Cómo se organiza y cuánto se apega a planes y normas',
-          alto:  { txt:'Planifica antes de actuar, se organiza y cumple las normas aun sin supervisión.', aporta:'Orden, cumplimiento y previsibilidad.', considerar:'Los cambios imprevistos o la necesidad de improvisar pueden incomodarle.' },
+          alto:  { txt:'Planifica antes de actuar, se organiza y cumple las normas aun sin supervisión.', aporta:'Orden, cumplimiento y previsibilidad.', considerar:'Los cambios imprevistos o la necesidad de improvisar pueden incomodarle.', inf:'Trabaja de forma ordenada y planificada, cumple las normas y mantiene un desempeño predecible.' },
           medio: { txt:'Se organiza y respeta las normas, con flexibilidad para ajustarse cuando la situación lo pide.', aporta:'Equilibrio entre orden y adaptabilidad.', considerar:'' },
-          bajo:  { txt:'Actúa con espontaneidad y se adapta sobre la marcha; prefiere la flexibilidad a los planes rígidos.', aporta:'Adaptabilidad y rapidez ante lo imprevisto.', considerar:'En tareas que exigen planificación o apego estricto a procedimientos puede necesitar apoyo.' },
+          bajo:  { txt:'Actúa con espontaneidad y se adapta sobre la marcha; prefiere la flexibilidad a los planes rígidos.', aporta:'Adaptabilidad y rapidez ante lo imprevisto.', considerar:'En tareas que exigen planificación o apego estricto a procedimientos puede necesitar apoyo.', inf:'Se adapta con rapidez a los cambios y responde con agilidad ante lo imprevisto.' },
           rasgoAlto:'la planificación',
           preguntas:{ alto:'Cuénteme de una situación en que tuvo que cambiar un plan a última hora. ¿Cómo reaccionó?',
                       bajo:'¿Cómo se asegura de cumplir plazos y procedimientos cuando nadie le supervisa?' } }
@@ -17713,10 +17713,10 @@ var _RH_FORT = {
   responsabilidad:'Cumple sus compromisos y asume las consecuencias de sus decisiones.',
   monitoreo:'Mantiene un control constante del servicio y registros claros y al día.',
   presion:'Mantiene un desempeño ordenado ante alta carga de trabajo y demandas simultáneas.',
-  integridad:'Sus respuestas sobre actitudes en el trabajo no muestran indicadores de riesgo de integridad.',
-  autocontrol:'Buen control de impulsos: logra frenar una respuesta automática cuando la situación lo exige.',
-  alerta:'Adecuada capacidad de vigilancia y de detección de irregularidades.',
-  criterio:'Buen criterio para resolver situaciones habituales del cargo.',
+  integridad:'Muestra respeto por las normas y hace un uso correcto de las atribuciones del cargo.',
+  autocontrol:'Controla sus impulsos y evalúa la situación antes de responder.',
+  alerta:'Mantiene la atención en su entorno y detecta irregularidades con oportunidad.',
+  criterio:'Resuelve con buen criterio las situaciones habituales del cargo.',
   razonamiento:'Comprende y aplica instrucciones con varias condiciones sin omitir pasos.',
   comunicacion:'Se comunica de forma clara y respetuosa.',
   equipo:'Colabora con su equipo y apoya cuando hace falta.'
@@ -17724,15 +17724,15 @@ var _RH_FORT = {
 var _RH_DEB = {
   liderazgo:'Le cuesta conducir y motivar a su equipo hacia objetivos comunes.',
   responsabilidad:'Presenta dificultades para cumplir compromisos y plazos.',
-  monitoreo:'El control del servicio y de los registros se ubica bajo lo esperado para el cargo.',
+  monitoreo:'Le cuesta mantener un control constante del servicio y los registros al día.',
   presion:'Ante alta carga de trabajo o demandas simultáneas tiende a desordenarse o a postergar lo secundario.',
-  integridad:'La prueba de integridad muestra indicadores que deben contrastarse con referencias antes de contratar.',
-  autocontrol:'Dificultad para frenar respuestas automáticas: puede actuar antes de evaluar la situación.',
-  alerta:'Rendimiento bajo lo esperado en vigilancia y detección de irregularidades.',
-  criterio:'Rendimiento bajo lo esperado al resolver situaciones habituales del cargo.',
-  razonamiento:'Dificultad para seguir instrucciones con varias condiciones.',
-  comunicacion:'Comunicación poco clara o escueta en la entrevista.',
-  equipo:'Relata dificultades para colaborar con su equipo.'
+  integridad:'Presenta indicadores de riesgo en el ámbito de la integridad, que deben contrastarse con las referencias laborales antes de contratar.',
+  autocontrol:'Le cuesta frenar respuestas automáticas, por lo que puede actuar antes de evaluar la situación.',
+  alerta:'Le cuesta mantener la atención en el entorno y detectar irregularidades a tiempo.',
+  criterio:'Le cuesta resolver sin orientación las situaciones habituales del cargo.',
+  razonamiento:'Le cuesta seguir instrucciones con varias condiciones.',
+  comunicacion:'Se comunica de forma poco clara o escueta.',
+  equipo:'Le cuesta colaborar con su equipo de trabajo.'
 };
 
 function _rhNivelPrueba(c, tid) {
@@ -17779,9 +17779,10 @@ function _rhFortDeb(c, niveles, ideales, sinDato, cargo) {
       var z = pf16ZoneOf(Math.round(pf[k])); if (z === 'medio') return;
       usadas++;
       var t = PF16_RPT.dim[k][z];
-      sumar(fort, t.aporta);
+      // En el informe, el resultado se redacta como descripción del trabajador (inf), no como lo que mide la prueba
+      sumar(fort, t.inf || t.aporta);
       // Ajuste emocional: alto solo advierte deseabilidad social; bajo se informa como rasgo
-      if (k === 'AN') { if (z === 'bajo') sumar(deb, t.txt); }
+      if (k === 'AN') { if (z === 'bajo') sumar(deb, t.infDeb || t.txt); }
       else sumar(deb, t.considerar);
     });
     notas.push(usadas ? 'Personalidad laboral' : 'Personalidad laboral sin frases: todas las dimensiones en nivel medio');
