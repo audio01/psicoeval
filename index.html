@@ -6823,11 +6823,27 @@ function regNext(fromStep) {
         if (f.length) falta.push(['exp' + n + '-block', 'e-exp' + n, 'Falta indicar ' + f.join(', ').replace(/, ([^,]*)$/, ' y $1') + '.']);
       };
       emp(1);
-      if (_regVal('exp-unico') !== 'si') emp(2);   // el trabajo anterior es obligatorio, salvo que declare que es el único
+      if (_regVal('exp-unico') !== 'si') {
+        emp(2);   // el trabajo anterior es obligatorio, salvo que declare que es el único
+        // Dos experiencias distintas: el trabajo anterior no puede repetir la misma empresa y el mismo cargo
+        if (!falta.length && _regMismaExp(txt('r-emp1'), txt('r-cargo1'), txt('r-emp2'), txt('r-cargo2')))
+          falta.push(['exp2-block', 'e-exp2', 'Este trabajo es igual al más reciente. Escribe un trabajo anterior distinto; si no has tenido otro, marca «No he tenido otro trabajo: este es el único».']);
+      }
     }
     if (!_regFaltas(falta)) return;
     regSetStep(4);
   }
+}
+
+// ¿Es la misma experiencia? Misma empresa (sin tildes, signos ni "SpA", "Ltda.", "S.A.") y mismo cargo
+function _regNormExp(t) {
+  return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/\b(spa|ltda|limitada|s\.?\s?a|eirl|e\.i\.r\.l|y cia|cia)\b\.?/g, ' ').replace(/[^a-z0-9]/g, '');
+}
+function _regMismaExp(e1, c1, e2, c2) {
+  var a = _regNormExp(e1), b = _regNormExp(e2), x = _regNormExp(c1), y = _regNormExp(c2);
+  if (!a || !b || a !== b) return false;
+  return !x || !y || x === y || x.indexOf(y) !== -1 || y.indexOf(x) !== -1;
 }
 
 function regBack(fromStep) {
