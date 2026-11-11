@@ -986,6 +986,8 @@ input,select,textarea{font-family:inherit;outline:none}
 .rh-body{overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:12px}
 .rh-pie{display:flex;gap:8px;align-items:center;padding:12px 20px;border-top:1px solid var(--border)}
 .rh-grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.usr-timbre{display:grid;grid-template-columns:1fr 160px auto;gap:10px;align-items:end;width:100%;margin-top:6px}
+@media (max-width:640px){.usr-timbre{grid-template-columns:1fr}}
 .usr-firma-p{background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(15,45,82,.06);padding:18px 20px;margin-top:16px}
 .usr-firma-t{font-size:14px;font-weight:800;color:var(--ink);margin-bottom:4px}
 .usr-firma-d{font-size:12px;color:var(--ink3);line-height:1.55;margin-bottom:10px}
@@ -18447,10 +18449,12 @@ var _rhFirma = null, _rhFirmaLeida = false;
 async function _rhFirmaCargar(forzar) {
   if (_rhFirmaLeida && !forzar) return _rhFirma;
   try {
-    var r = await fetch(SUPA_URL + '/rest/v1/psicoeval_firmas?select=imagen', { headers: getDBHeaders() });
+    var r = await fetch(SUPA_URL + '/rest/v1/psicoeval_firmas?select=imagen,nombre,rut', { headers: getDBHeaders() });
+    if (r.status === 400) r = await fetch(SUPA_URL + '/rest/v1/psicoeval_firmas?select=imagen', { headers: getDBHeaders() });
     if (!r.ok) { _rhFirma = null; _rhFirmaLeida = r.status !== 401; return null; }
     var fila = (await r.json())[0];
     _rhFirma = fila && fila.imagen ? await _rhFirmaDatos(fila.imagen) : null;
+    if (_rhFirma) { _rhFirma.nombre = fila.nombre || ''; _rhFirma.rut = fila.rut || ''; }
     _rhFirmaLeida = true;
   } catch(e) { _rhFirma = null; }
   return _rhFirma;
@@ -18459,7 +18463,12 @@ async function _rhFirmaCargar(forzar) {
 function _rhFirmaDatos(src) {
   return new Promise(function(ok) {
     var im = new Image();
-    im.onload = function(){ ok({ src: src, fmt: /^data:image\/png/.test(src) ? 'PNG' : 'JPEG', ratio: (im.naturalWidth || 3) / (im.naturalHeight || 1) }); };
+    im.onload = function(){
+      // Para el PDF se redibuja como PNG de color completo: jsPDF no dibuja bien los PNG de paleta con transparencia
+      var pdf = src, fmt = /^data:image\/png/.test(src) ? 'PNG' : 'JPEG';
+      try { var cv = document.createElement('canvas'); cv.width = im.naturalWidth; cv.height = im.naturalHeight; cv.getContext('2d').drawImage(im, 0, 0); pdf = cv.toDataURL('image/png'); fmt = 'PNG'; } catch(e) {}
+      ok({ src: src, pdf: pdf, fmt: fmt, ratio: (im.naturalWidth || 3) / (im.naturalHeight || 1) });
+    };
     im.onerror = function(){ ok(null); };
     im.src = src;
   });
@@ -18474,6 +18483,9 @@ function _rhFirmaCaja(id) {
         + (enInforme ? '<label class="rh-firma-chk"><input type="checkbox" id="rh-firma-usar"' + (usar ? ' checked' : '') + ' onchange="document.getElementById(\'rh-firma\').setAttribute(\'data-usar\', this.checked ? \'1\' : \'0\')"> Incluir en el PDF</label>' : '')
         + '<button type="button" class="rs-btn" onclick="document.getElementById(\'' + arch + '\').click()">Cambiar</button>'
         + '<button type="button" class="rs-link" style="color:#b91c1c" onclick="_rhFirmaQuitar()">Quitar</button></div>'
+        + (enInforme ? '' : '<div class="usr-timbre"><div class="field"><label>Nombre bajo la firma</label><input id="usr-timbre-nombre" class="rh-in" maxlength="120" placeholder="Si lo deja vacío, se usa el psicólogo del informe" value="' + htmlEsc(_rhFirma.nombre || '') + '"></div>'
+          + '<div class="field"><label>RUT</label><input id="usr-timbre-rut" class="rh-in" maxlength="12" placeholder="12.345.678-9" oninput="formatRut(this)" value="' + htmlEsc(_rhFirma.rut || '') + '"></div>'
+          + '<button type="button" class="rs-btn prim" onclick="_rhTimbreGuardar()">Guardar nombre y RUT</button></div>')
       : '<div class="rh-firma-acc"><button type="button" class="rs-btn' + (enInforme ? '' : ' prim') + '" onclick="document.getElementById(\'' + arch + '\').click()">Subir mi firma</button>'
         + '<span style="font-size:11.5px;color:var(--ink4)">Imagen PNG o JPG, idealmente con fondo blanco o transparente. Queda guardada en su cuenta y solo usted la ve.</span></div>')
     + '<input type="file" id="' + arch + '" accept="image/png,image/jpeg" style="display:none" onchange="_rhFirmaSubir(this)">';
@@ -18501,11 +18513,33 @@ async function _rhFirmaSubir(inp) {
       body: JSON.stringify({ imagen: out, actualizado: new Date().toISOString() })
     });
     if (!r.ok) throw new Error(r.status === 404 ? 'falta aplicar 40_firma_psicologo.sql en Supabase' : 'error ' + r.status);
+    var antes = _rhFirma || {};
     _rhFirma = await _rhFirmaDatos(out); _rhFirmaLeida = true;
+    if (_rhFirma) { _rhFirma.nombre = antes.nombre || ''; _rhFirma.rut = antes.rut || ''; }
     var box = document.getElementById('rh-firma'); if (box) box.setAttribute('data-usar', '1');
     _rhFirmaPintar();
     toast('Firma guardada en su cuenta ✓', 'ok');
   } catch(e) { toast('No se pudo guardar la firma: ' + e.message, 'er'); }
+}
+// Nombre y RUT que van bajo la firma (timbre del PDF)
+function _rhRutOk(rut) {
+  var n = String(rut || '').replace(/[^0-9kK]/g, '').toUpperCase(); if (n.length < 2) return false;
+  return calcRutDV(n.slice(0, -1)) === n.slice(-1);
+}
+async function _rhTimbreGuardar() {
+  var nombre = ((document.getElementById('usr-timbre-nombre') || {}).value || '').trim();
+  var rut = ((document.getElementById('usr-timbre-rut') || {}).value || '').trim().toUpperCase();
+  if (rut && !_rhRutOk(rut)) { toast('El RUT no es válido: revise el dígito verificador', 'er'); return; }
+  try {
+    var r = await fetch(SUPA_URL + '/rest/v1/psicoeval_firmas?user_id=not.is.null', {
+      method: 'PATCH', headers: Object.assign({}, getDBHeaders(), { 'Prefer': 'return=representation' }),
+      body: JSON.stringify({ nombre: nombre || null, rut: rut || null, actualizado: new Date().toISOString() })
+    });
+    if (!r.ok) throw new Error(r.status === 400 ? 'falta aplicar 41_firma_timbre.sql en Supabase' : 'error ' + r.status);
+    if (!(await r.json()).length) throw new Error('primero suba su firma');
+    _rhFirma.nombre = nombre; _rhFirma.rut = rut;
+    toast('Nombre y RUT guardados ✓', 'ok');
+  } catch(e) { toast('No se pudo guardar: ' + e.message, 'er'); }
 }
 async function _rhFirmaQuitar() {
   if (!(await appConfirm('¿Quitar su firma? Los PDF que genere desde ahora saldrán sin firma.'))) return;
@@ -18826,9 +18860,14 @@ function _rhArmarPdf(c, d, nom) {
   var firma = d.firma !== false && _rhFirma && _rhFirma.src ? _rhFirma : null;
   fila([celda(0.19, AZ, txt('Psicólogo que realiza el informe')), celda(0.81, null, function(an) {
     if (!firma) return parrafo([{ t: d.psicologo || '' }], an);
-    // Firma (alto máx. 20 mm, ancho máx. 60 mm) y debajo el nombre
-    var h = 20, w = h * firma.ratio; if (w > 60) { w = 60; h = w / firma.ratio; }
-    return [{ h: h + 2, dib: function(x, yy) { try { J.addImage(firma.src, firma.fmt, x, yy + 1, w, h); } catch(e) {} } }].concat(parrafo([{ t: d.psicologo || '' }], an));
+    // Timbre centrado: firma (alto máx. 24 mm, ancho máx. 70 mm), línea, nombre en negrita y RUT
+    var h = 24, w = h * firma.ratio; if (w > 70) { w = 70; h = w / firma.ratio; }
+    var nombre = firma.nombre || d.psicologo || '', lin = lh(PT);
+    var it = [{ h: h + 1.5, dib: function(x, yy, a) { try { J.addImage(firma.pdf || firma.src, firma.fmt, x + (a - w) / 2, yy + 1, w, h); } catch(e) {} } },
+              { h: 1.5, dib: function(x, yy, a) { var lw = Math.min(a - 4, Math.max(w, 55)); J.setLineWidth(0.25); J.line(x + (a - lw) / 2, yy + 0.6, x + (a + lw) / 2, yy + 0.6); } }];
+    if (nombre) it.push({ h: lin, dib: function(x, yy, a) { fuente(PT, true); J.text(nombre, x + a / 2, yy + lin * 0.78, { align: 'center' }); } });
+    if (firma.rut) it.push({ h: lin, dib: function(x, yy, a) { fuente(PT); J.text('RUT ' + firma.rut, x + a / 2, yy + lin * 0.78, { align: 'center' }); } });
+    return it;
   })], { minH: 16 });
 
   // ── Hoja 5: entrevista operacional (la completa el supervisor) ──
