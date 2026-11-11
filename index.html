@@ -1003,6 +1003,7 @@ input,select,textarea{font-family:inherit;outline:none}
 #rh-refs-extra:empty{display:none}
 [data-theme="dark"] .rh-ref-t span{background:rgba(245,158,11,.16);color:#fbbf24}
 .rh-sec{font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#1e3a8a;background:#dbeafe;padding:6px 10px;border-radius:6px;margin-top:4px}
+.pdf-borrar{color:#b91c1c!important;font-size:12px;margin-left:4px}
 .pdf-lista{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
 .pdf-fila{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--border);border-radius:9px;background:var(--surface);font-size:13px}
 .pdf-t{flex:1;min-width:0;color:var(--ink)}
@@ -18618,6 +18619,22 @@ async function _pdfDescargar(ruta, nombre) {
     setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
   } catch(e) { toast('No se pudo descargar el PDF ' + e.message, 'er'); }
 }
+// Elimina una versión archivada (42_eliminar_pdf.sql): primero el archivo y luego su registro.
+// La versión enviada a RRHH no se puede eliminar.
+async function _pdfEliminar(id, ruta, candId, version) {
+  if (!(await appConfirm('¿Eliminar la versión ' + version + ' de este informe?<br><br>Se borra el PDF archivado y no se puede recuperar. Las demás versiones no cambian.'))) return;
+  try {
+    var c = (await getDB()).find(function(x){ return x.id === candId; }) || {};
+    if (_pdfEnviada(await _pdfLista(candId), c) === id) { toast('Esa versión fue la enviada a RRHH: no se puede eliminar', 'er'); return; }
+    var r = await fetch(SUPA_URL + '/storage/v1/object/' + _PDF_BUCKET + '/' + ruta, { method: 'DELETE', headers: _pdfAuth() });
+    if (!r.ok && r.status !== 404) throw new Error(r.status === 400 || r.status === 403 ? 'falta aplicar 42_eliminar_pdf.sql en Supabase' : 'archivo (' + r.status + ')');
+    var r2 = await fetch(SUPA_URL + '/rest/v1/psicoeval_pdfs?id=eq.' + Number(id), { method: 'DELETE', headers: Object.assign({}, getDBHeaders(), { 'Prefer': 'return=representation' }) });
+    if (!r2.ok) throw new Error('registro (' + r2.status + ')');
+    if (!(await r2.json()).length) throw new Error('falta aplicar 42_eliminar_pdf.sql en Supabase');
+    toast('Versión eliminada', 'ok');
+    _rhPdfListaPintar(candId);
+  } catch(e) { toast('No se pudo eliminar: ' + e.message, 'er'); }
+}
 async function _rhPdfListaPintar(candId) {
   var box = document.getElementById('rh-pdfs'); if (!box) return;
   try {
@@ -18626,7 +18643,9 @@ async function _rhPdfListaPintar(candId) {
     box.innerHTML = rows.length ? rows.map(function(x){
       return '<div class="pdf-fila"><span class="pdf-ic"><svg class="ico"><use href="#i-doc"/></svg></span><span class="pdf-t">' + _pdfFecha(x.generado) + ' <small>· versión ' + x.version + ' · ' + _pdfKb(x.bytes) + '</small></span>'
         + (x.id === env ? '<span class="pdf-env">Enviado</span>' : '')
-        + '<button type="button" class="rs-btn" onclick="_pdfDescargar(\'' + x.ruta + '\',\'' + htmlEsc(nom).replace(/'/g, '') + ' IPS v' + x.version + '.pdf\')"><svg class="ico"><use href="#i-down"/></svg>Descargar</button></div>';
+        + '<button type="button" class="rs-btn" onclick="_pdfDescargar(\'' + x.ruta + '\',\'' + htmlEsc(nom).replace(/'/g, '') + ' IPS v' + x.version + '.pdf\')"><svg class="ico"><use href="#i-down"/></svg>Descargar</button>'
+        + (x.id === env ? '' : '<button type="button" class="rs-link pdf-borrar" title="Eliminar esta versión" onclick="_pdfEliminar(' + Number(x.id) + ',\'' + x.ruta + '\',\'' + candId + '\',' + x.version + ')">Eliminar</button>')
+        + '</div>';
     }).join('') : '<span class="pdf-vacio">Aún no hay PDF archivados. Cada vez que genere el PDF se guarda una copia aquí.</span>';
   } catch(e) { box.innerHTML = '<span class="pdf-vacio">No se pudo cargar el archivo de PDF: ' + htmlEsc(e.message) + '</span>'; }
 }
