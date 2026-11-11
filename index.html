@@ -1750,6 +1750,15 @@ body.adm .pub-aura i{animation:none}   /* estático: el vidrio no recompone en c
 .dsh-aviso{background:rgba(217,119,6,.1);border:1px solid rgba(217,119,6,.22);color:#92400e;border-radius:12px;padding:10px 14px;font-size:12.5px;line-height:1.5;margin-bottom:16px}
 .dsh-aviso .dsh-cel{color:#92400e;text-decoration:underline}
 .dsh-leg{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--ink3);margin-bottom:6px}.dsh-leg span{display:flex;align-items:center;gap:5px}.dsh-leg i{width:10px;height:10px;border-radius:2px;display:block}
+.dsh-icg{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:4px 16px;font-size:11.5px;color:var(--ink3);padding:0 0 2px}
+.dsh-icg b{font-weight:700;color:var(--ink2)}
+.vac-inst{margin-bottom:14px}
+.vac-inst-h{display:flex;align-items:center;gap:10px;padding:10px 4px 6px;border-bottom:1px solid var(--border)}
+.vac-inst-h>div{flex:1;min-width:0}
+.vac-inst-h b{display:block;font-size:14px;font-weight:800;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vac-inst-h span{display:block;font-size:11.5px;color:var(--ink3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vac-inst-h em{font-style:normal;font-size:11px;font-weight:700;color:var(--ink3);background:var(--surface3);padding:2px 8px;border-radius:100px;white-space:nowrap}
+@media (max-width:640px){.vac-inst-h{flex-wrap:wrap}}
 .dsh-cup{color:var(--ink3);white-space:nowrap}
 .rs-exp{display:flex;flex-direction:column;gap:2px;padding:8px 0;border-top:1px solid rgba(20,33,61,.07);font-size:12.5px}.rs-exp:first-of-type{border-top:none;padding-top:2px}
 .rs-exp b{color:var(--ink);font-weight:700}.rs-exp span{color:var(--ink3);line-height:1.45}.rs-exp .rs-exp-ver{color:#0f766e;font-weight:600;font-size:11.5px}
@@ -3590,11 +3599,20 @@ function _cfgReloadAll() {
   } catch(e) {}
 }
 
-var TM_MINS_DEFAULTS = { dc0:6, pai:5, situacional:5, vigilancia:3, comprension:4, disc:3, pf16:4, ipip_lt:3, normativa_ohs:6, integridad:5, gonogo:4, bart:3, matrices:12 };
+// DC-0 y Comprensión son pruebas de potencia sin normas de velocidad: el reloj es un límite de seguridad,
+// no un corte. 18 min para el DC-0 (las 9 personas que lo rindieron sin reloj tardaron 8 a 18 min; su ficha
+// dice 15-20) y 10 min para Comprensión (su ficha dice 8-12). Antes eran 6 y 4: cortaban a quien iba a ritmo normal.
+var TM_MINS_DEFAULTS = { dc0:18, pai:5, situacional:5, vigilancia:3, comprension:10, disc:3, pf16:4, ipip_lt:3, normativa_ohs:6, integridad:5, gonogo:4, bart:3, matrices:12 };
+// Tiempos guardados antes del cambio: los 6 y 4 minutos de entonces pasan a los nuevos (un valor distinto lo eligió el administrador)
+function _tmMigrar(o) {
+  if (!o || typeof o !== 'object') return o;
+  if (!(o._v >= 2)) { if (o.dc0 === 6) o.dc0 = TM_MINS_DEFAULTS.dc0; if (o.comprension === 4) o.comprension = TM_MINS_DEFAULTS.comprension; o._v = 2; }
+  return o;
+}
 var TM_MINS_CONFIG = (function(){
   try {
     var saved = localStorage.getItem('psicoeval_tm_mins');
-    if (saved) { var parsed = JSON.parse(saved); return Object.assign({}, TM_MINS_DEFAULTS, parsed); }
+    if (saved) { var parsed = _tmMigrar(JSON.parse(saved)); return Object.assign({}, TM_MINS_DEFAULTS, parsed); }
   } catch(e) {}
   return Object.assign({}, TM_MINS_DEFAULTS);
 })();
@@ -3607,7 +3625,7 @@ function saveTmMins() {
 function loadTmMins() {
   try {
     var saved = localStorage.getItem(LS_TM_MINS);
-    if (saved) Object.assign(TM_MINS_CONFIG, TM_MINS_DEFAULTS, JSON.parse(saved));
+    if (saved) Object.assign(TM_MINS_CONFIG, TM_MINS_DEFAULTS, _tmMigrar(JSON.parse(saved)));
   } catch(e) {}
 }
 
@@ -3615,7 +3633,7 @@ function updateTmMin(tid, val) {
   var v = parseInt(val, 10);
   if (isNaN(v) || v < 1) v = 1;
   if (v > 60) v = 60;
-  TM_MINS_CONFIG[tid] = v;
+  TM_MINS_CONFIG[tid] = v; TM_MINS_CONFIG._v = 2;
   saveTmMins();
   var el = document.getElementById('tm_display_' + tid);
   if (el) el.textContent = v + ' min';
@@ -6146,35 +6164,48 @@ function _vacPintar() {
     return '<button class="' + (_vacFiltro === o[0] ? 'on' : '') + '" onclick="_vacFiltrar(\'' + o[0] + '\')">' + o[1] + ' <span>' + o[2] + '</span></button>'; }).join('');
   var vis = buscadas.filter(function(v){ return _vacFiltro === 'todas' || (_vacFiltro === 'activas') === !!v.activa; });
   if (!vis.length) { cont.innerHTML = '<div class="vac-vacio">' + (q ? 'Ninguna instalación coincide con la búsqueda.' : _vacFiltro === 'activas' ? 'No hay instalaciones activas.' : 'No hay instalaciones inactivas.') + '</div>'; return; }
-  var porCargo = {}; vis.forEach(function(v){ (porCargo[v.perfil] = porCargo[v.perfil] || []).push(v); });
+  // Una instalación puede tener varios cargos: se agrupan por instalación y cada cargo es una línea
+  var porInst = {}, orden = [];
+  vis.forEach(function(v){ var k = _vacNorm(v.instalacion); if (!porInst[k]) { porInst[k] = []; orden.push(k); } porInst[k].push(v); });
+  orden.sort(function(a, b){
+    var aa = porInst[a].some(function(v){ return v.activa; }), bb = porInst[b].some(function(v){ return v.activa; });
+    return (bb - aa) || String(porInst[a][0].instalacion).localeCompare(porInst[b][0].instalacion, 'es');
+  });
   var h = '';
-  Object.keys(porCargo).forEach(function(k) {
-    var pm = PERFIL_META[k] || {};
-    h += '<div class="vac-grupo"><span>' + htmlEsc(pm.label || k) + '</span><em>' + porCargo[k].length + '</em><i></i></div><div class="vac-lst">';
-    porCargo[k].sort(function(a, b){ return (b.activa - a.activa) || String(a.instalacion).localeCompare(b.instalacion); }).forEach(function(v) {
+  orden.forEach(function(k) {
+    var vs = porInst[k].sort(function(a, b){ return (b.activa - a.activa) || _vacCargoTxt(a).localeCompare(_vacCargoTxt(b), 'es'); });
+    var v0 = vs.filter(function(v){ return v.activa; })[0] || vs[0], todas = (_vacLista || []).filter(function(v){ return _vacNorm(v.instalacion) === k; });
+    var con = function(k){ var x = vs.filter(function(v){ return v[k]; })[0]; return x ? x[k] : ''; };
+    var lugar = [con('comuna'), con('direccion')].filter(Boolean).map(htmlEsc).join(' · ');
+    h += '<div class="vac-inst"><div class="vac-inst-h"><div><b>' + htmlEsc(v0.instalacion) + '</b>' + (lugar ? '<span>' + lugar + '</span>' : '') + '</div>'
+      + '<em>' + todas.length + (todas.length === 1 ? ' cargo' : ' cargos') + '</em>'
+      + (admin ? '<button class="rs-btn" onclick="_vacEditar(null, \'' + htmlEsc(v0.id) + '\')" title="Agregar otro cargo a esta instalación, con sus mismos datos">+ Agregar cargo</button>' : '') + '</div><div class="vac-lst">';
+    vs.forEach(function(v) {
+      var pm = PERFIL_META[v.perfil] || {};
       var id = htmlEsc(v.id), datos = _vacDatos(v), turno = v.turno ? _rhTurnoTxt({ jornada: v.turno, jornada_otra: v.turno_otra }) : '';
-      var sub = [v.comuna, turno].filter(Boolean).map(htmlEsc).join(' · ');
+      var sub = [turno, v.cargo_nombre && v.cargo_nombre !== pm.label ? pm.label : ''].filter(Boolean).map(htmlEsc).join(' · ');
       h += '<div class="vac-it' + (v.activa ? '' : ' off') + (_vacAbiertas[v.id] ? ' abierta' : '') + '" id="vac-' + id + '">'
         + '<div class="vac-l" onclick="_vacToggle(\'' + id + '\')">'
         + '<span class="vac-dot" title="' + (v.activa ? 'Activa' : 'Inactiva') + '"></span>'
-        + '<div class="vac-nom"><b title="' + htmlEsc(v.instalacion) + '">' + htmlEsc(v.instalacion) + (v.cargo_nombre && v.cargo_nombre !== pm.label ? ' <em class="vac-cargo">' + htmlEsc(v.cargo_nombre) + '</em>' : '') + '</b>'
+        + '<div class="vac-nom"><b title="' + htmlEsc(_vacCargoTxt(v)) + '">' + htmlEsc(_vacCargoTxt(v)) + '</b>'
         + (sub ? '<span>' + sub + '</span>' : '') + '</div>'
-        + '<span class="vac-n" title="Ocupados: seleccionados, enviados a contratación o contratados en esta instalación">' + htmlEsc(_vacCuposTxt(v)) + '</span>'
-        + (admin ? '<button class="bd-icobtn" onclick="event.stopPropagation();_invAbrirVacante(\'' + id + '\')" title="' + (v.activa ? 'Invitar a evaluación para esta instalación' : 'Active la instalación para invitar') + '"' + (v.activa ? '' : ' disabled') + '><svg class="ico"><use href="#i-send"/></svg></button>'
+        + '<span class="vac-n" title="Ocupados: seleccionados, enviados a contratación o contratados en este cargo de la instalación">' + htmlEsc(_vacCuposTxt(v)) + '</span>'
+        + (admin ? '<button class="bd-icobtn" onclick="event.stopPropagation();_invAbrirVacante(\'' + id + '\')" title="' + (v.activa ? 'Invitar a evaluación para este cargo de la instalación' : 'Active el cargo para invitar') + '"' + (v.activa ? '' : ' disabled') + '><svg class="ico"><use href="#i-send"/></svg></button>'
           + '<div class="vac-sw' + (v.activa ? ' on' : '') + '" role="switch" aria-checked="' + v.activa + '" title="' + (v.activa ? 'Activa: clic para desactivar' : 'Inactiva: clic para activar') + '" onclick="event.stopPropagation();_vacActivar(\'' + id + '\',' + !v.activa + ')"><i></i></div>' : '')
         + '<svg class="ico vac-chev"><use href="#i-chev"/></svg></div>'
         + '<div class="vac-det">'
-        + (v.direccion ? '<div class="vac-dir"><svg class="ico"><use href="#i-pin"/></svg>' + htmlEsc(v.direccion) + (v.link_mapa ? ' · <a href="' + htmlEsc(v.link_mapa) + '" target="_blank" rel="noopener">Ver mapa</a>' : '') + '</div>' : '')
+        + (v.direccion && v.direccion !== con('direccion') ? '<div class="vac-dir"><svg class="ico"><use href="#i-pin"/></svg>' + htmlEsc(v.direccion) + '</div>' : '')
+        + (v.link_mapa ? '<div class="vac-dir"><svg class="ico"><use href="#i-pin"/></svg><a href="' + htmlEsc(v.link_mapa) + '" target="_blank" rel="noopener">Ver mapa</a></div>' : '')
         + (v.detalle ? '<div class="vac-detx">' + htmlEsc(v.detalle) + '</div>' : '')
         + (datos.length ? '<span class="vac-datos">' + datos.map(function(x){ return '<i>' + htmlEsc(x) + '</i>'; }).join('') + '</span>' : '')
-        + (_vacCuenta[v.id] ? '<div class="vac-detx">' + _vacCuenta[v.id] + (_vacCuenta[v.id] === 1 ? ' postulante eligió' : ' postulantes eligieron') + ' esta instalación.</div>' : '')
+        + (_vacCuenta[v.id] ? '<div class="vac-detx">' + _vacCuenta[v.id] + (_vacCuenta[v.id] === 1 ? ' postulante eligió' : ' postulantes eligieron') + ' este cargo de la instalación.</div>' : '')
         + (admin ? '<div class="vac-acc">'
           + '<button class="rs-btn" onclick="_invAbrirVacante(\'' + id + '\')"' + (v.activa ? '' : ' disabled') + '><svg class="ico"><use href="#i-send"/></svg>Invitar</button>'
           + '<button class="rs-btn" onclick="_vacEditar(\'' + id + '\')"><svg class="ico"><use href="#i-edit"/></svg>Editar</button>'
           + '<button class="rs-btn vac-del" onclick="_vacEliminar(\'' + id + '\')"><svg class="ico"><use href="#i-trash"/></svg>Eliminar</button></div>' : '')
         + '</div></div>';
     });
-    h += '</div>';
+    h += '</div></div>';
   });
   cont.innerHTML = h;
 }
@@ -6201,8 +6232,15 @@ async function _vacEliminar(id) {
     toast('Instalación eliminada', 'ok'); renderVacantesTab();
   } catch(e) { toast('No se pudo eliminar: ' + e.message, 'er'); }
 }
-function _vacEditar(id) {
+function _vacEditar(id, copiaDe) {
   var v = id ? (_vacLista || []).find(function(x){ return x.id === id; }) : null;
+  // + Agregar cargo: misma instalación, comuna, dirección, mapa, horario, sueldo, certificado, residencia y beneficios
+  var base = !id && copiaDe ? (_vacLista || []).find(function(x){ return x.id === copiaDe; }) : null;
+  if (base) {
+    var usados = (_vacLista || []).filter(function(x){ return _vacNorm(x.instalacion) === _vacNorm(base.instalacion); }).map(function(x){ return x.perfil; });
+    var libre = getActiveCargos().filter(function(k){ return usados.indexOf(k) === -1; })[0];
+    v = Object.assign({}, base, { id: undefined, perfil: libre || base.perfil, cargo_nombre: '', cupos: null, detalle: '', activa: true });
+  }
   v = v || { perfil: 'guardia', instalacion: '', comuna: '', turno: '4x4_rotativo', turno_otra: '', detalle: '', horario: '', sueldo_liquido: null, residencia: '', certificado: 'os10', beneficios: [], activa: true };
   var benef = v.beneficios || [], otros = benef.filter(function(b){ return _VAC_BENEF.indexOf(b) === -1; });
   var e = htmlEsc, cargos = getActiveCargos();
@@ -6211,7 +6249,7 @@ function _vacEditar(id) {
   cargos = _cargosOrdenados(cargos);
   var ov = document.createElement('div'); ov.id = 'vac-overlay'; ov.className = 'rh-ov';
   ov.innerHTML = '<div class="rh-box" style="width:min(560px,100%)">'
-    + '<div class="rh-top"><div><div style="font-size:17px;font-weight:800;letter-spacing:-.02em">' + (id ? 'Editar instalación' : 'Nueva instalación') + '</div>'
+    + '<div class="rh-top"><div><div style="font-size:17px;font-weight:800;letter-spacing:-.02em">' + (id ? 'Editar instalación' : base ? 'Agregar cargo a ' + e(base.instalacion) : 'Nueva instalación') + '</div>'
     + '<div style="font-size:12px;color:var(--ink3)">La instalación se ve solo en el panel. El resto de los datos se muestran al postulante.</div></div>'
     + '<button class="dh-close" title="Cerrar" aria-label="Cerrar" onclick="document.getElementById(\'vac-overlay\').remove()"><svg class="ico"><use href="#i-x"/></svg></button></div>'
     + '<div class="rh-body">'
@@ -6248,7 +6286,7 @@ async function _vacGuardarForm(id) {
             cargo_nombre: val('vac-cnom'), direccion: val('vac-dir'), cupos: (function(n){ return isNaN(n) || n < 1 ? null : Math.min(n, 500); })(parseInt(val('vac-cupos'), 10)), link_mapa: /^https:\/\//.test(val('vac-mapa')) ? val('vac-mapa') : '' };
   if (val('vac-mapa') && !d.link_mapa) { toast('El link del mapa debe empezar con https://', 'er'); return; }
   if (!d.instalacion) { toast('Escriba la instalación', 'er'); return; }
-  try { await _vacGuardar(id, d); var o = document.getElementById('vac-overlay'); if (o) o.remove(); toast(id ? 'Instalación actualizada' : 'Instalación creada', 'ok'); renderVacantesTab(); }
+  try { await _vacGuardar(id, d); var o = document.getElementById('vac-overlay'); if (o) o.remove(); toast(id ? 'Instalación actualizada' : (_vacLista || []).some(function(x){ return _vacNorm(x.instalacion) === _vacNorm(d.instalacion); }) ? 'Cargo agregado a la instalación' : 'Instalación creada', 'ok'); renderVacantesTab(); }
   catch(e) { toast('No se pudo guardar: ' + e.message, 'er'); }
 }
 
@@ -12580,13 +12618,18 @@ function _dashInstalacionesHtml(cands) {
   cands.forEach(function(c) {
     var nom = String(_instalacionDe(c) || '').trim(), k = _vacNorm(nom), e = getPipelineEtapa(c);
     if (!k) { sin.push(c.id); return; }
-    var g = grupos[k] = grupos[k] || { nom: nom, ids: [], env: [], pro: [], noc: [], rech: [], cupos: null, activa: false };
+    var g = grupos[k] = grupos[k] || { nom: nom, ids: [], env: [], pro: [], noc: [], rech: [], cupos: null, activa: false, cargos: {} };
     g.ids.push(c.id);
     (e === 'seleccionado' || e === 'enviado' || e === 'contratado' ? g.env : e === 'no_contratado' ? g.noc : e === 'descartado' ? g.rech : g.pro).push(c.id);
+    // Por cargo dentro de la instalación (una instalación puede tener varios cargos)
+    var cg = _postulaDe(c).cargo || _rhCargoBase(c), kc = _vacNorm(cg), gc = g.cargos[kc] = g.cargos[kc] || { nom: cg, ids: [], env: [], cupos: null };
+    gc.ids.push(c.id); if (e === 'seleccionado' || e === 'enviado' || e === 'contratado') gc.env.push(c.id);
   });
   (_vacLista || []).filter(function(v){ return v.activa && (!_dashPerfil || _dashPerfil === 'all' || v.perfil === _dashPerfil); }).forEach(function(v) {
-    var k = _vacNorm(v.instalacion), g = grupos[k] = grupos[k] || { nom: v.instalacion, ids: [], env: [], pro: [], noc: [], rech: [], cupos: null, activa: false };
+    var k = _vacNorm(v.instalacion), g = grupos[k] = grupos[k] || { nom: v.instalacion, ids: [], env: [], pro: [], noc: [], rech: [], cupos: null, activa: false, cargos: {} };
     g.activa = true; if (v.cupos) g.cupos = (g.cupos || 0) + v.cupos;
+    var kc = _vacNorm(_vacCargoTxt(v)), gc = g.cargos[kc] = g.cargos[kc] || { nom: _vacCargoTxt(v), ids: [], env: [], cupos: null };
+    if (v.cupos) gc.cupos = (gc.cupos || 0) + v.cupos;
   });
   var filas = Object.keys(grupos).map(function(k){ return grupos[k]; }).sort(function(a, b){ return (b.ids.length - a.ids.length) || a.nom.localeCompare(b.nom, 'es'); });
   var activas = filas.filter(function(g){ return g.activa; }), conCupos = activas.filter(function(g){ return g.cupos; });
@@ -12620,9 +12663,21 @@ function _dashInstalacionesHtml(cands) {
       + '</div></div>'
       + '<div class="dsh-it">' + _dashNum(g.ids, g.nom) + '</div>'
       + '<div class="dsh-ix">' + alertas.map(function(t){ return '<span class="dsh-alerta">' + t + '</span>'; }).join('')
-      + (g.cupos ? '<span class="dsh-cup">' + g.env.length + ' de ' + g.cupos + ' cupos</span>' : '') + '</div></div>';
+      + (g.cupos ? '<span class="dsh-cup">' + g.env.length + ' de ' + g.cupos + ' cupos</span>' : '') + '</div>'
+      + _dashCargosHtml(g) + '</div>';
   }).join('') + '</div></div>';
   return h;
+}
+// Detalle por cargo bajo la barra, solo si la instalación tiene más de un cargo
+function _dashCargosHtml(g) {
+  var cs = Object.keys(g.cargos || {}).map(function(k){ return g.cargos[k]; }).filter(function(x){ return x.ids.length || x.cupos; });
+  if (cs.length < 2) return '';
+  cs.sort(function(a, b){ return (b.ids.length - a.ids.length) || a.nom.localeCompare(b.nom, 'es'); });
+  return '<div class="dsh-icg">' + cs.map(function(x){
+    var t = '<b>' + htmlEsc(x.nom) + ':</b> ' + (x.ids.length ? '<a class="rs-link" onclick="_dashAbrir(' + _dashCelda(x.ids, g.nom + ' · ' + x.nom) + ')">' + x.ids.length + (x.ids.length === 1 ? ' persona' : ' personas') + '</a>' : 'sin postulantes');
+    if (x.cupos) t += ' · ' + x.env.length + ' de ' + x.cupos + ' cupos';
+    return '<span>' + t + '</span>';
+  }).join('') + '</div>';
 }
 // Calidad: pruebas con mínimo frente a sí mismas y frente al dictamen. Con pocos casos se muestra el conteo, no el porcentaje
 function _dashCalidadDatos(cands) {
@@ -17822,6 +17877,19 @@ function _postulaDe(c) {
   };
 }
 function _instalacionDe(c) { return _postulaDe(c).instalacion; }
+// Vacante que corresponde a una instalación y un cargo (y turno, si hay más de una)
+function _vacDeInstalacionCargo(p, prev) {
+  var n = typeof _vacNorm === 'function' ? _vacNorm : function(t){ return String(t || '').trim().toLowerCase(); };
+  prev = prev || {};
+  if (!n(p.instalacion)) return null;
+  var lista = (_vacLista || []).filter(function(v){ return n(v.instalacion) === n(p.instalacion) && n(_vacCargoTxt(v)) === n(p.cargo); });
+  if (lista.length > 1) { var t = lista.filter(function(v){ return v.turno === p.turno; }); if (t.length) lista = t; }
+  if (lista.length > 1) { var a = lista.filter(function(v){ return v.id === prev.vacante; }); if (a.length) lista = a; }
+  if (lista.length) return lista[0];
+  // Sin la lista de instalaciones cargada: se conserva la anterior solo si no cambió ni la instalación ni el cargo
+  if (!_vacLista && prev.vacante && n(prev.instalacion) === n(p.instalacion) && n(prev.cargo) === n(p.cargo)) return { id: prev.vacante, comuna: prev.comuna };
+  return null;
+}
 // Guarda a qué postula y lo copia a la última entrevista y al Informe RH (si existen)
 async function _guardarPostula(candId, p, desde) {
   var prev = (((_dbCache || []).find(function(x){ return x.id === candId; }) || {}).scores || {})._postula || {};
@@ -17829,7 +17897,12 @@ async function _guardarPostula(candId, p, desde) {
   p = { cargo: (p.cargo || '').trim(), instalacion: (p.instalacion || '').trim(), turno: p.turno || '', turno_otra: p.turno === 'otra' ? (p.turno_otra || '').trim() : '' };
   // Vacante (25_vacantes.sql): la elegida en la ficha; si no se eligió, se conserva mientras la instalación sea la misma
   if (vac && typeof vac === 'object') { p.vacante = vac.id; if (vac.comuna) p.comuna = vac.comuna; }
-  else if (!vac && prev.vacante && prev.instalacion === p.instalacion) { p.vacante = prev.vacante; if (prev.comuna) p.comuna = prev.comuna; }
+  else if (!vac) {
+    // Sin vacante elegida (cambio desde la entrevista o el Informe RH): la de esa instalación con ese cargo.
+    // Una instalación puede tener varios cargos: no se conserva la vacante de otro cargo.
+    var v2 = _vacDeInstalacionCargo(p, prev);
+    if (v2) { p.vacante = v2.id; if (v2.comuna) p.comuna = v2.comuna; }
+  }
   await _patchScoresField(candId, '_postula', p);
   var all = await getDB(), c = all.find(function(x){ return x.id === candId; }) || {}, s = c.scores || {};
   if (desde !== 'entrevista' && (s._entrevistas || []).length) {
