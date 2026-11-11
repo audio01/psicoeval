@@ -986,6 +986,9 @@ input,select,textarea{font-family:inherit;outline:none}
 .rh-body{overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:12px}
 .rh-pie{display:flex;gap:8px;align-items:center;padding:12px 20px;border-top:1px solid var(--border)}
 .rh-grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.usr-firma-p{background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(15,45,82,.06);padding:18px 20px;margin-top:16px}
+.usr-firma-t{font-size:14px;font-weight:800;color:var(--ink);margin-bottom:4px}
+.usr-firma-d{font-size:12px;color:var(--ink3);line-height:1.55;margin-bottom:10px}
 .rh-firma{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:10px 12px;border:1px dashed var(--border2);border-radius:10px}
 .rh-firma img{max-height:64px;max-width:220px;background:#fff;border-radius:6px;padding:4px}
 .rh-firma-acc{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
@@ -13583,7 +13586,12 @@ function _renderUsersList(el, users, meId) {
       + '(Edge Functions → Deploy a new function). Los pasos están en <em>supabase/COMO_APLICAR.md</em>.</div>';
   }
 
+  html += '<div class="adm-panel usr-firma-p"><div class="usr-firma-t">Mi firma</div>'
+    + '<div class="usr-firma-d">Se agrega en el PDF del Informe RH, sobre su nombre, en la fila «Psicólogo que realiza el informe». Queda guardada en su cuenta: solo usted la ve y la usa, desde cualquier computador.</div>'
+    + '<div id="usr-firma" class="rh-firma"><span class="pdf-vacio">Cargando…</span></div>'
+    + '<div class="usr-firma-d" style="margin-top:8px">Firme con lápiz oscuro en una hoja blanca sin líneas, tómele una foto de frente con buena luz y recórtela dejando poco margen.</div></div>';
   el.innerHTML = html;
+  _rhFirmaCargar().then(_rhFirmaPintar);
 }
 
 function openAddUserModal() {
@@ -18456,17 +18464,19 @@ function _rhFirmaDatos(src) {
     im.src = src;
   });
 }
-function _rhFirmaPintar() {
-  var box = document.getElementById('rh-firma'); if (!box) return;
-  var usar = box.getAttribute('data-usar') !== '0';
+function _rhFirmaPintar() { ['rh-firma', 'usr-firma'].forEach(_rhFirmaCaja); }
+// Caja de la firma: en el Informe RH (con «Incluir en el PDF») o en Usuarios → Mi firma
+function _rhFirmaCaja(id) {
+  var box = document.getElementById(id); if (!box) return;
+  var enInforme = id === 'rh-firma', usar = box.getAttribute('data-usar') !== '0', arch = id + '-arch';
   box.innerHTML = (_rhFirma
       ? '<img src="' + _rhFirma.src + '" alt="Su firma"><div class="rh-firma-acc">'
-        + '<label class="rh-firma-chk"><input type="checkbox" id="rh-firma-usar"' + (usar ? ' checked' : '') + ' onchange="document.getElementById(\'rh-firma\').setAttribute(\'data-usar\', this.checked ? \'1\' : \'0\')"> Incluir en el PDF</label>'
-        + '<button type="button" class="rs-btn" onclick="document.getElementById(\'rh-firma-arch\').click()">Cambiar</button>'
+        + (enInforme ? '<label class="rh-firma-chk"><input type="checkbox" id="rh-firma-usar"' + (usar ? ' checked' : '') + ' onchange="document.getElementById(\'rh-firma\').setAttribute(\'data-usar\', this.checked ? \'1\' : \'0\')"> Incluir en el PDF</label>' : '')
+        + '<button type="button" class="rs-btn" onclick="document.getElementById(\'' + arch + '\').click()">Cambiar</button>'
         + '<button type="button" class="rs-link" style="color:#b91c1c" onclick="_rhFirmaQuitar()">Quitar</button></div>'
-      : '<div class="rh-firma-acc"><button type="button" class="rs-btn" onclick="document.getElementById(\'rh-firma-arch\').click()">Subir mi firma</button>'
+      : '<div class="rh-firma-acc"><button type="button" class="rs-btn' + (enInforme ? '' : ' prim') + '" onclick="document.getElementById(\'' + arch + '\').click()">Subir mi firma</button>'
         + '<span style="font-size:11.5px;color:var(--ink4)">Imagen PNG o JPG, idealmente con fondo blanco o transparente. Queda guardada en su cuenta y solo usted la ve.</span></div>')
-    + '<input type="file" id="rh-firma-arch" accept="image/png,image/jpeg" style="display:none" onchange="_rhFirmaSubir(this)">';
+    + '<input type="file" id="' + arch + '" accept="image/png,image/jpeg" style="display:none" onchange="_rhFirmaSubir(this)">';
 }
 // Reduce la imagen (máx. 900 × 300 px) y la sube
 async function _rhFirmaSubir(inp) {
