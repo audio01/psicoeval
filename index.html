@@ -6295,7 +6295,7 @@ async function _vacGuardarForm(id) {
 // Al subir: se lee en este computador, se muestran los cambios y se guardan solo al confirmar.
 var _XLSX_LIB = ['https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js', 'sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw', 'XLSX'];
 var _VAC_COLS = ['Instalación', 'Activo', 'Comuna', 'Direccion', 'Link Mapa', 'Jornada', 'Turno', 'Cargo', 'Horario', 'Total Líquido', 'Colación', 'Comentario', 'Certificado', 'Residencia', 'Otros beneficios', 'Cupos', 'ID'];
-var _VAC_TURNO_XL = { '4x4_rotativo':['Rotativo', '4x4'], '4x4_dia':['Día', '4x4'], '4x4_noche':['Noche', '4x4'], '7x7_noche':['Noche', '7x7'] };
+var _VAC_TURNO_XL = { '4x4_rotativo':['Rotativo', '4x4'], '4x4_dia':['Día', '4x4'], '4x4_noche':['Noche', '4x4'], '7x7_noche':['Noche', '7x7'], '6x1':['', '6x1'] };
 function _vacNorm(t) { return String(t == null ? '' : t).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim(); }
 function _vacLimpio(t) { return String(t == null ? '' : t).replace(/\s+/g, ' ').trim(); }
 // Jornada (Día / Noche / Rotativo) + sistema (4x4, 5x2…) → clave de turno del panel
@@ -6303,7 +6303,7 @@ function _vacTurnoDe(jornada, sistema) {
   var j = _vacNorm(jornada).replace(/\s/g, ''), t = _vacNorm(sistema).replace(/\s/g, '');
   if (/^\d+x\d+$/.test(j) && !/^\d+x\d+$/.test(t)) { var x = j; j = t; t = x; }   // columnas invertidas
   var jd = /^dia/.test(j) ? 'día' : /^noche/.test(j) ? 'noche' : /^rotativ/.test(j) ? 'rotativo' : j;
-  var k = { '4x4|rotativo':'4x4_rotativo', '4x4|día':'4x4_dia', '4x4|noche':'4x4_noche', '7x7|noche':'7x7_noche' }[t + '|' + jd];
+  var k = { '4x4|rotativo':'4x4_rotativo', '4x4|día':'4x4_dia', '4x4|noche':'4x4_noche', '7x7|noche':'7x7_noche', '6x1|':'6x1' }[t + '|' + jd];
   if (k) return { turno: k, turno_otra: '' };
   var otra = [t, jd].filter(Boolean).join(' ');
   return otra ? { turno: 'otra', turno_otra: otra.slice(0, 60) } : { turno: '', turno_otra: '' };
@@ -17739,7 +17739,7 @@ function _rhListaD(d, c) {
   });
 }
 var _RH_NIVELES = ['Alto', 'Medio', 'Bajo'];
-var _RH_JORNADAS = [['4x4_rotativo','4x4 rotativo'], ['4x4_dia','4x4 día'], ['4x4_noche','4x4 noche'], ['7x7_noche','7x7 noche'], ['otra','Otra']];
+var _RH_JORNADAS = [['4x4_rotativo','4x4 rotativo'], ['4x4_dia','4x4 día'], ['4x4_noche','4x4 noche'], ['7x7_noche','7x7 noche'], ['6x1','6x1'], ['otra','Otra']];
 // Niveles ideales: los define el psicólogo según su organización. Se recuerdan por cargo
 // en este computador para no tener que ingresarlos de nuevo en el siguiente informe.
 function _rhCargoBase(c) { return c.cargo || (PERFIL_META[c.perfil] || {}).label || ''; }
