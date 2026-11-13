@@ -13331,6 +13331,7 @@ function _bdMenuVista(anchor) {
   else items = items.concat([{ titulo:'Agrupar por' }].concat(_BD_AGRUPAR.map(function(a){ return { label:a[1], on:(_BD.agrupar || '') === a[0], fn:function(){ _BD.agrupar = a[0]; _bdCambio(); } }; })));
   items = items.concat([{ titulo:'Más' }, { label:'Propiedades visibles…', fn:function(){ setTimeout(function(){ _bdMenuProps(anchor); }, 0); } }]);
   if (S.role === 'admin') items.push({ label:'Planilla de envío', fn:function(){ abrirPlanillaEnvio(); } });
+  if (S.role === 'admin') items.push({ label:'Exportar base a Excel', fn:function(){ exportarBaseExcel(); } });
   items.push({ label:'Exportar CSV', fn:function(){ exportCSV(); } });
   _bdMenu(anchor, items);
 }
@@ -19095,6 +19096,57 @@ async function contactosExportar() {
   _ctoBajar(_ctoCsv(lista), 'Contactos postulantes ' + new Date().toISOString().slice(0, 10) + '.csv', 'text/csv;charset=utf-8');
   var sin = ids.length - lista.length;
   toast(lista.length + ' contacto' + (lista.length > 1 ? 's' : '') + ' en el archivo' + (sin ? ' (' + sin + ' sin teléfono ni correo)' : '') + '. Impórtelo en contacts.google.com → Importar', 'ok');
+}
+
+// ── Exportar la base a Excel: una fila por candidato de la vista actual (con sus filtros). Solo datos de
+// contacto, postulación y proceso; respuestas, puntajes por escala, perfiles, notas de entrevista,
+// referencias y detalle de antecedentes no salen del panel.
+var _BASE_COLS = ['RUT', 'Nombre', 'Apellido', 'Teléfono', 'Correo', 'Comuna', 'Cargo', 'Instalación', 'Turno', 'Llegó por', 'Fecha de postulación',
+  'Etapa', 'Fecha de la etapa', 'Motivo de rechazo', 'Fecha de rechazo', 'Resultado de las pruebas', 'Dictamen', 'Fecha de entrevista', 'Recomendación Informe RH'];
+var _BASE_RECOM = { plazo_fijo:'Plazo fijo', indefinido:'Indefinido', no_contratar:'No contratar' };
+function _baseFecha(v) {
+  if (!v) return '';
+  var m = String(v).match(/^(\d{4})-(\d{2})-(\d{2})/); if (m) return m[3] + '-' + m[2] + '-' + m[1];
+  if (/^\d{2}-\d{2}-\d{4}/.test(String(v))) return String(v).slice(0, 10);
+  var d = v instanceof Date ? v : new Date(v); if (isNaN(d)) return '';
+  var p = function(n){ return (n < 10 ? '0' : '') + n; };
+  return p(d.getDate()) + '-' + p(d.getMonth() + 1) + '-' + d.getFullYear();
+}
+function _baseFila(c) {
+  var s = c.scores || {}, pz = _postulaDe(c), e = getPipelineEtapa(c), cierre = _esCierre(e);
+  var h = (s._pipeline_history || []).filter(function(x){ return x && x.to === e; }).pop();
+  var jor = (_RH_JORNADAS.filter(function(j){ return j[0] === pz.turno; })[0] || [])[1] || '';
+  var ev = (s._entrevistas || []).filter(Boolean).pop(), cat = _CAT_META[_categoriaDe(c)], rch = _rechazoDe(c);
+  var txt = function(html){ return String(html || '').replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim(); };
+  var res = txt(_bdResultadoTxt(c));
+  return {
+    'RUT': c.rut || '', 'Nombre': c.nombre || '', 'Apellido': c.apellido || '', 'Teléfono': c.telefono || '', 'Correo': c.email || '', 'Comuna': c.comuna || '',
+    'Cargo': pz.cargo || c.cargo || (PERFIL_META[c.perfil] || {}).label || '', 'Instalación': pz.instalacion || '',
+    'Turno': pz.turno === 'otra' ? (pz.turno_otra || 'Otro') : jor, 'Llegó por': _canalTxt(c) || '',
+    'Fecha de postulación': _baseFecha(c.created_at) || _baseFecha(_momentoCand(c)),
+    'Etapa': getPipelineMeta(e).label, 'Fecha de la etapa': _baseFecha(h && h.ts),
+    'Motivo de rechazo': cierre ? (rch ? rch.motivo : (h && h.motivo ? String(h.motivo).replace(/^Otro: /, '') : 'Sin motivo registrado')) : '',
+    'Fecha de rechazo': cierre ? _baseFecha(h && h.ts) : '',
+    'Resultado de las pruebas': res === '—' ? '' : res, 'Dictamen': cat ? cat[0] : '',
+    'Fecha de entrevista': _baseFecha(ev && (ev.fecha || ev.ts)), 'Recomendación Informe RH': _BASE_RECOM[(s._informe_rh || {}).recomendacion] || ''
+  };
+}
+async function exportarBaseExcel() {
+  if (S.role !== 'admin') { toast('Solo el administrador puede exportar la base', 'er'); return; }
+  try {
+    // Sin búsqueda ni filtros sale la base completa, con rechazados y archivados (que la tabla oculta por defecto);
+    // con filtros o búsqueda, lo mismo que se ve en pantalla
+    var all = await getDB(), filtrada = !!((_bdBuscarTxt || '').trim() || Object.keys(_BD.filtros || {}).length);
+    var lista = _bdOrdenar(filtrada ? _bdFiltrar(all) : all);
+    if (!lista.length) { toast('No hay candidatos en esta vista para exportar', 'er'); return; }
+    await _rhCargarLib(_XLSX_LIB);
+    var hoja = XLSX.utils.json_to_sheet(lista.map(_baseFila), { header: _BASE_COLS });
+    hoja['!cols'] = _BASE_COLS.map(function(k){ return { wch: { 'Nombre':20, 'Apellido':22, 'Correo':28, 'Cargo':26, 'Instalación':30, 'Motivo de rechazo':32, 'Resultado de las pruebas':28, 'Dictamen':24, 'Recomendación Informe RH':24 }[k] || 16 }; });
+    hoja['!autofilter'] = { ref: hoja['!ref'] };
+    var libro = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(libro, hoja, 'Candidatos');
+    XLSX.writeFile(libro, 'Base candidatos ' + new Date().toISOString().slice(0, 10) + '.xlsx');
+    toast(lista.length + ' candidato' + (lista.length > 1 ? 's' : '') + ' en el Excel' + (filtrada ? ' (según los filtros de la vista)' : ' (base completa, con rechazados y archivados)'), 'ok');
+  } catch(e) { toast('No se pudo descargar el Excel: ' + e.message, 'er'); }
 }
 
 async function abrirPlanillaEnvio(idsElegidos) {
