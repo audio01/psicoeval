@@ -5657,24 +5657,104 @@ var _dbCacheTs = 0;
 var _DB_TTL    = 60000; // ms
 
 function _invalidateCache() {
+  _dbGen++;   // una descarga en curso ya no sirve
   _dbCache   = null;
   _dbCacheTs = 0;
 }
 
+// Con datos en memoria responde al instante; si ya pasaron _DB_TTL ms, además los
+// actualiza por detrás y repinta la pantalla si algo cambió. Sin datos, espera la descarga.
 async function getDB() {
   if (!navigator.onLine) { _setConnState('offline'); return _dbCache || []; }
-  var now = Date.now();
-  if (_dbCache && (now - _dbCacheTs) < _DB_TTL) return _dbCache;
-  try {
-    const r = await fetch(`${SUPA_URL}/rest/v1/candidates?select=*&order=created_at.desc`,{headers:getDBHeaders()});
-    if (!r.ok) { _setConnState('error'); return _dbCache || []; }
-    _setConnState('ok');
-    var lista = (await r.json()).map(_withLabels);
-    await _unirPrivado(lista);
-    _dbCache   = lista;
-    _dbCacheTs = Date.now();
+  if (_dbCache) {
+    if (Date.now() - _dbCacheTs >= _DB_TTL) _dbDescargar(true);
     return _dbCache;
-  } catch(e) { _setConnState('error'); return _dbCache || []; }
+  }
+  return (await _dbDescargar(false)) || [];
+}
+// Una sola descarga a la vez (las pantallas que la piden mientras tanto esperan la misma).
+// _dbGen cambia con cada guardado local: una descarga que empezó antes se descarta y se repite.
+var _dbVuelo = null, _dbGen = 0, _dbFirma = null;
+function _dbDescargar(avisar) {
+  if (_dbVuelo) return _dbVuelo;
+  var gen = _dbGen;
+  var vuelo = _dbVuelo = (async function() {
+    try {
+      var pPriv = _privadoPedir();   // en paralelo con los candidatos
+      const r = await fetch(`${SUPA_URL}/rest/v1/candidates?select=*&order=created_at.desc`,{headers:getDBHeaders()});
+      if (!r.ok) { _setConnState('error'); _dbCacheTs = Date.now(); return _dbCache || []; }
+      _setConnState('ok');
+      var txt = await r.text(), priv = await _privadoLeer(pPriv);
+      if (gen !== _dbGen) { _dbVuelo = null; return _dbDescargar(avisar); }   // hubo un guardado mientras tanto
+      var firma = txt + '\u0000' + (priv ? priv.txt : '');
+      if (_dbCache && firma === _dbFirma) { _dbCacheTs = Date.now(); return _dbCache; }   // nada cambió
+      var lista = JSON.parse(txt).map(_withLabels);
+      _unirPrivado(lista, priv);
+      var habia = !!_dbCache;
+      _dbCache = lista; _dbCacheTs = Date.now(); _dbFirma = firma;
+      if (avisar && habia) setTimeout(_dbAlCambiar, 0);
+      return _dbCache;
+    } catch(e) { _setConnState('error'); _dbCacheTs = Date.now(); return _dbCache || []; }
+    finally { if (_dbVuelo === vuelo) _dbVuelo = null; }
+  })();
+  return vuelo;
+}
+// Llegaron datos distintos por detrás: se repinta lo que está a la vista, salvo que haya
+// una ficha, una ventana, un menú, un arrastre o una selección en curso
+function _dbAlCambiar() {
+  try {
+    _nuevosPintar();
+    if (S.currentView !== 'admin' || _drawerCandId) return;
+    if (document.querySelector('.rh-ov, .kanban-card.dragging, #bd-menu, .row-chk:checked')) return;
+    if ([].some.call(document.querySelectorAll('.overlay'), function(o){ return o.getClientRects().length > 0; })) return;
+    if (S.currentAdminTab === 'candidates') _bdCuerpoPintar(_dbCache);
+    else if (S.currentAdminTab === 'dashboard') renderDashboard();
+  } catch(e) {}
+}
+// Deja en memoria la ficha recién guardada (la fila que devuelve el servidor), sin volver a
+// descargar la lista. Conserva lo privado, que vive en otra tabla.
+function _cachePoner(fila) {
+  _dbGen++;
+  if (!_dbCache || !fila || !fila.id) return null;
+  var i = _dbCache.findIndex(function(x){ return x.id === fila.id; });
+  var c = _withLabels(Object.assign({}, fila)), viejo = i === -1 ? null : _dbCache[i];
+  c.scores = Object.assign({}, c.scores || {});
+  ['_entrevistas', '_ref_notas', '_informe_rh', '_chapi'].forEach(function(k){
+    if (viejo && viejo.scores && k in viejo.scores) c.scores[k] = viejo.scores[k]; else delete c.scores[k];
+  });
+  if (i === -1) _dbCache.unshift(c); else _dbCache[i] = c;
+  return c;
+}
+function _cacheQuitar(id) {
+  _dbGen++;
+  if (_dbCache) _dbCache = _dbCache.filter(function(x){ return x.id !== id; });
+}
+// Trae del servidor solo a una persona (al abrir su ficha con la lista ya vencida), para que
+// la ficha muestre lo último aunque la lista completa siga actualizándose por detrás
+async function _dbRefrescarUno(id) {
+  if (!_dbCache || !navigator.onLine) return;
+  var gen = _dbGen, q = encodeURIComponent(id);
+  try {
+    var admin = S.role === 'admin' && _privadoOk !== false;
+    var rs = await Promise.all([
+      fetch(SUPA_URL + '/rest/v1/candidates?id=eq.' + q + '&select=*', { headers: getDBHeaders() }),
+      admin ? fetch(SUPA_URL + '/rest/v1/psicoeval_privado?candidate_id=eq.' + q + '&select=*', { headers: getDBHeaders() }) : null
+    ]);
+    if (!rs[0].ok) return;
+    var fila = (await rs[0].json())[0], priv = rs[1] && rs[1].ok ? await rs[1].json() : null;
+    if (gen !== _dbGen || !_dbCache || !fila) return;   // hubo un guardado mientras tanto: manda lo local
+    var c = _cachePoner(fila);
+    if (c && priv) _privadoAplicar(c, priv[0]);
+    _dbGen = gen;   // es una lectura del servidor, no un guardado: no anula la descarga en curso
+  } catch(e) {}
+}
+// Igual, para la fila privada (entrevistas, notas, informe RH, Chapi)
+function _cachePrivado(x) {
+  _dbGen++;
+  if (!_dbCache || !x) return null;
+  var c = _dbCache.find(function(y){ return y.id === x.candidate_id; });
+  if (c) _privadoAplicar(c, x);
+  return c || null;
 }
 
 // Entrevistas y notas confidenciales: tabla psicoeval_privado, que solo lee el
@@ -5682,28 +5762,39 @@ async function getDB() {
 // scores._ref_notas para que el resto del panel las use igual que antes.
 // En la ficha (scores) quedan solo _dictamen y _entrevista_fecha, que ve también el lector.
 var _privadoOk = null;   // null: no se ha consultado · false: la tabla aún no existe
-async function _unirPrivado(lista) {
+function _privadoPedir() {
   var admin = false;
   try { admin = S.role === 'admin'; } catch(e) {}
-  if (!admin) {
+  if (!admin) return null;
+  return fetch(SUPA_URL + '/rest/v1/psicoeval_privado?select=*', { headers: getDBHeaders() }).catch(function(){ return null; });
+}
+// → null (no es administrador) · { ok:false } (SQL 19 sin aplicar o sin respuesta) · { ok:true, txt, filas }
+async function _privadoLeer(prom) {
+  if (!prom) return null;
+  try {
+    var r = await prom;
+    if (!r || !r.ok) return { ok: false, txt: '' };
+    var txt = await r.text();
+    return { ok: true, txt: txt, filas: JSON.parse(txt) };
+  } catch(e) { return { ok: false, txt: '' }; }
+}
+function _privadoAplicar(c, x) {
+  c.scores = c.scores || {};
+  c.scores._entrevistas = (x && Array.isArray(x.entrevistas)) ? x.entrevistas : [];
+  c.scores._ref_notas = (x && x.notas) || '';
+  c.scores._informe_rh = (x && x.informe_rh) || {};
+  c.scores._chapi = (x && x.chapi) || {};
+}
+function _unirPrivado(lista, priv) {
+  if (!priv) {
     lista.forEach(function(c){ if (c.scores) { delete c.scores._entrevistas; delete c.scores._ref_notas; delete c.scores._informe_rh; delete c.scores._chapi; } });
     return;
   }
-  try {
-    var r = await fetch(SUPA_URL + '/rest/v1/psicoeval_privado?select=*', { headers: getDBHeaders() });
-    if (!r.ok) { _privadoOk = false; return; }   // SQL 19 sin aplicar: se usa lo que venga en la ficha
-    _privadoOk = true;
-    var por = {};
-    (await r.json()).forEach(function(x){ por[x.candidate_id] = x; });
-    lista.forEach(function(c) {
-      var x = por[c.id];
-      c.scores = c.scores || {};
-      c.scores._entrevistas = (x && Array.isArray(x.entrevistas)) ? x.entrevistas : [];
-      c.scores._ref_notas = (x && x.notas) || '';
-      c.scores._informe_rh = (x && x.informe_rh) || {};
-      c.scores._chapi = (x && x.chapi) || {};
-    });
-  } catch(e) { _privadoOk = false; }
+  if (!priv.ok) { _privadoOk = false; return; }   // SQL 19 sin aplicar: se usa lo que venga en la ficha
+  _privadoOk = true;
+  var por = {};
+  priv.filas.forEach(function(x){ por[x.candidate_id] = x; });
+  lista.forEach(function(c){ _privadoAplicar(c, por[c.id]); });
 }
 
 // Guarda entrevistas o notas en la tabla privada y actualiza el dictamen visible en la ficha
@@ -5731,9 +5822,8 @@ async function _patchPrivado(candId, campo, valor) {
     scores = await _patchScoresField(candId, '_dictamen', ult ? ult.dictamen : null);
     scores = await _patchScoresField(candId, '_entrevista_fecha', fin ? fin.fecha || null : null);
   }
-  _invalidateCache();
-  var all = await getDB();
-  var c = all.find(function(x){ return x.id === candId; });
+  var c = _cachePrivado(guardado[0]);
+  if (!c) { _invalidateCache(); c = (await getDB()).find(function(x){ return x.id === candId; }); }
   return (c && c.scores) || scores || {};
 }
 
@@ -5813,8 +5903,8 @@ async function deleteFromDB(id) {
     const r = await fetch(`${SUPA_URL}/rest/v1/candidates?id=eq.${encodeURIComponent(id)}`,{method:'DELETE',headers:headers});
     if (!r.ok) { _setConnState('error'); console.error('deleteFromDB failed:', r.status, await r.text()); return false; }
     _setConnState('ok');
-    _invalidateCache();
     const rows = await r.json().catch(function(){ return []; });
+    if (Array.isArray(rows) && rows.length > 0) _cacheQuitar(id); else _invalidateCache();
     return Array.isArray(rows) && rows.length > 0;
   } catch(e) { _setConnState('error'); console.error('deleteFromDB error:', e); return false; }
 }
@@ -10907,7 +10997,7 @@ async function _patchScores(candidateId, cambiar) {
   // Si RLS bloquea el UPDATE, Supabase responde 200 con [] en vez de un error
   var updated = await r1.json().catch(function(){ return []; });
   if (!Array.isArray(updated) || !updated.length) throw new Error('No se pudo guardar (sin permisos o el candidato ya no existe)');
-  _invalidateCache();
+  _cachePoner(updated[0]);
   return scores;
 }
 
@@ -12202,6 +12292,7 @@ async function confirmReeval() {
       body: JSON.stringify({ scores: {}, estado: 'pending' })
     });
     if (!r1.ok) throw new Error('PATCH failed: ' + r1.status);
+    _dbGen++; _dbCacheTs = 0;   // la lista se actualiza por detrás en la próxima pantalla
     closeReevalModal();
     toast('✓ Evaluación reseteada — el candidato puede volver a rendir', 'ok');
     // Update row state in table without full re-render
@@ -12957,16 +13048,27 @@ function _nuevoMarcarRevisado(c) {
   _nuevosPintar();
 }
 // Con el panel abierto, cada 2 minutos busca evaluaciones nuevas (sin recargar la página)
-var _nuevosInt = null, _nuevosN = -1;
+var _nuevosInt = null;
+// Pide solo lo necesario para saber si algo cambió (etapa, fechas y marca de revisado, sin
+// respuestas ni puntajes). Si cambió, recién ahí se actualiza la lista completa, por detrás.
+function _nuevosFirma(lista) {
+  return lista.map(function(c){ return c.id + '|' + getPipelineEtapa(c) + '|' + (_esNuevo(c) ? 1 : 0); }).sort().join(',');
+}
 async function _nuevosRevisar() {
   if (!S.authToken || !S.role || document.hidden) return;
-  try { _invalidateCache(); var all = await getDB(); } catch(e) { return; }
-  var n = all.filter(_esNuevo).length, cambio = _nuevosN !== -1 && n !== _nuevosN;
-  _nuevosN = n; _nuevosPintar();
-  // Redibuja Candidatos solo si llegó algo y no hay una ficha, ventana o arrastre en curso
-  if (cambio && S.currentAdminTab === 'candidates' && !_drawerCandId && !document.querySelector('.rh-ov, .kanban-card.dragging')) { try { _bdCuerpoPintar(all); } catch(e) {} }
+  if (!_dbCache) { try { await getDB(); } catch(e) {} _nuevosPintar(); return; }
+  try {
+    var r = await fetch(SUPA_URL + '/rest/v1/candidates?select=id,estado,fecha,created_at,guardado:respuestas->>guardado,etapa:scores->>_pipeline_etapa,rev:scores->_revisado,hist:scores->_pipeline_history', { headers: getDBHeaders() });
+    if (!r.ok) { _dbDescargar(true); return; }
+    var mini = (await r.json()).map(function(x){
+      return { id: x.id, estado: x.estado, fecha: x.fecha, created_at: x.created_at, respuestas: x.guardado ? { guardado: x.guardado } : null,
+               scores: { _pipeline_etapa: x.etapa || '', _revisado: x.rev || null, _pipeline_history: x.hist || [] } };
+    });
+    if (_dbCache && _nuevosFirma(mini) !== _nuevosFirma(_dbCache)) _dbDescargar(true);
+  } catch(e) {}
+  _nuevosPintar();
 }
-function _nuevosIniciar() { clearInterval(_nuevosInt); _nuevosN = -1; _nuevosInt = setInterval(_nuevosRevisar, 120000); setTimeout(_nuevosRevisar, 3000); }
+function _nuevosIniciar() { clearInterval(_nuevosInt); _nuevosInt = setInterval(_nuevosRevisar, 120000); setTimeout(_nuevosRevisar, 3000); }
 
 function _porArchivarBadge(c) {
   var d = _diasParaArchivo(c);
@@ -14943,7 +15045,6 @@ async function kDrop(event, newStage) {
       }
       await _setPipelineEtapa(id, newStage, Object.assign({}, pos === null ? {} : { _pos: pos }, mot || {}));
     }
-    _invalidateCache();
     if (!mismaEtapa) toast(_esCierre(newStage) ? getPipelineMeta(newStage).icon + ' ' + getPipelineMeta(newStage).label + ': quedó en el Archivo' : getPipelineMeta(newStage).icon + ' Movido a ' + getPipelineMeta(newStage).label, 'ok');
     _bdRenderCuerpo();
     if (!mismaEtapa && newStage === 'contratado') _ofrecerContratacion(id);
@@ -15045,7 +15146,9 @@ async function openCandDrawer(id) {
   var tb = document.getElementById('drawer-tabs');
   if (tb) { tb.innerHTML = ''; document.getElementById('cand-drawer').insertBefore(tb, document.getElementById('drawer-body')); }
   document.getElementById('drawer-header').innerHTML = '';
+  var vencida = !!_dbCache && Date.now() - _dbCacheTs >= _DB_TTL;
   var all = await getDB();
+  if (vencida) { await _dbRefrescarUno(id); all = _dbCache || all; if (_drawerCandId !== id) return; }
   var c = all.find(function(x){ return x.id === id; });
   if (!c) { document.getElementById('drawer-body').innerHTML = '<div style="padding:20px;color:#e11d48">Candidato no encontrado</div>'; return; }
   _nuevoMarcarRevisado(c);
@@ -15522,7 +15625,7 @@ async function _chapiNombreGuardar(id) {
     var j = await r.json().catch(function(){ return []; });
     if (!Array.isArray(j) || !j.length) throw new Error('sin permisos');
     var o = document.getElementById('nom-overlay'); if (o) o.remove();
-    _invalidateCache();
+    _cachePoner(j[0]);
     toast('Nombre actualizado', 'ok');
     var c2 = (await getDB()).find(function(x){ return x.id === id; });
     if (c2 && _drawerCandId === id) { _renderDrawerHeader(c2); _switchDrawerTab(_drawerActiveTab, c2); }
@@ -15645,7 +15748,6 @@ async function _chapiDescartarGuardar(id) {
     await _patchPrivado(id, 'chapi', function(prev){ return Object.assign({}, prev || {}, { rechazo: { motivos: motivos, detalle: det, por: por, ts: new Date().toISOString(), respaldo: _chapiRespaldo(prev) } }); });
     await _setPipelineEtapa(id, 'descartado', { _motivo: 'Antecedentes (Chapi)' });
     var o = document.getElementById('chd-overlay'); if (o) o.remove();
-    _invalidateCache();
     var c = (await getDB()).find(function(x){ return x.id === id; });
     if (c && _drawerCandId === id) { _renderDrawerHeader(c); _switchDrawerTab('resumen', c); }
     toast('Descartado por antecedentes: quedó en el Archivo con su motivo', 'ok');
@@ -15665,7 +15767,6 @@ async function _chapiVisar(id) {
     await _patchPrivado(id, 'chapi', function(prev){ return Object.assign({}, prev || {}, { visado: { por: por, ts: new Date().toISOString() } }); });
     if (mover) await drawerSetEtapa(id, 'antecedentes_ok');
     else {
-      _invalidateCache();
       var c = (await getDB()).find(function(x){ return x.id === id; });
       if (c && _drawerCandId === id) { _renderDrawerHeader(c); _switchDrawerTab('resumen', c); }
       toast('Antecedentes visados', 'ok');
@@ -17296,7 +17397,7 @@ async function saveEntrevistaDrawer(candId) {
     if (destino && dictamen !== dictAntes && etapaAct !== destino && etapaAct !== 'contratado' && !(destino === 'seleccionado' && etapaAct === 'enviado')) {
       try {
         await _setPipelineEtapa(candId, destino, destino === 'descartado' ? { _motivo: 'Entrevista: no recomendable' } : null);
-        _invalidateCache(); all = await getDB(); c = all.find(function(x){ return x.id === candId; }); sc = c.scores;
+        all = await getDB(); c = all.find(function(x){ return x.id === candId; }); sc = c.scores;
         etapaMsg = ' · etapa: ' + getPipelineMeta(destino).label;
       } catch(e) { etapaMsg = ' · no se pudo cambiar la etapa'; }
     }
@@ -17445,7 +17546,7 @@ async function saveSeguimiento(candId) {
   try {
     var sc = await _patchScoresField(candId, '_seguimiento', function(){ return seg; });
     var c0 = (_dbCache || []).find(function(x){ return x.id === candId; });
-    if (seg.contratado === 'si' && c0 && getPipelineEtapa(c0) !== 'contratado') { await _setPipelineEtapa(candId, 'contratado'); _invalidateCache(); }
+    if (seg.contratado === 'si' && c0 && getPipelineEtapa(c0) !== 'contratado') { await _setPipelineEtapa(candId, 'contratado'); }
     var all = await getDB();
     var c = all.find(function(x){ return x.id === candId; });
     toast('✓ Seguimiento guardado', 'ok');
@@ -17937,7 +18038,6 @@ async function _guardarPostula(candId, p, desde) {
       return n;
     });
   }
-  _invalidateCache();
   var c2 = (await getDB()).find(function(x){ return x.id === candId; });
   return c2;
 }
@@ -19257,7 +19357,6 @@ async function _plMarcarEnviados() {
     }
     catch(e) { fallos++; }
   }
-  _invalidateCache();
   if (fallos) toast('No se pudo marcar como enviados a ' + fallos + ' postulante(s)', 'er');
   toast('📤 ' + marcados + (marcados === 1 ? ' marcado' : ' marcados') + ' como enviado a RRHH' + (movidos ? ' · ' + movidos + ' a Enviado a contratación' : ''), 'ok');
   var ov = document.getElementById('pl-overlay'); if (ov) ov.remove();
