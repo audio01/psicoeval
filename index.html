@@ -985,6 +985,8 @@ input,select,textarea{font-family:inherit;outline:none}
 .rh-top{display:flex;align-items:flex-start;gap:12px;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border)}
 .rh-body{overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:12px}
 .rh-pie{display:flex;gap:8px;align-items:center;padding:12px 20px;border-top:1px solid var(--border)}
+.rht-mod{font-size:10px;font-weight:700;text-transform:none;letter-spacing:0;color:#b45309;background:#fffbeb;border:1px solid #fde68a;border-radius:100px;padding:0 6px;margin-left:4px}
+.rht-orig{font-size:11px;color:var(--ink4);margin-top:3px}
 .rh-grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .usr-timbre{display:grid;grid-template-columns:1fr 160px auto;gap:10px;align-items:end;width:100%;margin-top:6px}
 @media (max-width:640px){.usr-timbre{grid-template-columns:1fr}}
@@ -18195,6 +18197,8 @@ async function abrirInformeRH(id) {
     + area('observaciones', d.observaciones, 8) + '</div>'
     + '<div class="field"><label>Refuerzo de habilidades que debe observar el supervisor <span style="text-transform:none;font-weight:500">(una acción por línea)</span></label>' + area('refuerzo', d.refuerzo, 4, 'Ej: Acompañamiento explícito en cambios de protocolo…') + '</div>'
     + sec('PDF generados')
+    + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><button class="rs-btn" onclick="_rhtAbrir()">Textos del informe…</button>'
+    + '<span style="font-size:11.5px;color:var(--ink4)">Cambie los títulos y etiquetas que salen en el PDF. Vale para todos los informes.</span></div>'
     + '<div id="rh-pdfs" class="pdf-lista"><span class="pdf-vacio">Cargando…</span></div>'
     + '<div style="font-size:11.5px;color:var(--ink4)">Las secciones B (entrevista operacional) y C (verificación de domicilio) salen en blanco para que las complete el supervisor.</div>'
     + '</div>'
@@ -18795,6 +18799,81 @@ function _rhCargarLib(l) {
   });
 }
 
+// ── Textos del PDF del Informe RH: títulos y etiquetas editables (Informe RH → «Textos del informe»).
+// Es una plantilla general: se guarda en la configuración 'informe_rh' bajo _textos y vale para todos los
+// PDF que se generen después. Lo que no se cambió usa el texto original. Cada campo: [clave, nombre, original, largo máx.]
+var _RH_TXT_DEF = [
+  ['Encabezado de cada hoja', [
+    ['enc_logo', 'Sigla grande', 'RH', 4], ['enc_tit1', 'Título, línea 1', 'INFORME PSICOLABORAL', 30], ['enc_tit2', 'Título, línea 2', 'VERIFICACION DE DOMICILIO', 30],
+    ['enc_cod1', 'Código, línea 1', 'R-GP-054', 12], ['enc_cod2', 'Código, línea 2', 'I-GP-001', 12], ['enc_version', 'Versión', 'Versión: 03', 16]]],
+  ['Hoja 1 · Datos y evaluación', [
+    ['lista', 'Recuadro Lista', 'LISTA', 8], ['zonal', 'Recuadro Zonal', 'ZONAL', 8], ['nombre', 'Etiqueta del nombre', 'Nombre:', 40], ['edad', 'Etiqueta de la edad', 'Edad:', 40], ['comuna', 'Etiqueta de la comuna', 'Comuna:', 40],
+    ['sec_a', 'Título de la sección A', 'A.- EVALUACIÓN PSICO LABORAL', 60], ['fecha_eval', 'Etiqueta de la fecha', 'Fecha de evaluación:', 40], ['categoria', 'Etiqueta de la categoría', 'Categoría:', 40],
+    ['publico', 'Etiqueta de atención a público', 'Atención a Público:', 40], ['pub_si', 'Atención a público: opción 1', 'Recomendable', 40], ['pub_no', 'Atención a público: opción 2', 'No Recomendable', 40],
+    ['col_comp', 'Tabla: columna 1', 'Competencia', 30], ['col_ideal', 'Tabla: columna 2', 'Nivel Ideal', 20], ['col_obt', 'Tabla: columna 3', 'Nivel Obtenido', 24]]],
+  ['Hoja 2 · Fortalezas y debilidades', [
+    ['tit_fort', 'Título de fortalezas', 'FORTALEZAS', 60], ['et_fort', 'Etiqueta de fortalezas', 'Fortalezas', 60], ['tit_deb', 'Título de debilidades', 'DEBILIDADES', 60], ['et_deb', 'Etiqueta de debilidades', 'Debilidades', 60]]],
+  ['Hoja 3 · Antecedentes laborales', [
+    ['tit_ant', 'Título', 'ANTECEDENTES LABORALES', 60], ['ant_empresa', 'Etiqueta de la empresa', 'Empresa en que trabajó anteriormente:', 110],
+    ['ant_corrobora', 'Etiqueta de quien corrobora', 'Nombre y cargo de la persona que corrobora antecedentes antiguo empleo:', 110], ['ant_fono', 'Etiqueta del teléfono', 'Fono o celular del empleador anterior:', 110],
+    ['ant_aportados', 'Etiqueta de los antecedentes', 'Antecedentes aportados por el empleador anterior:', 110], ['tit_ref', 'Título de las referencias adicionales (lleva el número después)', 'REFERENCIA', 50]]],
+  ['Hoja 4 · Observaciones finales', [
+    ['tit_obs', 'Título', 'OBSERVACIONES FINALES', 60], ['et_obs', 'Etiqueta de las observaciones', 'Observaciones Finales', 60],
+    ['et_refuerzo', 'Etiqueta del refuerzo', 'Refuerzo de habilidades que debe observar el Supervisor a cargo.', 110], ['et_psicologo', 'Etiqueta de la firma', 'Psicólogo que realiza el informe', 60]]],
+  ['Hoja 5 · Entrevista operacional', [
+    ['sec_b', 'Título de la sección B', 'B. ENTREVISTA OPERACIONAL', 45], ['b_fecha', 'Etiqueta de la fecha', 'Fecha de la entrevista', 50], ['b_aprueba', 'Pregunta de aprobación', 'Se aprueba la contratación', 90],
+    ['b_obs', 'Título de las observaciones', 'Observaciones (Obligatorias)', 90], ['b_quien', 'Etiqueta de quien entrevistó', 'Subgerente o Supervisor que realizó la entrevista', 80],
+    ['b_nombre', 'Pie del nombre', 'Nombre completo', 40], ['b_firma', 'Pie de la firma', 'Firma', 24]]],
+  ['Hoja 6 · Verificación de domicilio', [
+    ['sec_c', 'Título de la sección C', 'C. VERIFICACION DE DOMICILIO', 60], ['c_requiere', 'Pregunta', 'Requiere verificación de domicilio por falta de recomendaciones: *', 110],
+    ['c_sup', 'Recuadro 1', 'SUPERVISOR ENTREVISTADOR', 32], ['c_ver', 'Recuadro 2', 'VERIFICADOR DE DOMICILIO', 32], ['c_cierre', 'Recuadro 3', 'CIERRE', 32]]]
+];
+function _rhTxtCampos() { return _RH_TXT_DEF.reduce(function(a, g){ return a.concat(g[1]); }, []); }
+// Texto vigente de cada campo: el guardado (recortado a su largo) o, si está vacío o no existe, el original
+function _rhTextos() {
+  var g = (RH_PAUTA && RH_PAUTA._textos) || {}, out = {};
+  _rhTxtCampos().forEach(function(f){ var v = typeof g[f[0]] === 'string' ? g[f[0]].replace(/\s+/g, ' ').trim().slice(0, f[3]) : ''; out[f[0]] = v || f[2]; });
+  return out;
+}
+function _rhtAbrir() {
+  if (S.role !== 'admin') { toast('Solo el administrador puede cambiar los textos del informe', 'er'); return; }
+  var e = htmlEsc, T = _rhTextos();
+  var ov = document.getElementById('rht-overlay'); if (!ov) { ov = document.createElement('div'); ov.id = 'rht-overlay'; ov.className = 'rh-ov'; ov.style.zIndex = 9100; ov.style.background = 'rgba(15,23,42,.78)'; document.body.appendChild(ov); }
+  ov.innerHTML = '<div class="rh-box" style="width:min(760px,100%)">'
+    + '<div class="rh-top"><div><div style="font-size:17px;font-weight:800;letter-spacing:-.02em">Textos del informe</div>'
+    + '<div style="font-size:12px;color:var(--ink3)">Títulos y etiquetas del PDF del Informe RH. Valen para todos los PDF que genere desde ahora; los ya generados no cambian. Un campo vacío vuelve a su texto original.</div></div>'
+    + '<button class="dh-close" title="Cerrar" aria-label="Cerrar" onclick="document.getElementById(\'rht-overlay\').remove()"><svg class="ico"><use href="#i-x"/></svg></button></div>'
+    + '<div class="rh-body">'
+    + _RH_TXT_DEF.map(function(g) {
+        return '<div class="rh-sec">' + e(g[0]) + '</div><div class="rh-grid2">' + g[1].map(function(f) {
+          var cambiado = T[f[0]] !== f[2];
+          return '<div class="field"><label>' + e(f[1]) + (cambiado ? ' <span class="rht-mod">modificado</span>' : '') + '</label>'
+            + '<input id="rht-' + f[0] + '" class="rh-in" maxlength="' + f[3] + '" value="' + e(T[f[0]]) + '" placeholder="' + e(f[2]) + '">'
+            + (cambiado ? '<div class="rht-orig">Original: ' + e(f[2]) + ' · <a class="rs-link" onclick="var i=document.getElementById(\'rht-' + f[0] + '\');i.value=i.placeholder">volver</a></div>' : '') + '</div>';
+        }).join('') + '</div>';
+      }).join('')
+    + '</div>'
+    + '<div class="rh-pie"><a class="rs-link" onclick="_rhtRestablecer()" style="margin-right:auto">Volver todo a los textos originales</a>'
+    + '<button class="rs-btn" onclick="document.getElementById(\'rht-overlay\').remove()">Cancelar</button><button class="rs-btn prim" onclick="_rhtGuardar()">Guardar textos</button></div></div>';
+}
+// Solo se guarda lo que difiere del original
+function _rhtGuardar() {
+  var out = {}, n = 0;
+  _rhTxtCampos().forEach(function(f){ var el = document.getElementById('rht-' + f[0]), v = el ? el.value.replace(/\s+/g, ' ').trim().slice(0, f[3]) : ''; if (v && v !== f[2]) { out[f[0]] = v; n++; } });
+  if (n) RH_PAUTA._textos = out; else delete RH_PAUTA._textos;
+  saveRhPauta();
+  _logConfigChange('Textos del Informe RH', n ? n + ' texto' + (n > 1 ? 's' : '') + ' modificado' + (n > 1 ? 's' : '') : 'Vuelven a los originales');
+  var ov = document.getElementById('rht-overlay'); if (ov) ov.remove();
+  toast(n ? 'Textos guardados: se usan en los PDF que genere desde ahora' : 'El informe usa los textos originales', 'ok');
+}
+async function _rhtRestablecer() {
+  if (!(await appConfirm('¿Volver todos los títulos y etiquetas del informe a los textos originales?'))) return;
+  delete RH_PAUTA._textos; saveRhPauta();
+  _logConfigChange('Textos del Informe RH', 'Vuelven a los originales');
+  _rhtAbrir();
+  toast('El informe usa los textos originales', 'ok');
+}
+
 function _rhArmarPdf(c, d, nom) {
   var J = new window.jspdf.jsPDF({ unit: 'mm', format: 'letter', compress: true });
   var PW = 215.9, PH = 279.4, ML = 18, MR = 15, MT = 12, MB = 14, W = PW - ML - MR, HDR = 35, TOP = MT + HDR + 8;
@@ -18804,6 +18883,7 @@ function _rhArmarPdf(c, d, nom) {
   var nueva = function(){ J.addPage('letter'); y = TOP; };
   var caja = function(x, yy, on, s){ s = s || 3.4; J.setLineWidth(0.25); J.setFillColor(on ? 0 : 255); J.rect(x, yy, s, s, 'FD'); };
   J.setDrawColor(0); J.setLineWidth(0.25);
+  var T = _rhTextos();   // títulos y etiquetas: los originales o los de «Textos del informe»
 
   // ── Texto: segmentos [{t, b}] → líneas, con justificado y negritas dentro del párrafo ──
   var tokens = function(segs) {
@@ -18906,18 +18986,18 @@ function _rhArmarPdf(c, d, nom) {
     fuente(PT, true); J.text(rot, x + 1.8, yy + 5);
     ops.forEach(function(op, i) { var b = yy + 1.2 + i * 5.4; caja(x + 24, b + 0.8, val === op[0], 3.4); fuente(PT); J.text(op[1], x + 31, b + 3.9); });
   };
-  mini(ML + W * 0.66, y, 'LISTA', [['1','1'],['2','2'],['3','3']], d.lista);
-  mini(ML + 4, y + 25, 'ZONAL', [['norte','NORTE'],['centro','CENTRO'],['sur','SUR']], d.zonal);
+  mini(ML + W * 0.66, y, T.lista, [['1','1'],['2','2'],['3','3']], d.lista);
+  mini(ML + 4, y + 25, T.zonal, [['norte','NORTE'],['centro','CENTRO'],['sur','SUR']], d.zonal);
   y += 25 + 18.6 + 8;
-  [['Nombre:', nom], ['Edad:', _edadHoy(c) ? _edadHoy(c) + ' años' : ''], ['Comuna:', c.comuna || '']].forEach(function(r) {
+  [[T.nombre, nom], [T.edad, _edadHoy(c) ? _edadHoy(c) + ' años' : ''], [T.comuna, c.comuna || '']].forEach(function(r) {
     fila([celda(0.24, AZ, txt(r[0], { b: true })), celda(0.76, null, txt(r[1]))]);
   });
-  titulo('A.- EVALUACIÓN PSICO LABORAL', 13, 7, 6, 2.6);
-  fila([celda(0.24, AZ, txt('Fecha de evaluación:', { b: true })), celda(0.76, null, txt(d.fecha || ''))]);
-  fila([celda(0.24, AZ, txt('Categoría:', { b: true })), celda(0.76, null, function(){ return pila(_RH_CAT, d.categoria, 16); })]);
-  fila([celda(0.24, AZ, txt('Atención a Público:', { b: true })), celda(0.76, null, function(){ return pila([['si','Recomendable'],['no','No Recomendable']], d.publico, 16); })], { despues: 7 });
+  titulo(T.sec_a, 13, 7, 6, 2.6);
+  fila([celda(0.24, AZ, txt(T.fecha_eval, { b: true })), celda(0.76, null, txt(d.fecha || ''))]);
+  fila([celda(0.24, AZ, txt(T.categoria, { b: true })), celda(0.76, null, function(){ return pila(_RH_CAT, d.categoria, 16); })]);
+  fila([celda(0.24, AZ, txt(T.publico, { b: true })), celda(0.76, null, function(){ return pila([['si',T.pub_si],['no',T.pub_no]], d.publico, 16); })], { despues: 7 });
   var comp = { x: ML + W * 0.23, ancho: W * 0.77, pad: 0.7 }, cw = [0.53, 0.2, 0.27];
-  var cabecera = function(){ fila([celda(cw[0], AZ, txt('Competencia', { b: true, centro: true })), celda(cw[1], AZ, txt('Nivel Ideal', { b: true, centro: true })), celda(cw[2], AZ, txt('Nivel Obtenido', { b: true, centro: true }))], comp); };
+  var cabecera = function(){ fila([celda(cw[0], AZ, txt(T.col_comp, { b: true, centro: true })), celda(cw[1], AZ, txt(T.col_ideal, { b: true, centro: true })), celda(cw[2], AZ, txt(T.col_obt, { b: true, centro: true }))], comp); };
   cabecera();
   _rhListaD(d, c).forEach(function(k) {
     // Tabla larga (ACC, 12 competencias): si la fila no cabe, sigue en la hoja siguiente con su encabezado
@@ -18929,44 +19009,44 @@ function _rhArmarPdf(c, d, nom) {
 
   // ── Hoja 2: fortalezas y debilidades ──
   seccion();
-  titulo('FORTALEZAS', PT, 0, 3);
-  fila([celda(0.19, AZ, txt('Fortalezas')), celda(0.81, null, function(an){ return vinetas(d.fortalezas, an); })], { despues: 6 });
-  titulo('DEBILIDADES', PT, 0, 3);
-  fila([celda(0.19, AZ, txt('Debilidades')), celda(0.81, null, function(an){ return vinetas(d.debilidades, an); })]);
+  titulo(T.tit_fort, PT, 0, 3);
+  fila([celda(0.19, AZ, txt(T.et_fort)), celda(0.81, null, function(an){ return vinetas(d.fortalezas, an); })], { despues: 6 });
+  titulo(T.tit_deb, PT, 0, 3);
+  fila([celda(0.19, AZ, txt(T.et_deb)), celda(0.81, null, function(an){ return vinetas(d.debilidades, an); })]);
 
   // ── Hoja 3: antecedentes laborales ──
   seccion();
-  titulo('ANTECEDENTES LABORALES', PT, 4, 3);
-  [['Empresa en que trabajó anteriormente:', d.empresa], ['Nombre y cargo de la persona que corrobora antecedentes antiguo empleo:', d.corrobora],
-   ['Fono o celular del empleador anterior:', d.fono]].forEach(function(r) {
+  titulo(T.tit_ant, PT, 4, 3);
+  [[T.ant_empresa, d.empresa], [T.ant_corrobora, d.corrobora],
+   [T.ant_fono, d.fono]].forEach(function(r) {
     fila([celda(0.34, AZ, txt(r[0], { just: true })), celda(0.66, null, txt(r[1] || ''))]);
   });
-  fila([celda(0.34, AZ, txt('Antecedentes aportados por el empleador anterior:', { just: true })), celda(0.66, null, function(an){ return parrafos(d.aportados, an, { just: true }); })]);
+  fila([celda(0.34, AZ, txt(T.ant_aportados, { just: true })), celda(0.66, null, function(an){ return parrafos(d.aportados, an, { just: true }); })]);
   // Referencias adicionales: mismas filas, con su número
   (Array.isArray(d.refs_extra) ? d.refs_extra : []).forEach(function(r, i) {
-    titulo('REFERENCIA ' + (i + 2), PT - 1, 6, 3);
-    [['Empresa en que trabajó anteriormente:', r.empresa], ['Nombre y cargo de la persona que corrobora antecedentes antiguo empleo:', r.corrobora],
-     ['Fono o celular del empleador anterior:', r.fono]].forEach(function(x) {
+    titulo(T.tit_ref + ' ' + (i + 2), PT - 1, 6, 3);
+    [[T.ant_empresa, r.empresa], [T.ant_corrobora, r.corrobora],
+     [T.ant_fono, r.fono]].forEach(function(x) {
       fila([celda(0.34, AZ, txt(x[0], { just: true })), celda(0.66, null, txt(x[1] || ''))]);
     });
-    fila([celda(0.34, AZ, txt('Antecedentes aportados por el empleador anterior:', { just: true })), celda(0.66, null, function(an){ return parrafos(r.aportados, an, { just: true }); })]);
+    fila([celda(0.34, AZ, txt(T.ant_aportados, { just: true })), celda(0.66, null, function(an){ return parrafos(r.aportados, an, { just: true }); })]);
   });
 
   // ── Hoja 4: observaciones finales y refuerzo ──
   seccion();
-  titulo('OBSERVACIONES FINALES', PT, 4, 3);
+  titulo(T.tit_obs, PT, 4, 3);
   var frase = (_rhFrase(c, d, true) || '').split(/<b>|<\/b>/).map(function(t, i) {
     return { t: t.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&'), b: i % 2 === 1 };
   });
-  fila([celda(0.19, AZ, txt('Observaciones Finales')), celda(0.81, null, function(an) {
+  fila([celda(0.19, AZ, txt(T.et_obs)), celda(0.81, null, function(an) {
     var it = frase.some(function(s){ return s.t.trim(); }) ? parrafo(frase, an, { just: true }) : [];
     var resto = parrafos(d.observaciones, an, { just: true });
     if (it.length && resto.length) it.push({ h: 3.5, dib: function(){} });
     return it.concat(resto);
   })], { despues: 6 });
-  fila([celda(0.19, AZ, txt('Refuerzo de habilidades que debe observar el Supervisor a cargo.', { just: true })), celda(0.81, null, function(an){ return vinetas(_rhMayusTras2p(d.refuerzo), an, { just: true }); })], { despues: 6 });
+  fila([celda(0.19, AZ, txt(T.et_refuerzo, { just: true })), celda(0.81, null, function(an){ return vinetas(_rhMayusTras2p(d.refuerzo), an, { just: true }); })], { despues: 6 });
   var firma = d.firma !== false && _rhFirma && _rhFirma.src ? _rhFirma : null;
-  fila([celda(0.19, AZ, txt('Psicólogo que realiza el informe')), celda(0.81, null, function(an) {
+  fila([celda(0.19, AZ, txt(T.et_psicologo)), celda(0.81, null, function(an) {
     if (!firma) return parrafo([{ t: d.psicologo || '' }], an);
     // Timbre centrado: firma (alto máx. 24 mm, ancho máx. 70 mm), línea, nombre en negrita y RUT
     var h = 24, w = h * firma.ratio; if (w > 70) { w = 70; h = w / firma.ratio; }
@@ -18980,21 +19060,21 @@ function _rhArmarPdf(c, d, nom) {
 
   // ── Hoja 5: entrevista operacional (la completa el supervisor) ──
   seccion();
-  titulo('B. ENTREVISTA OPERACIONAL', 16, 0, 5);
-  fila([celda(0.25, AZ2, txt('Fecha de la entrevista', { b: true })), celda(0.75, null, null)], { minH: 16, despues: 10 });
-  fila([celda(1, AZ, txt('Se aprueba la contratación', { b: true }))]);
+  titulo(T.sec_b, 16, 0, 5);
+  fila([celda(0.25, AZ2, txt(T.b_fecha, { b: true })), celda(0.75, null, null)], { minH: 16, despues: 10 });
+  fila([celda(1, AZ, txt(T.b_aprueba, { b: true }))]);
   fila([celda(1, null, function(){ return pila([['si','Si'],['no','No']], '', 10); })], { minH: 20, despues: 6 });
-  fila([celda(1, AZ, txt('Observaciones (Obligatorias)', { b: true }))]);
+  fila([celda(1, AZ, txt(T.b_obs, { b: true }))]);
   fila([celda(1, null, null)], { minH: 58, despues: 6 });
-  fila([celda(0.19, AZ, txt('Subgerente o Supervisor que realizó la entrevista')), celda(0.56, null, txt('Nombre completo', { centro: true }), { abajo: true }),
-        celda(0.25, null, txt('Firma', { centro: true }), { abajo: true })], { minH: 24 });
+  fila([celda(0.19, AZ, txt(T.b_quien)), celda(0.56, null, txt(T.b_nombre, { centro: true }), { abajo: true }),
+        celda(0.25, null, txt(T.b_firma, { centro: true }), { abajo: true })], { minH: 24 });
 
   // ── Hoja 6: verificación de domicilio y cierre ──
   seccion();
-  titulo('C. VERIFICACION DE DOMICILIO', PT, 0, 4);
-  fila([celda(1, AZ, txt('Requiere verificación de domicilio por falta de recomendaciones: *'))]);
+  titulo(T.sec_c, PT, 0, 4);
+  fila([celda(1, AZ, txt(T.c_requiere))]);
   fila([celda(1, null, function(){ return pila([['si','Si'],['no','No']], '', 10); })], { despues: 8 });
-  ['SUPERVISOR ENTREVISTADOR', 'VERIFICADOR DE DOMICILIO', 'CIERRE'].forEach(function(t) {
+  [T.c_sup, T.c_ver, T.c_cierre].forEach(function(t) {
     if (y + 12 > PH - MB) nueva();
     fuente(PT); J.text(t, ML, y + 6); J.setFillColor(255); J.rect(ML + W * 0.37, y + 0.5, W * 0.63, 9.5, 'FD'); y += 12;
   });
@@ -19006,15 +19086,15 @@ function _rhArmarPdf(c, d, nom) {
     J.setPage(n); J.setLineWidth(0.3); J.setFillColor(255);
     J.rect(ML, MT, W, HDR); J.line(x1, MT, x1, MT + HDR); J.line(x2, MT, x2, MT + HDR); J.line(x3, MT, x3, MT + HDR);
     J.line(x2, MT + 11, x3, MT + 11); J.line(x2, MT + 22, x3, MT + 22);
-    fuente(44, true, 'helvetica'); J.text('RH', ML + cw2[0] / 2, MT + HDR / 2 + 5.6, { align: 'center' });
-    fuente(11, true, 'helvetica'); J.text(['INFORME PSICOLABORAL', 'VERIFICACION DE DOMICILIO'], x1 + cw2[1] / 2, MT + HDR / 2 - 0.8, { align: 'center', lineHeightFactor: 1.25 });
-    fuente(13, true, 'helvetica'); J.text('R-GP-054', x2 + cw2[2] / 2, MT + 7.4, { align: 'center' }); J.text('I-GP-001', x2 + cw2[2] / 2, MT + 18.4, { align: 'center' });
-    fuente(9, true, 'helvetica'); J.text(['Versión: 03', 'Página ' + n + ' de ' + N], x2 + cw2[2] / 2, MT + 27.2, { align: 'center', lineHeightFactor: 1.25 });
+    fuente(44, true, 'helvetica'); J.text(T.enc_logo, ML + cw2[0] / 2, MT + HDR / 2 + 5.6, { align: 'center' });
+    fuente(11, true, 'helvetica'); J.text([T.enc_tit1, T.enc_tit2], x1 + cw2[1] / 2, MT + HDR / 2 - 0.8, { align: 'center', lineHeightFactor: 1.25 });
+    fuente(13, true, 'helvetica'); J.text(T.enc_cod1, x2 + cw2[2] / 2, MT + 7.4, { align: 'center' }); J.text(T.enc_cod2, x2 + cw2[2] / 2, MT + 18.4, { align: 'center' });
+    fuente(9, true, 'helvetica'); J.text([T.enc_version, 'Página ' + n + ' de ' + N], x2 + cw2[2] / 2, MT + 27.2, { align: 'center', lineHeightFactor: 1.25 });
     fuente(11.5, true, 'helvetica'); J.text(['Nivel de', 'Seguridad'], x3 + 2.2, MT + 5, { lineHeightFactor: 1.15 });
     fuente(11.5, false, 'helvetica');
     ['Público', 'Reservado', 'Secreto'].forEach(function(t, i) { var b = MT + 17 + i * 5.6; caja(x3 + 2.2, b - 3, i === 1, 3.2); J.text(t, x3 + 7.2, b); });
   }
-  J.setProperties({ title: nom + ' IPS', subject: 'Informe psicolaboral R-GP-054' });
+  J.setProperties({ title: nom + ' IPS', subject: 'Informe psicolaboral ' + T.enc_cod1 });
   return J;
 }
 
