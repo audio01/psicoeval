@@ -2792,7 +2792,7 @@ body.adm .rh-box .vac-benef label,.vac-benef label{display:inline-flex;white-spa
   <!-- Ingreso del equipo: mismo estilo de vidrio que la portada (body.pub) -->
   <div class="pub-login">
     <div class="pub-panel pub-login-card">
-      <div class="pub-brand">RH <span>Seguridad</span></div>
+      <div class="pub-brand">Psico<span>Eval</span></div>
       <div class="pub-kicker">Panel de selección</div>
       <h2 class="pub-login-t">Ingreso del equipo</h2>
       <p class="pub-login-s">Ingresa con tu correo y contraseña.</p>
@@ -2820,7 +2820,7 @@ body.adm .rh-box .vac-benef label,.vac-benef label{display:inline-flex;white-spa
 <div id="view-admin" class="view" style="height:100vh;overflow:hidden">
   <div class="admin-layout">
     <aside class="sidebar">
-      <div class="logo">RH <span>Seguridad</span><small class="logo-sub">Panel de selección</small></div>
+      <div class="logo">Psico<span>Eval</span><small class="logo-sub">Panel de selección</small></div>
       <button class="sb-cta" id="sb-invitar" onclick="_invVacante='';showInviteModal()"><svg class="ico"><use href="#i-send"/></svg>Invitar a evaluación</button>
       <button class="nav-btn active" id="nav-dashboard" onclick="adminTab('dashboard',this)"><svg class="ico"><use href="#i-dash"/></svg><span>Dashboard</span></button>
       <button class="nav-btn" id="nav-candidates" onclick="adminTab('candidates',this)"><svg class="ico"><use href="#i-users"/></svg><span>Candidatos</span><b class="nav-n" data-nuevos title="Nuevos por revisar" style="display:none"></b></button>
@@ -2852,7 +2852,7 @@ body.adm .rh-box .vac-benef label,.vac-benef label{display:inline-flex;white-spa
       <!-- Mobile top bar -->
       <div id="mobile-admin-bar" style="display:none;align-items:center;justify-content:space-between;margin:-28px -36px 20px;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:-28px;z-index:50">
         <button id="mobile-menu-btn" onclick="toggleMobileSidebar()" style="display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;font-size:18px">☰</button>
-        <div style="font-size:15px;font-weight:700;letter-spacing:-.02em">RH <span style="color:var(--accent)">Seguridad</span></div>
+        <div style="font-size:15px;font-weight:700;letter-spacing:-.02em">Psico<span style="color:var(--accent)">Eval</span></div>
         <div style="width:36px"></div>
       </div>
       <!-- Mobile sidebar overlay (static, toggled via .open class) -->
@@ -2860,7 +2860,7 @@ body.adm .rh-box .vac-benef label,.vac-benef label{display:inline-flex;white-spa
         <div class="mob-overlay" onclick="closeMobileSidebar()"></div>
         <div class="mob-panel">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-            <div style="font-size:17px;font-weight:700">RH <span style="color:var(--accent)">Seguridad</span></div>
+            <div style="font-size:17px;font-weight:700">Psico<span style="color:var(--accent)">Eval</span></div>
             <button onclick="closeMobileSidebar()" aria-label="Cerrar menú" style="width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:16px">✕</button>
           </div>
           <button class="sb-cta" onclick="closeMobileSidebar();showInviteModal()"><svg class="ico"><use href="#i-send"/></svg>Invitar a evaluación</button>
@@ -5176,7 +5176,7 @@ function showView(id) {
   var pub = ['landing','register','testselect','test','results','adminlogin'].indexOf(id) !== -1;
   document.body.classList.toggle('pub', pub);
   document.body.classList.toggle('adm', id === 'admin');
-  document.title = id === 'adminlogin' ? 'RH Seguridad — Ingreso del equipo' : pub ? 'PsicoEval — Evaluación de postulantes' : 'RH Seguridad — Panel de selección';
+  document.title = id === 'adminlogin' ? 'PsicoEval — Ingreso del equipo' : pub ? 'PsicoEval — Evaluación de postulantes' : 'PsicoEval — Panel de selección';
   el.style.display = FLEX_VIEWS.includes(id) ? 'flex' : 'block';
   window.scrollTo(0,0);
 }
@@ -6376,7 +6376,7 @@ async function _vacGuardarForm(id) {
 }
 
 // ── Planilla Excel de vacantes (27_vacantes_excel.sql) ──
-// Mismas columnas que la planilla de RH Seguridad, más Certificado, Residencia, Otros beneficios e ID.
+// Mismas columnas que la planilla de la empresa, más Certificado, Residencia, Otros beneficios e ID.
 // Al subir: se lee en este computador, se muestran los cambios y se guardan solo al confirmar.
 var _XLSX_LIB = ['https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js', 'sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw', 'XLSX'];
 var _VAC_COLS = ['Instalación', 'Activo', 'Comuna', 'Direccion', 'Link Mapa', 'Jornada', 'Turno', 'Cargo', 'Horario', 'Total Líquido', 'Colación', 'Comentario', 'Certificado', 'Residencia', 'Otros beneficios', 'Cupos', 'ID'];
@@ -6499,7 +6499,7 @@ async function _vacExcelBajar() {
     var hoja = XLSX.utils.json_to_sheet(filas, { header: _VAC_COLS });
     hoja['!cols'] = _VAC_COLS.map(function(c){ return { wch: { 'Instalación':34, 'Direccion':40, 'Link Mapa':30, 'Horario':30, 'Comentario':40, 'Otros beneficios':26, 'Cupos':8, 'ID':38 }[c] || 14 }; });
     var libro = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(libro, hoja, 'Instalaciones');
-    XLSX.writeFile(libro, 'Instalaciones RH Seguridad ' + new Date().toISOString().slice(0, 10) + '.xlsx');
+    XLSX.writeFile(libro, 'Instalaciones ' + new Date().toISOString().slice(0, 10) + '.xlsx');
   } catch(e) { toast('No se pudo descargar el Excel: ' + e.message, 'er'); }
 }
 var _vacPlan = null;
@@ -19144,7 +19144,7 @@ function _ctoDatos(c) {
   var completo = may((c.apellido || '') + ' ' + (_vacLimpio(c.nombre).split(' ')[0] || '')) + (pz.instalacion ? ' - ' + may(pz.instalacion) : '');
   return { nombre: completo, apellido: '', completo: completo,
            tel: tel, email: _vacLimpio(c.email), cargo: cargo, instalacion: pz.instalacion || '',
-           nota: 'Postulante RH Seguridad' + (f.length === 10 ? ' · postuló el ' + f : '') + (c.comuna ? ' · vive en ' + _vacLimpio(c.comuna) : '') };
+           nota: 'Postulante' + (f.length === 10 ? ' · postuló el ' + f : '') + (c.comuna ? ' · vive en ' + _vacLimpio(c.comuna) : '') };
 }
 function _ctoVcard(c) {
   var d = _ctoDatos(c), x = function(t){ return String(t || '').replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/([,;])/g, '\\$1'); };
