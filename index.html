@@ -1773,6 +1773,21 @@ body.adm .pub-aura i{animation:none}   /* estático: el vidrio no recompone en c
 .dsh-sbar2 button{min-width:22px;border:none;padding:0 6px;color:#fff;font:inherit;font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums;cursor:pointer;text-align:left}
 .dsh-sbar2 button:first-child{border-radius:5px 0 0 5px}.dsh-sbar2 button:last-child{border-radius:0 5px 5px 0}.dsh-sbar2 button:only-child{border-radius:5px}
 .dsh-sbar2 button:hover{filter:brightness(1.12)}
+/* Gráfico de motivos al tocar un tramo: ventana con barras horizontales de mayor a menor */
+.dsh-mov{position:fixed;inset:0;z-index:9200;background:rgba(20,33,61,.32);display:flex;align-items:center;justify-content:center;padding:18px}
+.dsh-mbox{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:min(560px,100%);max-height:100%;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(15,23,42,.28)}
+.dsh-mt{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:16px 20px 8px}
+.dsh-mtit{font-size:15px;font-weight:800;color:var(--ink);letter-spacing:-.01em}.dsh-msub{font-size:12.5px;color:var(--ink3);margin-top:2px}
+.dsh-mx{border:none;background:none;font-size:16px;color:var(--ink3);cursor:pointer;padding:4px 8px;border-radius:8px}.dsh-mx:hover{background:var(--surface2)}
+.dsh-mb{overflow-y:auto;padding:8px 14px 6px;display:flex;flex-direction:column;gap:2px}
+.dsh-mr{display:grid;grid-template-columns:minmax(120px,42%) 1fr 70px;align-items:center;gap:12px;border:none;background:none;font:inherit;text-align:left;padding:7px 6px;border-radius:8px;cursor:pointer;color:var(--ink)}
+.dsh-mr:hover{background:var(--surface2)}
+.dsh-ml{font-size:13px;line-height:1.25}
+.dsh-mp{height:12px;border-radius:0 6px 6px 0;background:rgba(20,33,61,.06);display:block;overflow:hidden}.dsh-mp i{display:block;height:100%;border-radius:0 6px 6px 0}
+.dsh-mn{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink);text-align:right}.dsh-mn small{font-weight:600;color:var(--ink3)}
+.dsh-mf{display:flex;justify-content:flex-end;padding:10px 20px 16px;border-top:1px solid var(--border)}
+[data-theme="dark"] .dsh-mp{background:rgba(255,255,255,.08)}
+@media (max-width:640px){.dsh-mr{grid-template-columns:1fr 64px;row-gap:4px}.dsh-mp{grid-column:1/-1;grid-row:2}}
 .dsh-it{text-align:right}
 .dsh-ix{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
 .dsh-alerta{background:rgba(227,73,72,.1);color:#b42318;border-radius:999px;padding:2px 8px;font-size:11.5px;font-weight:700;white-space:nowrap}
@@ -2398,7 +2413,7 @@ body.adm .rh-box .vac-benef label,.vac-benef label{display:inline-flex;white-spa
           </div>
           <div class="field">
             <label for="r-canal-instalacion">¿En qué instalación trabaja? (opcional)</label>
-            <input id="r-canal-instalacion" maxlength="120" placeholder="Ej: Rehau" autocomplete="off">
+            <input id="r-canal-instalacion" maxlength="120" placeholder="Nombre de la instalación o empresa" autocomplete="off">
           </div>
         </div>
         <div class="field" id="canal-otro" style="display:none">
@@ -6355,7 +6370,7 @@ function _vacEditar(id, copiaDe) {
     + '<div class="field"><label>Requisito de residencia</label><input id="vac-resid" class="rh-in" maxlength="120" value="' + e(v.residencia || '') + '" placeholder="Ej: Vivir en Graneros o comunas cercanas"></div></div>'
     + '<div class="field"><label>Beneficios</label><div class="vac-benef">' + _VAC_BENEF.map(function(b){ return '<label><input type="checkbox" class="vac-b" value="' + e(b) + '"' + (benef.indexOf(b) !== -1 ? ' checked' : '') + '><span>' + e(b) + '</span></label>'; }).join('') + '</div>'
     + '<input id="vac-botros" class="rh-in" maxlength="120" style="margin-top:8px" value="' + e(otros.join(', ')) + '" placeholder="Otros beneficios, separados por coma"></div>'
-    + '<div class="field"><label>Descripción para el postulante <span style="text-transform:none;font-weight:500">(opcional)</span></label><textarea id="vac-det" class="rh-in" rows="2" maxlength="300" placeholder="Ej: Control de acceso en planta">' + e(v.detalle) + '</textarea></div>'
+    + '<div class="field"><label>Descripción para el postulante <span style="text-transform:none;font-weight:500">(opcional; la ve el postulante, sin el nombre de la instalación)</span></label><textarea id="vac-det" class="rh-in" rows="2" maxlength="300" placeholder="Ej: Control de acceso en planta">' + e(v.detalle) + '</textarea></div>'
     + '</div><div class="rh-pie"><span style="margin-right:auto"></span><button class="rs-btn" onclick="document.getElementById(\'vac-overlay\').remove()">Cancelar</button>'
     + '<button class="rs-btn prim" onclick="_vacGuardarForm(' + (id ? '\'' + e(id) + '\'' : '') + ')">Guardar</button></div></div>';
   document.body.appendChild(ov);
@@ -6371,6 +6386,7 @@ async function _vacGuardarForm(id) {
             cargo_nombre: val('vac-cnom'), direccion: val('vac-dir'), cupos: (function(n){ return isNaN(n) || n < 1 ? null : Math.min(n, 500); })(parseInt(val('vac-cupos'), 10)), link_mapa: /^https:\/\//.test(val('vac-mapa')) ? val('vac-mapa') : '' };
   if (val('vac-mapa') && !d.link_mapa) { toast('El link del mapa debe empezar con https://', 'er'); return; }
   if (!d.instalacion) { toast('Escriba la instalación', 'er'); return; }
+  var nv = _vacNombreVisible(d); if (nv) { toast('El nombre de la instalación aparece en ' + nv + ', y el postulante lo ve. Quítelo de ahí.', 'er'); return; }
   try { await _vacGuardar(id, d); var o = document.getElementById('vac-overlay'); if (o) o.remove(); toast(id ? 'Instalación actualizada' : (_vacLista || []).some(function(x){ return _vacNorm(x.instalacion) === _vacNorm(d.instalacion); }) ? 'Cargo agregado a la instalación' : 'Instalación creada', 'ok'); renderVacantesTab(); }
   catch(e) { toast('No se pudo guardar: ' + e.message, 'er'); }
 }
@@ -6414,6 +6430,15 @@ function _vacPerfilDe(cargo) {
   return 'guardia';
 }
 var _VAC_CERT_XL = { '':'No', os10:'OS-10', spd:'SPD', os10_o_spd:'OS-10 o SPD' };
+// El postulante ve la comuna, el turno, el horario, el sueldo, los requisitos y la descripción de la vacante, pero no el nombre de la instalación.
+// Devuelve el campo visible donde ese nombre aparece escrito ('' si en ninguno), para no guardar ni cargar la vacante
+function _vacNombreVisible(d) {
+  var n = _vacNorm(d.instalacion); if (n.length < 3) return '';
+  var campos = [['el nombre del cargo', d.cargo_nombre], ['la descripción', d.detalle], ['el requisito de residencia', d.residencia], ['el horario', d.horario],
+    ['el turno', d.turno_otra], ['la comuna', d.comuna], ['los beneficios', (d.beneficios || []).join(' ')]];
+  for (var i = 0; i < campos.length; i++) if (_vacNorm(campos[i][1]).indexOf(n) !== -1) return campos[i][0];
+  return '';
+}
 // Una fila de la planilla → datos de la vacante, con errores (no se carga) y avisos (se carga)
 function _vacDesdeFila(f) {
   var g = function(k){ var n = _vacNorm(k); for (var key in f) if (_vacNorm(key) === n) return f[key]; return ''; };
@@ -6455,6 +6480,7 @@ function _vacDesdeFila(f) {
   d.cupos = cu ? (cun >= 1 ? Math.min(cun, 500) : null) : null;
   if (cu && !(cun >= 1)) err.push('Cupos debe ser un número de 1 o más');
   d.id = _vacLimpio(g('ID'));
+  var nv = _vacNombreVisible(d); if (nv) err.push('el nombre de la instalación aparece en ' + nv + ', y el postulante lo ve: quítelo de ahí');
   return { datos: d, errores: err, avisos: av };
 }
 function _vacAFila(v) {
@@ -12715,20 +12741,66 @@ function _dashSemanalHtml(cands, invs, n) {
     + '</tbody></table></div></div>';
   return h + '<div class="dash-card" id="dsh-actividad"></div>';
 }
+function _dashGrupoNuevo(nom) {
+  return { nom: nom, ids: [], env: [], pro: [], noc: [], rech: [], det: { env: [], pro: [], noc: [], rech: [] }, cupos: null, activa: false, cargos: {} };
+}
+// Motivo de cada persona según el tramo: en cierres, el que se registró al cerrar; en los demás, la etapa en que va
+function _dashMotivoDe(c, e) {
+  if (!_esCierre(e)) return getPipelineMeta(e).label;
+  var s = c.scores || {}, h = (s._pipeline_history || []).filter(function(x){ return x && x.to === e; }).pop(), mot = h && h.motivo ? String(h.motivo) : '';
+  if (e === 'descartado' && (/^Antecedentes/.test(mot) || (s._chapi && s._chapi.rechazo))) return 'Antecedentes';
+  if (/^Otro/.test(mot)) return 'Otro';
+  if (mot === 'Entrevista: no recomendable') return 'Entrevista no recomendable';
+  return mot || 'Sin motivo registrado';
+}
+// Gráfico de motivos de un tramo (se abre al tocarlo): barras ordenadas de mayor a menor; cada barra abre a esas personas
+var _dashMots = [];
+function _dashMotCelda(inst, seg, det) { _dashMots.push({ inst: inst, seg: seg, det: det || [] }); return _dashMots.length - 1; }
+function _dashMotivosHtml(x, celda) {
+  var por = {}, tot = x.det.length;
+  x.det.forEach(function(d){ (por[d.m] = por[d.m] || []).push(d.id); });
+  var filas = Object.keys(por).map(function(m){ return { m: m, ids: por[m] }; }).sort(function(a, b){ return (b.ids.length - a.ids.length) || a.m.localeCompare(b.m, 'es'); });
+  var max = filas.length ? filas[0].ids.length : 1, cierre = x.seg[0] === 'rech' || x.seg[0] === 'noc';
+  var h = '<div class="dsh-mt"><div><div class="dsh-mtit">' + htmlEsc(x.seg[1]) + ' · ' + htmlEsc(x.inst) + '</div>'
+    + '<div class="dsh-msub">' + (cierre ? 'Motivos más comunes' : 'Etapa en que va cada persona') + ' · ' + tot + (tot === 1 ? ' persona' : ' personas') + '</div></div>'
+    + '<button class="dsh-mx" onclick="_dashMotivosCerrar()" aria-label="Cerrar">✕</button></div><div class="dsh-mb">';
+  h += filas.map(function(f) {
+    var n = f.ids.length, pct = tot >= 10 ? ' <small>' + _dashPct(n, tot) + ' %</small>' : '';
+    return '<button class="dsh-mr" title="' + htmlEsc(f.m) + ': ' + n + ' · ver a las personas" onclick="_dashMotivosCerrar();_dashAbrir(' + _dashCelda(f.ids, x.inst + ' · ' + x.seg[1] + ' · ' + f.m) + ')">'
+      + '<span class="dsh-ml">' + htmlEsc(f.m) + '</span><span class="dsh-mp"><i style="width:' + Math.max(3, Math.round(n / max * 100)) + '%;background:' + x.seg[2] + '"></i></span>'
+      + '<span class="dsh-mn">' + n + pct + '</span></button>';
+  }).join('');
+  return h + '</div><div class="dsh-mf"><button class="btn btn-ghost" onclick="_dashMotivosCerrar();_dashAbrir(' + _dashCelda(x.det.map(function(d){ return d.id; }), x.inst + ' · ' + x.seg[1]) + ')">' + (tot === 1 ? 'Ver a la persona' : 'Ver a las ' + tot + ' personas') + '</button></div>';
+}
+function _dashMotivosAbrir(i) {
+  var x = _dashMots[i]; if (!x || !x.det.length) return;
+  _dashMotivosCerrar();
+  var ov = document.createElement('div'); ov.id = 'dsh-mov'; ov.className = 'dsh-mov';
+  ov.onclick = function(e){ if (e.target === ov) _dashMotivosCerrar(); };
+  ov.innerHTML = '<div class="dsh-mbox" role="dialog" aria-modal="true">' + _dashMotivosHtml(x) + '</div>';
+  document.body.appendChild(ov);
+  document.addEventListener('keydown', _dashMotivosTecla);
+}
+function _dashMotivosTecla(e) { if (e.key === 'Escape') _dashMotivosCerrar(); }
+function _dashMotivosCerrar() {
+  var ov = document.getElementById('dsh-mov'); if (ov) ov.remove();
+  document.removeEventListener('keydown', _dashMotivosTecla);
+}
 function _dashInstalacionesHtml(cands) {
   var grupos = {}, sin = [];
   cands.forEach(function(c) {
     var nom = String(_instalacionDe(c) || '').trim(), k = _vacNorm(nom), e = getPipelineEtapa(c);
     if (!k) { sin.push(c.id); return; }
-    var g = grupos[k] = grupos[k] || { nom: nom, ids: [], env: [], pro: [], noc: [], rech: [], cupos: null, activa: false, cargos: {} };
+    var g = grupos[k] = grupos[k] || _dashGrupoNuevo(nom);
     g.ids.push(c.id);
-    (e === 'seleccionado' || e === 'enviado' || e === 'contratado' ? g.env : e === 'no_contratado' ? g.noc : e === 'descartado' ? g.rech : g.pro).push(c.id);
+    var sk = e === 'seleccionado' || e === 'enviado' || e === 'contratado' ? 'env' : e === 'no_contratado' ? 'noc' : e === 'descartado' ? 'rech' : 'pro';
+    g[sk].push(c.id); g.det[sk].push({ id: c.id, m: _dashMotivoDe(c, e) });
     // Por cargo dentro de la instalación (una instalación puede tener varios cargos)
     var cg = _postulaDe(c).cargo || _rhCargoBase(c), kc = _vacNorm(cg), gc = g.cargos[kc] = g.cargos[kc] || { nom: cg, ids: [], env: [], cupos: null };
     gc.ids.push(c.id); if (e === 'seleccionado' || e === 'enviado' || e === 'contratado') gc.env.push(c.id);
   });
   (_vacLista || []).filter(function(v){ return v.activa && (!_dashPerfil || _dashPerfil === 'all' || v.perfil === _dashPerfil); }).forEach(function(v) {
-    var k = _vacNorm(v.instalacion), g = grupos[k] = grupos[k] || { nom: v.instalacion, ids: [], env: [], pro: [], noc: [], rech: [], cupos: null, activa: false, cargos: {} };
+    var k = _vacNorm(v.instalacion), g = grupos[k] = grupos[k] || _dashGrupoNuevo(v.instalacion);
     g.activa = true; if (v.cupos) g.cupos = (g.cupos || 0) + v.cupos;
     var kc = _vacNorm(_vacCargoTxt(v)), gc = g.cargos[kc] = g.cargos[kc] || { nom: _vacCargoTxt(v), ids: [], env: [], cupos: null };
     if (v.cupos) gc.cupos = (gc.cupos || 0) + v.cupos;
@@ -12749,7 +12821,7 @@ function _dashInstalacionesHtml(cands) {
   var conGente = filas.filter(function(g){ return g.ids.length; }), vacias = activas.filter(function(g){ return !g.ids.length; });
   var sinCupos = activas.filter(function(g){ return g.ids.length && !g.cupos; }).length;
   if (vacias.length) h += '<div class="dsh-aviso"><b>Sin postulantes en el período:</b> ' + vacias.map(function(g){ return htmlEsc(g.nom); }).join(', ') + '.</div>';
-  h += '<div class="dash-card"><div class="dash-lbl">Resultado por instalación</div><div class="dsh-nota">Personas del período y cómo va cada una. Toque un tramo para ver a esas personas.'
+  h += '<div class="dash-card"><div class="dash-lbl">Resultado por instalación</div><div class="dsh-nota">Personas del período y cómo va cada una. Toque un tramo para ver el motivo de cada una; desde ahí puede abrir a las personas.'
     + (sinCupos ? ' ' + sinCupos + (sinCupos === 1 ? ' instalación activa no tiene' : ' instalaciones activas no tienen') + ' cupos cargados.' : '') + '</div>'
     + '<div class="dsh-leg">' + seg.map(function(s){ return '<span><i style="background:' + s[2] + '"></i>' + s[1] + '</span>'; }).join('') + '</div>';
   if (!conGente.length) return h + '<div class="dsh-vacio">Sin postulantes con instalación en el período.</div></div>';
@@ -12761,7 +12833,7 @@ function _dashInstalacionesHtml(cands) {
     if (n >= 5 && g.noc.length / n >= 0.4) alertas.push(_dashPct(g.noc.length, n) + ' % no contratados');
     return '<div class="dsh-ir"><div class="dsh-in" title="' + htmlEsc(g.nom) + '">' + htmlEsc(g.nom) + '</div>'
       + '<div class="dsh-ib"><div class="dsh-sbar2" style="width:' + Math.max(8, Math.round(n / max * 100)) + '%">'
-      + seg.map(function(s){ var ids = g[s[0]]; return ids.length ? '<button style="flex:' + ids.length + ' 0 auto;background:' + s[2] + '" title="' + s[1] + ': ' + ids.length + '" onclick="_dashAbrir(' + _dashCelda(ids, g.nom + ' · ' + s[1]) + ')">' + ids.length + '</button>' : ''; }).join('')
+      + seg.map(function(s){ var ids = g[s[0]]; return ids.length ? '<button style="flex:' + ids.length + ' 0 auto;background:' + s[2] + '" title="' + s[1] + ': ' + ids.length + ' · ver el motivo de cada una" onclick="_dashMotivosAbrir(' + _dashMotCelda(g.nom, s, g.det[s[0]]) + ')">' + ids.length + '</button>' : ''; }).join('')
       + '</div></div>'
       + '<div class="dsh-it">' + _dashNum(g.ids, g.nom) + '</div>'
       + '<div class="dsh-ix">' + alertas.map(function(t){ return '<span class="dsh-alerta">' + t + '</span>'; }).join('')
