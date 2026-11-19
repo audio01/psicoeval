@@ -19382,14 +19382,15 @@ function _plContar() {
 
 // Tabla con estilos en línea: así se conserva el formato al pegarla en Outlook o Gmail
 function _plTablaHtml() {
-  var e = function(x){ return htmlEsc(x || ''); };
-  var td = 'border:1px solid #000;padding:3px 6px;font-family:Arial,sans-serif;font-size:11px;text-align:center;vertical-align:middle';
-  return '<table id="pl-tabla" style="border-collapse:collapse;background:#fff;color:#000">'
-    + '<tr>' + _PL_COLS.map(function(h){ return '<th style="' + td + ';background:' + _PL_AZUL + ';color:#fff;font-weight:700;white-space:nowrap">' + e(h) + '</th>'; }).join('') + '</tr>'
+  // Para pegar en el correo (Outlook/Gmail ignoran "white-space:nowrap"): espacios duros, atributo nowrap y anchos fijos,
+  // así ninguna celda se parte en dos líneas ni se corta al pegar.
+  var e = function(x){ return htmlEsc(x || '').replace(/ /g, '&nbsp;'); };
+  var td = 'border:1px solid #000;padding:3px 6px;font-family:Arial,sans-serif;font-size:11px;text-align:center;vertical-align:middle;white-space:nowrap';
+  return '<table id="pl-tabla" cellspacing="0" cellpadding="0" border="1" style="border-collapse:collapse;background:#fff;color:#000">'
+    + '<tr>' + _PL_COLS.map(function(h){ return '<th nowrap="nowrap" style="' + td + ';background:' + _PL_AZUL + ';color:#fff;font-weight:700">' + e(h) + '</th>'; }).join('') + '</tr>'
     + _plFilas.map(function(f) {
       return '<tr>' + f.map(function(v, i) {
-        var nw = i === 0 || i === 3 || i === 4 || i === 5 || i === 10 ? ';white-space:nowrap' : '';
-        return '<td style="' + td + nw + (i === 11 ? ';min-width:200px' : '') + '">' + e(v) + '</td>';
+        return '<td nowrap="nowrap"' + (i === 11 ? ' width="200"' : '') + ' style="' + td + (i === 11 ? ';min-width:200px' : '') + '">' + e(v) + '</td>';
       }).join('') + '</tr>';
     }).join('')
     + '</table>';
