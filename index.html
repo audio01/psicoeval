@@ -1755,6 +1755,14 @@ body.adm .pub-aura i{animation:none}   /* estático: el vidrio no recompone en c
 .dsh-icg{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:4px 16px;font-size:11.5px;color:var(--ink3);padding:0 0 2px}
 .dsh-icg b{font-weight:700;color:var(--ink2)}
 .vac-inst{margin-bottom:14px}
+.vac-g{margin-bottom:8px}
+.vac-gi{flex:0 0 190px;min-width:0}
+.vac-gi b{display:block;font-size:13.5px;font-weight:800;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vac-it.off .vac-gi b{color:var(--ink3)}
+.vac-inv{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--accent-m,rgba(39,71,216,.3));background:var(--accent-l,rgba(39,71,216,.06));color:var(--accent);border-radius:8px;padding:4px 10px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;flex-shrink:0}
+.vac-inv .ico{width:13px;height:13px}
+.vac-inv:hover{background:var(--accent);color:#fff}
+.vac-inv[disabled]{opacity:.35;cursor:not-allowed;background:transparent;color:var(--ink3);border-color:var(--border)}
 .vac-inst-h{display:flex;align-items:center;gap:10px;padding:10px 4px 6px;border-bottom:1px solid var(--border)}
 .vac-inst-h>div{flex:1;min-width:0}
 .vac-inst-h b{display:block;font-size:14px;font-weight:800;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -2100,7 +2108,7 @@ body.adm .pdf-ic{display:inline-flex;color:var(--ink4)}
 .vac-grupo i{flex:1;height:1px;background:rgba(20,33,61,.08)}
 .vac-lst{background:rgba(255,255,255,.55);border:1px solid rgba(20,33,61,.08);border-radius:12px;overflow:hidden}
 .vac-it+.vac-it{border-top:1px solid rgba(20,33,61,.06)}
-.vac-l{display:flex;align-items:center;gap:12px;padding:10px 14px;cursor:pointer;min-height:48px}
+.vac-l{display:flex;align-items:center;gap:10px;padding:5px 12px;cursor:pointer;min-height:38px}
 .vac-l:hover{background:rgba(20,33,61,.025)}
 .vac-dot{width:8px;height:8px;border-radius:50%;background:#16a34a;flex-shrink:0}
 .vac-it.off .vac-dot{background:#cbd5e1}
@@ -2126,7 +2134,7 @@ body.adm .pdf-ic{display:inline-flex;color:var(--ink4)}
 .vac-vacio{padding:28px;text-align:center;color:var(--ink3);font-size:13px}
 [data-theme="dark"] .vac-lst,[data-theme="dark"] .vac-buscar{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.08)}
 [data-theme="dark"] .vac-seg button.on{background:rgba(255,255,255,.12)}
-@media (max-width:640px){.vac-nom{flex-direction:column;align-items:stretch;gap:1px}.vac-l{gap:8px;padding:10px 10px 10px 12px}.vac-l .vac-n{display:none}.vac-det{padding-left:14px}}
+@media (max-width:640px){.vac-l{display:grid;grid-template-columns:8px 1fr auto auto 14px;column-gap:8px;row-gap:0;padding:7px 10px 7px 12px}.vac-l>.vac-dot,.vac-l>.vac-inv,.vac-l>.vac-sw,.vac-l>.vac-chev{grid-row:1/span 2}.vac-gi{grid-column:2;grid-row:1;max-width:none}.vac-gi:empty{display:none}.vac-nom{grid-column:2;grid-row:2;flex-direction:column;align-items:stretch;gap:1px}.vac-gi+.vac-nom{margin-top:0}.vac-l .vac-n{display:none}.vac-det{padding-left:14px}}
 /* Cargos */
 .vac-fila{display:flex;align-items:center;gap:14px;padding:16px 18px;flex-wrap:wrap}
 .vac-txt{flex:1;min-width:200px;display:flex;flex-direction:column;gap:2px}
@@ -6274,38 +6282,37 @@ function _vacPintar() {
   var h = '';
   orden.forEach(function(k) {
     var vs = porInst[k].sort(function(a, b){ return (b.activa - a.activa) || _vacCargoTxt(a).localeCompare(_vacCargoTxt(b), 'es'); });
-    var v0 = vs.filter(function(v){ return v.activa; })[0] || vs[0], todas = (_vacLista || []).filter(function(v){ return _vacNorm(v.instalacion) === k; });
+    var v0 = vs.filter(function(v){ return v.activa; })[0] || vs[0];
     var con = function(k){ var x = vs.filter(function(v){ return v[k]; })[0]; return x ? x[k] : ''; };
-    var lugar = [con('comuna'), con('direccion')].filter(Boolean).map(htmlEsc).join(' · ');
-    h += '<div class="vac-inst"><div class="vac-inst-h"><div><b>' + htmlEsc(v0.instalacion) + '</b>' + (lugar ? '<span>' + lugar + '</span>' : '') + '</div>'
-      + '<em>' + todas.length + (todas.length === 1 ? ' cargo' : ' cargos') + '</em>'
-      + (admin ? '<button class="rs-btn" onclick="_vacEditar(null, \'' + htmlEsc(v0.id) + '\')" title="Agregar otro cargo a esta instalación, con sus mismos datos">+ Agregar cargo</button>' : '') + '</div><div class="vac-lst">';
-    vs.forEach(function(v) {
+    // Una tarjeta por instalación y una sola línea por cargo: el nombre sale una vez, a la izquierda
+    h += '<div class="vac-lst vac-g">';
+    vs.forEach(function(v, idx) {
       var pm = PERFIL_META[v.perfil] || {};
       var id = htmlEsc(v.id), datos = _vacDatos(v), turno = v.turno ? _rhTurnoTxt({ jornada: v.turno, jornada_otra: v.turno_otra }) : '';
-      var sub = [turno, v.cargo_nombre && v.cargo_nombre !== pm.label ? pm.label : ''].filter(Boolean).map(htmlEsc).join(' · ');
-      h += '<div class="vac-it' + (v.activa ? '' : ' off') + (_vacAbiertas[v.id] ? ' abierta' : '') + '" id="vac-' + id + '">'
+      var sub = [turno, v.cargo_nombre && v.cargo_nombre !== pm.label ? pm.label : '', v.comuna || con('comuna')].filter(Boolean).map(htmlEsc).join(' · ');
+      h += '<div class="vac-it' + (v.activa ? '' : ' off') + (_vacAbiertas[v.id] ? ' abierta' : '') + (idx === 0 ? ' prim' : '') + '" id="vac-' + id + '">'
         + '<div class="vac-l" onclick="_vacToggle(\'' + id + '\')">'
         + '<span class="vac-dot" title="' + (v.activa ? 'Activa' : 'Inactiva') + '"></span>'
+        + '<div class="vac-gi">' + (idx === 0 ? '<b title="' + htmlEsc(v0.instalacion) + '">' + htmlEsc(v0.instalacion) + '</b>' : '') + '</div>'
         + '<div class="vac-nom"><b title="' + htmlEsc(_vacCargoTxt(v)) + '">' + htmlEsc(_vacCargoTxt(v)) + '</b>'
         + (sub ? '<span>' + sub + '</span>' : '') + '</div>'
-        + '<span class="vac-n" title="Ocupados: seleccionados, enviados a contratación o contratados en este cargo de la instalación">' + htmlEsc(_vacCuposTxt(v)) + '</span>'
-        + (admin ? '<button class="bd-icobtn" onclick="event.stopPropagation();_invAbrirVacante(\'' + id + '\')" title="' + (v.activa ? 'Invitar a evaluación para este cargo de la instalación' : 'Active el cargo para invitar') + '"' + (v.activa ? '' : ' disabled') + '><svg class="ico"><use href="#i-send"/></svg></button>'
+        + '<span class="vac-n" title="' + htmlEsc(_vacCuposTxt(v)) + ' (ocupados: seleccionados, enviados a contratación o contratados)">' + htmlEsc(_vacCuposCorto(v)) + '</span>'
+        + (admin ? '<button class="vac-inv" onclick="event.stopPropagation();_invAbrirVacante(\'' + id + '\')" title="' + (v.activa ? 'Crear el link de postulación de este cargo y compartirlo' : 'Active el cargo para invitar') + '"' + (v.activa ? '' : ' disabled') + '><svg class="ico"><use href="#i-send"/></svg>Invitar</button>'
           + '<div class="vac-sw' + (v.activa ? ' on' : '') + '" role="switch" aria-checked="' + v.activa + '" title="' + (v.activa ? 'Activa: clic para desactivar' : 'Inactiva: clic para activar') + '" onclick="event.stopPropagation();_vacActivar(\'' + id + '\',' + !v.activa + ')"><i></i></div>' : '')
         + '<svg class="ico vac-chev"><use href="#i-chev"/></svg></div>'
         + '<div class="vac-det">'
-        + (v.direccion && v.direccion !== con('direccion') ? '<div class="vac-dir"><svg class="ico"><use href="#i-pin"/></svg>' + htmlEsc(v.direccion) + '</div>' : '')
+        + (v.direccion ? '<div class="vac-dir"><svg class="ico"><use href="#i-pin"/></svg>' + htmlEsc(v.direccion) + '</div>' : '')
         + (v.link_mapa ? '<div class="vac-dir"><svg class="ico"><use href="#i-pin"/></svg><a href="' + htmlEsc(v.link_mapa) + '" target="_blank" rel="noopener">Ver mapa</a></div>' : '')
         + (v.detalle ? '<div class="vac-detx">' + htmlEsc(v.detalle) + '</div>' : '')
         + (datos.length ? '<span class="vac-datos">' + datos.map(function(x){ return '<i>' + htmlEsc(x) + '</i>'; }).join('') + '</span>' : '')
         + (_vacCuenta[v.id] ? '<div class="vac-detx">' + _vacCuenta[v.id] + (_vacCuenta[v.id] === 1 ? ' postulante eligió' : ' postulantes eligieron') + ' este cargo de la instalación.</div>' : '')
         + (admin ? '<div class="vac-acc">'
-          + '<button class="rs-btn" onclick="_invAbrirVacante(\'' + id + '\')"' + (v.activa ? '' : ' disabled') + '><svg class="ico"><use href="#i-send"/></svg>Invitar</button>'
           + '<button class="rs-btn" onclick="_vacEditar(\'' + id + '\')"><svg class="ico"><use href="#i-edit"/></svg>Editar</button>'
+          + '<button class="rs-btn" onclick="_vacEditar(null, \'' + id + '\')" title="Agregar otro cargo a esta instalación, con sus mismos datos">+ Agregar cargo</button>'
           + '<button class="rs-btn vac-del" onclick="_vacEliminar(\'' + id + '\')"><svg class="ico"><use href="#i-trash"/></svg>Eliminar</button></div>' : '')
         + '</div></div>';
     });
-    h += '</div></div>';
+    h += '</div>';
   });
   cont.innerHTML = h;
 }
@@ -14646,6 +14653,10 @@ function _vacCupos(v) {
     if (e === 'seleccionado' || e === 'enviado' || e === 'contratado') oc++; else if (!_esCierre(e)) pr++;
   });
   return { ocupados: oc, proceso: pr, total: v.cupos || null, libres: v.cupos ? Math.max(0, v.cupos - oc) : null };
+}
+function _vacCuposCorto(v) {
+  var k = _vacCupos(v);
+  return k.total ? k.ocupados + '/' + k.total : String(k.ocupados);
 }
 function _vacCuposTxt(v) {
   var k = _vacCupos(v);
