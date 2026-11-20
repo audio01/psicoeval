@@ -1756,8 +1756,8 @@ body.adm .pub-aura i{animation:none}   /* estático: el vidrio no recompone en c
 .dsh-icg b{font-weight:700;color:var(--ink2)}
 .vac-inst{margin-bottom:14px}
 .vac-g{margin-bottom:8px}
-.vac-gi{flex:0 0 190px;min-width:0}
-.vac-gi b{display:block;font-size:13.5px;font-weight:800;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vac-gi{flex:0 0 240px;min-width:0}
+.vac-gi b{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;font-size:13.5px;font-weight:800;line-height:1.25;color:var(--ink);overflow:hidden;overflow-wrap:anywhere}
 .vac-it.off .vac-gi b{color:var(--ink3)}
 .vac-inv{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--accent-m,rgba(39,71,216,.3));background:var(--accent-l,rgba(39,71,216,.06));color:var(--accent);border-radius:8px;padding:4px 10px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;flex-shrink:0}
 .vac-inv .ico{width:13px;height:13px}
@@ -2117,6 +2117,7 @@ body.adm .pdf-ic{display:inline-flex;color:var(--ink4)}
 .vac-nom b{font-size:13.5px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .vac-nom span{font-size:12px;color:var(--ink4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:1;min-width:0}
 .vac-l .vac-n{font-size:11.5px}
+.vac-l .vac-n b{font-size:13.5px;color:var(--ink)}
 .vac-l .bd-icobtn[disabled]{opacity:.35;cursor:not-allowed}
 .vac-l .vac-sw{transform:scale(.8)}
 .vac-chev{width:14px;height:14px;color:var(--ink4);transition:transform .2s;flex-shrink:0}
@@ -6296,13 +6297,14 @@ function _vacPintar() {
         + '<div class="vac-gi">' + (idx === 0 ? '<b title="' + htmlEsc(v0.instalacion) + '">' + htmlEsc(v0.instalacion) + '</b>' : '') + '</div>'
         + '<div class="vac-nom"><b title="' + htmlEsc(_vacCargoTxt(v)) + '">' + htmlEsc(_vacCargoTxt(v)) + '</b>'
         + (sub ? '<span>' + sub + '</span>' : '') + '</div>'
-        + '<span class="vac-n" title="' + htmlEsc(_vacCuposTxt(v)) + ' (ocupados: seleccionados, enviados a contratación o contratados)">' + htmlEsc(_vacCuposCorto(v)) + '</span>'
+        + '<span class="vac-n" title="Personas en proceso en este cargo, en cualquier etapa (sin rechazados ni contratados). ' + htmlEsc(_vacCuposTxt(v)) + '"><b>' + _vacEnProceso(v) + '</b> en proceso</span>'
         + (admin ? '<button class="vac-inv" onclick="event.stopPropagation();_invAbrirVacante(\'' + id + '\')" title="' + (v.activa ? 'Crear el link de postulación de este cargo y compartirlo' : 'Active el cargo para invitar') + '"' + (v.activa ? '' : ' disabled') + '><svg class="ico"><use href="#i-send"/></svg>Invitar</button>'
           + '<div class="vac-sw' + (v.activa ? ' on' : '') + '" role="switch" aria-checked="' + v.activa + '" title="' + (v.activa ? 'Activa: clic para desactivar' : 'Inactiva: clic para activar') + '" onclick="event.stopPropagation();_vacActivar(\'' + id + '\',' + !v.activa + ')"><i></i></div>' : '')
         + '<svg class="ico vac-chev"><use href="#i-chev"/></svg></div>'
         + '<div class="vac-det">'
         + (v.direccion ? '<div class="vac-dir"><svg class="ico"><use href="#i-pin"/></svg>' + htmlEsc(v.direccion) + '</div>' : '')
         + (v.link_mapa ? '<div class="vac-dir"><svg class="ico"><use href="#i-pin"/></svg><a href="' + htmlEsc(v.link_mapa) + '" target="_blank" rel="noopener">Ver mapa</a></div>' : '')
+        + '<div class="vac-detx">' + htmlEsc(_vacCuposTxt(v)) + '</div>'
         + (v.detalle ? '<div class="vac-detx">' + htmlEsc(v.detalle) + '</div>' : '')
         + (datos.length ? '<span class="vac-datos">' + datos.map(function(x){ return '<i>' + htmlEsc(x) + '</i>'; }).join('') + '</span>' : '')
         + (_vacCuenta[v.id] ? '<div class="vac-detx">' + _vacCuenta[v.id] + (_vacCuenta[v.id] === 1 ? ' postulante eligió' : ' postulantes eligieron') + ' este cargo de la instalación.</div>' : '')
@@ -14654,9 +14656,15 @@ function _vacCupos(v) {
   });
   return { ocupados: oc, proceso: pr, total: v.cupos || null, libres: v.cupos ? Math.max(0, v.cupos - oc) : null };
 }
-function _vacCuposCorto(v) {
-  var k = _vacCupos(v);
-  return k.total ? k.ocupados + '/' + k.total : String(k.ocupados);
+// Personas en proceso en este cargo: en cualquier etapa abierta (sin rechazados, no contratados ni contratados)
+function _vacEnProceso(v) {
+  var n = 0;
+  (_dbCache || []).forEach(function(c){
+    if (!(c.scores && c.scores._postula && c.scores._postula.vacante === v.id)) return;
+    var e = getPipelineEtapa(c);
+    if (!_esCierre(e) && e !== 'contratado') n++;   // todas las etapas abiertas, incluidos seleccionados y enviados
+  });
+  return n;
 }
 function _vacCuposTxt(v) {
   var k = _vacCupos(v);
