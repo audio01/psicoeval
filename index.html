@@ -3998,9 +3998,9 @@ function _rhpLeerForm() {
 function _rhpPintar() {
   var e = htmlEsc, ed = _rhpEd, pm = PERFIL_META[ed.perfil] || {}, o = _rhPautaOrigen(ed.perfil);
   var origen = ed.copiada ? 'Copiada de ' + (((PERFIL_META[ed.copiada] || {}).label) || ed.copiada) + ': revísela y guarde.'
-             : o.tipo === 'propia' ? 'Pauta propia de este cargo.' : o.tipo === 'acc' ? 'Usa la pauta propuesta del ACC (perfil E-GP-059).'
+             : o.tipo === 'propia' ? 'Pauta propia de este cargo.' : o.tipo === 'acc' ? 'Usa la pauta propuesta del ACC (perfil E-GP-059).' : o.tipo === 'supervisor' ? 'Usa la pauta propuesta del Supervisor (perfil E-GP-060).'
              : o.tipo === 'base' ? 'Sin pauta propia: usa la de ' + (((PERFIL_META[o.base] || {}).label) || o.base) + '.' : 'Usa la pauta de guardia.';
-  var preset = _rhPreset(ed.preset).concat(_rhPreset(ed.preset === 'acc' ? 'guardia' : 'acc'));
+  var preset = _rhPreset(ed.preset).concat(_rhPreset('guardia'), _rhPreset('acc'), _rhPreset('supervisor'));
   var vistas = {}, quitadas = preset.filter(function(b){ if (vistas[b.key] || ed.lista.some(function(c){ return c.key === b.key; })) return false; vistas[b.key] = 1; return true; });
   var campo = function(i, id, lab, val, filas){ return '<div class="field"><label>' + lab + '</label>' + (filas ? '<textarea id="rhp-' + i + '-' + id + '" class="rh-in" rows="' + filas + '">' + e(val || '') + '</textarea>' : '<input id="rhp-' + i + '-' + id + '" class="rh-in" value="' + e(val || '') + '">') + '</div>'; };
   var otros = Object.keys(PERFIL_META).filter(function(k){ return k !== ed.perfil; });
@@ -4035,7 +4035,7 @@ function _rhpMover(i, d) { _rhpLeerForm(); var l = _rhpEd.lista, j = i + d; if (
 function _rhpQuitar(i) { _rhpLeerForm(); _rhpEd.lista.splice(i, 1); _rhpPintar(); }
 function _rhpVolver(key) {
   _rhpLeerForm();
-  var b = _rhPreset(_rhpEd.preset).concat(_rhPreset('guardia'), _rhPreset('acc')).filter(function(x){ return x.key === key; })[0];
+  var b = _rhPreset(_rhpEd.preset).concat(_rhPreset('guardia'), _rhPreset('acc'), _rhPreset('supervisor')).filter(function(x){ return x.key === key; })[0];
   if (b) _rhpEd.lista.push({ key:b.key, label:b.label, ideal:b.ideal, fort:b.fort, deb:b.deb, refuerzo:b.refuerzo });
   _rhpPintar();
 }
@@ -16264,6 +16264,56 @@ var _COMP_ACC = { comps: {
       ['Cuénteme de una vez en que cuidó el vehículo, los equipos o la imagen de la empresa ante el cliente sin que se lo pidieran.', '¿Qué resultado tuvo?'],
       ['Cuénteme de un momento en que pensó en renunciar y se quedó.', '¿Qué lo hizo quedarse? ¿Qué espera de esta empresa?'] ] }
 } };
+
+// Supervisor (perfil E-GP-060): preguntas y anclas de supervisión. Liderazgo y Monitoreo y control son del perfil (nivel Alto)
+// y llenan las mismas filas del Informe RH; las demás conservan su clave.
+var _COMP_SUPERVISOR = { comps: {
+  liderazgo: { name:'Liderazgo', icon:'🧭', star:true,
+    def:'Influye en los guardias para que cumplan con entusiasmo; corrige conductas y reconoce lo bien hecho, sin perder la autoridad.',
+    anclas:{ 1:'Evita corregir, o impone con gritos y amenazas.',
+             3:'Corrige cuando la falta es evidente, pero sin acordar cómo mejorar.',
+             5:'Corrige con hechos concretos, acuerda un compromiso, hace seguimiento y reconoce el cambio.' },
+    questions:[
+      ['Cuénteme de una vez en que tuvo que corregir a un guardia que incumplía una norma.', '¿Qué le dijo? ¿Cómo reaccionó? ¿Cambió su conducta?'],
+      ['Cuénteme de una vez en que logró motivar a un equipo desanimado o con malas evaluaciones.', '¿Qué hizo concretamente? ¿Qué resultado tuvo?'],
+      ['Cuénteme de una vez en que un subordinado cuestionó su decisión delante de otros.', '¿Cómo respondió? ¿Qué pasó después?'] ] },
+  monitoreo: { name:'Monitoreo y control', icon:'🔎', star:true,
+    def:'Verifica en terreno que se cumplan procedimientos, rondas y registros (libro de novedades, control de asistencia, listas de chequeo) y actúa sobre lo que encuentra.',
+    anclas:{ 1:'Supervisa solo cuando se lo piden o no revisa los registros.',
+             3:'Revisa registros y puestos, pero no da seguimiento a lo observado.',
+             5:'Revisa con lista de chequeo, detecta fallas, las corrige y verifica después que se resolvieron.' },
+    questions:[
+      ['Cuénteme de la última vez que supervisó una instalación.', '¿Qué revisó? ¿Qué encontró? ¿Qué hizo con eso?'],
+      ['Cuénteme de una vez en que encontró registros incompletos o rondas sin hacer.', '¿Cómo lo abordó con el guardia? ¿Cómo comprobó que se corrigió?'],
+      ['Cuénteme de una vez en que detectó un problema antes de que lo reclamara el cliente.', '¿Cómo lo detectó? ¿Qué hizo?'] ] },
+  cliente: {
+    def:'Mantiene una coordinación estrecha con el administrador del contrato, atiende sus requerimientos y gana su confianza sin saltarse los procedimientos de la empresa.',
+    anclas:{ 1:'Evita al cliente o promete sin consultar.',
+             3:'Atiende lo que le piden, sin anticiparse.',
+             5:'Se anticipa a los requerimientos, deja los acuerdos registrados y mantiene la confianza del cliente aunque deba decir que no.' },
+    questions:[
+      ['Cuénteme de una vez en que un cliente le exigió algo que no correspondía al contrato.', '¿Qué le respondió? ¿Cómo terminó?'],
+      ['Cuénteme de una vez en que un cliente se quejó de un guardia.', '¿Qué hizo con el cliente y con el guardia?'],
+      ['Cuénteme de una vez en que se anticipó a un problema del cliente.', '¿Qué hizo? ¿Qué resultado tuvo?'] ] },
+  comunicacion: {
+    def:'Informa con claridad, por escrito y de palabra, a la jefatura, a la central y al cliente; deja registro completo de los incidentes y los acuerdos.',
+    anclas:{ 1:'Informa solo de palabra, sin registro, o tarde.',
+             3:'Reporta lo principal, pero omite hora, lugar o personas.',
+             5:'Reporte completo y oportuno (qué, cuándo, dónde, quién y qué medida tomó) y confirma que fue recibido.' },
+    questions:[
+      ['Cuénteme del último incidente grave que tuvo que informar a su jefatura.', '¿Cuándo y cómo lo informó? ¿Qué dejó por escrito?'],
+      ['Cuénteme de una vez en que tuvo que dar una mala noticia al cliente.', '¿Cómo la comunicó? ¿Cómo reaccionó el cliente?'],
+      ['Cuénteme de un malentendido por una instrucción mal entendida por un guardia.', '¿Qué pasó? ¿Qué hace distinto ahora?'] ] },
+  equipo: {
+    def:'Se coordina con otros supervisores, la central y las áreas de la oficina zonal; resuelve coberturas y desacuerdos sin perjudicar el servicio.',
+    anclas:{ 1:'Tiene conflictos con otros supervisores o trabaja aislado.',
+             3:'Colabora cuando se lo piden.',
+             5:'Se coordina por iniciativa propia, cubre a otro supervisor o una instalación crítica y deja el relevo informado.' },
+    questions:[
+      ['Cuénteme de una vez en que debió cubrir una ausencia en un puesto crítico.', '¿Cómo consiguió el reemplazo? ¿A quién avisó?'],
+      ['Cuénteme de un desacuerdo con otro supervisor o con la central.', '¿Cómo lo resolvieron?'],
+      ['Cuénteme de una vez en que apoyó a otra instalación o a otro turno.', '¿Qué hizo? ¿Qué resultado tuvo?'] ] }
+} };
 var COMP_CARGO = {};   // { perfil: { comps: { clave: { name, def, anclas, questions, star, icon } } } }
 function loadCompCargo() {
   try { var v = JSON.parse(localStorage.getItem(LS_COMPETENCIAS) || '{}'); COMP_CARGO = v && typeof v === 'object' && !Array.isArray(v) ? v : {}; } catch(e) { COMP_CARGO = {}; }
@@ -16279,7 +16329,7 @@ function _compAjustes(perfil) {
   return COMP_CARGO[perfil] || _compPropia(perfil) || COMP_CARGO[b] || (b === 'guardia' ? _COMP_GUARDIA : null);
 }
 // Pauta propuesta que trae el propio cargo (no la de su cargo base)
-function _compPropia(perfil) { return perfil === 'c_acc' ? _COMP_ACC : null; }
+function _compPropia(perfil) { return perfil === 'c_acc' ? _COMP_ACC : perfil === 'supervisor' ? _COMP_SUPERVISOR : null; }
 // Competencias de la entrevista de un cargo: las nuevas primero y luego las de siempre con sus cambios
 function _compCfg(perfil) {
   var ov = _compAjustes(perfil); if (!ov || !ov.comps) return _COMP_CONFIG;
@@ -17854,6 +17904,21 @@ var _RH_COMP = [
   { key:'equipo',         label:'Trabajo en equipo',                  ideal:'Medio' },
   { key:'razonamiento',   label:'Razonamiento General',               ideal:'Medio' }
 ];
+// Supervisor Diurno (perfil E-GP-060): sus 12 competencias genéricas con el nivel que pide el perfil.
+var _RH_COMP_SUP = [
+  { key:'identificacion', label:'Identificación con la organización', ideal:'Alto'  },
+  { key:'presion',        label:'Trabajo bajo presión',               ideal:'Alto'  },
+  { key:'liderazgo',      label:'Liderazgo direccional',              ideal:'Alto'  },
+  { key:'autocontrol',    label:'Autocontrol',                        ideal:'Alto'  },
+  { key:'equipo',         label:'Trabajo en equipo',                  ideal:'Medio' },
+  { key:'integridad',     label:'Integridad',                         ideal:'Alto'  },
+  { key:'razonamiento',   label:'Razonamiento General',               ideal:'Medio' },
+  { key:'comunicacion',   label:'Comunicación',                       ideal:'Alto'  },
+  { key:'responsabilidad',label:'Responsabilidad',                    ideal:'Alto'  },
+  { key:'criterio',       label:'Criterio',                           ideal:'Alto'  },
+  { key:'alerta',         label:'Alerta',                             ideal:'Alto'  },
+  { key:'monitoreo',      label:'Monitoreo y control',                ideal:'Alto'  }
+];
 // ACC (Administrador de Clientes Clave, perfil E-GP-059): sus 12 competencias genéricas, todas en nivel Alto.
 // Las que comparten clave con la tabla de guardias usan las mismas fuentes (pruebas y entrevista);
 // Trabajo bajo presión toma la competencia STAR «Manejo de presión» de la entrevista del ACC.
@@ -17875,7 +17940,7 @@ var _RH_COMP_ACC = [
 // Vienen dos pautas propuestas: Guardia (también para los cargos sin pauta propia) y ACC (perfil E-GP-059).
 // Cada cargo puede tener la suya desde Cargos → Informe RH; un subtipo usa la de su cargo base.
 function _rhEsAcc(cargo) { return /clientes\s+clave|\(acc\)|^\s*acc\s*$/i.test(String(cargo || '')); }
-var RH_PAUTA = {};   // { perfil: { preset:'guardia'|'acc', comps:[{ key, label, ideal, fort, deb, refuerzo }] } }
+var RH_PAUTA = {};   // { perfil: { preset:'guardia'|'acc'|'supervisor', comps:[{ key, label, ideal, fort, deb, refuerzo }] } }
 function loadRhPauta() {
   try { var v = JSON.parse(localStorage.getItem(LS_RH_PAUTA) || '{}'); RH_PAUTA = v && typeof v === 'object' && !Array.isArray(v) ? v : {}; } catch(e) { RH_PAUTA = {}; }
 }
@@ -17886,8 +17951,8 @@ function saveRhPauta() {
 loadRhPauta();
 // Pautas propuestas, armadas con los textos de siempre
 function _rhPreset(nombre) {
-  var acc = nombre === 'acc', T = _rhTextosPreset(nombre);
-  return (acc ? _RH_COMP_ACC : _RH_COMP).map(function(k) {
+  var T = _rhTextosPreset(nombre);
+  return (nombre === 'supervisor' ? _RH_COMP_SUP : nombre === 'acc' ? _RH_COMP_ACC : _RH_COMP).map(function(k) {
     return { key:k.key, label:k.label, ideal:k.ideal, fort:_RH_FORT[k.key] || '', deb:_RH_DEB[k.key] || '', refuerzo:T.refuerzo[k.key] || '',
              prosaFort:T.fort[k.key] || '', prosaDeb:T.deb[k.key] || '' };
   });
@@ -17897,15 +17962,16 @@ function _rhPautaOrigen(perfil) {
   var b = typeof _perfilBase === 'function' ? _perfilBase(perfil) : perfil;
   if (RH_PAUTA[perfil] && Array.isArray(RH_PAUTA[perfil].comps)) return { tipo:'propia', pauta:RH_PAUTA[perfil] };
   if (perfil === 'c_acc') return { tipo:'acc' };
+  if (perfil === 'supervisor') return { tipo:'supervisor' };
   if (b !== perfil && RH_PAUTA[b] && Array.isArray(RH_PAUTA[b].comps)) return { tipo:'base', base:b, pauta:RH_PAUTA[b] };
   return { tipo:'guardia' };
 }
 function _rhPautaDe(perfil) {
   var o = _rhPautaOrigen(perfil);
   if (o.pauta) return o.pauta.comps.map(function(k){ return Object.assign({ fort:'', deb:'', refuerzo:'' }, k, { ideal:_RH_NIVELES.indexOf(k.ideal) >= 0 ? k.ideal : 'Medio' }); });
-  return _rhPreset(o.tipo === 'acc' ? 'acc' : 'guardia');
+  return _rhPreset(o.tipo === 'acc' || o.tipo === 'supervisor' ? o.tipo : 'guardia');
 }
-function _rhPresetDe(perfil) { var o = _rhPautaOrigen(perfil); return o.pauta ? (o.pauta.preset || 'guardia') : (o.tipo === 'acc' ? 'acc' : 'guardia'); }
+function _rhPresetDe(perfil) { var o = _rhPautaOrigen(perfil); return o.pauta ? (o.pauta.preset || 'guardia') : (o.tipo === 'acc' || o.tipo === 'supervisor' ? o.tipo : 'guardia'); }
 // Cargo escrito en el informe → cargo del panel (por nombre); si no calza, el cargo al que postuló
 function _rhPerfilDeCargo(cargo, c) {
   var t = String(cargo || '').trim().toLowerCase();
@@ -17920,7 +17986,7 @@ function _rhLista(cargo, c) { return _rhPautaDe(_rhPerfilDeCargo(cargo, c)); }
 function _rhListaD(d, c) {
   var actual = _rhLista(d && d.cargo, c);
   if (!d || !Array.isArray(d.comps_rh) || !d.comps_rh.length) return actual;
-  var todas = actual.concat(_rhPreset('guardia'), _rhPreset('acc'));
+  var todas = actual.concat(_rhPreset('guardia'), _rhPreset('acc'), _rhPreset('supervisor'));
   return d.comps_rh.map(function(x) {
     var m = todas.filter(function(k){ return k.key === x.key; })[0] || {};
     return Object.assign({ fort:'', deb:'', refuerzo:'' }, m, { key:x.key, label:x.label || m.label || x.key, ideal:m.ideal || 'Medio' });
@@ -18444,9 +18510,19 @@ var _RH_PROSA_DEB_ACC = {
   equipo:'Refiere dificultades para colaborar con su equipo, aspecto que requiere seguimiento en un cargo que coordina personal y áreas distintas.'
 };
 // Textos de la redacción según el cargo del informe
+// Supervisor: parte de los textos del ACC (mismas funciones de coordinar guardias, cliente y oficina zonal) con los propios del cargo
+var _RH_REFUERZO_SUP = {
+  identificacion:'Integración a la empresa: Presentarle la Visión de RH, las políticas del SIG y las instalaciones a su cargo, y hacer seguimiento de su adaptación durante los primeros meses, para favorecer su compromiso y permanencia.',
+  liderazgo:'Conducción del equipo: Acompañar sus primeras correcciones y reuniones con los guardias y retroalimentar cómo acuerda compromisos y reconoce lo bien hecho, para fortalecer su autoridad sin perder el trato respetuoso.',
+  monitoreo:'Supervisión en terreno: Acompañar algunas de sus visitas con la lista de chequeo y revisar con la persona qué detectó y cómo dio seguimiento, para asegurar que verifique que las fallas se corrijan.'
+};
+var _RH_REFUERZO_BASE_SUP = [
+  'Inducción en el cargo: Presentar las instalaciones a su cargo, los Planes de Operación y los instructivos de supervisión, y verificar que los conozca, para asegurar un inicio ordenado en sus funciones.',
+  'Seguimiento del período de adaptación: Retroalimentar su gestión durante las primeras semanas junto al jefe zonal, para consolidar las conductas esperadas en el cargo.'
+];
 function _rhTextosPreset(nombre) {
-  var acc = nombre === 'acc';
-  return { refuerzo: acc ? Object.assign({}, _RH_REFUERZO, _RH_REFUERZO_ACC) : _RH_REFUERZO, base: acc ? _RH_REFUERZO_BASE_ACC : _RH_REFUERZO_BASE,
+  var acc = nombre === 'acc' || nombre === 'supervisor', sup = nombre === 'supervisor';
+  return { refuerzo: acc ? Object.assign({}, _RH_REFUERZO, _RH_REFUERZO_ACC, sup ? _RH_REFUERZO_SUP : {}) : _RH_REFUERZO, base: sup ? _RH_REFUERZO_BASE_SUP : acc ? _RH_REFUERZO_BASE_ACC : _RH_REFUERZO_BASE,
            fort: acc ? Object.assign({}, _RH_PROSA_FORT, _RH_PROSA_FORT_ACC) : _RH_PROSA_FORT, deb: acc ? Object.assign({}, _RH_PROSA_DEB, _RH_PROSA_DEB_ACC) : _RH_PROSA_DEB };
 }
 function _rhTextosDe(lista, preset) {
