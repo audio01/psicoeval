@@ -18078,6 +18078,110 @@ var _RH_DEB = {
   equipo:'Le cuesta colaborar con su equipo de trabajo.'
 };
 
+// Variedad en fortalezas y debilidades. Cada competencia tiene varias redacciones y dos grados:
+// "alto" (nivel Alto: destaca) y "medio" (alcanza el ideal sin destacar). Se elige una por
+// postulante con una semilla fija: la misma persona recibe siempre la misma frase, pero dos
+// postulantes con los mismos niveles no reciben el mismo texto. Si el psicólogo editó la frase
+// de la pauta del cargo, se usa su texto tal cual.
+var _RH_FORT_ALTO = {
+  liderazgo:['Ejerce un liderazgo claro: orienta a su equipo, corrige a tiempo y logra que se comprometa con los objetivos.', 'Conduce a su equipo con claridad y consigue motivarlo hacia objetivos comunes, sin perder la autoridad.', 'Destaca en la conducción de personas: da instrucciones claras, reconoce lo bien hecho y sostiene la disciplina del equipo.'],
+  responsabilidad:['Destaca por su responsabilidad: cumple sus compromisos sin necesidad de supervisión y responde por sus decisiones.', 'Es una persona confiable en el cumplimiento de turnos, tareas y plazos, y asume las consecuencias de lo que decide.', 'Muestra un alto sentido del deber: cumple lo acordado y se hace cargo de sus errores.'],
+  monitoreo:['Ejerce un control riguroso del servicio: revisa puestos y registros, detecta fallas y verifica que se corrijan.', 'Destaca en la supervisión en terreno y en mantener los registros completos y al día.', 'Mantiene un seguimiento constante del servicio y actúa con oportunidad sobre lo que observa.'],
+  presion:['Se mantiene ordenado y eficaz ante alta carga de trabajo y demandas simultáneas.', 'Destaca por su desempeño bajo presión: prioriza con calma cuando las exigencias se acumulan.', 'Responde con orden y serenidad cuando debe atender varias demandas al mismo tiempo.'],
+  integridad:['Muestra un claro apego a las normas y un uso correcto de las atribuciones del cargo.', 'Destaca por su rectitud: respeta las normas y actúa con transparencia en el uso de sus atribuciones.', 'Actúa con probidad y respeto por las normas, aun cuando no hay supervisión.'],
+  autocontrol:['Muestra un buen control de impulsos: evalúa la situación antes de responder, incluso bajo provocación.', 'Destaca por su autocontrol: mantiene la calma y frena las respuestas impulsivas.', 'Responde con mesura ante situaciones tensas y piensa antes de actuar.'],
+  alerta:['Mantiene una atención sostenida al entorno y detecta con rapidez lo que se sale de lo normal.', 'Destaca por su capacidad de vigilancia: advierte las irregularidades a tiempo.', 'Se mantiene alerta durante el servicio y reconoce con oportunidad las situaciones de riesgo.'],
+  criterio:['Resuelve con muy buen criterio las situaciones del cargo, incluso las menos habituales.', 'Destaca por su criterio: elige la respuesta adecuada según el procedimiento y la situación.', 'Toma decisiones acertadas ante situaciones del servicio, equilibrando el procedimiento y el sentido común.'],
+  razonamiento:['Comprende con facilidad instrucciones complejas y las aplica sin omitir pasos.', 'Destaca en la comprensión de instrucciones y procedimientos con varias condiciones.', 'Procesa con rapidez la información escrita y la traduce en acciones correctas.'],
+  comunicacion:['Se comunica con claridad y respeto, e informa de manera completa y oportuna.', 'Destaca por su comunicación: transmite la información de forma ordenada y se asegura de que se entienda.', 'Se expresa con claridad y mantiene un trato respetuoso, también en conversaciones difíciles.'],
+  equipo:['Colabora activamente con su equipo y ofrece apoyo sin esperar a que se lo pidan.', 'Destaca por su trabajo en equipo: se coordina con otros y cubre cuando hace falta.', 'Aporta al buen funcionamiento del equipo, coordinándose y apoyando a sus compañeros.']
+};
+var _RH_FORT_MEDIO = {
+  liderazgo:['Conduce a su equipo de forma adecuada en las situaciones habituales del servicio.', 'Orienta a su equipo y hace cumplir las instrucciones, con un estilo de conducción adecuado al cargo.'],
+  responsabilidad:['Cumple sus compromisos y las responsabilidades habituales del cargo.', 'Responde adecuadamente a las tareas y plazos que se le asignan.'],
+  monitoreo:['Revisa el servicio y los registros de forma adecuada a lo que exige el cargo.', 'Mantiene un control adecuado del servicio y de sus registros.'],
+  presion:['Maneja de forma adecuada la presión habitual del cargo.', 'Mantiene un desempeño estable frente a las exigencias normales del servicio.'],
+  integridad:['Respeta las normas y hace un uso adecuado de las atribuciones del cargo.', 'Muestra respeto por las normas propias del cargo.'],
+  autocontrol:['Controla sus impulsos de forma adecuada en las situaciones habituales del cargo.', 'Mantiene un autocontrol adecuado frente a las exigencias normales del servicio.'],
+  alerta:['Mantiene un nivel de atención adecuado para las tareas de vigilancia del cargo.', 'Detecta las irregularidades habituales del servicio.'],
+  criterio:['Resuelve con criterio adecuado las situaciones habituales del cargo.', 'Aplica los procedimientos de forma adecuada en las situaciones frecuentes del servicio.'],
+  razonamiento:['Comprende y aplica de forma adecuada las instrucciones habituales del cargo.', 'Sigue correctamente instrucciones y procedimientos de complejidad habitual.'],
+  comunicacion:['Se comunica de forma clara y respetuosa en las situaciones habituales.', 'Transmite la información necesaria de manera adecuada al cargo.'],
+  equipo:['Colabora con su equipo cuando la situación lo requiere.', 'Se integra de forma adecuada al trabajo con otras personas.']
+};
+// Debilidades: la frase propuesta más dos alternativas con el mismo peso (no se suavizan los riesgos)
+var _RH_DEB_ALT = {
+  liderazgo:['Le cuesta corregir conductas y sostener la autoridad frente a su equipo.', 'Muestra dificultades para orientar y motivar a las personas a su cargo.'],
+  responsabilidad:['Muestra dificultades para cumplir de forma constante con tareas, turnos y plazos.', 'Puede requerir seguimiento para asegurar el cumplimiento de sus compromisos.'],
+  monitoreo:['Muestra dificultades para revisar registros y puestos de forma sistemática.', 'Puede detectar fallas en el servicio sin darles seguimiento hasta su corrección.'],
+  presion:['Bajo alta exigencia puede perder el orden o dejar tareas sin terminar.', 'Le cuesta priorizar cuando se acumulan demandas simultáneas.'],
+  integridad:['Presenta indicadores de riesgo en integridad; se recomienda contrastarlos con las referencias laborales antes de contratar.', 'Se observan indicadores de riesgo en el ámbito de la integridad, que deben verificarse con las referencias laborales antes de la contratación.'],
+  autocontrol:['Bajo tensión puede reaccionar de forma impulsiva antes de evaluar la situación.', 'Le cuesta contener respuestas automáticas cuando la situación lo exige.'],
+  alerta:['Puede pasar por alto irregularidades cuando la vigilancia se prolonga.', 'Muestra dificultades para sostener la atención al entorno durante el servicio.'],
+  criterio:['Puede requerir orientación para decidir qué hacer en situaciones habituales del cargo.', 'Muestra dificultades para elegir la respuesta adecuada ante situaciones del servicio.'],
+  razonamiento:['Puede omitir pasos cuando las instrucciones incluyen varias condiciones.', 'Muestra dificultades para comprender procedimientos escritos de cierta complejidad.'],
+  comunicacion:['Puede entregar información incompleta o poco ordenada.', 'Le cuesta expresarse con claridad, sobre todo en conversaciones difíciles.'],
+  equipo:['Tiende a trabajar de forma aislada y colabora poco con sus compañeros.', 'Puede tener dificultades para coordinarse con otras personas del equipo.']
+};
+// Personalidad laboral: redacciones alternativas de lo que aporta (inf) y de lo que conviene considerar
+var _RH_PF_ALT = {
+  EX:{ alto:{ inf:['Establece relaciones con facilidad y contribuye a un buen clima en el equipo.'], considerar:['Puede motivarse menos en puestos solitarios o de vigilancia prolongada sin contacto con otras personas.', 'Los turnos con poco contacto con otras personas pueden resultarle menos estimulantes.'] },
+       bajo:{ inf:['Se desempeña bien en tareas individuales que exigen concentración.'], considerar:['La atención continua de público puede resultarle más demandante.'] } },
+  AN:{ alto:{ inf:['Muestra estabilidad ante la presión y los imprevistos.'] } },
+  DU:{ alto:{ inf:['Decide con objetividad, a partir de hechos, y puede entregar retroalimentación difícil.'], considerar:['Puede priorizar los hechos por sobre el efecto que sus decisiones tienen en las personas.'] },
+       bajo:{ inf:['Se preocupa por las personas y cuida las relaciones en el equipo.'], considerar:['Puede costarle tomar decisiones que afecten a personas cercanas o entregar críticas.'] } },
+  IN:{ alto:{ inf:['Toma la iniciativa y expresa sus desacuerdos cuando lo estima necesario.'], considerar:['En estructuras muy jerárquicas puede cuestionar las instrucciones más de lo esperado.'] },
+       bajo:{ inf:['Sigue con disposición las directrices de su jefatura y colabora con el grupo.'], considerar:['Puede necesitar apoyo para plantear desacuerdos o decidir sin la validación de otros.'] } },
+  AC:{ alto:{ inf:['Se organiza, planifica su trabajo y cumple las normas de forma constante.'], considerar:['Puede incomodarle tener que improvisar o cambiar de plan sobre la marcha.', 'Ante cambios imprevistos puede necesitar más tiempo para reorganizarse.'] },
+       bajo:{ inf:['Responde con agilidad ante los imprevistos y se adapta rápido a los cambios.'], considerar:['En labores muy reglamentadas puede requerir supervisión para seguir los procedimientos al pie de la letra.'] } }
+};
+var _RH_MAX_FORT_COMP = 4, _RH_MAX_FORT_PF = 2;
+function _rhSemilla(c, k) {
+  var t = String((c && (c.id || ((c.nombre || '') + (c.apellido || '')))) || '') + '|' + k, h = 2166136261;
+  for (var i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  return h;
+}
+// Dos frases tratan el mismo tema si comparten una palabra de contenido (6 letras o más, sin la terminación)
+function _rhMismoTema(a, b) {
+  var pal = function(t){ return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(/[^a-zñ]+/)
+    .filter(function(w){ return w.length >= 6 && ['puede','pueden','situaciones','personas','trabajo'].indexOf(w) < 0; }).map(function(w){ return w.slice(0, 6); }); };
+  var A = pal(a); return pal(b).some(function(w){ return A.indexOf(w) >= 0; });
+}
+function _rhElegir(lista, c, k) { lista = (lista || []).filter(Boolean); return lista.length ? lista[_rhSemilla(c, k) % lista.length] : ''; }
+// Frase de fortaleza según el grado; la editada por el psicólogo en la pauta se respeta
+function _rhFraseFort(k, nivel, c) {
+  if (!k.fort || k.fort !== _RH_FORT[k.key]) return k.fort || '';
+  var l = (nivel === 'Alto' ? _RH_FORT_ALTO : _RH_FORT_MEDIO)[k.key];
+  return l ? _rhElegir(l, c, k.key + '|' + nivel) : k.fort;
+}
+function _rhFraseDeb(k, c) {
+  if (!k.deb || k.deb !== _RH_DEB[k.key] || !_RH_DEB_ALT[k.key]) return k.deb || '';
+  return _rhElegir([k.deb].concat(_RH_DEB_ALT[k.key]), c, k.key + '|deb');
+}
+// Todas las redacciones posibles de la debilidad de una competencia (para reconocerla en el texto)
+function _rhDebVariantes(key, propia) { return [propia || _RH_DEB[key]].concat(propia && propia !== _RH_DEB[key] ? [] : (_RH_DEB_ALT[key] || [])).filter(Boolean); }
+// Lo que el psicólogo anotó en la entrevista sobre una competencia, limpio para el informe:
+// sin las preguntas de la pauta, sin numeración y sin notas de trámite ("Ejemplo simple")
+function _rhNotaEntrevista(nota) {
+  var t = String(nota || '').split(/\n+/).map(function(l){ return l.trim().replace(/^\d+[.)-]\s*/, ''); })
+    .filter(function(l){ return l && !/\?/.test(l) && !/^seguimiento\b/i.test(l); }).join(' ').replace(/\s+/g, ' ').trim();
+  if (t.length < 25 || /^ejemplo (simple|normal|b[aá]sico)/i.test(t)) return '';
+  if (t.length > 220) { var c = t.slice(0, 220), p = c.lastIndexOf('. '); t = p > 80 ? c.slice(0, p + 1) : c.replace(/\s+\S*$/, '') + '…'; }
+  t = t.charAt(0).toUpperCase() + t.slice(1);
+  return /[.…!]$/.test(t) ? t : t + '.';
+}
+// Notas de la última entrevista por competencia del informe (por clave o por el mismo nombre)
+function _rhNotasEntrevista(c, lista) {
+  var ev = typeof _evUltima === 'function' ? _evUltima((c && c.scores) || {}) : null, r = {};
+  if (!ev) return r;
+  var norm = function(t){ return String(t || '').trim().toLowerCase(); };
+  _evCompsDe(ev).forEach(function(x) {
+    var t = _rhNotaEntrevista(x.nota); if (!t || !x.nivel) return;
+    (lista || []).forEach(function(k){ if (!r[k.key] && (k.key === x.key || norm(k.label) === norm(x.name))) r[k.key] = { nota:t, nivel:x.nivel }; });
+  });
+  return r;
+}
+
 function _rhNivelPrueba(c, tid) {
   var r = _aptRowsDe(c).filter(function(x){ return x.tid === tid; })[0];
   if (!r) return null;
@@ -18088,12 +18192,23 @@ function _rhNivelPrueba(c, tid) {
 // Fortalezas y debilidades armadas en el computador a partir de los niveles y los ideales
 // sinDato: competencias sin resultado (quedan en Medio por defecto y no generan frases)
 function _rhFortDeb(c, niveles, ideales, sinDato, cargo) {
-  var fort = [], deb = [];
-  (Array.isArray(cargo) ? cargo : _rhLista(cargo === undefined ? _rhCargoBase(c) : cargo, c)).forEach(function(k) {
+  var fort = [], deb = [], cand = [], idx = function(n){ return _RH_NIVELES.indexOf(n); };
+  var lista = Array.isArray(cargo) ? cargo : _rhLista(cargo === undefined ? _rhCargoBase(c) : cargo, c);
+  var notasEv = _rhNotasEntrevista(c, lista);
+  // Ejemplo concreto de la entrevista: solo si respalda la frase (4–5 en fortalezas, 1–2 en debilidades)
+  var conNota = function(t, key, fortaleza) {
+    var e = notasEv[key]; if (!e || (fortaleza ? e.nivel < 4 : e.nivel > 2)) return t;
+    return t + ' En la entrevista: ' + e.nota;
+  };
+  lista.forEach(function(k, i) {
     var n = niveles[k.key]; if (!n || (sinDato && sinDato[k.key] && n === 'Medio')) return;
-    if (n === 'Bajo' && k.deb) deb.push(k.deb);
-    else if (_RH_NIVELES.indexOf(n) <= _RH_NIVELES.indexOf(ideales[k.key] || k.ideal) && k.fort) fort.push(k.fort);
+    var ideal = ideales[k.key] || k.ideal;
+    if (n === 'Bajo' && k.deb) deb.push(conNota(_rhFraseDeb(k, c), k.key, false));
+    else if (idx(n) <= idx(ideal) && k.fort)
+      // Prioridad: nivel Alto, luego cuánto supera al ideal, luego si la entrevista lo respalda
+      cand.push({ t:conNota(_rhFraseFort(k, n, c), k.key, true), p:(n === 'Alto' ? 4 : 0) + (idx(ideal) - idx(n)) + (notasEv[k.key] && notasEv[k.key].nivel >= 4 ? 1 : 0), i:i });
   });
+  cand.sort(function(a, b){ return (b.p - a.p) || (a.i - b.i); }).slice(0, _RH_MAX_FORT_COMP).forEach(function(x){ fort.push(x.t); });
   var h0 = Array.isArray(c.historial) && c.historial[0];
   if (h0 && /guardia|vigilan|seguridad|conserje|portero|control de acceso/i.test(h0.cargo || '')) fort.push('Experiencia como ' + h0.cargo.toLowerCase() + (h0.empresa ? ' en ' + h0.empresa : '') + '.');
   var s = c.scores || {}, notas = [], sumar = function(lista, t){ if (t && lista.indexOf(t) === -1) lista.push(t); };
@@ -18106,10 +18221,12 @@ function _rhFortDeb(c, niveles, ideales, sinDato, cargo) {
     else {
       notas.push('DISC');
       var prof = _DISC_PROFILES[o[0] + (v(o[1]) >= 55 ? o[1] : '')] || _DISC_PROFILES[o[0]] || {};
-      (prof.fortalezas || []).slice(0, 2).forEach(function(t){ sumar(fort, t); });
-      if (v(o[0]) >= 70) sumar(deb, DISC_RPT.riesgos[o[0]].alto[0]);
-      sumar(deb, (prof.dificultades || [])[0]);
-      if (v(o[3]) < 40) sumar(deb, DISC_RPT.riesgos[o[3]].bajo[0]);
+      sumar(fort, _rhElegir((prof.fortalezas || []).slice(0, 2), c, 'disc'));
+      // Riesgos del DISC: si dos dicen lo mismo con otras palabras (p. ej. ambas sobre "cambios"), queda uno
+      var dDisc = [];
+      [v(o[0]) >= 70 && DISC_RPT.riesgos[o[0]].alto[0], (prof.dificultades || [])[0], v(o[3]) < 40 && DISC_RPT.riesgos[o[3]].bajo[0]]
+        .forEach(function(t){ if (t && !dDisc.some(function(x){ return _rhMismoTema(x, t); })) dDisc.push(t); });
+      dDisc.forEach(function(t){ sumar(deb, t); });
     }
   }
   // Personalidad laboral (descriptiva): lo que aportan y lo que conviene considerar de las
@@ -18117,17 +18234,19 @@ function _rhFortDeb(c, niveles, ideales, sinDato, cargo) {
   var pf = s.pf16, usadas = 0;
   if (pf && _pf16ValidezNivel(_pf16Validez(c, s)).label === 'Dudosa') notas.push('Personalidad laboral sin frases: validez dudosa');
   else if (pf) {
-    PF16_RPT.orden.forEach(function(k) {
-      if (pf[k] == null || (k === 'EX' && pf._v !== 2)) return;
-      var z = pf16ZoneOf(Math.round(pf[k])); if (z === 'medio') return;
-      usadas++;
-      var t = PF16_RPT.dim[k][z];
-      // En el informe, el resultado se redacta como descripción del trabajador (inf), no como lo que mide la prueba
-      sumar(fort, t.inf || t.aporta);
-      // Ajuste emocional: alto solo advierte deseabilidad social; bajo se informa como rasgo
-      if (k === 'AN') { if (z === 'bajo') sumar(deb, t.infDeb || t.txt); }
-      else sumar(deb, t.considerar);
-    });
+    // Las dimensiones más marcadas primero; aportan a lo más dos fortalezas, y todas sus advertencias
+    PF16_RPT.orden.filter(function(k){ return pf[k] != null && !(k === 'EX' && pf._v !== 2) && pf16ZoneOf(Math.round(pf[k])) !== 'medio'; })
+      .sort(function(a, b){ return Math.abs(pf[b] - 55) - Math.abs(pf[a] - 55); })
+      .forEach(function(k) {
+        var z = pf16ZoneOf(Math.round(pf[k])), alt = (_RH_PF_ALT[k] || {})[z] || {};
+        usadas++;
+        var t = PF16_RPT.dim[k][z];
+        // En el informe, el resultado se redacta como descripción del trabajador (inf), no como lo que mide la prueba
+        if (usadas <= _RH_MAX_FORT_PF) sumar(fort, _rhElegir([t.inf || t.aporta].concat(alt.inf || []), c, k + z + 'f'));
+        // Ajuste emocional: alto solo advierte deseabilidad social; bajo se informa como rasgo
+        if (k === 'AN') { if (z === 'bajo') sumar(deb, t.infDeb || t.txt); }
+        else sumar(deb, _rhElegir([t.considerar].concat(alt.considerar || []), c, k + z + 'd'));
+      });
     notas.push(usadas ? 'Personalidad laboral' : 'Personalidad laboral sin frases: todas las dimensiones en nivel medio');
   }
   return { fortalezas: fort.join('\n'), debilidades: deb.join('\n'), notas: notas };
@@ -18593,7 +18712,7 @@ function _rhRedaccionLocal(d, c) {
   if (cond.favorables.length) p1 += ' Durante la evaluación, ' + _rhListaY(cond.favorables) + '.';
   // 2. Oportunidades de mejora: debilidades y competencias bajo el ideal que no tengan ya su frase
   var deb = prosa(d.debilidades, TX.deb, TX.debCorta, 'deb');
-  var conFrase = Object.keys(TX.debCorta).filter(function(k){ return TX.debCorta[k] && String(d.debilidades || '').indexOf(TX.debCorta[k]) !== -1; });
+  var conFrase = Object.keys(TX.debCorta).filter(function(k){ return TX.debCorta[k] && _rhDebVariantes(k, TX.debCorta[k]).some(function(t){ return String(d.debilidades || '').indexOf(t) !== -1; }); });
   var resto = brecha.filter(function(b){ return conFrase.indexOf(b.key) === -1; });
   var nomTxt = function(b){ return _RH_NOMBRE_TXT[b.key] || _rhMinus((listaD.filter(function(k){ return k.key === b.key; })[0] || {}).label || b.key); };
   var bajos = resto.filter(function(b){ return b.n === 'Bajo'; }).map(nomTxt);
