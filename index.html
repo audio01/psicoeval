@@ -278,8 +278,8 @@ input,select,textarea{font-family:inherit;outline:none}
 .disc-item{text-align:center;padding:14px 8px;border-radius:12px}
 /* Cualidades del DISC: el texto completo siempre visible (2 columnas en celular) */
 .disc-opts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
-.disc-opt{display:flex;align-items:center;justify-content:center;min-height:46px;padding:8px 10px;border-radius:8px;border:2px solid #e2e8f0;font-size:13px;line-height:1.25;font-family:inherit;cursor:pointer;transition:all .12s;width:100%;text-align:center;white-space:normal;overflow-wrap:break-word;hyphens:auto;-webkit-hyphens:auto}
-@media(max-width:640px){.disc-opts{grid-template-columns:repeat(2,minmax(0,1fr))}.disc-opt{font-size:14px;min-height:50px}}
+.disc-opt{display:flex;align-items:center;justify-content:center;min-height:46px;padding:8px 10px;border-radius:8px;border:2px solid #e2e8f0;font-size:15px;line-height:1.25;font-family:inherit;cursor:pointer;transition:all .12s;width:100%;text-align:center;white-space:normal;overflow-wrap:break-word;hyphens:auto;-webkit-hyphens:auto}
+@media(max-width:640px){.disc-opts{grid-template-columns:repeat(2,minmax(0,1fr))}.disc-opt{font-size:15px;min-height:52px}}
 .disc-letter{font-size:32px;font-weight:800;line-height:1}
 .disc-name{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin:4px 0;color:var(--ink3)}
 .disc-pct{font-size:19px;font-weight:800}
@@ -607,13 +607,13 @@ input,select,textarea{font-family:inherit;outline:none}
   background: var(--mint-l);
 }
 .q-scale-text {
-  font-size: 14px;
+  font-size: 17px;
   line-height: 1.65;
   color: var(--ink);
   margin-bottom: 12px;
 }
 .q-scale-num {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--ink4);
   margin-right: 5px;
@@ -630,7 +630,7 @@ input,select,textarea{font-family:inherit;outline:none}
   border: 1.5px solid var(--border);
   background: var(--surface2);
   font-weight: 700;
-  font-size: 15px;
+  font-size: 17px;
   color: var(--ink3);
   cursor: pointer;
   transition: all .15s;
@@ -649,10 +649,10 @@ input,select,textarea{font-family:inherit;outline:none}
   box-shadow: 0 0 0 2px var(--accent-m);
 }
 .q-scale-btns button .scale-lbl {
-  font-size: 8px;
+  font-size: 11px;
   font-weight: 600;
   color: inherit;
-  opacity: .7;
+  opacity: .85;
   line-height: 1.1;
   text-align: center;
   display: none;
@@ -675,7 +675,7 @@ input,select,textarea{font-family:inherit;outline:none}
   background: var(--mint-l);
 }
 .q-choice-text {
-  font-size: 14px;
+  font-size: 17px;
   font-weight: 600;
   line-height: 1.65;
   color: var(--ink);
@@ -747,7 +747,7 @@ input,select,textarea{font-family:inherit;outline:none}
 }
 .q-choice-opt.sel .opt-dot { display: block; }
 .q-choice-opt .opt-label {
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1.55;
   color: var(--ink);
   font-weight: 400;
@@ -768,7 +768,7 @@ input,select,textarea{font-family:inherit;outline:none}
   background: var(--surface2);
   border-radius: 6px;
   padding: 3px 9px;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--ink2);
 }
@@ -2143,6 +2143,7 @@ body.adm .pdf-ic{display:inline-flex;color:var(--ink4)}
 .vac-txt span{font-size:12.5px;color:var(--ink3)}
 .vac-txt small{font-size:12px;color:var(--ink4);line-height:1.45}
 .vac-n{font-size:12px;font-weight:600;color:var(--ink3);white-space:nowrap;cursor:default}
+.vac-n-b{border:none;background:none;font-family:inherit;cursor:pointer;padding:3px 7px;margin:-3px -7px;border-radius:8px}.vac-n-b:hover{background:var(--surface2,rgba(0,0,0,.05));color:var(--ink)}.vac-n-b:hover b{text-decoration:underline}
 .vac-acc{display:flex;align-items:center;gap:8px}
 .vac-acc .rs-btn .ico{width:14px;height:14px}
 .vac-acc .rs-btn[disabled]{opacity:.4;cursor:not-allowed}
@@ -3621,11 +3622,13 @@ function _cfgReloadAll() {
 // DC-0 y Comprensión son pruebas de potencia sin normas de velocidad: el reloj es un límite de seguridad,
 // no un corte. 18 min para el DC-0 (las 9 personas que lo rindieron sin reloj tardaron 8 a 18 min; su ficha
 // dice 15-20) y 10 min para Comprensión (su ficha dice 8-12). Antes eran 6 y 4: cortaban a quien iba a ritmo normal.
-var TM_MINS_DEFAULTS = { dc0:18, pai:5, situacional:5, vigilancia:3, comprension:10, disc:3, pf16:4, ipip_lt:3, normativa_ohs:6, integridad:5, gonogo:4, bart:3, matrices:12 };
+var TM_MINS_DEFAULTS = { dc0:18, pai:5, situacional:5, vigilancia:6, comprension:10, disc:3, pf16:4, ipip_lt:3, normativa_ohs:6, integridad:5, gonogo:4, bart:3, matrices:12 };
 // Tiempos guardados antes del cambio: los 6 y 4 minutos de entonces pasan a los nuevos (un valor distinto lo eligió el administrador)
 function _tmMigrar(o) {
   if (!o || typeof o !== 'object') return o;
   if (!(o._v >= 2)) { if (o.dc0 === 6) o.dc0 = TM_MINS_DEFAULTS.dc0; if (o.comprension === 4) o.comprension = TM_MINS_DEFAULTS.comprension; o._v = 2; }
+  // v3: Vigilancia pasa de 3 a 6 minutos (con 3, el 57% no alcanzaba a terminar los 6 casos)
+  if (!(o._v >= 3)) { if (o.vigilancia === 3) o.vigilancia = TM_MINS_DEFAULTS.vigilancia; o._v = 3; }
   return o;
 }
 var TM_MINS_CONFIG = (function(){
@@ -3652,7 +3655,7 @@ function updateTmMin(tid, val) {
   var v = parseInt(val, 10);
   if (isNaN(v) || v < 1) v = 1;
   if (v > 60) v = 60;
-  TM_MINS_CONFIG[tid] = v; TM_MINS_CONFIG._v = 2;
+  TM_MINS_CONFIG[tid] = v; TM_MINS_CONFIG._v = 3;
   saveTmMins();
   var el = document.getElementById('tm_display_' + tid);
   if (el) el.textContent = v + ' min';
@@ -6247,6 +6250,7 @@ async function _vacCargar() {
 }
 async function renderVacantesTab() {
   var box = document.getElementById('vacantes-content'); if (!box) return;
+  var _scroll = typeof _dashRestaurar === 'function' ? _dashRestaurar() : null;
   var bN = document.getElementById('vac-tools'); if (bN) bN.style.display = S.role === 'admin' ? '' : 'none';
   box.innerHTML = '<div class="pdf-vacio">Cargando…</div>';
   var lista, all = [];
@@ -6258,6 +6262,7 @@ async function renderVacantesTab() {
     + '<input id="vac-q" type="search" placeholder="Buscar instalación, comuna o cargo" value="' + htmlEsc(_vacQ) + '" oninput="_vacQ=this.value;_vacPintar()"></div>'
     + '<div class="vac-seg" id="vac-seg"></div></div><div id="vac-lista"></div>';
   _vacPintar();
+  if (_scroll) { var _main = document.getElementById('admin-main'); if (_main) _main.scrollTop = _scroll; }
 }
 // Lista compacta: una línea por instalación; el detalle se despliega al hacer clic
 var _vacFiltro = 'activas', _vacQ = '', _vacAbiertas = {}, _vacCuenta = {};
@@ -6297,14 +6302,16 @@ function _vacPintar() {
         + '<div class="vac-gi">' + (idx === 0 ? '<b title="' + htmlEsc(v0.instalacion) + '">' + htmlEsc(v0.instalacion) + '</b>' : '') + '</div>'
         + '<div class="vac-nom"><b title="' + htmlEsc(_vacCargoTxt(v)) + '">' + htmlEsc(_vacCargoTxt(v)) + '</b>'
         + (sub ? '<span>' + sub + '</span>' : '') + '</div>'
-        + '<span class="vac-n" title="Personas en proceso en este cargo, en cualquier etapa (sin rechazados ni contratados). ' + htmlEsc(_vacCuposTxt(v)) + '"><b>' + _vacEnProceso(v) + '</b> en proceso</span>'
+        + (function(){ var n = _vacEnProceso(v), t = 'Personas en proceso en este cargo, en cualquier etapa (sin rechazados ni contratados). ' + htmlEsc(_vacCuposTxt(v));
+            return n ? '<button class="vac-n vac-n-b" onclick="event.stopPropagation();_vacProcesoAbrir(\'' + id + '\')" title="' + t + ' Clic para ver a las personas."><b>' + n + '</b> en proceso</button>'
+                     : '<span class="vac-n" title="' + t + '"><b>0</b> en proceso</span>'; })()
         + (admin ? '<button class="vac-inv" onclick="event.stopPropagation();_invAbrirVacante(\'' + id + '\')" title="' + (v.activa ? 'Crear el link de postulación de este cargo y compartirlo' : 'Active el cargo para invitar') + '"' + (v.activa ? '' : ' disabled') + '><svg class="ico"><use href="#i-send"/></svg>Invitar</button>'
           + '<div class="vac-sw' + (v.activa ? ' on' : '') + '" role="switch" aria-checked="' + v.activa + '" title="' + (v.activa ? 'Activa: clic para desactivar' : 'Inactiva: clic para activar') + '" onclick="event.stopPropagation();_vacActivar(\'' + id + '\',' + !v.activa + ')"><i></i></div>' : '')
         + '<svg class="ico vac-chev"><use href="#i-chev"/></svg></div>'
         + '<div class="vac-det">'
         + (v.direccion ? '<div class="vac-dir"><svg class="ico"><use href="#i-pin"/></svg>' + htmlEsc(v.direccion) + '</div>' : '')
         + (v.link_mapa ? '<div class="vac-dir"><svg class="ico"><use href="#i-pin"/></svg><a href="' + htmlEsc(v.link_mapa) + '" target="_blank" rel="noopener">Ver mapa</a></div>' : '')
-        + '<div class="vac-detx">' + htmlEsc(_vacCuposTxt(v)) + '</div>'
+        + '<div class="vac-detx">' + htmlEsc(_vacCuposTxt(v)) + (_vacEnProceso(v) ? ' · <a class="rs-link" onclick="_vacProcesoAbrir(\'' + id + '\')">Ver a las personas en proceso</a>' : '') + '</div>'
         + (v.detalle ? '<div class="vac-detx">' + htmlEsc(v.detalle) + '</div>' : '')
         + (datos.length ? '<span class="vac-datos">' + datos.map(function(x){ return '<i>' + htmlEsc(x) + '</i>'; }).join('') + '</span>' : '')
         + (_vacCuenta[v.id] ? '<div class="vac-detx">' + _vacCuenta[v.id] + (_vacCuenta[v.id] === 1 ? ' postulante eligió' : ' postulantes eligieron') + ' este cargo de la instalación.</div>' : '')
@@ -12589,15 +12596,19 @@ function setDashVista(v) { _dashVista = v; try { localStorage.setItem(_DASH_VIST
 var _dashCeldas = [], _dashSel = null, _dashPrev = null;
 function _dashCelda(ids, txt) { _dashCeldas.push({ ids: ids, txt: txt }); return _dashCeldas.length - 1; }
 // Al abrir una cifra se recuerda cómo estaba Candidatos y dónde iba en el Dashboard, para volver sin perder el hilo
-function _dashAbrir(i) {
+function _dashAbrir(i, origen) {
   var x = _dashCeldas[i]; if (!x) return;
+  x.origen = origen || 'dashboard';
   if (!_BD) _bdInit();
   var main = document.getElementById('admin-main');
   _dashSel = x; _dashPrev = { vistaId: _bdVistaId, bd: JSON.parse(JSON.stringify(_BD)), scroll: main ? main.scrollTop : 0 };
   _bdIrConFiltros({ dash: 'sel' });
   if (main) main.scrollTop = 0;
 }
-function _dashVolver() { adminTab('dashboard', document.getElementById('nav-dashboard')); }
+function _dashVolver() {
+  if (_dashSel && _dashSel.origen === 'vacantes') adminTab('vacantes', document.getElementById('nav-vacantes'));
+  else adminTab('dashboard', document.getElementById('nav-dashboard'));
+}
 // Al volver al Dashboard por cualquier camino, Candidatos queda como estaba antes de abrir la cifra
 function _dashRestaurar() {
   var p = _dashPrev, abierta = _BD && _BD.filtros && _BD.filtros.dash;
@@ -13389,8 +13400,9 @@ function _bdBarPintar() {
   var vol = document.getElementById('bd-volver');
   if (vol) {
     var desde = _BD.filtros && _BD.filtros.dash && _dashSel;
-    var nomV = { semanal:'Registro semanal', instalaciones:'Instalaciones', calidad:'Calidad de la selección' }[_dashVista];
-    vol.innerHTML = desde ? '<button class="bd-volver-b" onclick="_dashVolver()"><span aria-hidden="true">←</span> Volver al Dashboard</button><span class="bd-volver-t">' + nomV + ' · <b>' + htmlEsc(_dashSel.txt) + '</b></span>' : '';
+    var deInst = desde && _dashSel.origen === 'vacantes';
+    var nomV = deInst ? 'Instalaciones' : { semanal:'Registro semanal', instalaciones:'Instalaciones', calidad:'Calidad de la selección' }[_dashVista];
+    vol.innerHTML = desde ? '<button class="bd-volver-b" onclick="_dashVolver()"><span aria-hidden="true">←</span> ' + (deInst ? 'Volver a Instalaciones' : 'Volver al Dashboard') + '</button><span class="bd-volver-t">' + nomV + ' · <b>' + htmlEsc(_dashSel.txt) + '</b></span>' : '';
     vol.style.display = desde ? 'flex' : 'none';
   }
   var tab = _BD.vista === 'tablero';
@@ -14657,14 +14669,21 @@ function _vacCupos(v) {
   return { ocupados: oc, proceso: pr, total: v.cupos || null, libres: v.cupos ? Math.max(0, v.cupos - oc) : null };
 }
 // Personas en proceso en este cargo: en cualquier etapa abierta (sin rechazados, no contratados ni contratados)
-function _vacEnProceso(v) {
-  var n = 0;
+function _vacEnProcesoIds(v) {
+  var ids = [];
   (_dbCache || []).forEach(function(c){
     if (!(c.scores && c.scores._postula && c.scores._postula.vacante === v.id)) return;
     var e = getPipelineEtapa(c);
-    if (!_esCierre(e) && e !== 'contratado') n++;   // todas las etapas abiertas, incluidos seleccionados y enviados
+    if (!_esCierre(e) && e !== 'contratado') ids.push(c.id);   // todas las etapas abiertas, incluidos seleccionados y enviados
   });
-  return n;
+  return ids;
+}
+function _vacEnProceso(v) { return _vacEnProcesoIds(v).length; }
+// Abre en Candidatos a las personas en proceso de ese cargo de la instalación; "Volver" regresa a Instalaciones
+function _vacProcesoAbrir(id) {
+  var v = (_vacLista || []).find(function(x){ return x.id === id; }); if (!v) return;
+  var ids = _vacEnProcesoIds(v); if (!ids.length) return;
+  _dashAbrir(_dashCelda(ids, v.instalacion + ' · ' + _vacCargoTxt(v) + ' · en proceso'), 'vacantes');
 }
 function _vacCuposTxt(v) {
   var k = _vacCupos(v);
